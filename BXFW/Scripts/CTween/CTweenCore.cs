@@ -6,39 +6,17 @@
  * | the CTween tweening script.                     | *
  * | C stands for coroutine.                         | *
  * |                                                 | *
- * | Now for the boring license stuff.               | *
- * ------------------------------------------------- | */
-/*
- * Copyright (c) 2022 Barbaros Bayat
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
- /** -------------------------------------------------- 
- // GENERAL TODO :
- // 1 : <see cref="BXFW.CTweenCTX{T}"/>'s <see cref="BXFW.RepeatType.PingPong"/> doesn't work as ping-pong,
- //     but rather as <see cref="BXFW.RepeatType.Reset"/>. Reset seems to work fine.
- // 2 : <see cref="Component.transform"/> seems to internally call <see cref="Component.GetComponent{T}"/>.
- //     Make the tweening method cache the <see cref="Component.GetComponent{T}"/> call. 
- // BUG FIX : 
- // 1 : Creating a <see cref="BXFW.CTweenProperty{T}"/> with delay and calling itself's <see cref="BXFW.CTweenProperty{T}.StartTween"/> on it's
- //     <see cref="BXFW.CTweenProperty{T}.TwContext"/>'s ending action doesn't start the tween. (Only occurs on delayed tweens? need testing)
- * -------------------------------------------------- **/
+ * | ------------------------------------------------| */
+/** -------------------------------------------------- 
+// GENERAL TODO :
+// 1 : <see cref="BXFW.Tweening.CTweenCTX{T}"/>'s <see cref="BXFW.Tweening.RepeatType.PingPong"/> doesn't work as ping-pong,
+//     but rather as <see cref="BXFW.Tweening.RepeatType.Reset"/>. Reset seems to work fine.
+// 2 : <see cref="Component.transform"/> seems to internally call <see cref="Component.GetComponent{T}"/>.
+//     Make the tweening method cache the <see cref="Component.GetComponent{T}"/> call. 
+// BUG FIX : 
+// 1 : Creating a <see cref="BXFW.Tweening.CTweenProperty{T}"/> with delay and calling itself's <see cref="BXFW.Tweening.CTweenProperty{T}.StartTween"/> on it's
+//     <see cref="BXFW.Tweening.CTweenProperty{T}.TwContext"/>'s ending action doesn't start the tween. (Only occurs on delayed tweens? need testing)
+* -------------------------------------------------- **/
 
 using System;
 using System.Collections;
@@ -50,9 +28,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using static BXFW.CTween;
+using static BXFW.Tweening.CTween;
 
-namespace BXFW
+#if UNITY_EDITOR
+using BXFW.Editor;
+#endif
+
+namespace BXFW.Tweening
 {
     // Visual studio
     #pragma warning disable IDE0051 // Hide unused info
@@ -108,7 +90,7 @@ namespace BXFW
         {
             Debug.Log("<b>[ListStrings] Listing all fields in 'CTweenStrings'.</b>");
 
-            foreach (var field in typeof(CTweenStrings).GetFields())
+            foreach (FieldInfo field in typeof(CTweenStrings).GetFields())
             {
                 // Pass null as it's static.
                 Debug.LogFormat("Field | Name : {0} | ToString : {1}", field.Name, field.GetValue(null));

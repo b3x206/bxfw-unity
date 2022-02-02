@@ -1,17 +1,14 @@
 ﻿/// NOTE : Part of <see cref="BXFW.CTween"/>.
 /// Same stuff applies here too. (This is just some simple editor scripts)
 
-#if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
-#endif
 
 /// Editor utils go on this namespace.
 /// You can use these.
 namespace BXFW.CTween.Editor
 {
-#if UNITY_EDITOR
     /////////////////////////////////////////////////////////////////////////////
     /// <summary> <c>EXPERIMENTAL</c>, editor playback. </summary>            /// 
     /// Maybe TODO : Add generic IEnumerator support for custom return types. ///
@@ -77,5 +74,4 @@ namespace BXFW.CTween.Editor
         }
         #endregion
     }
-#endif
 }
