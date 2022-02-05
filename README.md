@@ -1,2 +1,7 @@
 # bxfw-unity
-BX framework (basically a "cool" name for my additionals) for Unity Game Engine. (since i am a slave of unity and their brand and i am emotionally attached to them)
+BX framework ("cool" name for my additionals, not actually a framework) for Unity.
+
+## How to use : 
+* Write ```git clone https://github.com/b3x206/bxfw-unity.git``` or download zip.
+* Import the file contents
+### Note : Will add a .unitypackage release, just wait.
