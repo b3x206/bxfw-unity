@@ -71,7 +71,8 @@ public class PlayerCamera : MonoBehaviour
 
     #region Camera Mechanics
     // ** Follow Target Transform
-    private void Update()
+	// FIX : FixedUpdate fixes movement jitter.
+    private void FixedUpdate()
     {
         var followPos = (FollowTransform == null || UseFollowVecInstead) ? FollowVector3 : FollowTransform.position;
         var lerpPos = CurrentCameraOffset.UseCameraPosClamp ? new Vector3(
