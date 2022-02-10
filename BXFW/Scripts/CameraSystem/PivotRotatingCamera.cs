@@ -106,6 +106,7 @@ public class PivotRotatingCamera : MonoBehaviour
         Gizmos.color = Color.red;
 
         // Eh, scrap it i am too dumb for maths...
+        // Was planning to draw an sphere for the moveable object distances, and normalize the drawing vec to a circle but idc.
         /* Max 
         Gizmos.DrawSphere(new Vector3(DistanceBetweenObj, DistanceBetweenObj, DistanceBetweenObj), 1f);
         Gizmos.DrawSphere(new Vector3(DistanceBetweenObj, DistanceBetweenObj, DistanceBetweenObj), 1f);

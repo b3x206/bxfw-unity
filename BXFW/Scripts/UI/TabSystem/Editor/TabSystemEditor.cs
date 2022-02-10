@@ -4,7 +4,7 @@ using TMPro;
 using UnityEditor;
 
 [CustomEditor(typeof(TabSystem))]
-public class TabSystemEditor : Editor
+internal class TabSystemEditor : Editor
 {
     //////////// Object Creation
     [MenuItem("GameObject/UI/Tab System")]

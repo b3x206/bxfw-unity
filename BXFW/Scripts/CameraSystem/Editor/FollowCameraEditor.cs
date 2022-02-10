@@ -1,15 +1,15 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(PlayerCamera.CameraOffset))]
-public class PlayerCameraOffsetEditor : PropertyDrawer
+[CustomPropertyDrawer(typeof(FollowCamera.CameraOffset))]
+internal class FollowCameraOffsetEditor : PropertyDrawer
 {
     private SerializedProperty CurrentOffset;
     private bool DrawXYZClamp
     {
         get
         {
-            return CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.UseCameraPosClamp)).boolValue;
+            return CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
         }
     }
 
@@ -31,32 +31,37 @@ public class PlayerCameraOffsetEditor : PropertyDrawer
         if (CurrentOffset == null)
             CurrentOffset = property;
 
-        EditorGUI.PropertyField(GetPropertyRect(position, 0), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.UseCameraPosClamp)));
+        EditorGUI.PropertyField(GetPropertyRect(position, 0), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)));
         if (DrawXYZClamp)
         {
-            EditorGUI.PropertyField(GetPropertyRect(position, 1), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.CameraPosXClamp)));
-            EditorGUI.PropertyField(GetPropertyRect(position, 2), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.CameraPosYClamp)));
-            EditorGUI.PropertyField(GetPropertyRect(position, 3), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.CameraPosZClamp)));
-            EditorGUI.PropertyField(GetPropertyRect(position, 4), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.Position)));
-            EditorGUI.PropertyField(GetPropertyRect(position, 5), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.EulerRotation)));
+            EditorGUI.indentLevel++;
+            EditorGUI.PropertyField(GetPropertyRect(position, 1), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosXClamp)));
+            EditorGUI.PropertyField(GetPropertyRect(position, 2), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosYClamp)));
+            EditorGUI.PropertyField(GetPropertyRect(position, 3), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosZClamp)));
+            EditorGUI.indentLevel--;
+
+            // Rest of the gui
+            EditorGUI.PropertyField(GetPropertyRect(position, 4), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.Position)));
+            EditorGUI.PropertyField(GetPropertyRect(position, 5), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.EulerRotation)));
         }
         else
         {
-            EditorGUI.PropertyField(GetPropertyRect(position, 1), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.Position)));
-            EditorGUI.PropertyField(GetPropertyRect(position, 2), CurrentOffset.FindPropertyRelative(nameof(PlayerCamera.CameraOffset.EulerRotation)));
+            // Without the clamp stuff
+            EditorGUI.PropertyField(GetPropertyRect(position, 1), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.Position)));
+            EditorGUI.PropertyField(GetPropertyRect(position, 2), CurrentOffset.FindPropertyRelative(nameof(FollowCamera.CameraOffset.EulerRotation)));
         }
 
         CurrentOffset.serializedObject.ApplyModifiedProperties();
     }
 }
 
-[CustomEditor(typeof(PlayerCamera))]
-public class PlayerCameraEditor : Editor
+[CustomEditor(typeof(FollowCamera))]
+internal class FollowCameraEditor : Editor
 {
     [MenuItem("GameObject/Player Camera")]
     public static void CreatePlayerCamera()
     {
-        var objCamera = new GameObject("PlayerCamera").AddComponent<PlayerCamera>();
+        var objCamera = new GameObject("PlayerCamera").AddComponent<FollowCamera>();
         objCamera.tag = "Main Camera";
         objCamera.FollowTransform = Selection.activeTransform;
         objCamera.SetCurrentCameraOffsetIndex(0);
@@ -65,7 +70,7 @@ public class PlayerCameraEditor : Editor
     public override void OnInspectorGUI()
     {
         // Variable
-        var Target = target as PlayerCamera;
+        var Target = target as FollowCamera;
         var StyleLabel = new GUIStyle 
         { 
             alignment = TextAnchor.UpperCenter,

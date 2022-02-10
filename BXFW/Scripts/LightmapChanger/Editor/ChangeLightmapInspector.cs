@@ -6,8 +6,12 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
+// NOTE ABOUT 'CustomEditor' file namespaces : 
+// Do not put these into BXFW.Editor namespaces. (it causes naming clashes)
+// thx
+
 [CustomEditor(typeof(ChangeLightmap))]
-public class ChangeLightmapInspector : Editor
+internal class ChangeLightmapInspector : Editor
 {
     public override void OnInspectorGUI()
     {

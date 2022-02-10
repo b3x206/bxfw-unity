@@ -5,7 +5,7 @@
 /// <br>Tracks the player smoothly.</br>
 /// </summary>
 [RequireComponent(typeof(Camera), typeof(AudioListener))]
-public class PlayerCamera : MonoBehaviour
+public class FollowCamera : MonoBehaviour
 {
     // ** Variables (Inspector)
     [Header("Camera Fading Object Settings")]
@@ -50,7 +50,6 @@ public class PlayerCamera : MonoBehaviour
 
     // ** Variables (Hidden)
     public Camera CameraComponent { get; private set; }
-    public static PlayerCamera Instance { get; private set; }
 
     // * Private-Internal
     private Plane[] CameraFrustumPlanes;
@@ -59,14 +58,6 @@ public class PlayerCamera : MonoBehaviour
     private void Awake()
     {
         CameraComponent = GetComponent<Camera>();
-
-        if (Instance == null)
-        { Instance = this; }
-        else
-        {
-            Debug.LogError($"[PlayerCamera] Duplicate object with name \"{name}\" tried to re-assign instance. The instance was already assigned at : {Instance.name}");
-            Destroy(gameObject);
-        }
     }
 
     #region Camera Mechanics

@@ -1,82 +1,85 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class FGridLayout : LayoutGroup
+namespace BXFW.UI
 {
-    public enum FitType
+    public class FGridLayout : LayoutGroup
     {
-        Uniform = 0,
-        Width = 1,
-        Height = 2,
-        FixedRows = 3,
-        FixedColumns = 4
+        public enum FitType
+        {
+            Uniform = 0,
+            Width = 1,
+            Height = 2,
+            FixedRows = 3,
+            FixedColumns = 4
+        }
+
+        [Space]
+        public FitType fitType;
+        public int Rows;
+        public int Columns;
+        [Space]
+        public Vector2 CellSize;
+        public Vector2 Spacing;
+        public bool fitX = true;
+        public bool fitY = true;
+
+        public override void CalculateLayoutInputHorizontal()
+        {
+            base.CalculateLayoutInputHorizontal();
+
+            if (fitType == FitType.Width || fitType == FitType.Height || fitType == FitType.Uniform)
+            {
+                float sqrRt = Mathf.Sqrt(transform.childCount);
+                Rows = Mathf.CeilToInt(sqrRt);
+                Columns = Mathf.CeilToInt(sqrRt);
+            }
+
+            if (fitType == FitType.Width || fitType == FitType.FixedColumns)
+            {
+                Rows = Mathf.CeilToInt(transform.childCount / (float)Columns);
+            }
+            if (fitType == FitType.Height || fitType == FitType.FixedRows)
+            {
+                Rows = Mathf.CeilToInt(transform.childCount / (float)Rows);
+            }
+
+            float parentWidth = rectTransform.rect.width;
+            float parentHeight = rectTransform.rect.height;
+
+            float cellWidth = (parentWidth / (float)Columns) -
+                ((Spacing.x / (float)Columns) * (Columns - 1)) -
+                (padding.left / (float)Columns) - (padding.right / (float)Columns);
+
+            float cellHeight = (parentHeight / (float)Rows) -
+                ((Spacing.y / (float)Rows) * (Rows - 1)) -
+                (padding.top / (float)Rows) - (padding.bottom / (float)Rows);
+
+            CellSize.x = fitX ? cellWidth : CellSize.x;
+            CellSize.y = fitY ? cellHeight : CellSize.y;
+
+            int columnCount = 0;
+            int rowCount = 0;
+            for (int i = 0; i < rectChildren.Count; i++)
+            {
+                columnCount = i % Columns;
+                rowCount = i / Columns;
+
+                RectTransform item = rectChildren[i];
+
+                float xPos = (CellSize.x * columnCount) + (Spacing.x * columnCount) + padding.left;
+                float yPos = (CellSize.y * rowCount) + (Spacing.y * rowCount) + padding.top;
+
+                SetChildAlongAxis(item, 0, xPos, CellSize.x);
+                SetChildAlongAxis(item, 1, yPos, CellSize.y);
+            }
+        }
+
+        public override void CalculateLayoutInputVertical()
+        { }
+        public override void SetLayoutHorizontal()
+        { }
+        public override void SetLayoutVertical()
+        { }
     }
-
-    [Space]
-    public FitType fitType;
-    public int Rows;
-    public int Columns;
-    [Space]
-    public Vector2 CellSize;
-    public Vector2 Spacing;
-    public bool fitX = true;
-    public bool fitY = true;
-
-    public override void CalculateLayoutInputHorizontal()
-    {
-        base.CalculateLayoutInputHorizontal();
-
-        if (fitType == FitType.Width || fitType == FitType.Height || fitType == FitType.Uniform)
-        {
-            float sqrRt = Mathf.Sqrt(transform.childCount);
-            Rows = Mathf.CeilToInt(sqrRt);
-            Columns = Mathf.CeilToInt(sqrRt);
-        }       
-
-        if (fitType == FitType.Width || fitType == FitType.FixedColumns)
-        {
-            Rows = Mathf.CeilToInt(transform.childCount / (float)Columns);
-        }
-        if (fitType == FitType.Height || fitType == FitType.FixedRows)
-        {
-            Rows = Mathf.CeilToInt(transform.childCount / (float)Rows);
-        }
-
-        float parentWidth = rectTransform.rect.width;
-        float parentHeight = rectTransform.rect.height;
-
-        float cellWidth = (parentWidth / (float)Columns) - 
-            ((Spacing.x / (float)Columns) * (Columns - 1)) - 
-            (padding.left / (float)Columns) - (padding.right / (float)Columns);
-
-        float cellHeight = (parentHeight / (float)Rows) - 
-            ((Spacing.y / (float)Rows) * (Rows - 1)) - 
-            (padding.top / (float)Rows) - (padding.bottom / (float)Rows);
-
-        CellSize.x = fitX ? cellWidth : CellSize.x;
-        CellSize.y = fitY ? cellHeight : CellSize.y;
-       
-        int columnCount = 0;
-        int rowCount = 0;
-        for (int i = 0; i < rectChildren.Count; i++)
-        {
-            columnCount = i % Columns;
-            rowCount = i / Columns;
-            
-            RectTransform item = rectChildren[i];
-
-            float xPos = (CellSize.x * columnCount) + (Spacing.x * columnCount) + padding.left;
-            float yPos = (CellSize.y * rowCount) + (Spacing.y * rowCount) + padding.top;
-
-            SetChildAlongAxis(item, 0, xPos, CellSize.x);
-            SetChildAlongAxis(item, 1, yPos, CellSize.y);
-        }
-    }
-
-    public override void CalculateLayoutInputVertical()
-    { }
-    public override void SetLayoutHorizontal()
-    { }
-    public override void SetLayoutVertical()
-    { }
 }
