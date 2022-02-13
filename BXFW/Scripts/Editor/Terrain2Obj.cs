@@ -205,7 +205,7 @@ namespace BXFW.Editor.Tools
             sw.Close();
             _terrain = null;
 
-            EditorUtility.DisplayProgressBar("Saving file to disc.", "This might take a while...", 1f);
+            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving file to disc.", "This might take a while...", 1f);
             GetWindow<Terrain2Obj>().Close();
             EditorUtility.ClearProgressBar();
         }
@@ -215,7 +215,7 @@ namespace BXFW.Editor.Tools
             if (_counter++ != ProgressUpdateInterval) return;
             _counter = 0;
 
-            EditorUtility.DisplayProgressBar("Saving...", "", Mathf.InverseLerp(0, _totalCount, ++_tCount));
+            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving...", "", Mathf.InverseLerp(0, _totalCount, ++_tCount));
         }
     }
 }

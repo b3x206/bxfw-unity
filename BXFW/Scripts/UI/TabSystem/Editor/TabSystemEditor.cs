@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using UnityEngine.UI;
 using TMPro;
-using UnityEditor;
 
 [CustomEditor(typeof(TabSystem))]
 internal class TabSystemEditor : Editor
