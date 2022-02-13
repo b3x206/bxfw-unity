@@ -78,13 +78,13 @@ public class FollowCamera : MonoBehaviour
         {
             transform.SetPositionAndRotation(
                 // Position
-                Vector3.Lerp(transform.position, lerpPos, Time.deltaTime * Move_Damp),
+                Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
                 // Rotation
                 Quaternion.Slerp(transform.rotation,
                     Quaternion.Euler(CurrentCameraOffset.EulerRotation.x,
                     CurrentCameraOffset.EulerRotation.y,
                     CurrentCameraOffset.EulerRotation.z),
-                Time.deltaTime * Rotation_Damp)
+                Time.fixedDeltaTime * Rotation_Damp)
             );
         }
     }
