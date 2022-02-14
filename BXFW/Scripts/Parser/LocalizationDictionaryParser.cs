@@ -6,6 +6,7 @@ using UnityEngine;
 using BXFW;
 using System.Text;
 using UnityEngine.Assertions;
+using System.Linq;
 
 namespace BXFW.Data
 {
@@ -48,7 +49,7 @@ namespace BXFW.Data
             TextID = textID;
             LocalizedValues = values;
         }
-        public static implicit operator string(LocalizedText text)
+        public static explicit operator string(LocalizedText text)
         {
             // Whether if we want this to be treated as an string.
             return text[DefaultLocale];
@@ -60,158 +61,263 @@ namespace BXFW.Data
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
-    /// TEXT_ID => en="Text Content" tr="Yazý içerik"
-    /// TEXT2_ID => en="Other Text Content" tr="Diðer yazý içeriði"
-    /// TEXT3_ID => en="More Text Content" tr="Daha fazla yazý içeriði"
+    /// TEXT_ID => en="Text Content", tr="Yazý içerik"
+    /// TEXT2_ID => en="Other Text Content", tr="Diðer yazý içeriði"
+    /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazý içeriði"
     /// </example>
     public static class LocalizedAssetParser
     {
         public const char NewLineChar = '\n';
 
+        public const char LocaleDefSeperateChar = ',';
         public const char EscapeChar = '\\';
         public const char SurroundChar = '"';
         public const char LocaleDefChar = '=';
         public const string TextIDChar = "=>";
 
+        /// <summary>
+        /// Creates a <see cref="Dictionary{TKey, TValue}"/> from <paramref name="listKeys"/> & <paramref name="listValues"/>.
+        /// </summary>
         private static Dictionary<TKey, TValue> CreateDictFromLists<TKey, TValue>(List<TKey> listKeys, List<TValue> listValues)
         {
             // Make sure the assertion is correct.
-            Debug.Log($"{listKeys.Count} == {listValues.Count}");
-            Assert.IsTrue(listKeys.Count == listValues.Count);
+            Assert.IsTrue(listKeys.Count >= listValues.Count);
 
             var dict = new Dictionary<TKey, TValue>(listKeys.Count);
 
             for (int i = 0; i < listKeys.Count; i++)
             {
-                dict.Add(listKeys[i], listValues[i]);
+                var valueAdd = (TValue)default;
+                if (i < listValues.Count)
+                {
+                    // If we have a corresponding value, add that.
+                    valueAdd = listValues[i];
+                }
+
+                dict.Add(listKeys[i], valueAdd);
             }
 
             return dict;
         }
         /// <summary>
-        /// Converts the strings with quotations to have escape characters in it.
+        /// Converts the strings with quotations to have escape characters in it. (for the parse file)
         /// </summary>
         private static string ConvertQuotationString(this string target)
         {
-            var newStr = string.Empty;
+            var newStr = new StringBuilder(target.Length);
 
             foreach (var c in target)
             {
-                // TODO : Make a list of 'EscapableChars' (maybe again=
+                // TODO : Make a list of 'EscapableChars' (maybe again)
                 if (c == SurroundChar)
                 {
                     // Add this instead.
-                    newStr += "\\\"";
+                    newStr.Append("\\\"");
+                    continue;
+                }
+                if (c == EscapeChar)
+                {
+                    newStr.Append("\\\\");
                     continue;
                 }
 
-                newStr += c;
+                newStr.Append(c);
             }
 
-            return newStr;
+            return newStr.ToString();
         }
 
-        public static List<LocalizedText> Parse(string parse)
+        public static List<LocalizedText> Parse(string fromString)
         {
-            var parseLn = parse.Split(NewLineChar);
+            var parseLn = fromString.Split(NewLineChar);
             var currentAsset = new List<LocalizedText>();
 
             foreach (var line in parseLn)
             {
+                // Ignore blank lines.
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
                 // Get identification of the text registries (TEXT_ID)
                 var TextID = line.Substring(0, line.IndexOf(TextIDChar)).Trim();
-                var LocaleDefsSplit = line.Substring(line.IndexOf(TextIDChar), line.Length - line.IndexOf(TextIDChar)).Trim().Split(LocaleDefChar);
+                var LocaleDefStringLine = line.Substring(line.LastIndexOf(TextIDChar) + TextIDChar.Length).Trim(' ');
+                var LocaleDefsSplit = LocaleDefStringLine.Split(LocaleDefSeperateChar);
 
                 var listLocaleLang = new List<string>();
                 var listLocaleData = new List<string>();
 
-                foreach (var localeKeyValue in LocaleDefsSplit)
+                foreach (var localeKeyValueNonSplit in LocaleDefsSplit)
                 {
-                    // Save the key first
-                    if (listLocaleLang.Count == listLocaleData.Count)
-                    {
-                        // We only care about the 'KeyValue' contains, the values can be the same.
-                        if (!listLocaleData.Contains(localeKeyValue))
-                        {
-                            listLocaleLang.Add(localeKeyValue.Trim());
-                        }
-                        else
-                        {
-                            Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : Locale {localeKeyValue} already exists on ID {TextID}. String parsed :\n{line}");
-                            listLocaleLang = null;
-                            listLocaleData = null;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        // Parse the text covered in "" marks.
-                        // This is because we parse assuming that the escape characters are written in code as is.
-                        // Basically if we parse a plain text file '\' has no meaning.
-                        // Maybe TODO : Make a escape fixer method for strings.
-                        var localeKeyValueConverted = localeKeyValue.ConvertQuotationString(); 
+                    if (string.IsNullOrWhiteSpace(localeKeyValueNonSplit))
+                        continue;
 
-                        var currDataStr = string.Empty;
-                        var currDataStrIsEscapeChar = false;
+                    var localeKeyValue = localeKeyValueNonSplit.Split(LocaleDefChar);
 
-                        foreach (var currDataChar in localeKeyValueConverted)
+                    // Make a dictionary, using localeKeyValue
+                    foreach (var keyValue in localeKeyValue)
+                    {
+                        bool isValue = keyValue.Contains(SurroundChar);
+
+                        if (!isValue)
                         {
-                            // Surrounding character (either denotes the start or the end)
-                            if (currDataChar == SurroundChar)
+                            // We only care about the 'KeyValue' contains, the values can be the same.
+                            if (!listLocaleLang.Contains(keyValue))
                             {
-                                // String is null. We 'most likely' still have text to parse
-                                if (string.IsNullOrEmpty(currDataStr))
-                                    continue;
-
-                                // Ending of string if we are not in an escape char.
-                                if (currDataStrIsEscapeChar)
-                                {
-                                    currDataStr += currDataChar;
-                                    currDataStrIsEscapeChar = false;
-                                    continue;
-                                }
-
-                                // End the string, both conditions are not satisfied.
+                                listLocaleLang.Add(keyValue.Trim());
+                            }
+                            else
+                            {
+                                Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : Locale {localeKeyValue} already exists on ID {TextID}. Line parsed :\n{line}");
+                                listLocaleLang = null;
+                                listLocaleData = null;
                                 break;
                             }
+                        }
+                        else // isValue
+                        {
+                            // -- Add listLocaleData -- //
+                            // Parse the text covered in "" marks.
+                            // This is because we parse assuming that the escape characters are written in code as is.
+                            // Basically if we parse a plain text file '\' has no meaning.
+                            // Maybe TODO : Make a escape fixer method for strings.
+                            var localeKeyValueConverted = keyValue.ConvertQuotationString();
 
-                            // Escape char (not the SurrondChar)
-                            if (currDataChar == EscapeChar)
+                            // Parse the string.
+                            var currDataStr = string.Empty;
+                            var encSurroundChar = false;
+                            var currDataStrIsEscapeChar = false;
+
+                            foreach (var currDataChar in localeKeyValueConverted)
                             {
+                                // Escape char (not the SurrondChar)
+                                if (currDataChar == EscapeChar)
+                                {
+                                    if (currDataStrIsEscapeChar)
+                                    {
+                                        // Escape char is written as '\\'.
+                                        currDataStr += currDataChar;
+                                        currDataStrIsEscapeChar = false;
+                                    }
+
+                                    currDataStrIsEscapeChar = true;
+                                    continue;
+                                }
+
+                                // Surrounding character (either denotes the start or the end)
+                                if (currDataChar == SurroundChar)
+                                {
+                                    // Ending of string if we are not in an escape char.
+                                    if (currDataStrIsEscapeChar)
+                                    {
+                                        currDataStr += currDataChar;
+                                        currDataStrIsEscapeChar = false;
+                                        continue;
+                                    }
+
+                                    // String is null. We 'most likely' still have text to parse
+                                    if (string.IsNullOrEmpty(currDataStr) && !encSurroundChar)
+                                    {
+                                        // This means that we encountered an escapeless Surround character.
+                                        encSurroundChar = true;
+                                        continue;
+                                    }
+
+                                    // End the string, both conditions are not satisfied.
+                                    break;
+                                }
+
                                 if (currDataStrIsEscapeChar)
                                 {
-                                    // Escape char is written as '\\'.
-                                    currDataStr += currDataChar;
+                                    // Ignore the 'Invalidly Escaped' character.
                                     currDataStrIsEscapeChar = false;
                                 }
 
-                                currDataStrIsEscapeChar = true;
-                                continue;
+                                currDataStr += currDataChar;
                             }
 
-                            if (currDataStrIsEscapeChar)
-                            {
-                                // Ignore the 'Invalidly Escaped' character.
-                                currDataStrIsEscapeChar = false;
-                            }
-
-                            currDataStr += currDataChar;
+                            // If the string is still null, accept as is.
+                            // Add to the list of locales anyway.
+                            listLocaleData.Add(currDataStr);
                         }
-
-                        // If the string is still null, accept as is.
-                        listLocaleLang.Add(currDataStr);
                     }
 
+                    // Lists are complete for this line.
                     if (listLocaleLang != null && listLocaleData != null)
                     {
-                        if (listLocaleLang.Count != 0 || listLocaleData.Count != 0)
+                        if (listLocaleLang.Count == 0 || listLocaleData.Count == 0)
                         {
-                            Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : No locale's was found while searching. String parsed :\n{line}]");
+                            Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : No locale / data was found while searching. String parsed :\n{line}");
                             continue;
                         }
 
                         currentAsset.Add(new LocalizedText(TextID, CreateDictFromLists(listLocaleLang, listLocaleData)));
                     }
+
+
+                    //    // -- Add listLocaleData -- //
+                    //    // Parse the text covered in "" marks.
+                    //    // This is because we parse assuming that the escape characters are written in code as is.
+                    //    // Basically if we parse a plain text file '\' has no meaning.
+                    //    // Maybe TODO : Make a escape fixer method for strings.
+                    //    var localeKeyValueConverted = localeKeyValue[1].ConvertQuotationString();
+
+                    //    // Parse the string.
+                    //    var currDataStr = string.Empty;
+                    //    var encSurroundChar = false;
+                    //    var currDataStrIsEscapeChar = false;
+
+                    //    foreach (var currDataChar in localeKeyValue[1])
+                    //    {
+                    //        // Escape char (not the SurrondChar)
+                    //        if (currDataChar == EscapeChar)
+                    //        {
+                    //            if (currDataStrIsEscapeChar)
+                    //            {
+                    //                // Escape char is written as '\\'.
+                    //                currDataStr += currDataChar;
+                    //                currDataStrIsEscapeChar = false;
+                    //            }
+
+                    //            currDataStrIsEscapeChar = true;
+                    //            continue;
+                    //        }
+
+                    //        // Surrounding character (either denotes the start or the end)
+                    //        if (currDataChar == SurroundChar)
+                    //        {
+                    //            // Ending of string if we are not in an escape char.
+                    //            if (currDataStrIsEscapeChar)
+                    //            {
+                    //                currDataStr += currDataChar;
+                    //                currDataStrIsEscapeChar = false;
+                    //                continue;
+                    //            }
+
+                    //            // String is null. We 'most likely' still have text to parse
+                    //            if (string.IsNullOrEmpty(currDataStr) && !encSurroundChar)
+                    //            {
+                    //                // This means that we encountered an escapeless Surround character.
+                    //                encSurroundChar = true;
+                    //                continue;
+                    //            }
+
+                    //            // End the string, both conditions are not satisfied.
+                    //            break;
+                    //        }
+
+                    //        if (currDataStrIsEscapeChar)
+                    //        {
+                    //            // Ignore the 'Invalidly Escaped' character.
+                    //            currDataStrIsEscapeChar = false;
+                    //        }
+
+                    //        currDataStr += currDataChar;
+                    //    }
+
+                    //    // If the string is still null, accept as is.
+                    //    // Add to the list of locales anyway.
+                    //    listLocaleLang.Add(currDataStr);
+                    //}
                 }
             }
 
@@ -239,11 +345,14 @@ namespace BXFW.Data
                 sb.Append(text.TextID);
                 sb.Append($" {TextIDChar} ");
 
-                foreach (var textWLocale in text.Data)
+                for (int i = 0; i < text.Data.Count; i++)
                 {
+                    var textWLocaleKey = text.Data.Keys.ToArray()[i];
+                    var textWLocaleValue = text.Data.Values.ToArray()[i];
+
                     // Append the dictionary data
-                    // Translates (roughly, the value is subject to change) to | TEXT_ID => localeValue = "whatever here is there."
-                    sb.Append($"{textWLocale.Key} {LocaleDefChar} {SurroundChar}{textWLocale.Value}{SurroundChar} ");
+                    // Translates (roughly, the value is subject to change) to | TEXT_ID => localeValue = "whatever here is there.", (comma added if other elements exist)
+                    sb.Append($"{textWLocaleKey} {LocaleDefChar} {SurroundChar}{textWLocaleValue.ConvertQuotationString()}{SurroundChar}{(i != assets.Count - 1 ? LocaleDefSeperateChar : ' ')} ");
                 }
 
                 // Create a new line
