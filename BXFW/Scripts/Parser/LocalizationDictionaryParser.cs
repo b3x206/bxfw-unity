@@ -61,9 +61,10 @@ namespace BXFW.Data
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
-    /// TEXT_ID => en="Text Content", tr="Yazý içerik"
-    /// TEXT2_ID => en="Other Text Content", tr="Diðer yazý içeriði"
-    /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazý içeriði"
+    /// // For some reason github does not correctly display the turkish characters.
+    /// TEXT_ID => en="Text Content", tr="Yazi icerik"
+    /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
+    /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
     /// </example>
     public static class LocalizedAssetParser
     {
