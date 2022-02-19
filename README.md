@@ -1,4 +1,5 @@
 # bxfw-unity
+[![CodeFactor](https://www.codefactor.io/repository/github/b3x206/bxfw-unity/badge)](https://www.codefactor.io/repository/github/b3x206/bxfw-unity)
 BX framework ("cool" name for my additionals, not actually a framework) for Unity.
 
 ## How to use : 
