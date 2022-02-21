@@ -1819,5 +1819,5 @@ namespace BXFW.Editor
 #endif
     #endregion
 
-        #endregion
+    #endregion
 }
