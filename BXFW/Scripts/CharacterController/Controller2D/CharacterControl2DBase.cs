@@ -35,7 +35,6 @@ namespace BXFW
 
         [Header("Kinematic Physics Settings")]
         public Vector2 gravity = new Vector2(0f, -9.81f);
-        public float mass = 1f;
         public bool UseGravity => useGravity;
         public void SetUseGravity(bool value, bool resetGravity = false)
         {
@@ -117,11 +116,12 @@ namespace BXFW
                 //currentRB.isKinematic = true;
                 // Cheat the 'Kinematic' collision thing by using a dynamic rb instead.
                 currentRB.bodyType = RigidbodyType2D.Dynamic;
-                currentRB.mass = 0.0001f;
+                //currentRB.mass = 0.0001f;
                 currentRB.drag = 0f;
                 currentRB.angularDrag = 0f;
                 currentRB.gravityScale = 0f;
                 currentRB.sleepMode = RigidbodySleepMode2D.NeverSleep;
+                currentRB.freezeRotation = true;
 
                 return currentRB;
             }
@@ -149,11 +149,8 @@ namespace BXFW
             }
         }
 
-        private Vector3 previousPosition;
         private void FixedUpdate()
         {
-            previousPosition = CharacterRB.position;
-
             TickInternalTime();
 
             ApplyGravityVelocity();
@@ -198,8 +195,11 @@ namespace BXFW
         protected void ApplyGravityVelocity()
         {
             if (!useGravity) return;
+
+            // Jumping has higher priority.
+            if (IsJumping) return; 
             // Do not apply gravity if we are grounded.
-            if (IsGrounded || IsJumping)
+            if (IsGrounded)
             {
                 // Set velocity to zero as we fell on the ground.
                 // TODO : This will have issues with clipping on higher gravity velocities
@@ -250,6 +250,31 @@ namespace BXFW
             return control2DBase.CharacterRB;
         }
 
+        private const int MAX_GROUND_COLLISION_CONTACTS = 16;
+        private ContactPoint2D[] groundContacts = new ContactPoint2D[MAX_GROUND_COLLISION_CONTACTS];
+
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            Debug.Log($"[CharacterControl2D] Primarily colliding with : {collision.gameObject.name}");
+
+            collision.GetContacts(groundContacts);
+
+            foreach (var contact in groundContacts)
+            {
+                if (contact.collider != null)
+                {
+                    if (contact.collider.gameObject.layer == groundLayer)
+                    {
+                        // Get the normal of the surface
+                        // If the normal is slope relative to the gravity, get the angle of the slope, then apply a support force. 
+                        // (Multiplied lerped value from Lerp(nSlope, 0, 1))
+
+                        Debug.Log($"Collision normal : {contact.normal}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Draw velocity arrows.
         /// </summary>
@@ -257,11 +282,15 @@ namespace BXFW
         {
             var gColor = Gizmos.color;
 
-            Gizmos.color = Color.green;
-            Additionals.DrawArrowDebug(transform.position, Velocity);
-            Gizmos.color = Color.red;
-            Additionals.DrawArrowDebug(transform.position, CharacterRB.velocity);
+            Gizmos.color = Color.blue;
+            Additionals.DrawArrowGizmos(transform.position, Velocity * 25f);
             
+            if (groundCheck != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            }
+
             Gizmos.color = gColor;
         }
     }

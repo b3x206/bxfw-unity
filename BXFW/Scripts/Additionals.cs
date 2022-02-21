@@ -37,6 +37,8 @@ namespace BXFW
         /// <param name="arrowHeadAngle">Head side rays angle.</param>
         public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
+            if (direction == Vector3.zero) return;
+
             Gizmos.DrawRay(pos, direction);
 
             Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
@@ -47,6 +49,8 @@ namespace BXFW
         /// <inheritdoc cref="Additionals.DrawArrowGizmos(Vector3, Vector3, float, float)"/>
         public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
+            if (direction == Vector3.zero) return;
+
             Gizmos.color = color;
             Gizmos.DrawRay(pos, direction);
 
@@ -62,6 +66,8 @@ namespace BXFW
         /// <param name="arrowHeadAngle">Head side rays angle.</param>
         public static void DrawArrowDebug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
+            if (direction == Vector3.zero) return;
+
             Debug.DrawRay(pos, direction);
 
             Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
@@ -72,6 +78,8 @@ namespace BXFW
         /// <inheritdoc cref="Additionals.DrawArrowDebug(Vector3, Vector3, float, float)"/>
         public static void DrawArrowDebug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
+            if (direction == Vector3.zero) return;
+
             Debug.DrawRay(pos, direction, color);
 
             Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
