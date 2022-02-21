@@ -219,7 +219,7 @@ namespace BXFW
             return path;
         }
         /// <summary>Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.</summary>
-        public static Vector3 GetVectorFromTransformAxis(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
+        public static Vector3 SetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
         {
             var v = current;
             switch (axisConstraint)
@@ -256,8 +256,46 @@ namespace BXFW
 
             return v;
         }
-        /// <summary>Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.</summary>
-        public static Vector2 GetVectorFromTransformAxis(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
+        /// <summary>Get the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.</summary>
+        public static Vector3 GetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current)
+        {
+            var v = current;
+            switch (axisConstraint)
+            {
+                case TransformAxis.None:
+                    return Vector3.zero;
+
+                case TransformAxis.XAxis:
+                    v.y = 0f;
+                    v.z = 0f;
+                    break;
+                case TransformAxis.YAxis:
+                    v.x = 0f;
+                    v.z = 0f;
+                    break;
+                case TransformAxis.ZAxis:
+                    v.x = 0f;
+                    v.y = 0f;
+                    break;
+                case TransformAxis.XYAxis:
+                    v.z = 0f;
+                    break;
+                case TransformAxis.YZAxis:
+                    v.x = 0f;
+                    break;
+                case TransformAxis.XZAxis:
+                    v.y = 0f;
+                    break;
+
+                default:
+                case TransformAxis.XYZAxis:
+                    return v;
+            }
+
+            return v;
+        }
+        /// <summary>Sets or removes the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.</summary>
+        public static Vector2 SetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
         {
             var v = current;
             switch (axisConstraint)
@@ -275,6 +313,29 @@ namespace BXFW
                 case TransformAxis2D.XYAxis:
                     v.x = setCurrent.x;
                     v.y = setCurrent.y;
+                    break;
+            }
+
+            return v;
+        }
+        /// <summary>Get the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.</summary>
+        public static Vector2 GetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current)
+        {
+            var v = current;
+            switch (axisConstraint)
+            {
+                case TransformAxis2D.None:
+                    return Vector2.zero;
+
+                default:
+                case TransformAxis2D.XYAxis:
+                    break;
+
+                case TransformAxis2D.XAxis:
+                    v.y = 0f;
+                    break;
+                case TransformAxis2D.YAxis:
+                    v.x = 0f;
                     break;
             }
 

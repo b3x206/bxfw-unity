@@ -1,6 +1,9 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// Property drawer for the <see cref="FollowCamera.CameraOffset"/>.
+/// </summary>
 [CustomPropertyDrawer(typeof(FollowCamera.CameraOffset))]
 internal class FollowCameraOffsetEditor : PropertyDrawer
 {
