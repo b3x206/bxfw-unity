@@ -61,9 +61,10 @@ namespace BXFW
         public CustomInputEvent MoveJumpInput = new KeyCode[] { KeyCode.Space };
 
         // Runtime variables
+        public bool IsJumping { get; private set; }
         public bool IsGrounded
         {
-            get { return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer); ; }
+            get { return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer); }
         }
         /// <summary>
         /// Whether if we are moving at all. (This considers all type of movement)
@@ -171,20 +172,24 @@ namespace BXFW
         /// </summary>
         private void TickInternalTime()
         {
-            if (!IsGrounded)
+            // -- Jump Delay
+            if (IsJumping)
             {
                 jumpTimer += Time.fixedDeltaTime;
             
                 if (jumpTimer >= jumpDelay)
                 {
                     jumpTimer = 0f;
-                    // Start applying gravity.
+                    // Start applying gravity if we are not jumping currently.
+                    IsJumping = false;
                 }
             }
             else
             {
                 jumpTimer = 0f;
             }
+
+            // -- Other
         }
 
         /// <summary>
@@ -194,7 +199,7 @@ namespace BXFW
         {
             if (!useGravity) return;
             // Do not apply gravity if we are grounded.
-            if (IsGrounded)
+            if (IsGrounded || IsJumping)
             {
                 // Set velocity to zero as we fell on the ground.
                 // TODO : This will have issues with clipping on higher gravity velocities
@@ -233,6 +238,7 @@ namespace BXFW
             if (!MoveJumpInput.IsKeyDown()) return;
 
             // Zero out the gravity velocity and add the jump force.
+            IsJumping = true;
             GravityVelocity = jumpAxis.GetVectorUsingTransformAxis(new Vector2(jumpSpeed, jumpSpeed));
         }
 
@@ -242,6 +248,21 @@ namespace BXFW
         public static explicit operator Rigidbody2D(CharacterControl2DBase control2DBase)
         {
             return control2DBase.CharacterRB;
+        }
+
+        /// <summary>
+        /// Draw velocity arrows.
+        /// </summary>
+        private void OnDrawGizmos()
+        {
+            var gColor = Gizmos.color;
+
+            Gizmos.color = Color.green;
+            Additionals.DrawArrowDebug(transform.position, Velocity);
+            Gizmos.color = Color.red;
+            Additionals.DrawArrowDebug(transform.position, CharacterRB.velocity);
+            
+            Gizmos.color = gColor;
         }
     }
 }

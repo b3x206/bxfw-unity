@@ -37,7 +37,7 @@ using BXFW.Editor;
 namespace BXFW.Tweening
 {
     // Visual studio
-    #pragma warning disable IDE0051 // Hide unused info
+#pragma warning disable IDE0051 // Hide unused info
 
     /// Solution for stylized print strings.
     /// <summary>
@@ -1912,7 +1912,7 @@ namespace BXFW.Tweening
         // ---- Refreshing Setters ---- //
         public float Duration
         {
-            get { return _Duration; }
+            get => _Duration;
             set
             {
                 _Duration = value;
@@ -1922,7 +1922,7 @@ namespace BXFW.Tweening
         }
         public float Delay
         {
-            get { return _Delay; }
+            get => _Delay;
             set
             {
                 _Delay = value;
@@ -1932,7 +1932,7 @@ namespace BXFW.Tweening
         }
         public AnimationCurve TweenCurve
         {
-            get { return _TweenCurve; }
+            get => _TweenCurve;
             set
             {
                 if (value == null) return;
@@ -1944,7 +1944,7 @@ namespace BXFW.Tweening
         }
         public bool AllowCustomCurveExtrapolation
         {
-            get { return _AllowCustomCurveExtrapolation; }
+            get => _AllowCustomCurveExtrapolation;
             set
             {
                 _AllowCustomCurveExtrapolation = value;
@@ -1977,11 +1977,11 @@ namespace BXFW.Tweening
 
         // ---- Get Only ---- //
         public CTweenCTX<T> TwContext { get; private set; }
-        public bool IsValidContext { get { return IsTweenableType(typeof(T)).Key; } }
+        public bool IsValidContext => IsTweenableType(typeof(T)).Key;
 
         // ---- Private ---- //
         private CTwSetMethod<T> m_Setter;
-        public bool IsSetup { get { return m_Setter != null; } }
+        public bool IsSetup => m_Setter != null;
 
         #region Ctor / Setup
         public CTweenProperty()
@@ -2276,19 +2276,10 @@ namespace BXFW.Tweening
         /// <br>Usually returns false if the repeat type is <see cref="RepeatType.Reset"/> 
         ///     or if repeat amount is zero.</br>
         /// </summary>
-        public bool IsValuesSwitched
-        {
-            get { return _IsValuesSwitched || !(RepeatType == RepeatType.Reset || RepeatAmount == 0); }
-        }
+        public bool IsValuesSwitched => _IsValuesSwitched || !(RepeatType == RepeatType.Reset || RepeatAmount == 0);
 
-        public bool ContextIsValid
-        {
-            get
-            {
-                return StartValue != null && EndValue != null &&
+        public bool ContextIsValid => StartValue != null && EndValue != null &&
                     SetterFunction != null && IteratorCoroutine != null && (TargetObject_IsOptional || TargetObj != null);
-            }
-        }
         // -- Pausing
         public T PauseValue { get; private set; }
         public float CoroutineElapsed;
@@ -2296,7 +2287,7 @@ namespace BXFW.Tweening
         // --- Interpolation
         public EaseType TweenEaseType { get; private set; } = EaseType.QuadOut;
         public AnimationCurve CustomTimeCurve { get; private set; } = null;
-        public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
+        public bool UseCustomTwTimeCurve => CustomTimeCurve != null;
         public bool UseUnclampedLerp { get; private set; } = false;
         // -- Setter (subpart of Interpolation)
         public Func<float, float> TimeSetLerp { get; private set; }
@@ -2307,9 +2298,9 @@ namespace BXFW.Tweening
 
         // --- Target (Identifier and Null checks)
         private readonly UnityEngine.Object _TargetObj;
-        public UnityEngine.Object TargetObj { get { return _TargetObj; } }
-        public bool TargetObject_IsOptional { get { return _TargetObj == null; } }
-        public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
+        public UnityEngine.Object TargetObj => _TargetObj;
+        public bool TargetObject_IsOptional => _TargetObj == null;
+        public IEnumerator IteratorCoroutine => _IteratorCoroutine;
 
         // --- Private Fields
         // Coroutine / Iterator 

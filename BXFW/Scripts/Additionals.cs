@@ -35,7 +35,7 @@ namespace BXFW
         /// <param name="direction">Direction point of the arrow.</param>
         /// <param name="arrowHeadLength">Head side rays length.</param>
         /// <param name="arrowHeadAngle">Head side rays angle.</param>
-        public static void DrawArrow_Gizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Gizmos.DrawRay(pos, direction);
 
@@ -44,8 +44,8 @@ namespace BXFW
             Gizmos.DrawRay(pos + direction, right * arrowHeadLength);
             Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
         }
-        /// <inheritdoc cref="Additionals.DrawArrow_Gizmos(Vector3, Vector3, float, float)"/>
-        public static void DrawArrow_Gizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        /// <inheritdoc cref="Additionals.DrawArrowGizmos(Vector3, Vector3, float, float)"/>
+        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Gizmos.color = color;
             Gizmos.DrawRay(pos, direction);
@@ -60,7 +60,7 @@ namespace BXFW
         /// <param name="direction">Direction point of the arrow.</param>
         /// <param name="arrowHeadLength">Head side rays length.</param>
         /// <param name="arrowHeadAngle">Head side rays angle.</param>
-        public static void DrawArrow_Debug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Debug.DrawRay(pos, direction);
 
@@ -69,8 +69,8 @@ namespace BXFW
             Debug.DrawRay(pos + direction, right * arrowHeadLength);
             Debug.DrawRay(pos + direction, left * arrowHeadLength);
         }
-        /// <inheritdoc cref="Additionals.DrawArrow_Debug(Vector3, Vector3, float, float)"/>
-        public static void DrawArrow_Debug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        /// <inheritdoc cref="Additionals.DrawArrowDebug(Vector3, Vector3, float, float)"/>
+        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Debug.DrawRay(pos, direction, color);
 
