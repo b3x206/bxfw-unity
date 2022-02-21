@@ -133,15 +133,6 @@ namespace BXFW
                 return new Vector3[0];
             }
 
-            /*
-            Matrix4x4 localToWorld = coll.transform.localToWorldMatrix;
-            Vector3[] world_v = new Vector3[coll.vertices.Length];
-
-            for (int i = 0; i < filter.mesh.vertices.Length; i++)
-            {
-                world_v[i] = localToWorld.MultiplyPoint3x4(filter.mesh.vertices[i]);
-            }
-            */
             var vertices = new Vector3[8];
             var thisMatrix = coll.transform.localToWorldMatrix;
             var storedRotation = coll.transform.rotation;
@@ -233,6 +224,9 @@ namespace BXFW
             var v = current;
             switch (axisConstraint)
             {
+                case TransformAxis.None:
+                    return Vector3.zero;
+
                 case TransformAxis.XAxis:
                     v.x = setCurrent.x;
                     break;
@@ -254,8 +248,34 @@ namespace BXFW
                     v.x = setCurrent.x;
                     v.z = setCurrent.z;
                     break;
+
+                default:
                 case TransformAxis.XYZAxis:
                     return setCurrent;
+            }
+
+            return v;
+        }
+        /// <summary>Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.</summary>
+        public static Vector2 GetVectorFromTransformAxis(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
+        {
+            var v = current;
+            switch (axisConstraint)
+            {
+                case TransformAxis2D.None:
+                    return Vector2.zero;
+
+                case TransformAxis2D.XAxis:
+                    v.x = setCurrent.x;
+                    break;
+                case TransformAxis2D.YAxis:
+                    v.y = setCurrent.y;
+                    break;
+                default:
+                case TransformAxis2D.XYAxis:
+                    v.x = setCurrent.x;
+                    v.y = setCurrent.y;
+                    break;
             }
 
             return v;
@@ -305,7 +325,7 @@ namespace BXFW
         /// <param name="relativeCam">Orthographic camera to resize.</param>
         /// <param name="sr">Sprite renderer to resize.</param>
         /// <param name="axis">Axis to resize.</param>
-        public static void ResizeMeshToScreen(this Camera relativeCam, MeshFilter sr, TransformAxis axis = TransformAxis.XYAxis)
+        public static void ResizeMeshToScreen(this Camera relativeCam, MeshFilter sr, TransformAxis2D axis = TransformAxis2D.XYAxis)
         {
             if (sr == null || relativeCam == null)
             {
@@ -323,16 +343,21 @@ namespace BXFW
 
             switch (axis)
             {
+                // Do nothing if none.
+                case TransformAxis2D.None:
+                    Debug.LogWarning("[Additionals::ResizeSpriteToScreen] TransformAxis2D to resize was none.");
+                    return;
+
                 default:
-                case TransformAxis.XYAxis:
+                case TransformAxis2D.XYAxis:
                     sr.transform.localScale =
                         new Vector3(worldScreenWidth / width, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
-                case TransformAxis.XAxis:
+                case TransformAxis2D.XAxis:
                     sr.transform.localScale =
                         new Vector3(worldScreenWidth / width, sr.transform.localScale.y, sr.transform.localScale.z);
                     break;
-                case TransformAxis.YAxis:
+                case TransformAxis2D.YAxis:
                     sr.transform.localScale =
                         new Vector3(sr.transform.localScale.x, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
@@ -966,21 +991,41 @@ namespace BXFW
         #endregion
     }
 
+    [Flags]
     /// <summary>
     /// Transform Axis.
     /// <br>(Used in few helper methods)</br>
     /// </summary>
-    public enum TransformAxis : byte
+    public enum TransformAxis
     {
-        XAxis,
-        YAxis,
-        ZAxis,
+        None = 0,
 
-        XYAxis,
-        YZAxis,
-        XZAxis,
+        XAxis = 1 << 0,
+        YAxis = 1 << 1,
+        ZAxis = 1 << 2,
 
-        XYZAxis
+        XYAxis = XAxis | YAxis,
+        YZAxis = YAxis | ZAxis,
+        XZAxis = XAxis | ZAxis,
+
+        // All Axis
+        XYZAxis = XAxis | YAxis | ZAxis,
+    }
+
+    [Flags]
+    /// <summary>
+    /// Transform axis, used in 2D space.
+    /// <br>NOTE : This is an axis value for position.
+    /// For rotation, please use the <see cref="TransformAxis"/>.</br>
+    /// </summary>
+    public enum TransformAxis2D
+    {
+        None = 0,
+
+        XAxis = 1 << 0,
+        YAxis = 1 << 1,
+
+        XYAxis = XAxis | YAxis
     }
 
     /// <summary>
