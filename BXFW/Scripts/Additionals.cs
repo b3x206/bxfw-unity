@@ -463,6 +463,51 @@ namespace BXFW
             // Using floats here is faster.
             return UnityEngine.Random.Range(0f, 1f) > .5f;
         }
+
+        // -- Other Utils (General)
+        /// <summary>
+        /// Copies the given directory.
+        /// </summary>
+        public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        {
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+            if (!dir.Exists)
+            {
+                throw new DirectoryNotFoundException
+                    ($"Source directory does not exist or could not be found: {sourceDirName}");
+            }
+
+            if (sourceDirName.Equals(destDirName))
+            {
+                Debug.LogWarning("[ChangeLightmap] The directory you are trying to copy is the same as the destination directory.");
+                return;
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // If the destination directory doesn't exist, create it.       
+            Directory.CreateDirectory(destDirName);
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach (FileInfo file in files)
+            {
+                string tempPath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(tempPath, false);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dirs)
+                {
+                    string tempPath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
+                }
+            }
+        }
         /// <summary>
         /// Converts a 2 dimensional array to an array of arrays.
         /// </summary>
@@ -1237,36 +1282,14 @@ namespace BXFW.Editor
 
     public static class EditorAdditionals
     {
-        #region Property Field Crap
-        /// <summary>
-        /// Returns the actual c# object, UNLIKE the <see cref="SerializedProperty.objectReferenceValue"/>.
-        /// </summary>
-        /// <param name="property">Target property.</param>
-        /// <returns>Object.</returns>
-        public static object GetValue(this SerializedProperty property)
-        {
-            Type parentType = property.serializedObject.targetObject.GetType();
-            var propPath = property.propertyPath;
-            var arrayElemIndex = 0;
-
-            // From array, get type of child array type.
-            if (propPath.Contains(".Array.data"))
-            {
-                propPath = propPath.Split('.')[0];
-                arrayElemIndex = int.Parse(property.propertyPath.Split('[', ']')[1]);
-            }
-
-            FieldInfo fi = parentType.GetField(propPath);
-            var fieldValue = fi.GetValue(property.serializedObject.targetObject);
-            //Debug.Log($"ParentType : {parentType.Name} | PropPath : {propPath} | ArrayElemIndex : {arrayElemIndex} | FieldInfo : {fi.Name} | FieldInfo.GetValue {((Array)fieldValue).GetValue(arrayElemIndex)} | FieldInfoValue.ToString : {fieldValue}");
-
-            if (fi.FieldType.IsArray)
-                return ((Array)fieldValue).GetValue(arrayElemIndex);
-        
-            return fieldValue;
-        }
+        #region Property Field Helpers
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
+        /// <summary>
+        /// Returns the c# object.
+        /// </summary>
+        /// <param name="prop">Property to get the c# object from.</param>
+        /// <exception cref="Exception"/>
         public static object GetTarget(this SerializedProperty prop)
         {
             string[] propertyNames = prop.propertyPath.Split('.');
@@ -1277,33 +1300,15 @@ namespace BXFW.Editor
             for (int i = 0; i < propertyNames.Length && target != null; ++i)
             {
                 string propName = propertyNames[i];
-                //FieldInfo propField;
-                object propFieldValue;
 
-                if (prevTarget == null)
-                {
-                    //propField = target.GetType().GetField(propName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    propFieldValue = GetField(target, propName);
-                }
-                else
-                {
-                    //propField = prevTarget.GetType().GetField(propName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    propFieldValue = GetField(prevTarget, propName);
-                }
-
-                // if (propName == "Array")
-                if (propName == "Array" && (prevTarget is IEnumerable || prevTarget is IEnumerable<object>))
+                if (propName == "Array" && (target is IEnumerable || target is IEnumerable<object>))
                 {
                     isNextPropertyArrayIndex = true;
                 }
                 else if (isNextPropertyArrayIndex)
                 {
-                    //isNextPropertyArrayIndex = false;
-                    //int arrayIndex = ParseArrayIndex(propName);
-                    //object[] targetAsArray = (object[])target;
-                    //target = targetAsArray[arrayIndex];
+                    isNextPropertyArrayIndex = false;
 
-                    // propFieldValue is IEnumerable || propFieldValue is IEnumerable<object>
                     Match m = ArrayIndexCapturePattern.Match(propName);
 
                     // Object is actually an array that unity serializes
@@ -1314,24 +1319,29 @@ namespace BXFW.Editor
 
                         if (targetAsArray == null)
                             throw new Exception(@$"[EditorAdditionals::GetTarget] Error while casting targetAsArray (Make sure the type extends from IEnumerable)
-    -> Invalid cast : Tried to cast type {target.GetType().Name} as IEnumerable.");
+-> Invalid cast : Tried to cast type {target.GetType().Name} as IEnumerable.");
 
                         prevTarget = target;
 
                         // Should use 'MoveNext' but i don't care.
                         var cntIndex = 0;
+                        var isSuccess = false;
                         foreach (var item in targetAsArray)
                         {
                             if (cntIndex == arrayIndex)
                             {
                                 prevTarget = target;
                                 target = item;
+                                isSuccess = true;
 
                                 break;
                             }
 
                             cntIndex++;
                         }
+
+                        if (!isSuccess)
+                            throw new Exception($"[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {prop.propertyPath} in array {targetAsArray}.");
                     }
                     else
                     {
@@ -1340,18 +1350,14 @@ namespace BXFW.Editor
                 }
                 else
                 {
+                    prevTarget = target;
                     target = GetField(target, propName);
                 }
             }
 
-#if UNITY_EDITOR
-            var targetAsVarToCheck = target;
-            Debug.Log(targetAsVarToCheck);
-#endif
-
-            return target;
+            // target may be null on certain occassions, that's why we keep a 'prevTarget' variable.
+            return target ?? prevTarget;
         }
-    
         /// <summary>
         /// Internal helper method for getting field from properties.
         /// </summary>
@@ -1381,59 +1387,9 @@ namespace BXFW.Editor
             return null;
         }
 
-        /// <summary>
-        /// Sets the c# object.
-        /// </summary>
-        /// <param name="property">Target property.</param>
-        /// <param name="value">Value to set.</param>
-        public static void SetValue(this SerializedProperty property, object value)
-        {
-            // -- Get
-            Type parentType = property.serializedObject.targetObject.GetType();
-            var propPath = property.propertyPath;
-            var arrayElemIndex = 0;
-
-            // From array, get type of child array type.
-            if (propPath.Contains(".Array.data"))
-            {
-                propPath = propPath.Split('.')[0];
-                arrayElemIndex = int.Parse(property.propertyPath.Split('[', ']')[1]);
-            }
-
-            FieldInfo fi = parentType.GetField(propPath); // this FieldInfo contains the type.
-
-            // -- Set
-            if (fi.FieldType.IsArray)
-            {
-                ((Array)fi.GetValue(property.serializedObject.targetObject)).SetValue(value, arrayElemIndex);
-                return;
-            }
-
-            fi.SetValue(property.serializedObject.targetObject, value);
-        }
-
         public static Type GetFieldType(this SerializedProperty property)
         {
-            if (property.serializedObject.targetObject == null) return null;
-        
-            Type parentType = property.serializedObject.targetObject.GetType();
-            var propPath = property.propertyPath;
-
-            // From array, get type of child array type.
-            if (propPath.Contains(".Array.data"))
-            {
-                propPath = propPath.Split('.')[0];
-            }
-
-            FieldInfo fi = parentType.GetField(propPath);
-
-            if (fi == null)
-                return null;
-
-            //if (fi.FieldType.IsArray)
-            //    return fi.FieldType.GetElementType(); // Need element type for it to be useful for unity.
-
-            return fi.FieldType;
+            return property.GetTarget().GetType();
         }
         #endregion
 

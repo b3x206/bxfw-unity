@@ -203,7 +203,7 @@ namespace BXFW
             {
                 // Set velocity to zero as we fell on the ground.
                 // TODO : This will have issues with clipping on higher gravity velocities
-                GravityVelocity = Vector2.zero;
+                GravityVelocity = new Vector2(0f, gravity.y > 0f ? 2f : -2f);
                 return;
             }
 
