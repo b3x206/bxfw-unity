@@ -732,6 +732,20 @@ namespace BXFW
                 array[i] = genDefValue;
             }
         }
+        /// <summary>
+        /// Converts a <see cref="Array"/> to standard array.
+        /// </summary>
+        public static T[] ToTypeArray<T>(this Array target)
+        {
+            T[] arrayReturn = new T[target.Length];
+
+            for (int i = 0; i < target.Length; i++)
+            {
+                arrayReturn[i] = (T)target.GetValue(i);
+            }
+
+            return arrayReturn;
+        }
         #endregion
 
         #region Serializing
@@ -1153,24 +1167,34 @@ namespace BXFW
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
 
-        /// <summary> Save the dictionary to lists. </summary> 
+        // Save the dictionary to lists
         public void OnBeforeSerialize()
         {
-            // -- Only useful if we directly add to the dictionary, then serialize
-            //if (keys.Count != Keys.Count) // If the actual dictionary is more up to date.
-            //{
-            //    keys.Clear();
-            //    values.Clear();
+            // The 'keys' and 'values' are already serialized, just add them 
 
-            //    foreach (KeyValuePair<TKey, TValue> pair in this)
-            //    {
-            //        keys.Add(pair.Key);
-            //        values.Add(pair.Value);
-            //    }
-            //}
+            // If a key is removed
+            if (keys.Count != values.Count)
+            {
+                // Removing or adding keys, set to defualt value
+                values.Resize(keys.Count);
+            }
+
+            // Directly adding to dictionary (from c#, not from editor)
+            // --Only useful if we directly add to the dictionary, then serialize
+            if (keys.Count < Keys.Count) // If the actual dictionary is more up to date.
+            {
+                keys.Clear();
+                values.Clear();
+
+                foreach (KeyValuePair<TKey, TValue> pair in this)
+                {
+                    keys.Add(pair.Key);
+                    values.Add(pair.Value);
+                }
+            }
         }
 
-        /// <summary> Load dictionary from lists. </summary>
+        // load dictionary from lists
         public void OnAfterDeserialize()
         {
             Clear();
@@ -1206,7 +1230,7 @@ namespace BXFW
 namespace BXFW.Editor
 {
     #region Unity Editor Additionals
-#if UNITY_EDITOR
+// #if UNITY_EDITOR
     /// <summary>
     /// Allows for coroutine execution in Edit Mode.
     /// </summary>
@@ -1253,22 +1277,14 @@ namespace BXFW.Editor
 
             for (int i = 0; i < CoroutineInProgress.Count; i++)
             {
-                /* Null coroutine */
+                // Null coroutine
                 if (CoroutineInProgress[i] == null)
                 { continue; }
 
-                /* Normal */
+                // Normal
                 if (!CoroutineInProgress[i].MoveNext())
                 { CoroutineInProgress.Remove(CoroutineInProgress[i]); }
             }
-
-            /* Previous Method 
-            CurrentExec_Index = (CurrentExec_Index + 1) % CoroutineInProgress.Count;
-
-            bool finish = !CoroutineInProgress[CurrentExec_Index].MoveNext();
-
-            if (finish)
-            { CoroutineInProgress.RemoveAt(CurrentExec_Index); }*/
         }
     }
 
@@ -1286,22 +1302,25 @@ namespace BXFW.Editor
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
         /// <summary>
-        /// Returns the c# object.
+        /// Returns the c# object's fieldInfo and the instance object it comes with.
+        /// <br>Important NOTE : The instance object that gets returned with this method may be null.
+        /// In these cases use the <returns>return </returns></br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
         /// <exception cref="Exception"/>
-        public static object GetTarget(this SerializedProperty prop)
+        public static (FieldInfo, object) GetTarget(this SerializedProperty prop)
         {
-            string[] propertyNames = prop.propertyPath.Split('.');
             object target = prop.serializedObject.targetObject;
-            object prevTarget = null;
+            FieldInfo targetInfo = null;
+
+            string[] propertyNames = prop.propertyPath.Split('.');
             bool isNextPropertyArrayIndex = false;
 
             for (int i = 0; i < propertyNames.Length && target != null; ++i)
             {
                 string propName = propertyNames[i];
 
-                if (propName == "Array" && (target is IEnumerable || target is IEnumerable<object>))
+                if (propName == "Array" && target is IEnumerable)
                 {
                     isNextPropertyArrayIndex = true;
                 }
@@ -1321,16 +1340,13 @@ namespace BXFW.Editor
                             throw new Exception(@$"[EditorAdditionals::GetTarget] Error while casting targetAsArray (Make sure the type extends from IEnumerable)
 -> Invalid cast : Tried to cast type {target.GetType().Name} as IEnumerable.");
 
-                        prevTarget = target;
-
-                        // Should use 'MoveNext' but i don't care.
+                        // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors.
                         var cntIndex = 0;
                         var isSuccess = false;
                         foreach (var item in targetAsArray)
                         {
                             if (cntIndex == arrayIndex)
                             {
-                                prevTarget = target;
                                 target = item;
                                 isSuccess = true;
 
@@ -1350,22 +1366,30 @@ namespace BXFW.Editor
                 }
                 else
                 {
-                    prevTarget = target;
-                    target = GetField(target, propName);
+                    targetInfo = GetField(target, propName);
+                    target = targetInfo.GetValue(target);
                 }
             }
 
-            // target may be null on certain occassions, that's why we keep a 'prevTarget' variable.
-            return target ?? prevTarget;
+            return (targetInfo, target);
+        }
+        /// <summary>
+        /// Returns the type of the property's target.
+        /// </summary>
+        /// <param name="property">Property to get type from.</param>
+        public static Type GetFieldType(this SerializedProperty property)
+        {
+            return property.GetTarget().Item1.FieldType;
         }
         /// <summary>
         /// Internal helper method for getting field from properties.
+        /// <br>Gets the target normally, if not found searches in <see cref="Type.BaseType"/>.</br>
         /// </summary>
         /// <param name="target"></param>
         /// <param name="name"></param>
         /// <param name="targetType"></param>
         /// <returns></returns>
-        private static object GetField(object target, string name, Type targetType = null)
+        private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
             if (targetType == null)
             {
@@ -1373,9 +1397,11 @@ namespace BXFW.Editor
             }
 
             FieldInfo fi = targetType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            // If the field info is present.
             if (fi != null)
             {
-                return fi.GetValue(target);
+                return fi;
             }
 
             // If not found, search in parent
@@ -1384,12 +1410,8 @@ namespace BXFW.Editor
                 return GetField(target, name, targetType.BaseType);
             }
 
-            return null;
-        }
-
-        public static Type GetFieldType(this SerializedProperty property)
-        {
-            return property.GetTarget().GetType();
+            // Name field on doesn't exist? Some weird unity bug? Help 
+            throw new NullReferenceException($"[EditorAdditionals::GetField] Error while getting field : Could not find {name} on {target} and it's children.");
         }
         #endregion
 
@@ -1399,16 +1421,16 @@ namespace BXFW.Editor
         /// </summary>
         public static void DrawBoxCollider(this Transform transform, Color gizmoColor, BoxCollider boxCollider, float alphaForInsides = 0.3f)
         {
-            //Save the color in a temporary variable to not overwrite changes in the inspector (if the sent-in color is a serialized variable).
+            // Save the color in a temporary variable to not overwrite changes in the inspector (if the sent-in color is a serialized variable).
             var color = gizmoColor;
 
-            //Change the gizmo matrix to the relative space of the boxCollider.
-            //This makes offsets with rotation work
-            //Source: https://forum.unity.com/threads/gizmo-rotation.4817/#post-3242447
+            // Change the gizmo matrix to the relative space of the boxCollider.
+            // This makes offsets with rotation work
+            // Source: https://forum.unity.com/threads/gizmo-rotation.4817/#post-3242447
             Gizmos.matrix = Matrix4x4.TRS(transform.TransformPoint(boxCollider.center), transform.rotation, transform.lossyScale);
 
-            //Draws the edges of the BoxCollider
-            //Center is Vector3.zero, since we've transformed the calculation space in the previous step.
+            // Draws the edges of the BoxCollider
+            // Center is Vector3.zero, since we've transformed the calculation space in the previous step.
             Gizmos.color = color;
             Gizmos.DrawWireCube(Vector3.zero, boxCollider.size);
 
@@ -1417,7 +1439,7 @@ namespace BXFW.Editor
             Gizmos.color = color;
             Gizmos.DrawCube(Vector3.zero, boxCollider.size);
         }
-        public static void DrawArrow_Gizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Gizmos.DrawRay(pos, direction);
 
@@ -1426,7 +1448,7 @@ namespace BXFW.Editor
             Gizmos.DrawRay(pos + direction, right * arrowHeadLength);
             Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
         }
-        public static void DrawArrow_Gizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Gizmos.color = color;
             Gizmos.DrawRay(pos, direction);
@@ -1437,7 +1459,7 @@ namespace BXFW.Editor
             Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
         }
 
-        public static void DrawArrow_Debug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Debug.DrawRay(pos, direction);
 
@@ -1446,7 +1468,7 @@ namespace BXFW.Editor
             Debug.DrawRay(pos + direction, right * arrowHeadLength);
             Debug.DrawRay(pos + direction, left * arrowHeadLength);
         }
-        public static void DrawArrow_Debug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Debug.DrawRay(pos, direction, color);
 
@@ -1541,7 +1563,7 @@ namespace BXFW.Editor
                     if (iter.isArray && !renderArrays)
                     { continue; }
 
-        #region String ID Event
+                    #region String ID Event
                     // -- Check if there is a match
                     string MatchingKey = null;
                     foreach (string s in onStringMatchEvent.Keys)
@@ -1579,7 +1601,7 @@ namespace BXFW.Editor
 
                         continue;
                     }
-        #endregion
+                    #endregion
 
                     // -- If no match, draw as it is. -- //
 
@@ -1738,17 +1760,6 @@ namespace BXFW.Editor
             curr_arr_Size = curr_arr_Size < 0 ? 0 : curr_arr_Size;
             GUILayout.EndHorizontal();
 
-            //var gsBG = new GUIStyle();
-            //if (UnityArrayGUICustom_CurrentBG == null)
-            //{
-            //    UnityArrayGUICustom_CurrentBG = new Texture2D(1, 1);
-            //}
-
-            //UnityArrayGUICustom_CurrentBG.SetPixel(0, 0, Color.red);
-            //Debug.Log(UnityArrayGUICustom_CurrentBG.GetPixel(0, 0));
-            ////gsBG.normal.background = UnityArrayGUICustom_CurrentBG;
-            ////gsBG.active.background = UnityArrayGUICustom_CurrentBG;
-
             if (toggleDropdwnState)
             {
                 // Resize array
@@ -1796,7 +1807,7 @@ namespace BXFW.Editor
         /// <param name="thickness">Thiccness of the line.</param>
         /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10)
-        {        
+        {
             Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
             r.height = thickness;
             r.y += padding / 2;
@@ -1804,23 +1815,101 @@ namespace BXFW.Editor
             r.width += 6;
             EditorGUI.DrawRect(r, color);
         }
-        /* 
-            var targetObj = property.serializedObject.targetObject;
-            var targetObjClassType = targetObj.GetType();
+        /// <summary>
+        /// Draws a ui line and returns the padded position rect.
+        /// </summary>
+        /// <param name="parentRect">Parent rect to draw relative to.</param>
+        /// <param name="color">Color of the line.</param>
+        /// <param name="thickness">Thiccness of the line.</param>
+        /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
+        /// <returns>The new position target rect, offseted.</returns>
+        public static Rect DrawUILine(Rect parentRect, Color color, int thickness = 2, int padding = 3)
+        {
+            // Rect that is passed as an parameter.
+            Rect drawRect = new Rect(parentRect.position, new Vector2(parentRect.width, thickness));
 
-            var field = targetObjClassType.GetField(property.propertyPath);
-            if (field == null)
-            {
-                Debug.LogWarning("[EditorAdditionals::SerializedPropertyObjectValue] The field is null.");
-                return;
-            }
-         */
+            drawRect.y += padding / 2;
+            drawRect.x -= 2;
+            drawRect.width += 6;
+
+            // Rect with proper height.
+            Rect returnRect = new Rect(new Vector2(parentRect.position.x, drawRect.position.y + (thickness + padding)), parentRect.size);
+            EditorGUI.DrawRect(drawRect, color);
+
+            return returnRect;
+        }
         #endregion
     }
 #endif
 
-    #region Read Only Inspector Variables
-    public class ReadOnlyInspectorAttribute : PropertyAttribute { }
+    #region Inspector Variable Attributes
+    /// <summary>
+    /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
+    /// </summary>
+    public class InspectorLineAttribute : PropertyAttribute
+    {
+#if UNITY_EDITOR
+        public Color LineColor { get; private set; }
+        public int LineThickness { get; private set; }
+        public int LinePadding { get; private set; }
+#endif
+        public InspectorLineAttribute(float colorR, float colorG, float colorB, int thickness = 2, int padding = 3)
+        {
+#if UNITY_EDITOR
+            LineColor = new Color(colorR, colorG, colorB);
+            LineThickness = thickness;
+            LinePadding = padding;
+#endif
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Return the draw height.
+        /// </summary>
+        /// <param name="parentRect"></param>
+        /// <returns></returns>
+        public float GetYPosHeightOffset()
+        {
+            return LineThickness + LinePadding;
+        }
+#endif
+    }
+
+#if UNITY_EDITOR
+    [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
+    public class InspectorLineDrawer : PropertyDrawer
+    {
+        private InspectorLineAttribute targetAttribute;
+
+        public override float GetPropertyHeight(SerializedProperty property,
+                                                GUIContent label)
+        {
+            float addHeight = 0f;
+
+            if (targetAttribute != null)
+                addHeight = targetAttribute.GetYPosHeightOffset();
+
+            return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
+        }
+
+
+        public override void OnGUI(Rect position,
+                                   SerializedProperty property,
+                                   GUIContent label)
+        {
+            targetAttribute = (InspectorLineAttribute)property.GetTarget().Item1.GetCustomAttribute(typeof(InspectorLineAttribute));
+
+            // Draw line and draw UI line.
+            var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
+            EditorGUI.PropertyField(posRect, property, label, true);
+        }
+    }
+#endif
+
+    /// <summary>
+    /// Attribute to disable gui on property fields.
+    /// </summary>
+    public class InspectorReadOnlyViewAttribute : PropertyAttribute { }
 
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(ReadOnlyInspectorAttribute))]
