@@ -104,35 +104,61 @@ namespace BXFW
                 rb.velocity = Vector3.ClampMagnitude(rb.velocity, MaxSpeed);
             }
         }
-        /// <summary>Converts the vertices of this mesh filter to the world space.</summary>
-        public static Vector3[] VerticesToWorldSpace(this MeshFilter filter, bool removeDuplicateVert = true)
+        public static Vector3[] VerticesToWorldSpace(this MeshFilter filter)
         {
             if (filter == null)
             {
                 Debug.LogWarning("[Additionals::VerticesToWorldSpace] The mesh filter reference is null.");
                 return new Vector3[0];
             }
-            if (filter.mesh == null)
+
+            var vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
+            if (vertsMesh == null)
             {
                 Debug.LogWarning("[Additionals::VerticesToWorldSpace] The mesh filter mesh is null.");
                 return new Vector3[0];
             }
 
             Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
-            Vector3[] world_v = new Vector3[filter.mesh.vertices.Length];
+            Vector3[] world_v = new Vector3[vertsMesh.vertices.Length];
 
-            for (int i = 0; i < filter.mesh.vertices.Length; i++)
+            for (int i = 0; i < vertsMesh.vertices.Length; i++)
             {
-                var setWorldVert = localToWorld.MultiplyPoint3x4(filter.mesh.vertices[i]);
-                if (Array.IndexOf(world_v, setWorldVert) <= -1 && removeDuplicateVert)
-                    continue;
-
-                world_v[i] = setWorldVert;
+                world_v[i] = localToWorld.MultiplyPoint3x4(vertsMesh.vertices[i]);
             }
 
             return world_v;
         }
-        /// <summary>Converts the vertices of this mesh filter to the world space.</summary>
+        public static Vector3[] WorldVertsToLocalSpace(this MeshFilter filter, Vector3[] worldV)
+        {
+            if (filter == null)
+            {
+                Debug.LogWarning("[Additionals::WorldVertsToLocalSpace] The mesh filter reference is null.");
+                return new Vector3[0];
+            }
+
+            var vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
+            if (vertsMesh == null)
+            {
+                Debug.LogWarning("[Additionals::WorldVertsToLocalSpace] The mesh filter mesh is null.");
+                return new Vector3[0];
+            }
+            if (vertsMesh.vertexCount != worldV.Length)
+            {
+                Debug.LogError("[Additionals::WorldVertsToLocalSpace] The vertex amount is not equal.");
+                return new Vector3[0];
+            }
+
+            Matrix4x4 worldToLocal = filter.transform.worldToLocalMatrix;
+            Vector3[] local_v = new Vector3[worldV.Length];
+
+            for (int i = 0; i < worldV.Length; i++)
+            {
+                local_v[i] = worldToLocal.MultiplyPoint3x4(worldV[i]);
+            }
+
+            return local_v;
+        }
         public static Vector3[] VerticesToWorldSpace(this BoxCollider coll)
         {
             if (coll == null)
@@ -159,6 +185,9 @@ namespace BXFW
             coll.transform.rotation = storedRotation;
             return vertices;
         }
+        /// <summary>
+        /// Returns the biggest axis in the <paramref name="target"/>.
+        /// </summary>
         public static float GetBiggestAxis(this Vector3 target)
         {
             if (target.x > target.y && target.x > target.z)
