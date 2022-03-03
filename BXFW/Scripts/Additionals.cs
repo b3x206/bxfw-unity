@@ -244,17 +244,6 @@ namespace BXFW
             return height >= Display.main.systemHeight ? 0 : height;
 #endif
         }
-        public static string GetGameObjectPath(this GameObject obj)
-        {
-            string path = $"/{obj.name}";
-            while (obj.transform.parent != null)
-            {
-                obj = obj.transform.parent.gameObject;
-                path = $"/{obj.name}{path}";
-            }
-
-            return path;
-        }
         /// <summary>Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.</summary>
         public static Vector3 SetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
         {
@@ -1954,9 +1943,11 @@ namespace BXFW.Editor
                                    SerializedProperty property,
                                    GUIContent label)
         {
+            var gEnabled = GUI.enabled;
+
             GUI.enabled = false;
             EditorGUI.PropertyField(position, property, label, true);
-            GUI.enabled = true;
+            GUI.enabled = gEnabled;
         }
     }
 #endif
