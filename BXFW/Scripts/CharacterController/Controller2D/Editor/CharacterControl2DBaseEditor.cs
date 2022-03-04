@@ -2,10 +2,10 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace BXFW.Editor
+namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(CharacterControl2DBase))]
-    internal class CharacterControl2DBaseEditor : UnityEditor.Editor
+    internal class CharacterControl2DBaseEditor : Editor
     {
         private CharacterControl2DBase Target => (CharacterControl2DBase)target;
 

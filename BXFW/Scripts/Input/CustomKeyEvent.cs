@@ -1,68 +1,74 @@
 ﻿using UnityEngine;
 
-[System.Serializable]
-public class CustomInputEvent
+namespace BXFW
 {
-    public KeyCode[] KeyCodeReq;
-
-    public bool IsKey()
+    /// <summary>
+    /// <see cref="KeyCode"/> event that can be remapped from inspector.
+    /// </summary>
+    [System.Serializable]
+    public class CustomInputEvent
     {
-        bool IsInvokable = false;
+        public KeyCode[] KeyCodeReq;
 
-        foreach (KeyCode key in KeyCodeReq)
+        public bool IsKey()
         {
-            if (Input.GetKey(key))
+            bool IsInvokable = false;
+
+            foreach (KeyCode key in KeyCodeReq)
             {
-                IsInvokable = true;
-                break;
+                if (Input.GetKey(key))
+                {
+                    IsInvokable = true;
+                    break;
+                }
             }
+
+            return IsInvokable;
+        }
+        public bool IsKeyDown()
+        {
+            bool IsInvokable = false;
+
+            foreach (KeyCode key in KeyCodeReq)
+            {
+                if (Input.GetKeyDown(key))
+                {
+                    IsInvokable = true;
+                    break;
+                }
+            }
+
+            return IsInvokable;
+        }
+        public bool IsKeyUp()
+        {
+            bool IsInvokable = false;
+
+            foreach (KeyCode key in KeyCodeReq)
+            {
+                if (Input.GetKeyUp(key))
+                {
+                    IsInvokable = true;
+                    break;
+                }
+            }
+
+            return IsInvokable;
         }
 
-        return IsInvokable;
-    }
-    public bool IsKeyDown()
-    {
-        bool IsInvokable = false;
-
-        foreach (KeyCode key in KeyCodeReq)
+        public CustomInputEvent()
+        { }
+        public CustomInputEvent(KeyCode[] kCodes)
         {
-            if (Input.GetKeyDown(key))
-            {
-                IsInvokable = true;
-                break;
-            }
+            KeyCodeReq = kCodes;
         }
-
-        return IsInvokable;
-    }
-    public bool IsKeyUp()
-    {
-        bool IsInvokable = false;
-
-        foreach (KeyCode key in KeyCodeReq)
+        public static implicit operator bool(CustomInputEvent iEvent)
         {
-            if (Input.GetKeyUp(key))
-            {
-                IsInvokable = true;
-                break;
-            }
+            return iEvent.IsKey();
         }
-
-        return IsInvokable;
-    }
-
-    public CustomInputEvent()
-    { }
-    public CustomInputEvent(KeyCode[] kCodes)
-    {
-        KeyCodeReq = kCodes;
-    }
-    public static implicit operator bool(CustomInputEvent iEvent)
-    {
-        return iEvent.IsKey();
-    }
-    public static implicit operator CustomInputEvent(KeyCode[] KeyCodes)
-    {
-        return new CustomInputEvent(KeyCodes);
+        public static implicit operator CustomInputEvent(KeyCode[] KeyCodes)
+        {
+            return new CustomInputEvent(KeyCodes);
+        }
     }
 }

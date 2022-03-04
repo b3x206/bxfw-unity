@@ -94,7 +94,7 @@ namespace BXFW
         {
             if (rb is null)
             {
-                Debug.LogError("<color=red>[Additionals::ClampVelocity] The referenced rigidbody is null.</color>");
+                Debug.LogError("[Additionals::ClampVelocity] The referenced rigidbody is null.");
                 return;
             }
 
@@ -213,7 +213,7 @@ namespace BXFW
         /// <summary>Returns the keyboard height in display pixels. </summary>
         public static int GetKeyboardHeight(bool includeInput)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
         using (var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
         {
             var unityPlayer = unityClass.GetStatic<AndroidJavaObject>("currentActivity").Get<AndroidJavaObject>("mUnityPlayer");
@@ -367,6 +367,9 @@ namespace BXFW
 
             return v;
         }
+        /// <summary>
+        /// Whether if the layermask contains the <paramref name="layer"/>.
+        /// </summary>
         public static bool ContainsLayer(this LayerMask mask, int layer)
         {
             return mask == (mask | (1 << layer));
@@ -494,7 +497,7 @@ namespace BXFW
             if (!dir.Exists)
             {
                 throw new DirectoryNotFoundException
-                    ($"Source directory does not exist or could not be found: {sourceDirName}");
+                    (string.Format("[Additionals::DirectoryCopy] Source directory does not exist or could not be found: {0}", sourceDirName));
             }
 
             if (sourceDirName.Equals(destDirName))
@@ -595,15 +598,18 @@ namespace BXFW
             // Return it
             return tgt;
         }
-        public static T GetRandomEnum<T>(T[] EnumToIgnore = null) where T : Enum
+        public static T GetRandomEnum<T>(T[] EnumToIgnore = null)
         {
+            if (!typeof(T).IsEnum)
+                throw new Exception(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+
             Array values = Enum.GetValues(typeof(T));
             List<T> ListValues = new List<T>();
 
             /* TODO : Check duplicate EnumToIgnore values. */
             if (EnumToIgnore.Length >= values.Length)
             {
-                Debug.LogWarning($"[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning null. Bool : {EnumToIgnore.Length} >= {values.Length}");
+                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning null. Bool : {0} >= {1}", EnumToIgnore.Length, values.Length));
                 return default;
             }
 
@@ -636,32 +642,6 @@ namespace BXFW
         public static Vector3 Abs(this Vector3 v)
         {
             return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
-        }
-        /// <summary>Get the index of chars.</summary>
-        public static (int index, char value) IndexOfAnyChar(this string s, params char[] toFind)
-        {
-            // DONE: input parameters validation
-            if (null == s)
-                return (-1, default(char)); // or throw ArgumentNullException(nameof(s))
-            else if (null == toFind || toFind.Length <= 0)
-                return (-1, default(char)); // or throw ArgumentNullException(nameof(toFind))
-
-            int bestIndex = -1;
-            char bestChar = default;
-
-            foreach (char c in toFind)
-            {
-                // for the long strings let's provide count for efficency
-                int index = s.IndexOf(c, 0, bestIndex < 0 ? s.Length : bestIndex);
-
-                if (index >= 0)
-                {
-                    bestIndex = index;
-                    bestChar = c;
-                }
-            }
-
-            return (bestIndex, bestChar);
         }
         /// <summary>Get types that has the <paramref name="AttributeType"/> attribute from <see cref="Assembly"/> <paramref name="AttributeAssem"/>.</summary>
         /// <returns>The types with the attribute <paramref name="AttributeType"/>.</returns>
@@ -699,6 +679,8 @@ namespace BXFW
         }
 
         // -- Array Utils
+#if CSHARP_7_OR_LATER 
+        // Tuple definition like (a, b) was added in c# 7
         /// <summary>
         /// Similar to the python's <c>'enumerate()'</c> keyword for it's <c>for</c> loops.
         /// </summary>
@@ -715,6 +697,7 @@ namespace BXFW
                 yield return (i, obj);
             }
         }
+#endif
         /// <summary>Resize array.</summary>
         /// <param name="newT">The instance of a new generic. This is added due to 'T' not being a 'new T()' able type.</param>
         public static void Resize<T>(this List<T> list, int sz, T newT)
@@ -743,7 +726,7 @@ namespace BXFW
         /// <param name="array">The array to reset it's values.</param>
         public static void ResetArray<T>(this T[] array)
         {
-            T genDefValue = default(T);
+            T genDefValue = (T)default;
 
             for (int i = 0; i < array.Length; i++)
             {
@@ -773,7 +756,7 @@ namespace BXFW
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::SetBool] Couldn't set the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetBool] Couldn't set the savekey because it is null. Key={0}", SaveKey));
                 return;
             }
 
@@ -783,102 +766,108 @@ namespace BXFW
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogWarning($"[Additionals::GetBool] The key is null. It will return false. {SaveKey}");
+                Debug.LogWarning(string.Format("[Additionals::GetBool] The key is null. It will return false. Key={0}", SaveKey));
                 return false;
             }
             else
             {
-                return PlayerPrefs.GetInt(SaveKey) == 1;
+                return PlayerPrefs.GetInt(SaveKey) >= 1;
             }
         }
         public static void SetVector2(string SaveKey, Vector2 Value)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::SetVector2] Couldn't set the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetVector2] Couldn't set the savekey because it is null. Key={0}", SaveKey));
                 return;
             }
 
-            PlayerPrefs.SetFloat($"{SaveKey}_X", Value.x);
-            PlayerPrefs.SetFloat($"{SaveKey}_Y", Value.y);
+            PlayerPrefs.SetFloat(string.Format("{0}_X", SaveKey), Value.x);
+            PlayerPrefs.SetFloat(string.Format("{0}_Y", SaveKey), Value.y);
         }
         public static Vector2 GetVector2(string SaveKey)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::GetVector2] Couldn't get the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::GetVector2] Couldn't get the savekey because it is null. Key={0}", SaveKey));
                 return default;
             }
 
-            return new Vector2(PlayerPrefs.GetFloat($"{SaveKey}_X"),
-                PlayerPrefs.GetFloat($"{SaveKey}_Y"));
+            return new Vector2(PlayerPrefs.GetFloat(string.Format("{0}_X", SaveKey)),
+                PlayerPrefs.GetFloat(string.Format("{0}_Y", SaveKey)));
         }
         public static void SetVector3(string SaveKey, Vector3 Value)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::SetVector3] Couldn't set the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetVector3] Couldn't set the savekey because it is null. Key={0}", SaveKey));
                 return;
             }
 
-            PlayerPrefs.SetFloat($"{SaveKey}_X", Value.x);
-            PlayerPrefs.SetFloat($"{SaveKey}_Y", Value.y);
-            PlayerPrefs.SetFloat($"{SaveKey}_Z", Value.z);
+            PlayerPrefs.SetFloat(string.Format("{0}_X", SaveKey), Value.x);
+            PlayerPrefs.SetFloat(string.Format("{0}_Y", SaveKey), Value.y);
+            PlayerPrefs.SetFloat(string.Format("{0}_Z", SaveKey), Value.z);
         }
         public static Vector3 GetVector3(string SaveKey)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::GetVector3] Couldn't get the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::GetVector3] Couldn't get the savekey because it is null. Key={0}", SaveKey));
                 return default;
             }
 
-            return new Vector3(PlayerPrefs.GetFloat($"{SaveKey}_X"),
-                PlayerPrefs.GetFloat($"{SaveKey}_Y"), PlayerPrefs.GetFloat($"{SaveKey}_Z"));
+            return new Vector3(PlayerPrefs.GetFloat(string.Format("{0}_X", SaveKey)),
+                PlayerPrefs.GetFloat(string.Format("{0}_Y", SaveKey)), PlayerPrefs.GetFloat(string.Format("{0}_Z", SaveKey)));
         }
         public static void SetColor(string SaveKey, Color Value)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::SetColor] Couldn't set the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetColor] Couldn't set the savekey because it is null. Key={0}", SaveKey));
                 return;
             }
 
-            PlayerPrefs.SetFloat($"{SaveKey}_R", Value.r);
-            PlayerPrefs.SetFloat($"{SaveKey}_G", Value.g);
-            PlayerPrefs.SetFloat($"{SaveKey}_B", Value.b);
-            PlayerPrefs.SetFloat($"{SaveKey}_A", Value.a);
+            PlayerPrefs.SetFloat(string.Format("{0}_R", SaveKey), Value.r);
+            PlayerPrefs.SetFloat(string.Format("{0}_G", SaveKey), Value.g);
+            PlayerPrefs.SetFloat(string.Format("{0}_B", SaveKey), Value.b);
+            PlayerPrefs.SetFloat(string.Format("{0}_A", SaveKey), Value.a);
         }
         public static Color GetColor(string SaveKey)
         {
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::GetColor] Couldn't get the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::GetColor] Couldn't get the savekey because it is null. Key={0}", SaveKey));
                 return default;
             }
 
-            return new Color(PlayerPrefs.GetFloat($"{SaveKey}_R"), PlayerPrefs.GetFloat($"{SaveKey}_G"),
-                PlayerPrefs.GetFloat($"{SaveKey}_B"), PlayerPrefs.GetFloat($"{SaveKey}_A"));
+            return new Color(PlayerPrefs.GetFloat(string.Format("{0}_R", SaveKey)), PlayerPrefs.GetFloat(string.Format("{0}_G", SaveKey)),
+                PlayerPrefs.GetFloat(string.Format("{0}_B", SaveKey)), PlayerPrefs.GetFloat(string.Format("{0}_A", SaveKey)));
         }
-        public static void SetEnum<T>(string SaveKey, T Enum) where T : Enum
+        public static void SetEnum<T>(string SaveKey, T value)
         {
+            if (!typeof(T).IsEnum)
+                throw new Exception(string.Format("[Additionals::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::SetEnum] Couldn't set the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetEnum] Couldn't set the savekey because it is null. Key={0}", SaveKey));
                 return;
             }
 
-            PlayerPrefs.SetInt($"{SaveKey}_ENUM:{typeof(T).Name}", Convert.ToInt32(Enum));
+            PlayerPrefs.SetInt(string.Format("{0}_ENUM:{1}", SaveKey, typeof(T).Name), Convert.ToInt32(value));
         }
-        public static T GetEnum<T>(string SaveKey) where T : Enum
+        public static T GetEnum<T>(string SaveKey)
         {
+            if (!typeof(T).IsEnum)
+                throw new Exception(string.Format("[Additionals::SetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError($"[Additionals::GetEnum] Couldn't get the savekey because it is null. {SaveKey}");
+                Debug.LogError(string.Format("[Additionals::SetEnum] Couldn't get the savekey because it is null. Key={0}", SaveKey));
                 return default;
             }
 
-            return (T)(object)PlayerPrefs.GetInt($"{SaveKey}_ENUM:{typeof(T).Name}");
+            return (T)(object)PlayerPrefs.GetInt(string.Format("{0}_ENUM:{1}", SaveKey, typeof(T).Name));
         }
         public static bool HasPlayerPrefsKey<T>(string SaveKey)
         {
@@ -887,28 +876,27 @@ namespace BXFW
             var tType = typeof(T);
             if (tType == typeof(Vector2))
             {
-                return PlayerPrefs.HasKey($"{SaveKey}_X") && PlayerPrefs.HasKey($"{SaveKey}_Y");
+                return PlayerPrefs.HasKey(string.Format("{0}_X", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_Y", SaveKey));
             }
             if (tType == typeof(Vector3))
             {
-                return PlayerPrefs.HasKey($"{SaveKey}_X") && PlayerPrefs.HasKey($"{SaveKey}_Y") && PlayerPrefs.HasKey($"{SaveKey}_Z");
+                return PlayerPrefs.HasKey(string.Format("{0}_X", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_Y", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_Z", SaveKey));
             }
             if (tType == typeof(Color))
             {
-                return PlayerPrefs.HasKey($"{SaveKey}_R") && PlayerPrefs.HasKey($"{SaveKey}_G")
-                    && PlayerPrefs.HasKey($"{SaveKey}_B") && PlayerPrefs.HasKey($"{SaveKey}_A");
+                return PlayerPrefs.HasKey(string.Format("{0}_R", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_G", SaveKey))
+                    && PlayerPrefs.HasKey(string.Format("{0}_B", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_A", SaveKey));
             }
             if (tType == typeof(bool))
             {
-                return PlayerPrefs.HasKey("SaveKey");
+                return PlayerPrefs.HasKey(SaveKey);
             }
             if (tType.IsEnum)
             {
-                return PlayerPrefs.HasKey($"{SaveKey}_ENUM:{typeof(T).Name}");
+                return PlayerPrefs.HasKey(string.Format("{0}_ENUM:{1}", SaveKey, typeof(T).Name));
             }
 
-            Debug.LogWarning($"[Additionals::HasPlayerPrefsKey] The type {typeof(T).Name} is not supported by additionals playerprefs. Returning false.");
-            return false;
+            return PlayerPrefs.HasKey(SaveKey);
         }
         #endregion
 
@@ -926,7 +914,7 @@ namespace BXFW
                     assemblyName = Assembly.GetExecutingAssembly().FullName;
 
                     // The following line of code returns the type. 
-                    typeToDeserialize = Type.GetType($"{typeName}, {assemblyName}");
+                    typeToDeserialize = Type.GetType(string.Format("{0}, {1}", typeName, assemblyName));
 
                     return typeToDeserialize;
                 }
@@ -936,14 +924,14 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Saves the object.
-        /// Use only for editor!
+        /// Saves the object as binary.
+        /// <br>NOTE : These binary serialization functions are unsafe, refrain from using them as much as possible.</br>
         /// </summary>
         /// <typeparam name="T">Type of object. Can be anything as long as it has the <see cref="SerializableAttribute"/>.</typeparam>
         /// <param name="serializableObject">The object itself.</param>
         /// <param name="filePath">The file path to save.</param>
         /// <param name="OverWrite">Should we overwrite our save?</param>
-        public static void Save<T>(T serializableObject, string filePath, bool OverWrite = false)
+        public static void BSave<T>(T serializableObject, string filePath, bool OverWrite = false)
         {
             // Make sure the generic is serializable.
             Contract.Requires(typeof(T).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
@@ -956,30 +944,38 @@ namespace BXFW
                 }
                 else if (File.Exists(filePath))
                 {
-                    Debug.Log("[Additionals::Save] File already exists, creating new file name.");
+                    Debug.Log(string.Format("[Additionals::Save] File '{0}' already exists, creating new file name.", filePath));
 
-                    // When no linq
-                    /** File path for <see cref="Directory.GetFiles(string)"/> */
-                    string modifiedFPath = null;
-                    /* Cutting everything after the last slash  *
-                     * INFO : Use backward slash : '\'          */
-                    int IndexOfmodifiedPath = filePath.LastIndexOf('\\');
+                    /// File path for <see cref="Directory.GetFiles(string)"/>
+                    string modifiedFilePath = null;
+                    // Cutting everything after the last slash
+                    // NOTE : Use backward slash for winbloat : '\'
+#if UNITY_EDITOR_WIN
+                    char filePathSeperatorChar = '\\';
+#elif UNITY_EDITOR
+                    // Non-windows editor?
+                    char filePathSeperatorChar = '/';
+#else
+                    // If windows, use the line seperator as '\\'.
+                    char filePathSeperatorChar = Application.platform == RuntimePlatform.WindowsPlayer ? '\\' : '/';
+#endif
+
+                    int IndexOfmodifiedPath = filePath.LastIndexOf(filePathSeperatorChar);
                     if (IndexOfmodifiedPath > 0)
                     {
                         // To remove everything after the last '\'
-                        modifiedFPath = filePath.Remove(IndexOfmodifiedPath);
-                        Debug.Log($"Modified Path 1 : {modifiedFPath}");
+                        modifiedFilePath = filePath.Remove(IndexOfmodifiedPath);
                     }
 
-                    /** Parsing the file directory to parts for overriding. */
-                    string[] existing = Directory.GetFiles(modifiedFPath, "*.bytes", SearchOption.TopDirectoryOnly);
-                    string[] splitLast_Existing = existing[existing.Length - 1].Split('\\');
+                    // Parsing the file directory to parts for overriding.
+                    string[] existing = Directory.GetFiles(modifiedFilePath, "*.bytes", SearchOption.TopDirectoryOnly);
+                    string[] splitLast_Existing = existing[existing.Length - 1].Split(filePathSeperatorChar);
                     string LastName = splitLast_Existing[splitLast_Existing.Length - 1];
 
                     string[] splitLast_Extension = LastName.Split('.');
 
-                    /* Cutting the extension */
-                    string FileExtension = $".{splitLast_Extension[splitLast_Extension.Length - 1]}";
+                    // Cutting the extension
+                    string FileExtension = string.Format(".{0}", splitLast_Extension[splitLast_Extension.Length - 1]);
                     string FileName = null;
                     /* If the size is larger than 2, we assume the stupid user has put dots inside the file name. 
                      * Generate FileName string */
@@ -989,7 +985,7 @@ namespace BXFW
                         for (int i = 0; i < splitLast_Extension.Length - 1; i++)
                         {
                             /* Split ignores the dots */
-                            FileName += $"{splitLast_Extension[i]}.";
+                            FileName += string.Format("{0}.", splitLast_Extension[i]);
                         }
                     }
                     else
@@ -999,12 +995,11 @@ namespace BXFW
                     int IndexOfFilePath = filePath.LastIndexOf('\\');
                     if (IndexOfFilePath > 0)
                     {
-                        /* To remove everything after the last '\' *
-                         * Incremented 1 as we need the last '\'   */
+                        // To remove everything after the last '\' |
+                        // Incremented 1 as we need the last '\'   |
                         filePath = filePath.Remove(IndexOfFilePath + 1);
-                        /* Generate new filePath. */
-                        filePath += $"{FileName}{existing.Length}{FileExtension}";
-                        // Debug.Log($"Generated new filePath : {filePath}");
+                        // Generate new filePath.
+                        filePath += string.Format("{0}{1}{2}", FileName, existing.Length, FileExtension);
                     }
                 }
 
@@ -1020,20 +1015,20 @@ namespace BXFW
                 }
             }
             catch (Exception e)
-            { throw new SerializationException($"[Additionals::Load] An Error occured while deserializing.\n->{e.Message}\n->{e.StackTrace}"); }
+            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
         }
         /// <summary>
-        /// TODO : Async (oof) and compression
         /// Loads binary saved data from path.
+        /// <br>NOTE : These binary serialization functions are unsafe, refrain from using them as much as possible.</br>
         /// </summary>
         /// <typeparam name="ExpectT">The expected type. If you get it wrong you will get an exception.</typeparam>
         /// <param name="filePath">File path to load from.</param>
-        /// <returns></returns>
-        public static ExpectT Load<ExpectT>(string filePath)
+        /// <returns>Data that is loaded. NOTE : Please don't invoke/parse/do anything with this data.</returns>
+        public static ExpectT BLoad<ExpectT>(string filePath)
         {
             /* Make sure the generic is serializable.
              * Reflection is bad but idc. */
-            Contract.Requires(typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
+            Contract.Requires(typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0, "[Additionals::BLoad]");
 
             ExpectT DSerObj;
 
@@ -1047,13 +1042,13 @@ namespace BXFW
                     };
 
                     stream.Position = 0;
-                    // Might check hash here..
+                    // TODO : Might check security hash here.
+                    // You should use json instead anyway
                     DSerObj = (ExpectT)bformatter.Deserialize(stream);
                 }
             }
             catch (Exception e)
-            /* So what's the purpose? To give better info about what went wrong. */
-            { throw new SerializationException($"[Additionals::Load] An Error occured while deserializing.\n->{e.Message}\n->{e.StackTrace}"); }
+            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
 
             return DSerObj;
         }
@@ -1103,9 +1098,8 @@ namespace BXFW
                 }
             }
             catch (Exception e)
-            { throw new SerializationException($"[Additionals::Load] An Error occured while deserializing.\n->{e.Message}\n->{e.StackTrace}"); }
+            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
 
-            /* No check of md5 as we are just loading from editor, sike we just loadin */
             return DSerObj;
         }
 
@@ -1118,7 +1112,7 @@ namespace BXFW
         {
             if (obj is null)
             {
-                Debug.LogError("[Additionals::ObjectToByteArray] The given object is null!");
+                Debug.LogError("[Additionals::ObjectToByteArray] The given object is null.");
                 return null;
             }
 
@@ -1132,9 +1126,9 @@ namespace BXFW
                 return ms.ToArray();
             }
         }
-        #endregion
+#endregion
 
-        #endregion
+#endregion
     }
 
     [Flags]
@@ -1224,7 +1218,8 @@ namespace BXFW
                 // Unity moment
                 if (keys.Count != values.Count)
                 {
-                    throw new Exception($"There are {keys.Count} keys and {values.Count} values after deserialization. Make sure that both key and value types are serializable.");
+                    throw new IndexOutOfRangeException(string.Format(@"[SerializableDictionary] There are {0} keys and {1} values after deserialization.
+Make sure that both key and value types are serializable.", keys.Count, values.Count));
                 }
             }
 
@@ -1232,9 +1227,15 @@ namespace BXFW
             {
                 if (Keys.Contains(keys[i]))
                 {
-                    // TODO : 
+                    // NOTE : 
                     // Ignore for now, don't update the dictionary.
-                    // Maybe add a flag for update requirement?
+                    // There is no elegant solution to the 'duplicate' issue.
+                    // Just make sure that the dev is notified about the issue.
+
+                    if (Application.isPlaying)
+                    {
+                        Debug.LogWarning(string.Format("[SerializableDictionary] Note : Key {0} is already contained in the dictionary. Please make sure your keys are all unique.", keys[i]));
+                    }
 
                     continue;
                 }
@@ -1245,10 +1246,10 @@ namespace BXFW
     }
 }
 
-namespace BXFW.Editor
+#region Unity Editor Additionals
+namespace BXFW.Tools.Editor
 {
-    #region Unity Editor Additionals
-// #if UNITY_EDITOR
+#if UNITY_EDITOR
     /// <summary>
     /// Allows for coroutine execution in Edit Mode.
     /// </summary>
@@ -1336,6 +1337,7 @@ namespace BXFW.Editor
 
             for (int i = 0; i < propertyNames.Length && target != null; ++i)
             {
+                // Alias the string name. (but we need for for the 'i' variable)
                 string propName = propertyNames[i];
 
                 if (propName == "Array" && target is IEnumerable)
@@ -1355,10 +1357,10 @@ namespace BXFW.Editor
                         var targetAsArray = target as IEnumerable;
 
                         if (targetAsArray == null)
-                            throw new Exception(@$"[EditorAdditionals::GetTarget] Error while casting targetAsArray (Make sure the type extends from IEnumerable)
--> Invalid cast : Tried to cast type {target.GetType().Name} as IEnumerable.");
+                            throw new Exception(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
+-> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
 
-                        // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors.
+                        // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors).
                         var cntIndex = 0;
                         var isSuccess = false;
                         foreach (var item in targetAsArray)
@@ -1375,11 +1377,11 @@ namespace BXFW.Editor
                         }
 
                         if (!isSuccess)
-                            throw new Exception($"[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {prop.propertyPath} in array {targetAsArray}.");
+                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", prop.propertyPath, targetAsArray));
                     }
                     else
                     {
-                        throw new Exception($"[EditorAdditionals::GetTarget] Invalid array index parsing on string : \"{propName}\"");
+                        throw new Exception(string.Format("[EditorAdditionals::GetTarget] Invalid array index parsing on string : \"{0}\"", propName));
                     }
                 }
                 else
@@ -1429,7 +1431,7 @@ namespace BXFW.Editor
             }
 
             // Name field on doesn't exist? Some weird unity bug? Help 
-            throw new NullReferenceException($"[EditorAdditionals::GetField] Error while getting field : Could not find {name} on {target} and it's children.");
+            throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find {0} on {1} and it's children.", name, target));
         }
         #endregion
 
@@ -1574,8 +1576,13 @@ namespace BXFW.Editor
                 return;
             }
 
+            int childPropertyCountSO = 0;
+            
             using (SerializedProperty iter = target.GetIterator())
             {
+                // Status variable whether if we drawed an serializedobject with 
+                bool drawChildPropertySO = false;
+
                 while (iter.NextVisible(true))
                 {
                     if (iter.isArray && !renderArrays)
@@ -1634,34 +1641,20 @@ namespace BXFW.Editor
                         continue;
                     }
                     // -- Skip the visible children as we draw this iteration.
-                    if (iter.hasVisibleChildren)
+                    if (!drawChildPropertySO)
                     {
-                        // -- TODO
-                        /*
-                        switch (iter.type)
+                        // -- Skip the children 'n - 1' times.
+                        if (iter.hasVisibleChildren)
                         {
-                            case "Vector3":
-                                for (int i = 0; i < 3; i++)
-                                {
-                                    iter.NextVisible(true);
-                                }
-                                break;
-                            default:
-                                break;
+                            drawChildPropertySO = true;
+                            childPropertyCountSO = iter.CountInProperty() - 1;
+                            // Do not 'continue;' here as we want to draw the parent property with one PropertyField call.
                         }
-                        */
-                        /*
-                        int childAmount = 0;
-
-                        iter.value
-
-                        while (iter.NextVisible(true)) childAmount++;
-
-                        for (int i = 0; i < childAmount; i++)
-                        {
-                            iter.NextVisible(true);
-                        }
-                        */
+                    }
+                    else if (childPropertyCountSO != 0)
+                    {
+                        childPropertyCountSO--;
+                        continue;
                     }
 
                     // Debug.LogFormat("{0} | {1}", iter.type, iter.hasVisibleChildren);
@@ -1705,37 +1698,39 @@ namespace BXFW.Editor
             { EditorGUI.indentLevel -= 1; }
         }
         /// <summary>
-        /// Create array with fields in case of bug.
-        /// INFO : This is a more primitive array drawer, but it works.
+        /// Create array with fields.
+        /// This is a more primitive array drawer, but it works.
         /// </summary>
         /// <param name="obj">Serialized object of target.</param>
         /// <param name="arr_name">Array field name.</param>
         public static void UnityArrayGUI(this SerializedObject obj, string arr_name, Action<int> OnArrayFieldDrawn = null)
         {
             int prev_indent = EditorGUI.indentLevel;
+            var propertyTarget = obj.FindProperty(string.Format("{0}.Array.size", arr_name));
 
             // Get size of array
-            int arr_Size = obj.FindProperty($"{arr_name}.Array.size").intValue;
+            int arrSize = propertyTarget.intValue;
 
             // Create the size field
             EditorGUI.indentLevel = 1;
-            int curr_arr_Size = EditorGUILayout.IntField("Size", arr_Size);
+            int curr_arr_Size = EditorGUILayout.IntField("Size", arrSize);
             // Clamp
             curr_arr_Size = curr_arr_Size < 0 ? 0 : curr_arr_Size;
             EditorGUI.indentLevel = 3;
 
-            if (curr_arr_Size != arr_Size)
+            if (curr_arr_Size != arrSize)
             {
-                obj.FindProperty($"{arr_name}.Array.size").intValue = curr_arr_Size;
+                propertyTarget.intValue = curr_arr_Size;
             }
 
             // Create the array fields (stupid)
-            for (int i = 0; i < arr_Size; i++)
+            for (int i = 0; i < arrSize; i++)
             {
-                // Create property field. TODO : Add dropdown
-                var prop = obj.FindProperty($"{arr_name}.Array.data[{i}]");
-                // If our property is null, ignore
-                // This is necessary as we don't update on time.
+                // Create property field.
+                // TODO : Add dropdown
+                var prop = obj.FindProperty(string.Format("{0}.Array.data[{1}]", arr_name, i));
+
+                // If our property is null, ignore.
                 if (prop == null)
                     continue;
 
@@ -1752,9 +1747,8 @@ namespace BXFW.Editor
         /// System namespace doesn't have a thing like this so.
         public delegate void RefIndexDelegate<T>(int arg1, ref T arg2);
 
-        /// <summary>Internal unity icon for icon pointing downwards.</summary>
-        public const string UInternal_PopupTex = "Icon Dropdown";
-        private static Texture2D UnityArrayGUICustom_CurrentBG;
+        ///// <summary>Internal unity icon for icon pointing downwards.</summary>
+        //private const string UInternal_PopupTex = "Icon Dropdown";
         /// <summary>
         /// Create custom array with fields.
         /// <br>Known issues : Only support standard arrays (because <see cref="List{T}"/> is read only), everything has to be passed by reference.</br>
@@ -1772,7 +1766,7 @@ namespace BXFW.Editor
             GUILayout.BeginHorizontal();
             //toggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, new GUIContent(EditorGUIUtility.IconContent(UInternal_PopupTex)));
             toggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
-            EditorGUILayout.LabelField($"{typeof(T)} List", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(string.Format("{0} List", typeof(T).Name), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             int curr_arr_Size = EditorGUILayout.IntField("Size", GenericDrawList.Length, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f));
             curr_arr_Size = curr_arr_Size < 0 ? 0 : curr_arr_Size;
@@ -1794,7 +1788,7 @@ namespace BXFW.Editor
 
                     // GUILayout.BeginVertical(gsBG);
                     EditorGUI.indentLevel--;
-                    EditorGUILayout.LabelField($"Element {i} --------", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(string.Format("Element {0} --------", i), EditorStyles.boldLabel);
                     EditorGUI.indentLevel++;
                     OnArrayFieldDrawn.Invoke(i, ref GenericDrawList[i]);
                     // GUILayout.EndVertical();
@@ -1858,9 +1852,58 @@ namespace BXFW.Editor
         }
         #endregion
     }
-#endif
 
-    #region Inspector Variable Attributes
+    #region Inspector Attributes Drawers
+    // (maybe) TODO : Carry these 'Inspector Attribute Drawers' over to a seperate file.
+    [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
+    public class InspectorLineDrawer : PropertyDrawer
+    {
+        private InspectorLineAttribute targetAttribute;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float addHeight = 0f;
+
+            if (targetAttribute != null)
+                addHeight = targetAttribute.GetYPosHeightOffset();
+
+            return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            targetAttribute = (InspectorLineAttribute)property.GetTarget().Item1.GetCustomAttribute(typeof(InspectorLineAttribute));
+
+            // Draw line and draw UI line.
+            var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
+            EditorGUI.PropertyField(posRect, property, label, true);
+        }
+    }
+    [CustomPropertyDrawer(typeof(InspectorReadOnlyViewAttribute))]
+    public class ReadOnlyDrawer : PropertyDrawer
+    {
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var gEnabled = GUI.enabled;
+
+            GUI.enabled = false;
+            EditorGUI.PropertyField(position, property, label, true);
+            GUI.enabled = gEnabled;
+        }
+    }
+
+    #endregion
+#endif
+}
+
+#region Inspector Variable Attributes
+namespace BXFW
+{
     /// <summary>
     /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
     /// </summary>
@@ -1893,65 +1936,11 @@ namespace BXFW.Editor
 #endif
     }
 
-#if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
-    public class InspectorLineDrawer : PropertyDrawer
-    {
-        private InspectorLineAttribute targetAttribute;
-
-        public override float GetPropertyHeight(SerializedProperty property,
-                                                GUIContent label)
-        {
-            float addHeight = 0f;
-
-            if (targetAttribute != null)
-                addHeight = targetAttribute.GetYPosHeightOffset();
-
-            return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
-        }
-
-
-        public override void OnGUI(Rect position,
-                                   SerializedProperty property,
-                                   GUIContent label)
-        {
-            targetAttribute = (InspectorLineAttribute)property.GetTarget().Item1.GetCustomAttribute(typeof(InspectorLineAttribute));
-
-            // Draw line and draw UI line.
-            var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
-            EditorGUI.PropertyField(posRect, property, label, true);
-        }
-    }
-#endif
-
     /// <summary>
     /// Attribute to disable gui on property fields.
     /// </summary>
     public class InspectorReadOnlyViewAttribute : PropertyAttribute { }
-
-#if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(ReadOnlyInspectorAttribute))]
-    public class ReadOnlyDrawer : PropertyDrawer
-    {
-        public override float GetPropertyHeight(SerializedProperty property,
-                                                GUIContent label)
-        {
-            return EditorGUI.GetPropertyHeight(property, label, true);
-        }
-
-        public override void OnGUI(Rect position,
-                                   SerializedProperty property,
-                                   GUIContent label)
-        {
-            var gEnabled = GUI.enabled;
-
-            GUI.enabled = false;
-            EditorGUI.PropertyField(position, property, label, true);
-            GUI.enabled = gEnabled;
-        }
-    }
-#endif
-    #endregion
-
-    #endregion
 }
+#endregion
+
+#endregion

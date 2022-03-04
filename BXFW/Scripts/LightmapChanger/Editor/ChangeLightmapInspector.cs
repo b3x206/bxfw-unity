@@ -5,16 +5,14 @@ using UnityEngine.SceneManagement;
 using System.IO;
 using System.Collections.Generic;
 
-namespace BXFW.Editor
+namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(ChangeLightmap))]
-    internal class ChangeLightmapInspector : UnityEditor.Editor
+    internal class ChangeLightmapInspector : Editor
     {
         /// <summary>
         /// Compares the enum names with the lightmap name to check if the name is available.
         /// </summary>
-        /// <param name="Compare"></param>
-        /// <returns></returns>
         private bool IsLightmapNameAvailable(string Compare)
         {
             var EnumNames = new List<string>();
@@ -23,7 +21,6 @@ namespace BXFW.Editor
             for (int i = 0; i < EnumArray.Length; i++)
             { EnumNames.Add(((LightmapEnum)EnumArray.GetValue(i)).ToString()); }
 
-            /* I can't be bothered to use linq */
             foreach (string s in EnumNames)
             {
                 if (s.Equals(Compare))
@@ -32,7 +29,6 @@ namespace BXFW.Editor
                 }
             }
 
-            /* good enough. */
             return true;
         }
 
@@ -112,24 +108,24 @@ namespace BXFW.Editor
                 if (!IsLightmapNameAvailable(lightmapData.LightmapName))
                 {
                     EditorUtility.DisplayDialog("Warning", $"There is already a saved lightmap with the name {lightmapData.LightmapName}.", "Ok, i will change it");
-                    /* TODO : Implement a reimport-rebake system. */
+                    // TODO : Implement a reimport-rebake system.
 
                     return;
                 }
 
                 string DirPath = EditorUtility.OpenFolderPanel("Select lightmap directory to load...", $"{Directory.GetCurrentDirectory()}\\Assets", null);
-                /* if no path is selected. */
+                // if no path is selected.
                 if (string.IsNullOrEmpty(DirPath)) { return; }
 
                 DirectoryInfo inf = new DirectoryInfo(DirPath);
 
-                /* Check if selected file is valid. */
+                // Check if selected file is valid.
                 bool IsValidDir = false;
                 string[] files = Directory.GetFiles(inf.FullName, "*.asset", SearchOption.TopDirectoryOnly);
                 foreach (string s in files)
                 {
                     string[] split = s.Split('\\');
-                    /* Get the last name of the files. */
+                    // Get the last name of the files.
                     if (split[split.Length - 1].Equals("LightingData.asset"))
                     {
                         IsValidDir = true;
@@ -146,7 +142,7 @@ namespace BXFW.Editor
 
                 if (!string.IsNullOrEmpty(lightmapData.LightmapName))
                 {
-                    /* Instantly generate the directory. */
+                    // Instantly generate the directory.
                     if (inf.Name.Equals(lightmapData.LightmapName))
                     {
                         lightmapData.AddToBakedList(inf, false);
@@ -176,17 +172,14 @@ namespace BXFW.Editor
                    $"Do you want to clear all saved lightmaps?",
                    "Yes", "No", "Yes, don't delete the SavedLightmaps folder"))
                 {
-                    /* Yes */
                     case 0:
                         lightmapData.ClearData(true);
                         break;
-                    /* No */
-                    case 1:
-                        break;
-                    /* Alt option */
                     case 2:
                         lightmapData.ClearData(false);
                         break;
+
+                    case 1:
                     default:
                         break;
                 }

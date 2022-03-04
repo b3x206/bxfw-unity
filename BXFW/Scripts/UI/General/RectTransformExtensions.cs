@@ -1,168 +1,171 @@
 ﻿using UnityEngine;
 
-public enum AnchorPresets
+namespace BXFW.UI
 {
-    TopLeft,
-    TopCenter,
-    TopRight,
-
-    MiddleLeft,
-    MiddleCenter,
-    MiddleRight,
-
-    BottomLeft,
-    BottomCenter,
-    BottomRight,
-    BottomStretch,
-
-    VertStretchLeft,
-    VertStretchRight,
-    VertStretchCenter,
-
-    HorStretchTop,
-    HorStretchMiddle,
-    HorStretchBottom,
-
-    StretchAll
-}
-
-public enum PivotPresets
-{
-    TopLeft,
-    TopCenter,
-    TopRight,
-
-    MiddleLeft,
-    MiddleCenter,
-    MiddleRight,
-
-    BottomLeft,
-    BottomCenter,
-    BottomRight,
-}
-
-/// <summary>
-/// Extensions for class <see cref="RectTransform"/>.
-/// </summary>
-public static class RectTransformExtensions
-{
-    public static void SetAnchor(this RectTransform source, AnchorPresets align, 
-        bool setPosition = false, float offsetX = 0f, float offsetY = 0f)
+    public enum AnchorPresets
     {
-        if (setPosition)
-        {
-            source.anchoredPosition = new Vector3(offsetX, offsetY, 0);
-        }
+        TopLeft,
+        TopCenter,
+        TopRight,
 
-        switch (align)
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+
+        BottomLeft,
+        BottomCenter,
+        BottomRight,
+        BottomStretch,
+
+        VertStretchLeft,
+        VertStretchRight,
+        VertStretchCenter,
+
+        HorStretchTop,
+        HorStretchMiddle,
+        HorStretchBottom,
+
+        StretchAll
+    }
+
+    public enum PivotPresets
+    {
+        TopLeft,
+        TopCenter,
+        TopRight,
+
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+
+        BottomLeft,
+        BottomCenter,
+        BottomRight,
+    }
+
+    /// <summary>
+    /// Extensions for class <see cref="RectTransform"/>.
+    /// </summary>
+    public static class RectTransformExtensions
+    {
+        public static void SetAnchor(this RectTransform source, AnchorPresets align,
+            bool setPosition = false, float offsetX = 0f, float offsetY = 0f)
         {
-            case AnchorPresets.TopLeft:
+            if (setPosition)
+            {
+                source.anchoredPosition = new Vector3(offsetX, offsetY, 0);
+            }
+
+            switch (align)
+            {
+                case AnchorPresets.TopLeft:
                     source.anchorMin = new Vector2(0, 1);
                     source.anchorMax = new Vector2(0, 1);
                     break;
-            case AnchorPresets.TopCenter:
+                case AnchorPresets.TopCenter:
                     source.anchorMin = new Vector2(0.5f, 1);
                     source.anchorMax = new Vector2(0.5f, 1);
                     break;
-            case AnchorPresets.TopRight:
+                case AnchorPresets.TopRight:
                     source.anchorMin = new Vector2(1, 1);
                     source.anchorMax = new Vector2(1, 1);
                     break;
 
-            case AnchorPresets.MiddleLeft:
+                case AnchorPresets.MiddleLeft:
                     source.anchorMin = new Vector2(0, 0.5f);
                     source.anchorMax = new Vector2(0, 0.5f);
                     break;
-            case AnchorPresets.MiddleCenter:
+                case AnchorPresets.MiddleCenter:
                     source.anchorMin = new Vector2(0.5f, 0.5f);
                     source.anchorMax = new Vector2(0.5f, 0.5f);
                     break;
-            case AnchorPresets.MiddleRight:
+                case AnchorPresets.MiddleRight:
                     source.anchorMin = new Vector2(1, 0.5f);
                     source.anchorMax = new Vector2(1, 0.5f);
                     break;
 
-            case AnchorPresets.BottomLeft:
+                case AnchorPresets.BottomLeft:
                     source.anchorMin = new Vector2(0, 0);
                     source.anchorMax = new Vector2(0, 0);
                     break;
-            case AnchorPresets.BottomCenter:
+                case AnchorPresets.BottomCenter:
                     source.anchorMin = new Vector2(0.5f, 0);
                     source.anchorMax = new Vector2(0.5f, 0);
                     break;
-            case AnchorPresets.BottomRight:
+                case AnchorPresets.BottomRight:
                     source.anchorMin = new Vector2(1, 0);
                     source.anchorMax = new Vector2(1, 0);
                     break;
 
-            case AnchorPresets.HorStretchTop:
+                case AnchorPresets.HorStretchTop:
                     source.anchorMin = new Vector2(0, 1);
                     source.anchorMax = new Vector2(1, 1);
                     break;
-            case AnchorPresets.HorStretchMiddle:
+                case AnchorPresets.HorStretchMiddle:
                     source.anchorMin = new Vector2(0, 0.5f);
                     source.anchorMax = new Vector2(1, 0.5f);
                     break;
-            case AnchorPresets.HorStretchBottom:
+                case AnchorPresets.HorStretchBottom:
                     source.anchorMin = new Vector2(0, 0);
                     source.anchorMax = new Vector2(1, 0);
                     break;
 
-            case AnchorPresets.VertStretchLeft:
+                case AnchorPresets.VertStretchLeft:
                     source.anchorMin = new Vector2(0, 0);
                     source.anchorMax = new Vector2(0, 1);
                     break;
-            case AnchorPresets.VertStretchCenter:
+                case AnchorPresets.VertStretchCenter:
                     source.anchorMin = new Vector2(0.5f, 0);
                     source.anchorMax = new Vector2(0.5f, 1);
                     break;
-            case AnchorPresets.VertStretchRight:
+                case AnchorPresets.VertStretchRight:
                     source.anchorMin = new Vector2(1, 0);
                     source.anchorMax = new Vector2(1, 1);
                     break;
 
-            case AnchorPresets.StretchAll:
+                case AnchorPresets.StretchAll:
                     source.anchorMin = new Vector2(0, 0);
                     source.anchorMax = new Vector2(1, 1);
                     source.offsetMin = Vector2.zero;
                     source.offsetMax = Vector2.zero;
                     break;
+            }
         }
-    }
 
-    public static void SetPivot(this RectTransform source, PivotPresets preset)
-    {
-        switch (preset)
+        public static void SetPivot(this RectTransform source, PivotPresets preset)
         {
-            case PivotPresets.TopLeft:
+            switch (preset)
+            {
+                case PivotPresets.TopLeft:
                     source.pivot = new Vector2(0, 1);
                     break;
-            case PivotPresets.TopCenter:
+                case PivotPresets.TopCenter:
                     source.pivot = new Vector2(0.5f, 1);
                     break;
-            case PivotPresets.TopRight:
+                case PivotPresets.TopRight:
                     source.pivot = new Vector2(1, 1);
                     break;
 
-            case PivotPresets.MiddleLeft:
+                case PivotPresets.MiddleLeft:
                     source.pivot = new Vector2(0, 0.5f);
                     break;
-            case PivotPresets.MiddleCenter:
+                case PivotPresets.MiddleCenter:
                     source.pivot = new Vector2(0.5f, 0.5f);
                     break;
-            case PivotPresets.MiddleRight:
+                case PivotPresets.MiddleRight:
                     source.pivot = new Vector2(1, 0.5f);
                     break;
 
-            case PivotPresets.BottomLeft:
+                case PivotPresets.BottomLeft:
                     source.pivot = new Vector2(0, 0);
                     break;
-            case PivotPresets.BottomCenter:
+                case PivotPresets.BottomCenter:
                     source.pivot = new Vector2(0.5f, 0);
                     break;
-            case PivotPresets.BottomRight:
+                case PivotPresets.BottomRight:
                     source.pivot = new Vector2(1, 0);
                     break;
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ using UnityEditor;
 
 using System.Linq;
 
-namespace BXFW.Editor.Tools
+namespace BXFW.Tools.Editor
 {
     public class TRandomizerEditorWindow : EditorWindow
     {

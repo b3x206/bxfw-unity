@@ -4,7 +4,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace BXFW.Editor.Tools
+namespace BXFW.Tools.Editor
 {
     public enum SaveFormat { Triangles, Quads }
     public enum SaveResolution { Full = 0, Half, Quarter, Eighth, Sixteenth }

@@ -31,7 +31,7 @@ using UnityEngine.UI;
 using static BXFW.Tweening.CTween;
 
 #if UNITY_EDITOR
-using BXFW.Editor;
+using BXFW.Tweening.Editor;
 #endif
 
 namespace BXFW.Tweening

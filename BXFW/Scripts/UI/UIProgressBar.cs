@@ -8,37 +8,7 @@ namespace BXFW.UI
     [RequireComponent(typeof(RectTransform)), ExecuteAlways]
     public class UIProgressBar : MonoBehaviour
     {
-#if UNITY_EDITOR
-        /// <summary>
-        /// Editor creation shortcut.
-        /// </summary>
-        /// <param name="cmd"></param>
-        [UnityEditor.MenuItem("GameObject/UI/Progress Bar")]
-        private static void CreateUIProgressBar(UnityEditor.MenuCommand cmd)
-        {
-            // Create & Align
-            var PBar = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
-            UnityEditor.GameObjectUtility.SetParentAndAlign(PBar.gameObject, (GameObject)cmd.context);
-            PBar.RectTransform.sizeDelta = new Vector2(200f, 75f);
-            // Create the mask for the 'PBar'
-            var PBarBGImage = PBar.gameObject.AddComponent<Image>();
-            PBar.gameObject.AddComponent<Mask>();
-            PBarBGImage.color = new Color(1f, 1f, 1f, .4f);
-
-            // Create another gameObject, with stretch of this object.
-            var PBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
-            PBarImage.transform.SetParent(PBar.transform);
-            // This sets the UI stretch (after setting parent ofc)
-            PBarImage.rectTransform.anchorMin = new Vector2(0, 0);
-            PBarImage.rectTransform.anchorMax = new Vector2(1, 1);
-            PBarImage.rectTransform.offsetMin = Vector2.zero;
-            PBarImage.rectTransform.offsetMax = Vector2.zero;
-
-            // Set the 'PBarImage' as the target image
-            PBar.m_ProgressBarImg = PBarImage;
-            PBar.Initilaze(); // Call initilaze for setting up the image.
-        }
-#endif
+        // -- Variables -- //
         // -- Private
         [SerializeField, Range(0f, 1f)] private float m_ProgressValue;
         [SerializeField] private Image m_ProgressBarImg;
@@ -85,9 +55,8 @@ namespace BXFW.UI
         /// </summary>
         public CTweenPropertyFloat ProgressInterp = new CTweenPropertyFloat(.1f);
 
-        // --------------- //
-        // --- Methods --- //
-        // Init
+        // -- Methods -- //
+        // Initilaze
         private void Awake()
         {
             Initilaze();
@@ -117,6 +86,7 @@ namespace BXFW.UI
 
             RectTransform = GetComponent<RectTransform>();
         }
+        
         // Progress
         private void OnValidate()
         {
@@ -146,5 +116,37 @@ namespace BXFW.UI
 
             m_ProgressValue = ProgressSet;
         }
+
+        // Editor
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor creation shortcut.
+        /// </summary>
+        [UnityEditor.MenuItem("GameObject/UI/Progress Bar")]
+        private static void CreateUIProgressBar(UnityEditor.MenuCommand cmd)
+        {
+            // Create & Align
+            var PBar = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
+            UnityEditor.GameObjectUtility.SetParentAndAlign(PBar.gameObject, (GameObject)cmd.context);
+            PBar.RectTransform.sizeDelta = new Vector2(200f, 75f);
+            // Create the mask for the 'PBar'
+            var PBarBGImage = PBar.gameObject.AddComponent<Image>();
+            PBar.gameObject.AddComponent<Mask>();
+            PBarBGImage.color = new Color(1f, 1f, 1f, .4f);
+
+            // Create another gameObject, with stretch of this object.
+            var PBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
+            PBarImage.transform.SetParent(PBar.transform);
+            // This sets the UI stretch (after setting parent ofc)
+            PBarImage.rectTransform.anchorMin = new Vector2(0, 0);
+            PBarImage.rectTransform.anchorMax = new Vector2(1, 1);
+            PBarImage.rectTransform.offsetMin = Vector2.zero;
+            PBarImage.rectTransform.offsetMax = Vector2.zero;
+
+            // Set the 'PBarImage' as the target image
+            PBar.m_ProgressBarImg = PBarImage;
+            PBar.Initilaze(); // Call initilaze for setting up the image.
+        }
+#endif
     }
 }
