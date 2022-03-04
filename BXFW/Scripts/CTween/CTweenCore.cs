@@ -105,7 +105,7 @@ namespace BXFW.Tweening
         // Non-Dynamic
         /// <see cref="CTween.To"/>
         public static readonly string Log_CTwDurationZero =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 LogRich("[CTween]->", true),
                 LogRich("The duration is less than zero. Please note that the return is null."));
         // Dynamic
@@ -113,7 +113,7 @@ namespace BXFW.Tweening
         {
             return string.Format
                 (   // Main String
-                    "{0}{1}",
+                    "{0} {1}",
                     // Format List
                     LogRich("[CTweenCTX::SetEase]->", true),
                     LogRich(string.Format("Cannot set ease to predefined {0} mode because there is a Custom Ease Curve set.\nPlease set custom curve to null (Use ::SetCustomCurve()) if you want to set predefined eases.", TypeAttemptSet.ToString()))
@@ -126,25 +126,25 @@ namespace BXFW.Tweening
         // All
         /// <see cref="CTweenCore"/>
         public static readonly string Warn_CTwCoreAlreadyExist =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 WarnRich("[CTweenCore::Editor_InitilazeCTw]->", true),
                 LogRich("The CTween core is already init and it already contains a editor object."));
         public static readonly string Warn_CTwPropertyTwNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 WarnRich("[CTweenContext]", true),
                 LogRich("The tween property is null. This might be a bad error."));
         public static readonly string Warn_CTwCTXTimeCurveNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 WarnRich("[CTweenCTX::SetCustomCurve]", true),
                 LogRich("The tween property is null. This might be a bad error."));
         public static readonly string Warn_CTwCurrentIteratorNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 WarnRich("[CTween::StopTween]->", true),
                 LogRich("The current running coroutine is null. Probably an internal error, that is not very important."));
 #if UNITY_EDITOR // Editor Only
         /// <see cref="CTween.To"/> on editor.
         public static readonly string Warn_EditorCTwCoreNotInit =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 WarnRich("[CTween::To(OnEditor)]->", true),
                 LogRich("Please make sure you initilaze CTween for editor playback. (by calling Editor_InitilazeCTw())"));
 #endif
@@ -155,32 +155,31 @@ namespace BXFW.Tweening
         #region Errors
         // Non-Dynamic
         public static readonly string Err_CTwCoreNotInit =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTweenCore(Critical)]->", true),
                 LogRich("The 'Current' reference is null. Make sure the Core initilazes properly."));
         public static readonly string Err_CTwCTXFailUpdate =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTweenCTX(Critical)]->", true),
                 LogRich("The 'IteratorCoroutine' given variable is null even after update."));
 
         public static readonly string Err_SetterFnNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTween(General Error)]->", true),
                 LogRich("The given setter function is null or broken. This can happen in these classes : 'CTweenCTX<T>', 'CTween(To Methods)' or 'CTweenProperty<T>'."));
         public static readonly string Err_TargetNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTween(Error, Extension Method)]->", true),
                 LogRich("The given target is null. Returning null context, expect exceptions."));
 
         public static readonly string Err_CTwCTXSetterNull =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTweenCTX::SetSetter]->"),
                 LogRich("Couldn't set action as the variable passed was null."));
         public static readonly string Err_CTwCTXNoIterator =
-            string.Format("{0}{1}",
+            string.Format("{0} {1}",
                 ErrRich("[CTweenCTX(General Error)]->"),
                 LogRich("The IteratorCoroutine variable is null."));
-
 
         // Dynamic (Needs to be generated dynamically or smth)
         /// <see cref="CTween.To"/> methods.
@@ -1525,7 +1524,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-
         /// <see cref="Material">
         public static CTweenCTX<Color> CTwChangeColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
         {
@@ -1810,17 +1808,18 @@ namespace BXFW.Tweening
         }
         public static float ElasticInOut(float t, bool clamped = true)
         {
-            var tVal = (t *= 2f) == 2f ? 1f : t < 1f ? -0.5f * (Mathf.Pow(2f, 10f * (t -= 1)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f)) : (Mathf.Pow(2f, -10f * (t -= 1f)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f) * 0.5f + 1f);
+            var tVal = (t *= 2f) == 2f ? 1f : t < 1f ? -0.5f * (Mathf.Pow(2f, 10f * (t -= 1)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f)) :
+                ((Mathf.Pow(2f, -10f * (t -= 1f)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f) * 0.5f) + 1f);
             return clamped ? Mathf.Clamp01(tVal) : tVal;
         }
         public static float CircularIn(float t, bool clamped = true)
         {
-            var tVal = -(Mathf.Sqrt(1 - t * t) - 1);
+            var tVal = -(Mathf.Sqrt(1 - (t * t)) - 1);
             return clamped ? Mathf.Clamp01(tVal) : tVal;
         }
         public static float CircularOut(float t, bool clamped = true)
         {
-            var tVal = Mathf.Sqrt(1f - (t -= 1f) * t);
+            var tVal = Mathf.Sqrt(1f - ((t -= 1f) * t));
             return clamped ? Mathf.Clamp01(tVal) : tVal;
         }
         public static float CircularInOut(float t, bool clamped = true)

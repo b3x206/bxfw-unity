@@ -48,7 +48,7 @@ namespace BXFW.Tools.Editor
         private static RandomizationAxis RandAxis = RandomizationAxis.XAxis;
         private static Vector2 V2Field = Vector2.zero;
 
-        private Vector2 ScrlPosition = Vector2.zero;
+        private Vector2 ScrollPos = Vector2.zero;
 
         private static void OnSceneGUI(SceneView currentView)
         {
@@ -57,7 +57,7 @@ namespace BXFW.Tools.Editor
             var boxSize = new Vector2(200, 200);
             // For some reason boxPadding.y needs to be doubled by 2 to get into the correct position.
             var boxPadding = new Vector2(20, 20);
-            var boxRect = new Rect(currentView.position.width - (boxSize.x + boxPadding.x), currentView.position.height - (boxSize.y + boxPadding.y * 2),
+            var boxRect = new Rect(currentView.position.width - (boxSize.x + boxPadding.x), currentView.position.height - (boxSize.y + (boxPadding.y * 2)),
                 boxSize.x, boxSize.y);
 
             var areaPadding = new Vector2(10, 10);
@@ -65,12 +65,7 @@ namespace BXFW.Tools.Editor
 
             GUI.Box(boxRect, string.Empty, GUI.skin.box);
             GUILayout.BeginArea(areaRect);
-
-            if (GUILayout.Button("Hello"))
-            {
-                Debug.Log("aa");
-            }
-
+            // (Maybe) TODO : Draw a pivot editor
             GUILayout.EndArea();
             Handles.EndGUI();
         }
@@ -84,7 +79,7 @@ namespace BXFW.Tools.Editor
             SerializedObject so = new SerializedObject(target);
             SerializedProperty tProperty = so.FindProperty("Transforms");
 
-            ScrlPosition = GUILayout.BeginScrollView(ScrlPosition);
+            ScrollPos = GUILayout.BeginScrollView(ScrollPos);
 
             EditorGUILayout.PropertyField(tProperty, true); // True means show children
 

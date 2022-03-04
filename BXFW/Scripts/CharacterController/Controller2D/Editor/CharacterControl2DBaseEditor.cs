@@ -8,14 +8,11 @@ namespace BXFW.ScriptEditor
     internal class CharacterControl2DBaseEditor : Editor
     {
         private CharacterControl2DBase Target => (CharacterControl2DBase)target;
-
-
         private SerializedObject controlBaseProperty;
 
-        private void OnEnable()
-        {
-            
-        }
+        //private void OnEnable()
+        //{ 
+        //}
 
         public override void OnInspectorGUI()
         {

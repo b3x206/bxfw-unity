@@ -85,8 +85,8 @@ namespace BXFW.Tools.Editor
             var uvScale = new Vector2(1.0f / (w - 1), 1.0f / (h - 1));
             var tData = _terrain.GetHeights(0, 0, w, h);
 
-            w = (w - 1) / tRes + 1;
-            h = (h - 1) / tRes + 1;
+            w = ((w - 1) / tRes) + 1;
+            h = ((h - 1) / tRes) + 1;
             var tVertices = new Vector3[w * h];
             var tUV = new Vector2[w * h];
 
@@ -99,8 +99,8 @@ namespace BXFW.Tools.Editor
             {
                 for (var x = 0; x < w; x++)
                 {
-                    tVertices[y * w + x] = Vector3.Scale(meshScale, new Vector3(-y, tData[x * tRes, y * tRes], x)) + _terrainPos;
-                    tUV[y * w + x] = Vector2.Scale(new Vector2(x * tRes, y * tRes), uvScale);
+                    tVertices[(y * w) + x] = Vector3.Scale(meshScale, new Vector3(-y, tData[x * tRes, y * tRes], x)) + _terrainPos;
+                    tUV[(y * w) + x] = Vector2.Scale(new Vector2(x * tRes, y * tRes), uvScale);
                 }
             }
 
@@ -148,7 +148,7 @@ namespace BXFW.Tools.Editor
                 // Write vertices
                 System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US"); // why this
                 _counter = _tCount = 0;
-                _totalCount = (tVertices.Length * 2 + (_saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / ProgressUpdateInterval;
+                _totalCount = ((tVertices.Length * 2) + (_saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / ProgressUpdateInterval;
                 for (var i = 0; i < tVertices.Length; i++)
                 {
                     UpdateProgress();

@@ -1,7 +1,4 @@
-﻿/// NOTE : Part of <see cref="BXFW.CTween"/>.
-/// Same stuff applies here too. (This is just some simple editor scripts)
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
@@ -9,6 +6,8 @@ using UnityEditor;
 /// You can use these.
 namespace BXFW.Tweening.Editor
 {
+    /// NOTE : Part of <see cref="CTween"/>.
+    /// Same stuff applies here too. (This is just some simple editor scripts)
     /////////////////////////////////////////////////////////////////////////////
     /// <summary> <c>EXPERIMENTAL</c>, editor playback. </summary>            /// 
     /// Maybe TODO : Add generic IEnumerator support for custom return types. ///
