@@ -68,6 +68,7 @@ namespace BXFW
         /// Externally applied movement.
         /// </summary>
         private Vector3 externLerpPosMove;
+        private Quaternion externLerpRotateMove;
         /// Current shake duration (total duration for easing in-out), set by <see cref="ShakeCamera(Vector2, float)"/>.
         private float currentShakeDuration;
         /// Current shake elapsed, set by <see cref="ShakeCamTick"/>.
@@ -81,28 +82,28 @@ namespace BXFW
         {
             if (currentShakeElapsed > 0f)
             {
-                currentShakeElapsed -= Time.fixedDeltaTime;
+                currentShakeElapsed -= Time.fixedDeltaTime / currentShakeDuration;
             }
             else
             {
                 externLerpPosMove = Vector3.zero;
+                externLerpRotateMove = Quaternion.identity;
+                return;
             }
 
             // Needs to be converted to local x/y
-            externLerpPosMove = transform.InverseTransformPoint(
-                Vector2.Scale(
-                    Vector2.Lerp(new Vector2(Random.Range(0f, 1f), Random.Range(0f, 1f)).normalized, Vector2.zero, currentShakeElapsed / currentShakeDuration),
-                    currentShakeMagnitude
-                    )
-                );
+            var rVec = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+            externLerpPosMove = Vector2.Scale(Vector2.Scale(Vector2.Lerp(rVec, Vector2.zero, currentShakeElapsed), currentShakeMagnitude), transform.right + transform.up);
+            externLerpRotateMove = Quaternion.LookRotation(externLerpPosMove + Vector3.forward, transform.up);
+            Debug.Log($"Extern lerp pos move is : {externLerpPosMove} | Duration Elapsed (0..1) : {currentShakeElapsed} | Random vec : {rVec}");
         }
         /// <summary>
         /// Shakes the camera on the local x/y position.
         /// </summary>
         public void ShakeCamera(Vector2 shakeMagnitude, float duration)
         {
+            currentShakeElapsed = 1f;
             currentShakeDuration = duration;
-            currentShakeElapsed = duration;
             currentShakeMagnitude = shakeMagnitude;
         }
 
@@ -119,7 +120,12 @@ namespace BXFW
                 Mathf.Clamp(followPos.z + CurrentCameraOffset.Position.z, CurrentCameraOffset.CameraPosZClamp.x, CurrentCameraOffset.CameraPosZClamp.y))
                 : new Vector3(followPos.x + CurrentCameraOffset.Position.x,
                         followPos.y + CurrentCameraOffset.Position.y,
-                        followPos.z + CurrentCameraOffset.Position.z) + externLerpPosMove;
+                        followPos.z + CurrentCameraOffset.Position.z) 
+                + externLerpPosMove;
+            var rotatePos = Quaternion.Euler(CurrentCameraOffset.EulerRotation.x,
+                        CurrentCameraOffset.EulerRotation.y,
+                        CurrentCameraOffset.EulerRotation.z)
+                * externLerpRotateMove;
 
             if (CanFollow)
             {
@@ -127,11 +133,7 @@ namespace BXFW
                     // Position
                     Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
                     // Rotation
-                    Quaternion.Slerp(transform.rotation,
-                        Quaternion.Euler(CurrentCameraOffset.EulerRotation.x,
-                        CurrentCameraOffset.EulerRotation.y,
-                        CurrentCameraOffset.EulerRotation.z),
-                    Time.fixedDeltaTime * Rotation_Damp)
+                    Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
                 );
             }
         }
@@ -169,17 +171,16 @@ namespace BXFW
             }
 
             // Draw spheres in camera offsets.
-            if (FollowTransform != null)
-            {
-                for (int i = 0; i < CameraOffsetTargets.Length; i++)
-                {
-                    Gizmos.color = CacheColor[i];
-                    Gizmos.DrawSphere(FollowTransform.position + CameraOffsetTargets[i].Position, 1f);
-                }
+            var posOffset = FollowTransform == null ? FollowVector3 : FollowTransform.position;
 
-                Gizmos.color = CacheColor[CacheColor.Length - 1];
-                Gizmos.DrawCube(FollowVector3, Vector3.one);
+            for (int i = 0; i < CameraOffsetTargets.Length; i++)
+            {
+                Gizmos.color = CacheColor[i];
+                Gizmos.DrawSphere(CameraOffsetTargets[i].Position + posOffset, 1f);
             }
+
+            Gizmos.color = CacheColor[CacheColor.Length - 1];
+            Gizmos.DrawCube(FollowVector3, Vector3.one);
         }
 #endif
     }

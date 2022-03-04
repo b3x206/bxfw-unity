@@ -119,7 +119,6 @@ namespace BXFW
             tUDL.localPosition = new Vector3(-0.5f, 0.5f, -0.5f);
             Snappable_SnapPoints.Add(SnapPoint.UpperDwnLeft, tUDL);
 
-
             // ---- 4 ---- ////////////////////////// UP (front)
             var tLUL = new GameObject("CubeSnap-LowerUpLeft").transform;
             tLUL.SetParent(transform);

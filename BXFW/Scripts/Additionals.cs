@@ -186,6 +186,38 @@ namespace BXFW
             return vertices;
         }
         /// <summary>
+        /// Returns the center of an virtual circle, between the <paramref name="cPoint0"/>, <paramref name="cPoint1"/> and <paramref name="cPoint2"/>.
+        /// </summary>
+        public static Vector3 CircleCenter(Vector3 cPoint0, Vector3 cPoint1, Vector3 cPoint2, out Vector3 cPointNormal)
+        {
+            // two circle chords
+            var v1 = cPoint1 - cPoint0;
+            var v2 = cPoint2 - cPoint0;
+
+            // Normal related stuff
+            cPointNormal = Vector3.Cross(v1, v2);
+            if (cPointNormal.sqrMagnitude < Mathf.Epsilon)
+                return Vector3.one * float.NaN;
+            cPointNormal.Normalize();
+
+            // Perpendicular of both chords
+            var pd1 = Vector3.Cross(v1, cPointNormal).normalized;
+            var pd2 = Vector3.Cross(v2, cPointNormal).normalized;
+            // Distance between the chord midpoints
+            var r = (v1 - v2) * 0.5f;
+            // Center angle between the two perpendiculars
+            var c = Vector3.Angle(pd1, pd2);
+            // Angle between first perpendicular and chord midpoint vector
+            var a = Vector3.Angle(r, pd1);
+            // Law of sine to calculate length of p2
+            var d = r.magnitude * Mathf.Sin(a * Mathf.Deg2Rad) / Mathf.Sin(c * Mathf.Deg2Rad);
+
+            if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0)
+                return cPoint0 + (v2 * 0.5f) - (pd2 * d);
+
+            return cPoint0 + (v2 * 0.5f) + (pd2 * d);
+        }
+        /// <summary>
         /// Returns the biggest axis in the <paramref name="target"/>.
         /// </summary>
         public static float GetBiggestAxis(this Vector3 target)

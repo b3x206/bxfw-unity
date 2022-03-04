@@ -61,7 +61,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomEditor(typeof(FollowCamera))]
-    internal class FollowCameraEditor : UnityEditor.Editor
+    internal class FollowCameraEditor : Editor
     {
         [MenuItem("GameObject/Player Camera")]
         public static void CreatePlayerCamera()
@@ -91,17 +91,19 @@ namespace BXFW.ScriptEditor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Set Camera Position Offset From Position"))
             {
-                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position = Target.transform.position - Target.FollowTransform.position;
-                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation = Target.transform.rotation.eulerAngles;
+                var FollowPosition = Target.FollowTransform == null ? Target.FollowVector3 : Target.FollowTransform.position;
+                Undo.RecordObject(Target, "Set Camera Position");
 
-                Undo.RecordObject(Target.transform, "Undo Set Camera Position");
+                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position = Target.transform.position - FollowPosition;
+                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation = Target.transform.rotation.eulerAngles;
             }
             if (GUILayout.Button("Get Position From Camera Position Offset"))
             {
-                Target.transform.position = Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position + Target.FollowTransform.position;
-                Target.transform.rotation = Quaternion.Euler(Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation);
+                var FollowPosition = Target.FollowTransform == null ? Target.FollowVector3 : Target.FollowTransform.position;
+                Undo.RecordObject(Target.transform, "Get Camera Position");
 
-                Undo.RecordObject(Target.transform, "Undo Get Camera Position");
+                Target.transform.position = Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position + FollowPosition;
+                Target.transform.rotation = Quaternion.Euler(Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation);
             }
             GUILayout.EndHorizontal();
         }

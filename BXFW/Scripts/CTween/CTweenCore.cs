@@ -36,9 +36,6 @@ using BXFW.Tweening.Editor;
 
 namespace BXFW.Tweening
 {
-    // Visual studio
-#pragma warning disable IDE0051 // Hide unused info
-
     /// Solution for stylized print strings.
     /// <summary>
     /// Constant strings for <see cref="CTween"/> messages.
@@ -328,7 +325,11 @@ namespace BXFW.Tweening
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0.0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                Debug.Log("Delayed tween begin");
+                yield return new WaitForSeconds(ctx.StartDelay); 
+            }
+            Debug.Log("Delayed tween end");
 
             // Start Interpolator
             float Elapsed = 0.0f;
@@ -384,11 +385,7 @@ namespace BXFW.Tweening
             }
             // End Repeating
 
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
-
+            // NOTE : Call this before actions to stop annoying stuff from happening.
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
@@ -460,11 +457,6 @@ namespace BXFW.Tweening
                 goto _Start;
             }
             // End Repeating
-
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
 
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
@@ -538,11 +530,6 @@ namespace BXFW.Tweening
             }
             // End Repeating
 
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
-
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
@@ -614,11 +601,6 @@ namespace BXFW.Tweening
                 goto _Start;
             }
             // End Repeating
-
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
 
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
@@ -692,11 +674,6 @@ namespace BXFW.Tweening
             }
             // End Repeating
 
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
-
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
@@ -768,11 +745,6 @@ namespace BXFW.Tweening
                 goto _Start;
             }
             // End Repeating
-
-            // Ending Actions
-            ctx.OnEndAction?.Invoke();
-            ctx.PersistentOnEndAction?.Invoke();
-            ctx.OnEndAction_UnityEvent?.Invoke();
 
             // Call this to avoid IEnumerator errors.
             // As this is technically a (OnTweenEnd) call.
@@ -2071,7 +2043,7 @@ namespace BXFW.Tweening
         {
             if (m_Setter == null && Setter == null)
             {
-                Debug.LogError("[CTweenContext::StartTween] Null action was passed. Doing nothing.");
+                Debug.LogError(CTweenStrings.Err_SetterFnNull);
                 return;
             }
 
@@ -2645,6 +2617,7 @@ namespace BXFW.Tweening
             CurrentRunningTweens.Remove(this);
             if (_CurrentIteratorCoroutine != null)
             {
+                // Coroutine should stop itself, otherwise it's gone rogue.
                 Current.StopCoroutine(_CurrentIteratorCoroutine);
                 _CurrentIteratorCoroutine = null;
             }
@@ -2656,6 +2629,10 @@ namespace BXFW.Tweening
             //}
 
             IsRunning = false;
+
+            OnEndAction?.Invoke();
+            PersistentOnEndAction?.Invoke();
+            OnEndAction_UnityEvent?.Invoke();
         }
         #endregion
 
