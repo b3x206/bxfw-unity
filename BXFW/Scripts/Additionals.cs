@@ -1584,8 +1584,7 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
-        /// Draw default inspector with gui inbetween.
-        /// WARNING : Please do not use big <see cref="SerializeField"/> arrays because those are slower than default <see cref="Editor.DrawDefaultInspector()"/>.
+        /// Draw default inspector with commands inbetween. (Allowing to put custom gui between)
         /// </summary>
         /// <param name="target">The targeted method target.</param>
         /// <param name="onStringMatchEvent">The event <see cref="MatchGUIActionOrder"/> match.</param>
@@ -1600,32 +1599,26 @@ namespace BXFW.Tools.Editor
         ///     }
         /// });
         /// </example>
-        public static void DrawDefaultInspector(this SerializedObject target, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent, bool renderArrays = false)
+        /// <returns><see cref="EditorGUI.EndChangeCheck"/> (whether if a field was modified inside this method)</returns>
+        public static bool DrawCustomDefaultInspector(this SerializedObject obj, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent)
         {
-            if (target == null)
-            {
-                Debug.LogError("[EditorAdditionals] The SerializedObject target is null.");
-                return;
-            }
+            // Do the important steps
+            EditorGUI.BeginChangeCheck();
+            obj.UpdateIfRequiredOrScript();
 
-            int childPropertyCountSO = 0;
-            
-            using (SerializedProperty iter = target.GetIterator())
+            // Loop through properties and create one field (including children) foreach top level property.
+            // wHY UNity, includeChildren = 'expanded' WTFFFFFF
+            SerializedProperty property = obj.GetIterator();
+            bool expanded = true;
+            while (property.NextVisible(expanded))
             {
-                // Status variable whether if we drawed an serializedobject with 
-                bool drawChildPropertySO = false;
-
-                while (iter.NextVisible(true))
+                using (new EditorGUI.DisabledScope("m_Script" == property.propertyPath))
                 {
-                    if (iter.isArray && !renderArrays)
-                    { continue; }
-
-                    #region String ID Event
                     // -- Check if there is a match
                     string MatchingKey = null;
                     foreach (string s in onStringMatchEvent.Keys)
                     {
-                        if (s.Equals(iter.name))
+                        if (s.Equals(property.name))
                         {
                             MatchingKey = s;
                             break;
@@ -1640,63 +1633,40 @@ namespace BXFW.Tools.Editor
                         if (Pair.Key == MatchGUIActionOrder.OmitAndInvoke)
                         {
                             Pair.Value?.Invoke();
-                            continue;
+                            goto _Exit;
                         }
 
                         // -- Omit GUI
                         if (Pair.Key == MatchGUIActionOrder.Omit)
-                        { continue; }
+                        { goto _Exit; }
 
                         // -- Standard draw
                         if (Pair.Key == MatchGUIActionOrder.After)
-                        { EditorGUILayout.PropertyField(iter); }
+                        { EditorGUILayout.PropertyField(property, true); }
 
                         Pair.Value?.Invoke();
 
                         if (Pair.Key == MatchGUIActionOrder.Before)
-                        { EditorGUILayout.PropertyField(iter); }
+                        { EditorGUILayout.PropertyField(property, true); }
 
-                        continue;
-                    }
-                    #endregion
-
-                    // -- If no match, draw as it is. -- //
-
-                    // Disable GUI if we are drawing the script thing.
-                    // INFO : The iterator name for the 'Script' field is 'm_Script'.
-                    if (iter.name.Equals("m_Script"))
-                    {
-                        GUI.enabled = false;
-                        EditorGUILayout.PropertyField(iter);
-                        GUI.enabled = true;
-
-                        continue;
-                    }
-                    // -- Skip the visible children as we draw this iteration.
-                    if (!drawChildPropertySO)
-                    {
-                        // -- Skip the children 'n - 1' times.
-                        if (iter.hasVisibleChildren)
-                        {
-                            drawChildPropertySO = true;
-                            childPropertyCountSO = iter.CountInProperty() - 1;
-                            // Do not 'continue;' here as we want to draw the parent property with one PropertyField call.
-                        }
-                    }
-                    else if (childPropertyCountSO != 0)
-                    {
-                        childPropertyCountSO--;
-                        continue;
+                        goto _Exit;
                     }
 
-                    // Debug.LogFormat("{0} | {1}", iter.type, iter.hasVisibleChildren);
-
-                    EditorGUILayout.PropertyField(iter);
+                    EditorGUILayout.PropertyField(property, true);
                 }
 
-                target.ApplyModifiedProperties();
+                // why goto here ?
+                // because i went insane at this point
+                // goto is bad code, don't do this (FIXME)
+                _Exit:
+                expanded = false;
             }
+
+            // Save & end method
+            obj.ApplyModifiedProperties();
+            return EditorGUI.EndChangeCheck();
         }
+
 
         [Flags]
         public enum EditorListOption

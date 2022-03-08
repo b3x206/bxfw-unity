@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace BXFW
@@ -13,9 +11,22 @@ namespace BXFW
     {
         [Header("-- Debug Settings")]
         public Behaviour[] DisableComponentOnEnable;
-        public Transform MoveTransform;
 
         [Header("-- Camera Settings")]
+        public Transform MoveTransform;
+        public bool IsEnabled
+        {
+            get { return isEnabled; }
+            set
+            {
+                isEnabled = value;
+                enabled = value;
+#if UNITY_EDITOR
+                if (!Application.isPlaying) return;
+#endif
+            }
+        }
+        [SerializeField] private bool isEnabled = true;
         public bool CameraLookRawInput = true;
         public float CameraLookSensitivity = 10f;
         public float CameraMoveSpeed = 10f;
@@ -24,26 +35,39 @@ namespace BXFW
         public Vector2 MinMaxYRotation = new Vector2(0f, 0f);
 
         // -- Input Settings -- //
-        private readonly IList<string> InputLookAxis = new[] { "Mouse X", "Mouse Y" };
+        private readonly IList<string> InputLookAxis    = new string[] { "Mouse X", "Mouse Y" };
         [Header(":: Input Settings ::")]
         public bool InputAdjustMoveSpeedMouseWheel = false;
-        public CustomInputEvent InputMoveForward = new[] { KeyCode.W, KeyCode.UpArrow };
-        public CustomInputEvent InputMoveBackward = new[] { KeyCode.S, KeyCode.DownArrow };
-        public CustomInputEvent InputMoveLeft = new[] { KeyCode.A, KeyCode.LeftArrow };
-        public CustomInputEvent InputMoveRight = new[] { KeyCode.D, KeyCode.RightArrow };
-        public CustomInputEvent InputMoveBoost = new[] { KeyCode.LeftShift, KeyCode.RightShift };
-        public CustomInputEvent InputMoveDescend = new[] { KeyCode.Q };
-        public CustomInputEvent InputMoveAscend = new[] { KeyCode.E };
+        public CustomInputEvent InputMoveForward        = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
+        public CustomInputEvent InputMoveBackward       = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
+        public CustomInputEvent InputMoveLeft           = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
+        public CustomInputEvent InputMoveRight          = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        public CustomInputEvent InputMoveBoost          = new KeyCode[] { KeyCode.LeftShift, KeyCode.RightShift };
+        public CustomInputEvent InputMoveDescend        = new KeyCode[] { KeyCode.Q };
+        public CustomInputEvent InputMoveAscend         = new KeyCode[] { KeyCode.E };
+        [InspectorLine(.4f, .4f, .4f)]
+        public CustomInputEvent InputEventDisableEnable = new KeyCode[] { KeyCode.F8 };
 
         public new Transform transform { get; private set; }
         private Quaternion OriginalRotation;
-        private void Awake()
+        private bool isInit = false;
+        private void Start()
         {
+            if (!IsEnabled) return;
+
+            // Initilaze resets quaternion rotation.
+            Initilaze();
+        }
+        private void Initilaze()
+        {
+            if (isInit) return;
+
             transform = MoveTransform == null ? GetComponent<Transform>() : MoveTransform;
 
             // Initial rotation shouldn't have X axis rotation, otherwise the angleaxis does stupid stuff and the Z rotates too.
             transform.rotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
             OriginalRotation = transform.rotation;
+            isInit = true;
         }
 
         private float GetMouseAxis(int Axis)
@@ -146,6 +170,9 @@ namespace BXFW
             {
                 comp.enabled = false;
             }
+
+            if (!isInit)
+                Initilaze();
         }
         private void OnDisable()
         {

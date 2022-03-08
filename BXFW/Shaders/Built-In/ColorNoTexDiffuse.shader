@@ -11,6 +11,8 @@
 
         CGPROGRAM
 
+        // This doesn't work on URP becuase it doesn't have Lambert shading.
+        // Just fry your computer while trying to render very detailed Lambert hdr.
         #pragma surface surf Lambert
 
         struct Input
@@ -24,7 +26,21 @@
 
         void surf (Input IN, inout SurfaceOutput o)
         {
-            // no albedo
+            // ———————————No albedo?———————————
+            //  ⣞⣝⢽⢪⢣⢣⢣⢫⡺⡵⣝⡮⣗⢷⢽⢽⢽⣮⡷⡽⣜⣜⢮⢺⣜⢷⢽⢝⡽⣝
+            //  ⠸⡸⠜⠕⠕⠁⢁⢇⢏⢽⢺⣪⡳⡝⣎⣏⢯⢞⡿⣟⣷⣳⢯⡷⣽⢽⢯⣳⣫⠇
+            //    ⢀⢀⢄⢬⢪⡪⡎⣆⡈⠚⠜⠕⠇⠗⠝⢕⢯⢫⣞⣯⣿⣻⡽⣏⢗⣗⠏
+            //    ⠪⡪⡪⣪⢪⢺⢸⢢⢓⢆⢤⢀⠀⠀⠀⠀⠈⢊⢞⡾⣿⡯⣏⢮⠷⠁
+            //    ⠈⠊⠆⡃⠕⢕⢇⢇⢇⢇⢇⢏⢎⢎⢆⢄⠀⢑⣽⣿⢝⠲⠉
+            //    ⠀⡿⠂⠠⠀⡇⢇⠕⢈⣀⠀⠁⠡⠣⡣⡫⣂⣿⠯⢪⠰⠂
+            //    ⡦⡙⡂⢀⢤⢣⠣⡈⣾⡃⠠⠄⠀⡄⢱⣌⣶⢏⢊⠂
+            //    ⢝⡲⣜⡮⡏⢎⢌⢂⠙⠢⠐⢀⢘⢵⣽⣿⡿⠁⠁
+            //    ⠨⣺⡺⡕⡕⡱⡑⡆⡕⡅⡕⡜⡼⢽⡻⠏
+            //    ⣼⣳⣫⣾⣵⣗⡵⡱⡡⢣⢑⢕⢜⢕⡝
+            //    ⣴⣿⣾⣿⣿⣿⡿⡽⡑⢌⠪⡢⡣⣣⡟⠀
+            //    ⡟⡾⣿⢿⢿⢵⣽⣾⣼⣘⢸⢸⣞⡟⠀
+            //    ⠁⠇⠡⠩⡫⢿⣝⡻⡮⣒⢽⠋
+            // —————————————————————————————
             fixed4 c = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
             o.Albedo = c.rgb;
             o.Alpha = c.a;

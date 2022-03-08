@@ -75,6 +75,11 @@ namespace BXFW
         private float currentShakeElapsed;
         /// Current shake magnitude, set by <see cref="ShakeCamera(Vector2, float)"/>.
         private Vector2 currentShakeMagnitude;
+        /// Frames 'Fixed frames' after a random variable is generated.
+        private int currentTotalShakeGraceFrames = 1;
+        private int currentShakeGraceFrames = 1;
+        private Vector2 currentRandomVector = Vector2.zero;
+        private bool currentShakeRotation = false;
         /// <summary>
         /// Ticks the <see cref="ShakeCamera(Vector2, float)"/> method.
         /// </summary>
@@ -91,17 +96,36 @@ namespace BXFW
                 return;
             }
 
-            // Needs to be converted to local x/y
-            var rVec = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
-            externLerpPosMove = Vector2.Scale(Vector2.Scale(Vector2.Lerp(rVec, Vector2.zero, currentShakeElapsed), currentShakeMagnitude), transform.right + transform.up);
-            externLerpRotateMove = Quaternion.LookRotation(externLerpPosMove + Vector3.forward, transform.up);
-            Debug.Log($"Extern lerp pos move is : {externLerpPosMove} | Duration Elapsed (0..1) : {currentShakeElapsed} | Random vec : {rVec}");
+            // Doesn't have to be converted to local x/y, for some reason rotation doesn't modify global x/y ?
+            currentShakeGraceFrames--;
+            if (currentShakeGraceFrames <= 0)
+            {
+                currentRandomVector = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f));
+                currentShakeGraceFrames = currentTotalShakeGraceFrames;
+            }
+
+            externLerpPosMove = transform.InverseTransformPoint(Vector3.Scale(Vector2.Lerp(currentRandomVector, Vector2.zero, currentShakeElapsed), currentShakeMagnitude) + transform.position);
+            
+            if (currentShakeRotation)
+            {
+                externLerpRotateMove = Quaternion.LookRotation(externLerpPosMove + Vector3.forward, transform.up);
+            }
+            else
+            {
+                externLerpRotateMove = Quaternion.identity;
+            }
         }
         /// <summary>
         /// Shakes the camera on the local x/y position.
         /// </summary>
-        public void ShakeCamera(Vector2 shakeMagnitude, float duration)
+        public void ShakeCamera(Vector2 shakeMagnitude, float duration, bool shakeRotation = false, int shakeGraceFrames = 3)
         {
+            if (shakeMagnitude == Vector2.zero || Mathf.Approximately(0f, duration))
+                return; // Do nothing if we are requested to do nothing.
+                        // NOTE : The modular 'CameraShake' component will wait for duration to set 'IsShaking'.
+
+            currentShakeRotation = shakeRotation;
+            currentShakeGraceFrames = currentTotalShakeGraceFrames = Mathf.Clamp(shakeGraceFrames, 0, 16);
             currentShakeElapsed = 1f;
             currentShakeDuration = duration;
             currentShakeMagnitude = shakeMagnitude;
@@ -120,7 +144,7 @@ namespace BXFW
                 Mathf.Clamp(followPos.z + CurrentCameraOffset.Position.z, CurrentCameraOffset.CameraPosZClamp.x, CurrentCameraOffset.CameraPosZClamp.y))
                 : new Vector3(followPos.x + CurrentCameraOffset.Position.x,
                         followPos.y + CurrentCameraOffset.Position.y,
-                        followPos.z + CurrentCameraOffset.Position.z) 
+                        followPos.z + CurrentCameraOffset.Position.z)
                 + externLerpPosMove;
             var rotatePos = Quaternion.Euler(CurrentCameraOffset.EulerRotation.x,
                         CurrentCameraOffset.EulerRotation.y,
