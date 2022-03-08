@@ -13,9 +13,6 @@
 //     but rather as <see cref="BXFW.Tweening.RepeatType.Reset"/>. Reset seems to work fine.
 // 2 : <see cref="Component.transform"/> seems to internally call <see cref="Component.GetComponent{T}"/>.
 //     Make the tweening method cache the <see cref="Component.GetComponent{T}"/> call. 
-// BUG FIX : 
-// 1 : Creating a <see cref="BXFW.Tweening.CTweenProperty{T}"/> with delay and calling itself's <see cref="BXFW.Tweening.CTweenProperty{T}.StartTween"/> on it's
-//     <see cref="BXFW.Tweening.CTweenProperty{T}.TwContext"/>'s ending action doesn't start the tween. (Only occurs on delayed tweens? need testing)
 * -------------------------------------------------- **/
 
 using System;
@@ -184,7 +181,7 @@ namespace BXFW.Tweening
         {
             return string.Format
                 (   // Main String
-                    "{0}{1}",
+                    "{0} {1}",
                     // Format List
                     ErrRich("[CTweenCore(Error)]->", true),
                     LogRich(string.Format("The type ({0}) is not tweenable!", ReasonNonTwn))
@@ -194,7 +191,7 @@ namespace BXFW.Tweening
         {
             return string.Format
                 (   // Main String
-                    "{0}{1}",
+                    "{0} {1}",
                     // Format List
                     ErrRich("[CTweenCore(Critical)]", true),
                     LogRich(string.Format("The given context is not valid. Reason : \"{0}\"", ReasonInvalid))
@@ -207,7 +204,7 @@ namespace BXFW.Tweening
 
             return string.Format
                 (   // Main String
-                    "{0}{1}",
+                    "{0} {1}",
                     // Format List
                     ErrRich("[CTweenCTX::SetSetter]", true),
                     LogRich(
@@ -223,7 +220,7 @@ namespace BXFW.Tweening
 
             return string.Format
                 (   // Main String
-                    "{0}{1}",
+                    "{0} {1}",
                     // Format List
                     ErrRich("[CTweenCTX::(Critical)]", true),
                     LogRich(
@@ -325,11 +322,7 @@ namespace BXFW.Tweening
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0.0f)
-            {
-                Debug.Log("Delayed tween begin");
-                yield return new WaitForSeconds(ctx.StartDelay); 
-            }
-            Debug.Log("Delayed tween end");
+            { yield return new WaitForSeconds(ctx.StartDelay); }
 
             // Start Interpolator
             float Elapsed = 0.0f;
