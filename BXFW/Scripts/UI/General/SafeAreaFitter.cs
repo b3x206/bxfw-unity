@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace BXFW
+namespace BXFW.UI
 {
     /// <summary>
     /// Resizes a <see cref="RectTransform"/> to fit <see cref="Screen.safeArea"/>.

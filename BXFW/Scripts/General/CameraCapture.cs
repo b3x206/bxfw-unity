@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// An editor exclusive script, to capture and save <see cref="RenderTexture"/>'s from an camera.
@@ -19,11 +19,13 @@ namespace BXFW.ScriptEditor
         [Header("Management")]
         public ScriptToggler CamMoveTest;
 
+        private static readonly Vector2Int MAX_SCREENSHOT_RESOLUTION = new Vector2Int(32768, 32768);
+
         private void OnValidate()
         {
             // Limit the screenshot resolution.
-            ScreenshotResolution.x = Mathf.Clamp(ScreenshotResolution.x, 128, 16384);
-            ScreenshotResolution.y = Mathf.Clamp(ScreenshotResolution.y, 128, 16384);
+            ScreenshotResolution.x = Mathf.Clamp(ScreenshotResolution.x, 128, MAX_SCREENSHOT_RESOLUTION.x);
+            ScreenshotResolution.y = Mathf.Clamp(ScreenshotResolution.y, 128, MAX_SCREENSHOT_RESOLUTION.y);
         }
  
         private void Awake()
@@ -46,11 +48,11 @@ namespace BXFW.ScriptEditor
         {
             if (ScreenshotCamera == null) { Debug.LogError("[CameraCapture::TakeScreenshot] Screenshot camera is null."); return; }
 
-            // capture the virtuCam and save it as a square PNG.
+            // Capture the virtuCam and save it as a PNG with correct aspect.
             var prevAspect = ScreenshotCamera.aspect;
             ScreenshotCamera.aspect = ScreenshotResolution.x / (float)ScreenshotResolution.y;
 
-            // recall that the height is now the "actual" size from now on
+            // Recall that the height is now the "actual" size from now on
             RenderTexture tempRT = new RenderTexture(ScreenshotResolution.x, ScreenshotResolution.y, 32);
             // the last parameter can be 0,16,24,32 formats like RenderTextureFormat.Default, ARGB32 etc.
 
@@ -58,29 +60,30 @@ namespace BXFW.ScriptEditor
             ScreenshotCamera.Render();
 
             RenderTexture.active = tempRT;
-            Texture2D virtualPhoto =
-                new Texture2D(ScreenshotResolution.x, ScreenshotResolution.y, ScreenshotTexFormat, false);
+            Texture2D vImageTexture = new Texture2D(ScreenshotResolution.x, ScreenshotResolution.y, ScreenshotTexFormat, false);
             // false, meaning no need for mipmaps
-            virtualPhoto.ReadPixels(new Rect(0, 0, ScreenshotResolution.x, ScreenshotResolution.y), 0, 0);
+            vImageTexture.ReadPixels(new Rect(0, 0, ScreenshotResolution.x, ScreenshotResolution.y), 0, 0);
 
-            RenderTexture.active = null;            //can help avoid errors
+            RenderTexture.active = null;            // Can help avoid errors
             ScreenshotCamera.targetTexture = null;
 
-            // Wait for the screenshot to be taken for destruction
+            // Save to Filesystem
             var dirString = $"{Directory.GetCurrentDirectory()}/000EditorScreenshots";
             DirectoryInfo Dir = new DirectoryInfo(dirString);
             if (!Dir.Exists) { Directory.CreateDirectory(dirString); }
 
             string fileName;
-            byte[] bytes = virtualPhoto.EncodeToPNG();
-            using (FileStream f = File.Create($"{dirString}/Screenshot{ScreenshotID:000}.png"))
+            byte[] bytes = vImageTexture.EncodeToPNG();
+            using (FileStream f = File.Create(string.Format("{0}/Screenshot{1:000}.png", dirString, ScreenshotID)))
             {
                 f.Write(bytes, 0, bytes.Length);
                 fileName = f.Name;
             }
-
             Debug.Log(string.Format("[CameraCapture::TakeScreenshot] Saved image at : {0}", fileName));
+            // Increment ScreenshotID for unique file names.
             ScreenshotID++;
+            
+            // Cleanup
             Destroy(tempRT);
             ScreenshotCamera.aspect = prevAspect;
         }

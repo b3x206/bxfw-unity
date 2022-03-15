@@ -36,9 +36,8 @@ namespace BXFW
     }
 
     /// <summary>
-    /// Make the cube transform have snappable points.
-    /// Allows for snapping on global space.
-    /// Also includes the <see cref="MonoBehaviour"/>.
+    /// Makes any transform have cubic snappable points.
+    /// Also includes the <see cref="MonoBehaviour"/>, use it as a class that you inherit from.
     /// </summary>
     [Serializable]
     public class MBSnappableCubeTransform : MonoBehaviour
@@ -269,7 +268,8 @@ namespace BXFW
             }
 
             Destroy(SnapHelper.gameObject);
-            OnSnapTransformCall?.Invoke();
+            if (OnSnapTransformCall != null)
+                OnSnapTransformCall();
 
             return true;
         }
@@ -306,7 +306,8 @@ namespace BXFW
             transformTarget.transform.SetParent(PrevParent);
 
             Destroy(SnapHelper.gameObject);
-            OnSnapTransformCall?.Invoke();
+            if (OnSnapTransformCall != null)
+                OnSnapTransformCall();
 
             return true;
         }
@@ -422,7 +423,8 @@ namespace BXFW
             }
 
             Destroy(SnapHelper.gameObject);
-            OnAlignTransformCall?.Invoke();
+            if (OnAlignTransformCall != null)
+                OnAlignTransformCall();
 
             return true;
         }

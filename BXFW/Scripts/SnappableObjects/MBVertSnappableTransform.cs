@@ -1,4 +1,9 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+// This is an editor exclusive namespace.
+using BXFW.Tools.Editor;
+#endif
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -7,7 +12,8 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Snappable transform with mesh.
+    /// Snappable transform that uses mesh vertices.
+    /// <br>Working principle is same as <see cref="MBSnappableCubeTransform"/>.</br>
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     public class MBVertSnappableTransform : MonoBehaviour

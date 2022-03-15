@@ -30,11 +30,11 @@ namespace BXFW.Tools.Editor
         public static void OpenWindow()
         {
             var window = GetWindow<TRandomizerEditorWindow>("Transform Randomizer");
-            SceneView.duringSceneGui += OnSceneGUI;
-            OnWindowClose = () =>
-            {
-                SceneView.duringSceneGui -= OnSceneGUI;
-            };
+            //SceneView.duringSceneGui += OnSceneGUI;
+            //OnWindowClose = () =>
+            //{
+            //    SceneView.duringSceneGui -= OnSceneGUI;
+            //};
         }
         private void OnDestroy()
         {
@@ -50,25 +50,25 @@ namespace BXFW.Tools.Editor
 
         private Vector2 ScrollPos = Vector2.zero;
 
-        private static void OnSceneGUI(SceneView currentView)
-        {
-            Handles.BeginGUI();
-
-            var boxSize = new Vector2(200, 200);
-            // For some reason boxPadding.y needs to be doubled by 2 to get into the correct position.
-            var boxPadding = new Vector2(20, 20);
-            var boxRect = new Rect(currentView.position.width - (boxSize.x + boxPadding.x), currentView.position.height - (boxSize.y + (boxPadding.y * 2)),
-                boxSize.x, boxSize.y);
-
-            var areaPadding = new Vector2(10, 10);
-            var areaRect = new Rect(boxRect.x + (areaPadding.x / 2), boxRect.y + (areaPadding.y / 2), boxRect.width - areaPadding.x, boxRect.height - areaPadding.y);
-
-            GUI.Box(boxRect, string.Empty, GUI.skin.box);
-            GUILayout.BeginArea(areaRect);
-            // (Maybe) TODO : Draw a pivot editor
-            GUILayout.EndArea();
-            Handles.EndGUI();
-        }
+        // (Maybe) TODO : Draw a pivot editor
+        //private static void OnSceneGUI(SceneView currentView)
+        //{
+        //    Handles.BeginGUI();
+        //
+        //    var boxSize = new Vector2(200, 200);
+        //    // For some reason boxPadding.y needs to be doubled by 2 to get into the correct position.
+        //    var boxPadding = new Vector2(20, 20);
+        //    var boxRect = new Rect(currentView.position.width - (boxSize.x + boxPadding.x), currentView.position.height - (boxSize.y + (boxPadding.y * 2)),
+        //        boxSize.x, boxSize.y);
+        //
+        //    var areaPadding = new Vector2(10, 10);
+        //    var areaRect = new Rect(boxRect.x + (areaPadding.x / 2), boxRect.y + (areaPadding.y / 2), boxRect.width - areaPadding.x, boxRect.height - areaPadding.y);
+        //
+        //    GUI.Box(boxRect, string.Empty, /*GUI.skin.box*/EditorStyles.helpBox);
+        //    GUILayout.BeginArea(areaRect);
+        //    GUILayout.EndArea();
+        //    Handles.EndGUI();
+        //}
 
         private void OnGUI()
         {

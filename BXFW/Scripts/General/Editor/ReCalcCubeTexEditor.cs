@@ -1,6 +1,8 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
+using BXFW.Tools.Editor;
+
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(ReCalcCubeTexture))]
@@ -42,7 +44,7 @@ namespace BXFW.ScriptEditor
         {
             var TargetMesh = Target.GetCalculateMesh();
 
-            AssetDatabase.CreateAsset(TargetMesh, $"{UDirSave}\\{Target.CubeMeshName}.asset");
+            AssetDatabase.CreateAsset(TargetMesh, $"{UDirSave}/{Target.CubeMeshName}.asset");
             AssetDatabase.SaveAssets();
 
             return TargetMesh;
@@ -68,7 +70,7 @@ namespace BXFW.ScriptEditor
             // Use that cube as mesh.
             if (FileNames.Length > 0)
             {
-                var MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>($"{UDirSave}\\{Target.CubeMeshName}.asset");
+                var MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>($"{UDirSave}/{Target.CubeMeshName}.asset");
 
                 if (MeshAssign != null)
                 {

@@ -53,13 +53,6 @@ namespace BXFW
 
             if (Input.GetMouseButton(0))
             {
-                // This is the exact same euler you see on editor view. This fixes the dumb unity issue.
-                Vector3 TransformEulerFixed = new Vector3(
-                    transform.eulerAngles.x > 180f ? transform.eulerAngles.x - 360f : transform.eulerAngles.x,
-                    transform.eulerAngles.y > 180f ? transform.eulerAngles.y - 360f : transform.eulerAngles.y,
-                    transform.eulerAngles.z > 180f ? transform.eulerAngles.z - 360f : transform.eulerAngles.z
-                    );
-
                 transform.position = PivotObj.position;
 
                 Vector3 dir = prevPos - CameraComponent.ScreenToViewportPoint(Input.mousePosition);
@@ -68,14 +61,15 @@ namespace BXFW
                 if (ClampCameraRotation)
                 {
                     // Get Rotation to apply
-                    Vector3 CurrentRotationEuler = TransformEulerFixed;
+                    // This is the exact same euler you see on editor view. This fixes the dumb unity issue.
+                    Vector3 CurrentRotationEuler = Additionals.FixEulerRotation(transform.eulerAngles);
 
                     // X, Y and Z Clamps (we should not use euler for these but idk)
                     CurrentRotationEuler.x = Mathf.Clamp(CurrentRotationEuler.x, RotLimitMin.x, RotLimitMax.x);
                     CurrentRotationEuler.y = Mathf.Clamp(CurrentRotationEuler.y, RotLimitMin.y, RotLimitMax.y);
                     CurrentRotationEuler.z = 0f;
 
-                    // Apply Rotation (goddamnit)
+                    // Apply Rotation
                     transform.localRotation = Quaternion.Euler(CurrentRotationEuler);
                 }
 
@@ -103,8 +97,14 @@ namespace BXFW
 
         private void OnDrawGizmosSelected()
         {
+            if (PivotObj == null) return;
+
+            var gColor = Gizmos.color;
             Gizmos.DrawWireSphere(PivotObj.position, DistanceBetweenObj);
             Gizmos.color = Color.red;
+            Gizmos.color = gColor;
+
+            // maybe (TODO) : Draw a portion of sphere to show possible positions of the camera.
         }
     }
 }

@@ -52,8 +52,11 @@ namespace BXFW
 
         [Header("Movement Base Input Map")]
         // Editor script TODO : Hide / Show depending on the move/jump axis.
+        // Both Move{Direction} CustomInputEvent is visible if moveAxis is X and Y
+        // Hidden if moveAxis is only Y
         public CustomInputEvent MoveLeftInput = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
         public CustomInputEvent MoveRightInput = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        // Hidden if moveAxis is only X
         public CustomInputEvent MoveUpInput = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
         public CustomInputEvent MoveDownInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
         // Hidden if moveAxis is X and Y.
@@ -145,7 +148,7 @@ namespace BXFW
             // If current ground layer is still the default layer.
             if (groundLayer == DEFAULT_LAYER_MASK)
             {
-                Debug.LogWarning($"[CharacterControl2DBase::Awake] Warning : The '{nameof(groundLayer)}' is set to the default layer. Please make a ground layer.");
+                Debug.LogWarning("[CharacterControl2DBase::Awake] Warning : The '{groundLayer variable}' is set to the default layer. Please make a ground layer.");
             }
         }
 
@@ -255,7 +258,7 @@ namespace BXFW
 
         private void OnCollisionStay2D(Collision2D collision)
         {
-            Debug.Log($"[CharacterControl2D] Primarily colliding with : {collision.gameObject.name}");
+            // Debug.Log($"[CharacterControl2D] Primarily colliding with : {collision.gameObject.name}");
 
             collision.GetContacts(groundContacts);
 
@@ -267,9 +270,9 @@ namespace BXFW
                     {
                         // Get the normal of the surface
                         // If the normal is slope relative to the gravity, get the angle of the slope, then apply a support force. 
-                        // (Multiplied lerped value from Lerp(nSlope, 0, 1))
+                        // (Multiplied lerped value from Lerp(nSlopeAngle / maxSlopeLimit, 0, 1))
 
-                        Debug.Log($"Collision normal : {contact.normal}");
+                        // Debug.Log($"Collision normal : {contact.normal}");
                     }
                 }
             }

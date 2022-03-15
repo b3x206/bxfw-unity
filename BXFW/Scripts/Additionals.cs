@@ -1,6 +1,5 @@
 ﻿// Standard
 using UnityEngine;
-using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,7 +10,6 @@ using System.Text;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 
 // Serialization
 using System.IO;
@@ -88,6 +86,25 @@ namespace BXFW
             Debug.DrawRay(pos + direction, left * arrowHeadLength, color);
         }
         #endregion
+
+        /// <summary>
+        /// Get the path of the gameobject.
+        /// </summary>
+        public static string GetPath(this GameObject target)
+        {
+            return target.transform.GetPath();
+        }
+
+        /// <summary>
+        /// Get the path of the gameobject.
+        /// </summary>
+        public static string GetPath(this Transform target)
+        {
+            if (target.parent == null)
+                return string.Format("/{0}", target.name);
+
+            return string.Format("{0}/{1}", target.parent.GetPath(), target.name);
+        }
 
         /// <summary>Clamps rigidbody velocity.</summary>
         public static void ClampVelocity(this Rigidbody rb, float MaxSpeed)
@@ -485,7 +502,7 @@ namespace BXFW
                     break;
             }
         }
-        /// <summary>Fixes euler rotation to standard code ranges instead of Unity Editor ranges.</summary>
+        /// <summary>Fixes euler rotation to Unity Editor instead of the code ranges.</summary>
         public static Vector3 FixEulerRotation(Vector3 eulerRot)
         {
             Vector3 TransformEulerFixed = new Vector3(
@@ -513,7 +530,8 @@ namespace BXFW
         /// <summary>Returns a random boolean.</summary>
         public static bool RandBool()
         {
-            // Using floats here is faster.
+            // Using floats here is faster and more random.
+            // (for some reason, maybe the System.Convert.ToBoolean method is intensive?)
             return UnityEngine.Random.Range(0f, 1f) > .5f;
         }
 
@@ -599,7 +617,7 @@ namespace BXFW
         /// </summary>
         /// <typeparam name="TSrc">Type of array.</typeparam>
         /// <typeparam name="TDest">Destination type <c>(? Undocumented)</c></typeparam>
-        /// <param name="src">3-Dimensional array.</param>
+        /// <param name="src">3 Dimensional array.</param>
         /// <returns>Array of arrays of the same size the <paramref name="src"/>.</returns>
         public static TDest[][][] Convert3DArray<TSrc, TDest>(this TSrc[,,] src, Func<TSrc, TDest> converter)
         {
@@ -630,6 +648,12 @@ namespace BXFW
             // Return it
             return tgt;
         }
+        /// <summary>
+        /// Get a random enum from enum type <typeparamref name="T"/>.
+        /// </summary>
+        /// <param name="EnumToIgnore">Enum list of values to ignore from.</param>
+        /// <returns>Randomly selected enum.</returns>
+        /// <exception cref="Exception">Thrown when the type isn't enum. (<see cref="Type.IsEnum"/> is false)</exception>
         public static T GetRandomEnum<T>(T[] EnumToIgnore = null)
         {
             if (!typeof(T).IsEnum)
@@ -638,7 +662,6 @@ namespace BXFW
             Array values = Enum.GetValues(typeof(T));
             List<T> ListValues = new List<T>();
 
-            /* TODO : Check duplicate EnumToIgnore values. */
             if (EnumToIgnore.Length >= values.Length)
             {
                 Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning null. Bool : {0} >= {1}", EnumToIgnore.Length, values.Length));
@@ -646,7 +669,19 @@ namespace BXFW
             }
 
             for (int i = 0; i < values.Length; i++)
-            { ListValues.Add((T)values.GetValue(i)); }
+            {
+                var value = (T)values.GetValue(i);
+
+                // Ignore duplicate values.
+                // This isn't very important, but makes the removing cleaner.
+                if (ListValues.Contains(value))
+                {
+                    // Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] Multiple enum value '{0}' passed in array. Ignoring.", value));
+                    continue;
+                }
+                
+                ListValues.Add(value); 
+            }
 
             if (EnumToIgnore != null)
             {
@@ -966,7 +1001,12 @@ namespace BXFW
         public static void BSave<T>(T serializableObject, string filePath, bool OverWrite = false)
         {
             // Make sure the generic is serializable.
-            Contract.Requires(typeof(T).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
+            // Require attribute.
+            if (typeof(T).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                Debug.LogError(string.Format("[Additionals::BSave] Is serializable is false for given type '{0}'.", typeof(T).Name));
+                return;
+            }
 
             try
             {
@@ -1009,21 +1049,21 @@ namespace BXFW
                     // Cutting the extension
                     string FileExtension = string.Format(".{0}", splitLast_Extension[splitLast_Extension.Length - 1]);
                     string FileName = null;
-                    /* If the size is larger than 2, we assume the stupid user has put dots inside the file name. 
-                     * Generate FileName string */
+                    // If the size is larger than 2, we assume the stupid user has put dots inside the file name. 
+                    // Generate FileName string 
                     if (splitLast_Extension.Length > 2)
                     {
-                        /* This for loop 'might' be flawed because of the length */
+                        // This for loop 'might' be flawed because of the length 
                         for (int i = 0; i < splitLast_Extension.Length - 1; i++)
                         {
-                            /* Split ignores the dots */
+                            // Split ignores the dots
                             FileName += string.Format("{0}.", splitLast_Extension[i]);
                         }
                     }
                     else
                     { FileName = splitLast_Extension[0]; }
 
-                    /* Cutting everything after the last slash */
+                    // Cutting everything after the last slash
                     int IndexOfFilePath = filePath.LastIndexOf('\\');
                     if (IndexOfFilePath > 0)
                     {
@@ -1058,9 +1098,12 @@ namespace BXFW
         /// <returns>Data that is loaded. NOTE : Please don't invoke/parse/do anything with this data.</returns>
         public static ExpectT BLoad<ExpectT>(string filePath)
         {
-            /* Make sure the generic is serializable.
-             * Reflection is bad but idc. */
-            Contract.Requires(typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0, "[Additionals::BLoad]");
+            // Require attribute.
+            if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                Debug.LogError(string.Format("[Additionals::BLoad] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
+                return default;
+            }
 
             ExpectT DSerObj;
 
@@ -1074,7 +1117,6 @@ namespace BXFW
                     };
 
                     stream.Position = 0;
-                    // TODO : Might check security hash here.
                     // You should use json instead anyway
                     DSerObj = (ExpectT)bformatter.Deserialize(stream);
                 }
@@ -1085,7 +1127,6 @@ namespace BXFW
             return DSerObj;
         }
         /// <summary>
-        /// TODO : Async (oof) and compression
         /// Loads binary saved data from text.
         /// </summary>
         /// <typeparam name="ExpectT">The expected type. If you get it wrong you will get an exception.</typeparam>
@@ -1093,8 +1134,12 @@ namespace BXFW
         /// <returns></returns>
         public static ExpectT Load<ExpectT>(char[] fileContents)
         {
-            /* Make sure the generic is serializable. */
-            Contract.Requires(typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
+            // Require attribute.
+            if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
+                return default;
+            }
 
             byte[] fileContentData = new byte[fileContents.Length];
             for (int i = 0; i < fileContents.Length; i++)
@@ -1103,7 +1148,6 @@ namespace BXFW
             return Load<ExpectT>(fileContentData);
         }
         /// <summary>
-        /// TODO : Async and compression (oof)
         /// Loads binary saved data from bytes.
         /// </summary>
         /// <typeparam name="ExpectT"></typeparam>
@@ -1111,8 +1155,12 @@ namespace BXFW
         /// <returns></returns>
         public static ExpectT Load<ExpectT>(byte[] fileContents)
         {
-            /* Make sure the generic is serializable. */
-            Contract.Requires(typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
+            // Require attribute.
+            if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
+                return default;
+            }
 
             ExpectT DSerObj;
 
@@ -1139,7 +1187,8 @@ namespace BXFW
         /// Returns a byte array from an object.
         /// </summary>
         /// <param name="obj">Object that has the <see cref="SerializableAttribute"/>.</param>
-        /// <returns>byte array</returns>
+        /// <returns>Object as serializd byte array.</returns>
+        /// <exception cref="InvalidDataContractException"/>
         public static byte[] ObjectToByteArray(object obj)
         {
             if (obj is null)
@@ -1148,8 +1197,12 @@ namespace BXFW
                 return null;
             }
 
-            /* Require attribute. */
-            Contract.Requires(obj.GetType().GetCustomAttributes(typeof(SerializableAttribute), true).Length != 0);
+            // Require attribute.
+            if (obj.GetType().GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given object '{0}'.", obj));
+                return null;
+            }
 
             BinaryFormatter bf = new BinaryFormatter();
             using (MemoryStream ms = new MemoryStream())
@@ -1163,11 +1216,11 @@ namespace BXFW
 #endregion
     }
 
-    [Flags]
     /// <summary>
     /// Transform Axis.
     /// <br>(Used in few helper methods)</br>
     /// </summary>
+    [Flags]
     public enum TransformAxis
     {
         None = 0,
@@ -1184,12 +1237,12 @@ namespace BXFW
         XYZAxis = XAxis | YAxis | ZAxis,
     }
 
-    [Flags]
     /// <summary>
     /// Transform axis, used in 2D space.
     /// <br>NOTE : This is an axis value for position.
     /// For rotation, please use the <see cref="TransformAxis"/>.</br>
     /// </summary>
+    [Flags]
     public enum TransformAxis2D
     {
         None = 0,
@@ -1202,7 +1255,7 @@ namespace BXFW
 
     /// <summary>
     /// Serializable dictionary.
-    /// <br>NOTE : Array types <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable. Wrap them with container class.</br>
+    /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>
     /// </summary>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
@@ -1339,12 +1392,19 @@ namespace BXFW.Tools.Editor
         }
     }
 
+    /// <summary>
+    /// Order of drawing GUI when a match is satisfied in method :
+    /// <see cref="EditorAdditionals.DrawCustomDefaultInspector(SerializedObject, Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}})"/>.
+    /// </summary>
+    [Flags]
     public enum MatchGUIActionOrder
     {
+        // Default Value
         Before = 0,
-        After = 1,
-        Omit = 2,
-        OmitAndInvoke = 3
+        After = 1 << 0,
+        Omit = 1 << 1,
+
+        OmitAndInvoke = After | Omit
     }
 
     public static class EditorAdditionals
@@ -1359,7 +1419,7 @@ namespace BXFW.Tools.Editor
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
         /// <exception cref="Exception"/>
-        public static (FieldInfo, object) GetTarget(this SerializedProperty prop)
+        public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
         {
             object target = prop.serializedObject.targetObject;
             FieldInfo targetInfo = null;
@@ -1423,7 +1483,7 @@ namespace BXFW.Tools.Editor
                 }
             }
 
-            return (targetInfo, target);
+            return new KeyValuePair<FieldInfo, object>(targetInfo, target);
         }
         /// <summary>
         /// Returns the type of the property's target.
@@ -1431,16 +1491,12 @@ namespace BXFW.Tools.Editor
         /// <param name="property">Property to get type from.</param>
         public static Type GetFieldType(this SerializedProperty property)
         {
-            return property.GetTarget().Item1.FieldType;
+            return property.GetTarget().Key.FieldType;
         }
         /// <summary>
         /// Internal helper method for getting field from properties.
         /// <br>Gets the target normally, if not found searches in <see cref="Type.BaseType"/>.</br>
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="name"></param>
-        /// <param name="targetType"></param>
-        /// <returns></returns>
         private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
             if (targetType == null)
@@ -1469,7 +1525,7 @@ namespace BXFW.Tools.Editor
 
         #region Gizmos
         /// <summary>
-        /// TODO : Need testing (these gizmo matrix manipulations never worked fine on my side)
+        /// Draws box collider gizmo according to the rotation of the parent transform.
         /// </summary>
         public static void DrawBoxCollider(this Transform transform, Color gizmoColor, BoxCollider boxCollider, float alphaForInsides = 0.3f)
         {
@@ -1486,7 +1542,7 @@ namespace BXFW.Tools.Editor
             Gizmos.color = color;
             Gizmos.DrawWireCube(Vector3.zero, boxCollider.size);
 
-            //Draws the sides/insides of the BoxCollider, with a tint to the original color.
+            // Draws the sides/insides of the BoxCollider, with a tint to the original color.
             color.a *= alphaForInsides;
             Gizmos.color = color;
             Gizmos.DrawCube(Vector3.zero, boxCollider.size);
@@ -1563,10 +1619,8 @@ namespace BXFW.Tools.Editor
         private static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
         {
             Camera cam = SceneView.currentDrawingSceneView.camera;
-            if (cam)
-                return cam.ScreenToWorldPoint(cam.WorldToScreenPoint(position) + translateBy);
-            else
-                return position;
+
+            return cam != null ? cam.ScreenToWorldPoint(cam.WorldToScreenPoint(position) + translateBy) : position;
         }
         #endregion
 
@@ -1602,7 +1656,7 @@ namespace BXFW.Tools.Editor
         /// <returns><see cref="EditorGUI.EndChangeCheck"/> (whether if a field was modified inside this method)</returns>
         public static bool DrawCustomDefaultInspector(this SerializedObject obj, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent)
         {
-            // Do the important steps
+            // Do the important steps (otherwise the inspector won't work)
             EditorGUI.BeginChangeCheck();
             obj.UpdateIfRequiredOrScript();
 
@@ -1612,6 +1666,7 @@ namespace BXFW.Tools.Editor
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
+                // Disable if 
                 using (new EditorGUI.DisabledScope("m_Script" == property.propertyPath))
                 {
                     // -- Check if there is a match
@@ -1666,7 +1721,6 @@ namespace BXFW.Tools.Editor
             obj.ApplyModifiedProperties();
             return EditorGUI.EndChangeCheck();
         }
-
 
         [Flags]
         public enum EditorListOption
@@ -1729,7 +1783,6 @@ namespace BXFW.Tools.Editor
             for (int i = 0; i < arrSize; i++)
             {
                 // Create property field.
-                // TODO : Add dropdown
                 var prop = obj.FindProperty(string.Format("{0}.Array.data[{1}]", arr_name, i));
 
                 // If our property is null, ignore.
@@ -1874,7 +1927,7 @@ namespace BXFW.Tools.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            targetAttribute = (InspectorLineAttribute)property.GetTarget().Item1.GetCustomAttribute(typeof(InspectorLineAttribute));
+            targetAttribute = (InspectorLineAttribute)property.GetTarget().Key.GetCustomAttribute(typeof(InspectorLineAttribute));
 
             // Draw line and draw UI line.
             var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
