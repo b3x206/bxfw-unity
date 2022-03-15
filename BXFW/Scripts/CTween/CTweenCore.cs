@@ -2047,7 +2047,7 @@ namespace BXFW.Tweening
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
-            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowCustomCurveOvershoot); ;
+            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowCustomCurveOvershoot);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
             if (OnEndAction != null)
