@@ -263,31 +263,33 @@ namespace BXFW
         public static int GetKeyboardHeight(bool includeInput)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        using (var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-        {
-            var unityPlayer = unityClass.GetStatic<AndroidJavaObject>("currentActivity").Get<AndroidJavaObject>("mUnityPlayer");
-            var view = unityPlayer.Call<AndroidJavaObject>("getView");
-            var dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
-
-            if (view == null || dialog == null)
-                return 0;
-
-            var decorHeight = 0;
-
-            if (includeInput)
+            // In android you have to do dumb stuff in order to get keyboard height
+            // This 'may not be necessary' in more updated versions of unity, but here we are.
+            using (var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             {
-                var decorView = dialog.Call<AndroidJavaObject>("getWindow").Call<AndroidJavaObject>("getDecorView");
+                var unityPlayer = unityClass.GetStatic<AndroidJavaObject>("currentActivity").Get<AndroidJavaObject>("mUnityPlayer");
+                var view = unityPlayer.Call<AndroidJavaObject>("getView");
+                var dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
 
-                if (decorView != null)
-                    decorHeight = decorView.Call<int>("getHeight");
-            }
+                if (view == null || dialog == null)
+                    return 0;
 
-            using (var rect = new AndroidJavaObject("android.graphics.Rect"))
-            {
-                view.Call("getWindowVisibleDisplayFrame", rect);
-                return Display.main.systemHeight - rect.Call<int>("height") + decorHeight;
+                var decorHeight = 0;
+
+                if (includeInput)
+                {
+                    var decorView = dialog.Call<AndroidJavaObject>("getWindow").Call<AndroidJavaObject>("getDecorView");
+
+                    if (decorView != null)
+                        decorHeight = decorView.Call<int>("getHeight");
+                }
+
+                using (var rect = new AndroidJavaObject("android.graphics.Rect"))
+                {
+                    view.Call("getWindowVisibleDisplayFrame", rect);
+                    return Display.main.systemHeight - rect.Call<int>("height") + decorHeight;
+                }
             }
-        }
 #else
             var height = Mathf.RoundToInt(TouchScreenKeyboard.area.height);
             return height >= Display.main.systemHeight ? 0 : height;
@@ -417,7 +419,7 @@ namespace BXFW
             return v;
         }
         /// <summary>
-        /// Whether if the layermask contains the <paramref name="layer"/>.
+        /// Whether if the <paramref name="mask"/> contains the <paramref name="layer"/>.
         /// </summary>
         public static bool ContainsLayer(this LayerMask mask, int layer)
         {
@@ -513,16 +515,6 @@ namespace BXFW
 
             return TransformEulerFixed;
         }
-        /// <summary>Gathers a gameobject from <paramref name="path"/>. (Path seperator is '/')</summary>
-        public static GameObject GetGameObjectFromPath(string path)
-        {
-            // Okay, i know this method is useless, but it
-            // explicitly specifies that the 'GameObject.Find' method also supports paths.
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            return GameObject.Find(path);
-        }
         #endregion
 
         #region Helper Functions
@@ -531,7 +523,7 @@ namespace BXFW
         public static bool RandBool()
         {
             // Using floats here is faster and more random.
-            // (for some reason, maybe the System.Convert.ToBoolean method is intensive?)
+            // (for some reason, maybe the System.Convert.ToBoolean method takes more time than float comparison?)
             return UnityEngine.Random.Range(0f, 1f) > .5f;
         }
 
@@ -552,9 +544,21 @@ namespace BXFW
 
             if (sourceDirName.Equals(destDirName))
             {
-                Debug.LogWarning("[ChangeLightmap] The directory you are trying to copy is the same as the destination directory.");
+                Debug.LogWarning("[Additionals::DirectoryCopy] The directory you are trying to copy is the same as the destination directory.");
                 return;
             }
+            // These lines are probably a bad idea, c# 'probably' will just throw an exception if these lines aren't satisfied.
+            // Basically leave as is, the programmer should know that they should keep directories 'case sensitive'.
+            //else if (sourceDirName.Equals(destDirName, StringComparison.OrdinalIgnoreCase) && 
+            //    (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor))
+            //{
+            //    // In windows, it's same directory
+            //    // On arch btw systems, directories are case sensitive
+            //    // unlike winbloat, it's case sensitive as long as there's no file with same name but different casing)
+
+            //    Debug.LogWarning("[Additionals::DirectoryCopy] The directory you are trying to copy is the same as the destination directory. (case doesn't match but IsWindows == true)");
+            //    return;
+            //}
 
             DirectoryInfo[] dirs = dir.GetDirectories();
 
@@ -604,7 +608,7 @@ namespace BXFW
                 // Create new member on index 'i' with the size of the first dimension
                 tgt[i] = new TDest[width];
 
-                // Set source 'WTF'
+                // Set source.
                 for (int j = 0; j < width; j++)
                     tgt[i][j] = src[i, j];
             }
@@ -749,11 +753,11 @@ namespace BXFW
 #if CSHARP_7_OR_LATER 
         // Tuple definition like (a, b) was added in c# 7
         /// <summary>
-        /// Similar to the python's <c>'enumerate()'</c> keyword for it's <c>for</c> loops.
+        /// Similar to the python's <c>'enumerate()'</c> keyword for it's <see langword="for"/> loops.
         /// </summary>
         /// <typeparam name="T">Type of the actual object to enumerate.</typeparam>
         /// <param name="enumerable">The enumerated object.</param>
-        /// <returns>Object + Index of <c><see cref="foreach"/></c>.</returns>
+        /// <returns>Object + Index of <c><see langword="foreach"/></c>.</returns>
         public static IEnumerable<(int, T)> Enumerate<T>(this IEnumerable<T> enumerable)
         {
             int i = -1;
@@ -766,7 +770,10 @@ namespace BXFW
         }
 #endif
         /// <summary>Resize array.</summary>
-        /// <param name="newT">The instance of a new generic. This is added due to 'T' not being a 'new T()' able type.</param>
+        /// <param name="newT">
+        /// The instance of a new generic.
+        /// This is added due to '<typeparamref name="T"/>' not being a '<see langword="new"/> <typeparamref name="T"/>()' able type.
+        /// </param>
         public static void Resize<T>(this List<T> list, int sz, T newT)
         {
             int cur = list.Count;
@@ -801,7 +808,7 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Converts a <see cref="Array"/> to standard array.
+        /// Converts a <see cref="Array"/> to a typed array.
         /// </summary>
         public static T[] ToTypeArray<T>(this Array target)
         {

@@ -14,24 +14,18 @@ namespace BXFW.Tools.Editor
         [Header("Capture Settings")]
         public Camera ScreenshotCamera;
         public Vector2Int ScreenshotResolution = new Vector2Int(2000, 2000);
-        public TextureFormat ScreenshotTexFormat = TextureFormat.RGBA32;
+        public TextureFormat ScreenshotTexFormat = TextureFormat.RGB24;
         public KeyCode CaptureKey = KeyCode.F1;
-        [Header("Management")]
-        public ScriptToggler CamMoveTest;
 
         private static readonly Vector2Int MAX_SCREENSHOT_RESOLUTION = new Vector2Int(32768, 32768);
 
         private void OnValidate()
         {
             // Limit the screenshot resolution.
-            ScreenshotResolution.x = Mathf.Clamp(ScreenshotResolution.x, 128, MAX_SCREENSHOT_RESOLUTION.x);
-            ScreenshotResolution.y = Mathf.Clamp(ScreenshotResolution.y, 128, MAX_SCREENSHOT_RESOLUTION.y);
+            ScreenshotResolution.x = Mathf.Clamp(ScreenshotResolution.x, 1, MAX_SCREENSHOT_RESOLUTION.x);
+            ScreenshotResolution.y = Mathf.Clamp(ScreenshotResolution.y, 1, MAX_SCREENSHOT_RESOLUTION.y);
         }
  
-        private void Awake()
-        {
-            DebugLogConsole.AddToStringDisplay($"\n{CaptureKey} : Capture Images\n{CamMoveTest.ToggleKey} : Free Look");
-        }
         private void Update()
         {
             if (Input.GetKeyDown(CaptureKey))

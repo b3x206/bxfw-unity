@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(FreeMoveCamera))]
+    [CustomEditor(typeof(FreeMoveCamera), true)]
     public class FreeMoveCameraEditor : Editor
     {
         private FreeMoveCamera Target;

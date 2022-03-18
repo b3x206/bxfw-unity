@@ -3,6 +3,7 @@ using UnityEngine.UI;
 
 namespace BXFW.UI
 {
+    [RequireComponent(typeof(RectTransform))]
     public class FGridLayout : LayoutGroup
     {
         public enum FitType
@@ -23,6 +24,11 @@ namespace BXFW.UI
         public Vector2 Spacing;
         public bool fitX = true;
         public bool fitY = true;
+
+        /// <summary>
+        /// Returns the <see cref="RectTransform"/> that this layout group uses.
+        /// </summary>
+        public RectTransform RectTransform { get { return base.rectTransform; } }
 
         public override void CalculateLayoutInputHorizontal()
         {
@@ -58,8 +64,8 @@ namespace BXFW.UI
             CellSize.x = fitX ? cellWidth : CellSize.x;
             CellSize.y = fitY ? cellHeight : CellSize.y;
 
-            int columnCount = 0;
-            int rowCount = 0;
+            int columnCount;
+            int rowCount;
             for (int i = 0; i < rectChildren.Count; i++)
             {
                 columnCount = i % Columns;

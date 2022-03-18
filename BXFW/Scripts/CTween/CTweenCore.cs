@@ -1,12 +1,26 @@
-﻿/* --------------------------------------------------- *
- * |             Created in : 25.12.2020             | *
- * |                  Made by : B3X                  | *
- * |-------------------------------------------------| *
- * | More Info : This is the second version of       | *
- * | the CTween tweening script.                     | *
- * | C stands for coroutine.                         | *
- * |                                                 | *
- * | ------------------------------------------------| */
+﻿/// CTween :
+///     It does tweens.
+/// 
+/// How do use? :
+///     <example>
+///     // basically dotween but crappier
+///     objectOrPropertyThatHasTypeThatSupportsCTweenExtensions.CTw{ExtensionContext}({EndValue}, {Duration});
+///     
+///     CTween.To((supportedType t) => { /* Setter function goes here, example one looks like : */ variableThatNeedTween.something = t; }, {StartValue}, {EndValue}, {Duration});
+///     </example>
+/// 
+/// What else?  :
+///     1 : Has many features (bugs, but i call them features)
+///     2 : Runs with very high performance (about 1 tween per 3 hours!! wow such fast)
+///     3 : Very coding pattern (what)
+/// 
+/// But why did you spend effort on this? there are better alternatives :
+///     I don't know, but yeah
+///
+/// How long have you been writing this? :
+///     For 2 years (actually i probably spent like 2 weeks on initial writing, which is the most of the functionality, then it's just bug fixes and some duct tape)
+
+
 /** -------------------------------------------------- 
 // GENERAL TODO :
 // 1 : <see cref="BXFW.Tweening.CTweenCTX{T}"/>'s <see cref="BXFW.Tweening.RepeatType.PingPong"/> doesn't work as ping-pong,
@@ -237,6 +251,10 @@ namespace BXFW.Tweening
     }
 
     #region CTween Core Classes
+    /// <summary>
+    /// Core of the CTweenCore.
+    /// <br>Dispatches the coroutines.</br>
+    /// </summary>
     [ExecuteAlways()]
     public class CTweenCore : MonoBehaviour
     {
@@ -331,7 +349,7 @@ namespace BXFW.Tweening
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
-            while (Elapsed <= 0f)
+            while (Elapsed <= 1f)
             {
                 // Check if the timescale is tampered with
                 // if it's below zero, just skip the frame
@@ -412,7 +430,7 @@ namespace BXFW.Tweening
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
-            while (Elapsed <= 0f)
+            while (Elapsed <= 1f)
             {
                 // Check if the timescale is tampered with
                 // if it's below zero, just skip the frame
@@ -490,7 +508,7 @@ namespace BXFW.Tweening
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
-            while (Elapsed <= 0f)
+            while (Elapsed <= 1f)
             {
                 // Check if the timescale is tampered with
                 // if it's below zero, just skip the frame
@@ -568,7 +586,7 @@ namespace BXFW.Tweening
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
-            while (Elapsed <= 0f)
+            while (Elapsed <= 1f)
             {
                 // Check if the timescale is tampered with
                 // if it's below zero, just skip the frame
@@ -646,7 +664,7 @@ namespace BXFW.Tweening
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
-            while (Elapsed <= 0f)
+            while (Elapsed <= 1f)
             {
                 // Check if the timescale is tampered with
                 // if it's below zero, just skip the frame
@@ -934,14 +952,14 @@ namespace BXFW.Tweening
             }
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<float>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<float> ctx) => { return Current.To(ctx); });
-            if (StartTween)
-                Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<float>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<float> ctx) => { return Current.To(ctx); });
 
+            if (StartTween)
+            {
+                Context.StartTween();
+                CurrentRunningTweens.Add(Context);
+            }
             // Return Context
             return Context;
         }
@@ -979,13 +997,14 @@ namespace BXFW.Tweening
             }
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<Color>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<Color> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<Color>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Color> ctx) => { return Current.To(ctx); });
+
             if (StartTween)
+            {
                 Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+                CurrentRunningTweens.Add(Context);
+            }
 
             // Return Context
             return Context;
@@ -1025,13 +1044,14 @@ namespace BXFW.Tweening
             // -- End Check Method Params -- //
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<Vector2>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<Vector2> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<Vector2>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Vector2> ctx) => { return Current.To(ctx); });
+
             if (StartTween)
+            {
                 Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+                CurrentRunningTweens.Add(Context);
+            }
 
             // Return Context
             return Context;
@@ -1071,13 +1091,14 @@ namespace BXFW.Tweening
             // -- End Check Method Params -- //
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<Vector3>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<Vector3> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<Vector3>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Vector3> ctx) => { return Current.To(ctx); });
+
             if (StartTween)
+            {
                 Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+                CurrentRunningTweens.Add(Context);
+            }
 
             // Return Context
             return Context;
@@ -1117,13 +1138,14 @@ namespace BXFW.Tweening
             // -- End Check Method Params -- //
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<Quaternion>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<Quaternion> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<Quaternion>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Quaternion> ctx) => { return Current.To(ctx); });
+
             if (StartTween)
+            {
                 Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+                CurrentRunningTweens.Add(Context);
+            }
 
             // Return Context
             return Context;
@@ -1163,13 +1185,14 @@ namespace BXFW.Tweening
             // -- End Check Method Params -- //
 
             // -- Make Context -- //
-            var Context = new CTweenCTX<Matrix4x4>
-                (StartValue, TargetValue, TargetObject, Duration, Setter,
-                // Note that the below method is special, it returns the target coroutine with new contexts.
-                (CTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new CTweenCTX<Matrix4x4>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
+
             if (StartTween)
+            {
                 Context.StartTween();
-            CurrentRunningTweens.Add(Context);
+                CurrentRunningTweens.Add(Context);
+            }
 
             // Return Context
             return Context;
@@ -1188,7 +1211,7 @@ namespace BXFW.Tweening
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
         public static CTweenCTX<T> GenericTo<T>(T StartValue, T TargetValue, float Duration, CTwSetMethod<T> Setter,
-            bool StartTween = true, UnityEngine.Object TargetObject = null)
+            UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // Call helper method
             var ValCheckPair = IsTweenableType(typeof(T));
@@ -1197,8 +1220,8 @@ namespace BXFW.Tweening
             if (ValCheckPair.Key)
             {
                 /// We get method <see cref="CTween.To"/> returned from this class.
-                return (CTweenCTX<T>)ValCheckPair.Value.Invoke
-                    (null, new object[] { StartValue, TargetValue, Duration, Setter, TargetObject, StartTween });
+                return (CTweenCTX<T>)ValCheckPair.Value.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, 
+                        TargetObject, StartTween });
             }
             else
             {
@@ -1870,7 +1893,6 @@ namespace BXFW.Tweening
     #region CTween Property Bases
     /// <summary>
     /// Carries the base variables for the <see cref="CTweenProperty{T}"/>.
-    /// TODO : Add custom curve allow and ease type enum. See:<see cref="EaseType"/>
     /// </summary>
     [Serializable]
     public abstract class CTweenPropertyBase
@@ -2011,18 +2033,6 @@ namespace BXFW.Tweening
             // ** Create & Return property
             return new CTweenProperty<T>(ctxEqual);
         }
-        public void SetupProperty(CTwSetMethod<T> Setter)
-        {
-            if (Setter == null)
-            {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
-                return;
-            }
-
-            m_Setter = Setter;
-            TwContext = GenericTo(default, default, _Duration, Setter, false);
-            UpdateProperty();
-        }
         public void SetupProperty(T StartValue, T EndValue, CTwSetMethod<T> Setter)
         {
             if (Setter == null)
@@ -2032,8 +2042,12 @@ namespace BXFW.Tweening
             }
 
             m_Setter = Setter;
-            TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, false);
+            TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
             UpdateProperty();
+        }
+        public void SetupProperty(CTwSetMethod<T> Setter)
+        {
+            SetupProperty(default, default, Setter);
         }
         #endregion
 
@@ -2278,10 +2292,17 @@ namespace BXFW.Tweening
         /// <br>Usually returns false if the repeat type is <see cref="RepeatType.Reset"/> 
         ///     or if repeat amount is zero.</br>
         /// </summary>
-        public bool IsValuesSwitched => _IsValuesSwitched || !(RepeatType == RepeatType.Reset || RepeatAmount == 0);
+        public bool IsValuesSwitched { get { return _IsValuesSwitched || !(RepeatType == RepeatType.Reset || RepeatAmount == 0); } }
 
-        public bool ContextIsValid => StartValue != null && EndValue != null &&
+        public bool ContextIsValid
+        {
+            get
+            {
+                return StartValue != null && EndValue != null &&
                     SetterFunction != null && IteratorCoroutine != null && (TargetObject_IsOptional || TargetObj != null);
+            }
+        }
+
         // -- Pausing
         public T PauseValue { get; private set; }
         public float CoroutineElapsed;
@@ -2289,7 +2310,7 @@ namespace BXFW.Tweening
         // --- Interpolation
         public EaseType TweenEaseType { get; private set; } = EaseType.QuadOut;
         public AnimationCurve CustomTimeCurve { get; private set; } = null;
-        public bool UseCustomTwTimeCurve => CustomTimeCurve != null;
+        public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
         public bool UseUnclampedLerp { get; private set; } = false;
         // -- Setter (subpart of Interpolation)
         public Func<float, float> TimeSetLerp { get; private set; }
@@ -2300,9 +2321,9 @@ namespace BXFW.Tweening
 
         // --- Target (Identifier and Null checks)
         private readonly UnityEngine.Object _TargetObj;
-        public UnityEngine.Object TargetObj => _TargetObj;
-        public bool TargetObject_IsOptional => _TargetObj == null;
-        public IEnumerator IteratorCoroutine => _IteratorCoroutine;
+        public UnityEngine.Object TargetObj { get { return _TargetObj; } }
+        public bool TargetObject_IsOptional { get { return _TargetObj == null; } }
+        public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
 
         // --- Private Fields
         // Coroutine / Iterator 
@@ -2570,6 +2591,9 @@ namespace BXFW.Tweening
                 // Error handling
                 Debug.LogError(CTweenStrings.GetErr_CTwCTXCtorExcept(e));
             }
+
+            Debug.LogFormat("[CTweenCTX<>] Constructed tween '{0}' with target '{1}' Tween Details : Duration={2} StartVal={3} EndVal={4} EndActions={5}.",
+                ToString(), TargetObj, Duration, StartValue, EndValue, OnEndAction == null);
         }
 
         #region Start-Stop (Part of the Generic Interface)
@@ -2668,7 +2692,8 @@ namespace BXFW.Tweening
             if (OnEndAction_UnityEvent != null)
                 OnEndAction_UnityEvent.Invoke();
 
-            Debug.LogFormat("[CTweenCTX<>] Stopped tween '{0}' with target '{1}' Tween Details : Duration={2} EndVal={3} EndActions={4}.", ToString(), TargetObj, Duration, EndValue, OnEndAction == null);
+            Debug.LogFormat("[CTweenCTX<>] Stopped tween '{0}' with target '{1}' Tween Details : Duration={2} StartVal={3} EndVal={4} EndActions={5}.", 
+                ToString(), TargetObj, Duration, StartValue, EndValue, OnEndAction == null);
         }
         #endregion
 

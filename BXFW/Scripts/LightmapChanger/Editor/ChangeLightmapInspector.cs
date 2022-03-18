@@ -13,17 +13,18 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Compares the enum names with the lightmap name to check if the name is available.
         /// </summary>
-        private bool IsLightmapNameAvailable(string Compare)
+        /// <returns>False if the <paramref name="lmapName"/> equals to a member in <see cref="LightmapEnum"/>.</returns>
+        private bool IsLightmapNameAvailable(string lmapName)
         {
-            var EnumNames = new List<string>();
-            var EnumArray = System.Enum.GetValues(typeof(LightmapEnum));
+            // Ignore null / empty strings.
+            if (string.IsNullOrWhiteSpace(lmapName))
+                return false;
 
-            for (int i = 0; i < EnumArray.Length; i++)
-            { EnumNames.Add(((LightmapEnum)EnumArray.GetValue(i)).ToString()); }
+            var EnumArray = System.Enum.GetValues(typeof(LightmapEnum)).ToTypeArray<LightmapEnum>();
 
-            foreach (string s in EnumNames)
+            foreach (LightmapEnum s in EnumArray)
             {
-                if (s.Equals(Compare))
+                if (s.ToString().Equals(lmapName))
                 {
                     return false;
                 }
@@ -36,6 +37,7 @@ namespace BXFW.ScriptEditor
         private Vector2 lManagerScrollCurrent = Vector2.zero;
         private void LightmapManagerGUI()
         {
+            // TODO : Make a lightmap manager GUI.
             var gContent = new GUIContent();
             GUILayout.BeginArea(EditorGUILayout.GetControlRect(), gContent);
             GUILayout.BeginScrollView(lManagerScrollCurrent);
@@ -48,16 +50,16 @@ namespace BXFW.ScriptEditor
         public override void OnInspectorGUI()
         {
             var lightmapData = (ChangeLightmap)target;
+            var gEnabled = GUI.enabled;
 
-            /* Drawn inspector */
+            GUI.enabled = !Lightmapping.isRunning;
+
+            // Drawn inspector
             SerializedObject lDataProp = new SerializedObject(lightmapData);
-
-            /* Name field */
+            // Name field
             SerializedProperty lDataName = lDataProp.FindProperty(nameof(lightmapData.LightmapName));
-
-            /* Enum booleans */
+            // Enum booleans
             SerializedProperty lDataEnumBool = lDataProp.FindProperty(nameof(lightmapData.SetDefaultLightmapOnAwake));
-
             SerializedProperty lDataLMapEnum = lDataProp.FindProperty(nameof(lightmapData.DefaultLightmap));
 
             // Lightmap enums are going to be displayed like : 
@@ -79,13 +81,13 @@ namespace BXFW.ScriptEditor
 
             lDataProp.ApplyModifiedProperties();
 
-            /* Buttons */
+            // Buttons
             if (GUILayout.Button("Bake"))
             {
                 if (!IsLightmapNameAvailable(lightmapData.LightmapName))
                 {
                     EditorUtility.DisplayDialog("Warning", $"There is already a saved lightmap with the name {lightmapData.LightmapName}.", "Ok, i will change it");
-                    /* TODO : Implement a reimport-rebake system. */
+                    
 
                     return;
                 }
@@ -107,13 +109,11 @@ namespace BXFW.ScriptEditor
             {
                 if (!IsLightmapNameAvailable(lightmapData.LightmapName))
                 {
-                    EditorUtility.DisplayDialog("Warning", $"There is already a saved lightmap with the name {lightmapData.LightmapName}.", "Ok, i will change it");
-                    // TODO : Implement a reimport-rebake system.
-
+                    EditorUtility.DisplayDialog("Warning", string.Format("There is already a saved/loaded lightmap with the name {0}.", lightmapData.LightmapName), "Ok, i will change it");
                     return;
                 }
 
-                string DirPath = EditorUtility.OpenFolderPanel("Select lightmap directory to load...", $"{Directory.GetCurrentDirectory()}\\Assets", null);
+                string DirPath = EditorUtility.OpenFolderPanel("Select lightmap directory to load...", string.Format("{0}/Assets", Directory.GetCurrentDirectory()), null);
                 // if no path is selected.
                 if (string.IsNullOrEmpty(DirPath)) { return; }
 
@@ -124,7 +124,12 @@ namespace BXFW.ScriptEditor
                 string[] files = Directory.GetFiles(inf.FullName, "*.asset", SearchOption.TopDirectoryOnly);
                 foreach (string s in files)
                 {
-                    string[] split = s.Split('\\');
+#if UNITY_EDITOR_WIN
+                    char filePathSeperatorChar = '\\';
+#else
+                    char filePathSeperatorChar = '/';
+#endif
+                    string[] split = s.Split(filePathSeperatorChar);
                     // Get the last name of the files.
                     if (split[split.Length - 1].Equals("LightingData.asset"))
                     {
@@ -135,14 +140,14 @@ namespace BXFW.ScriptEditor
 
                 if (!IsValidDir)
                 {
-                    Debug.LogWarning($"[ChangeLightmap] The loaded directory \"{inf.FullName}\" is invalid because no file exists with the name LightingData.asset.\n" +
+                    Debug.LogWarning(string.Format("[ChangeLightmap] The loaded directory \"{0}\" is invalid because no file exists with the name LightingData.asset.\n", inf.FullName) +
                         "If you selected a valid file but you are getting this error make sure your lightmap file is named like \"LightingData\".");
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(lightmapData.LightmapName))
                 {
-                    // Instantly generate the directory.
+                    // Generate the directory.
                     if (inf.Name.Equals(lightmapData.LightmapName))
                     {
                         lightmapData.AddToBakedList(inf, false);
@@ -151,10 +156,10 @@ namespace BXFW.ScriptEditor
                     }
 
                     switch (EditorUtility.DisplayDialogComplex("Info",
-                        $"Would you like to use the directory name ({inf.Name}) or the name in the LightmapName ({lightmapData.LightmapName}) for your lightmap name?",
+                        string.Format("Would you like to use the directory name ({0}) or the name in the LightmapName ({1}) for your lightmap name?", inf.Name, lightmapData.LightmapName),
                         "Directory", "Lightmap Name", "Cancel"))
                     {
-                        /* Directory */
+                        // Directory 
                         case 0:
                             lightmapData.AddToBakedList(inf, false);
                             break;
@@ -169,7 +174,7 @@ namespace BXFW.ScriptEditor
             if (GUILayout.Button("Clear Lightmaps"))
             {
                 switch (EditorUtility.DisplayDialogComplex("Warning!",
-                   $"Do you want to clear all saved lightmaps?",
+                   "Do you want to clear all saved lightmaps?",
                    "Yes", "No", "Yes, don't delete the SavedLightmaps folder"))
                 {
                     case 0:
@@ -185,13 +190,12 @@ namespace BXFW.ScriptEditor
                 }
             }
 
+            GUI.enabled = gEnabled;
+
             if (Lightmapping.isRunning)
             {
-                GUI.enabled = false;
-                EditorGUILayout.HelpBox("Currently baking lightmaps...", MessageType.Warning);
+                EditorGUILayout.HelpBox("[ChangeLightmap] Currently baking lightmaps...", MessageType.Warning);
             }
-            else
-            { GUI.enabled = true; }
         }
     }
 }

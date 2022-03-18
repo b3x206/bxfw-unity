@@ -189,8 +189,8 @@ namespace BXFW
 
 #if UNITY_EDITOR_WIN
         private const char filePathSeperatorChar = '\\';
-#elif UNITY_EDITOR
-    private const char filePathSeperatorChar = '/';
+#else
+        private const char filePathSeperatorChar = '/';
 #endif
 
         #region Baking & Generation
@@ -383,7 +383,7 @@ namespace BXFW
 
             DataAssetNames.Add(UseUserdefStr ? LightmapName : inf.Name);
 
-            BXFW.Additionals.DirectoryCopy(inf.FullName, string.Format("{0}{1}{2}", ResFile, filePathSeperatorChar, UseUserdefStr ? LightmapName : inf.Name), true);
+            Additionals.DirectoryCopy(inf.FullName, string.Format("{0}{1}{2}", ResFile, filePathSeperatorChar, UseUserdefStr ? LightmapName : inf.Name), true);
 
             try
             {
@@ -465,7 +465,6 @@ namespace BXFW
             return GetLightmapDataDirectory(sceneWithIndex.name);
         }
         #endregion
-
 #endif
         #endregion
     }

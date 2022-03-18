@@ -7,6 +7,7 @@ namespace BXFW.UI
 {
     /// <summary>
     /// UI Menu system manager.
+    /// <br>Extend from this class to automatically have menu management capabilities.</br>
     /// </summary>
     public class UIMenuManager : MonoBehaviour
     {

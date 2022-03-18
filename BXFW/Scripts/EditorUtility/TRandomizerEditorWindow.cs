@@ -22,7 +22,7 @@ namespace BXFW.Tools.Editor
         #endregion
 
         #region Open Window
-        private static System.Action OnWindowClose;
+        //private static System.Action OnWindowClose;
         [MenuItem("Tools/Transform Randomizer")]
         protected static void OpenRandomizerWindow()
         { OpenWindow(); }
@@ -36,10 +36,10 @@ namespace BXFW.Tools.Editor
             //    SceneView.duringSceneGui -= OnSceneGUI;
             //};
         }
-        private void OnDestroy()
-        {
-            OnWindowClose?.Invoke();
-        }
+        //private void OnDestroy()
+        //{
+        //    OnWindowClose?.Invoke();
+        //}
         #endregion
 
         #region Window

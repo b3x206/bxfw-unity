@@ -9,7 +9,7 @@ namespace BXFW.Tools.Editor
     public enum SaveFormat { Triangles, Quads }
     public enum SaveResolution { Full = 0, Half, Quarter, Eighth, Sixteenth }
 
-    // Important Note about this class : I stole this from unify community (which is long gone).
+    // Important Note about this class : I stole this from unify community (which is 'probably' long gone).
     // If the author of this file wants to do something with this file, please open an issue or mail.
     
     // TODO :

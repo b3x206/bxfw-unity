@@ -4,7 +4,7 @@ namespace BXFW
 {
     /// <summary>
     /// Following camera.
-    /// <br>Tracks the player smoothly.</br>
+    /// <br>Tracks the <see cref="FollowTransform"/> smoothly.</br>
     /// </summary>
     [RequireComponent(typeof(Camera), typeof(AudioListener))]
     public class FollowCamera : MonoBehaviour
@@ -40,6 +40,8 @@ namespace BXFW
             public Vector2 CameraPosXClamp;
             public Vector2 CameraPosYClamp;
             public Vector2 CameraPosZClamp;
+
+            public override string ToString() { return string.Format("[CameraOffset] Pos={0}, Rot={1}", Position, EulerRotation); }
         }
         [Header("State Positions Camera")]
         public CameraOffset[] CameraOffsetTargets = new CameraOffset[1];
@@ -54,16 +56,21 @@ namespace BXFW
         { CurrentCameraOffsetIndex = Offset; }
 
         // ** Variables (Hidden)
-        public Camera CameraComponent { get; private set; }
-
-        // ** Initilaze
-        private void Awake()
+        private Camera _camComponent;
+        public Camera CameraComponent 
         {
-            CameraComponent = GetComponent<Camera>();
+            get
+            {
+                if (_camComponent == null)
+                    _camComponent = GetComponent<Camera>();
+
+                return _camComponent;
+            }
         }
 
         #region Camera Mechanics
 
+        #region Camera Shake
         /// <summary>
         /// Externally applied movement.
         /// </summary>
@@ -122,7 +129,7 @@ namespace BXFW
         {
             if (shakeMagnitude == Vector2.zero || Mathf.Approximately(0f, duration))
                 return; // Do nothing if we are requested to do nothing.
-                        // NOTE : The modular 'CameraShake' component will wait for duration to set 'IsShaking'.
+                        // NOTE : The modular 'CameraShake' component (TODO) will wait for duration to set 'IsShaking'.
 
             currentShakeRotation = shakeRotation;
             currentShakeGraceFrames = currentTotalShakeGraceFrames = Mathf.Clamp(shakeGraceFrames, 0, 16);
@@ -130,10 +137,15 @@ namespace BXFW
             currentShakeDuration = duration;
             currentShakeMagnitude = shakeMagnitude;
         }
+        #endregion
 
         // ** Follow Target Transform
         // FIX : FixedUpdate fixes movement jitter.
-        private void FixedUpdate()
+        /// <summary>
+        /// The camera movement method.
+        /// <br>Always call this method when you override it.</br>
+        /// </summary>
+        protected virtual void FixedUpdate()
         {
             ShakeCamTick();
 
@@ -160,20 +172,27 @@ namespace BXFW
                     Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
                 );
             }
+
+            OnFixedUpdate();
         }
+        protected virtual void OnFixedUpdate() { }
         #endregion
 
 #if UNITY_EDITOR
         private static Color[] CacheColor;
-        private void OnDrawGizmosSelected()
+        /// <summary>
+        /// Draw gizmos on selection. This draws the camera positions in <see cref="CameraOffsetTargets"/>.
+        /// <br>Always call this method when you override it.</br>
+        /// </summary>
+        protected virtual void OnDrawGizmosSelected()
         {
             // Generate persistent unique colors. (dumb method, we should use the editor script instead).
             static Color GetRandColor()
             {
                 return new Color(
-                    Random.Range(.5f, 1f),
-                    Random.Range(.5f, 1f),
-                    Random.Range(.5f, 1f));
+                    Random.Range(0.5f, 1f),
+                    Random.Range(0.5f, 1f),
+                    Random.Range(0.5f, 1f));
             }
             if (CacheColor == null)
             {

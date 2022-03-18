@@ -12,26 +12,25 @@ namespace BXFW.ScriptEditor
         {
             // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
             var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight + 4;
-            return new Rect(parentRect.min.x, parentRect.min.y + (EditorGUIUtility.singleLineHeight * (index + 1)), parentRect.size.x, propHeight);
+            Debug.LogFormat("[GetPropertyRect] Getting height of rect {0} | min {1} max {2}", parentRect, parentRect.min, parentRect.max);
+            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (index + 1)), parentRect.size.x, propHeight);
         }
 
         private SerializedProperty propDuration;
         private SerializedProperty propDelay;
-        private SerializedProperty propUseTweenCurve;
+        //private SerializedProperty propUseTweenCurve;
         private SerializedProperty propAllowCustomCurveOvershoot;
         private SerializedProperty propTweenCurve;
         private SerializedProperty propTweenEase;
         private SerializedProperty propOnEndAction;
-
-        private bool isSerializedPropertySetup = false;
 
         /// <summary>
         /// Sets up the relative property variables inside this class.
         /// </summary>
         private void SetupSerializedPropertyRelative(SerializedProperty property)
         {
-            if (isSerializedPropertySetup) return;
-
+            // Refresh properties always because this code is reused for all properties
+            // Basically there's one instance of this script running.
             if (property == null)
             {
                 Debug.LogError("[CTweenPropertyEditor] Error : Passed property is null for initilazing 'SerializedProperty' variables.");
@@ -40,13 +39,11 @@ namespace BXFW.ScriptEditor
 
             propDuration = property.FindPropertyRelative("_Duration");
             propDelay = property.FindPropertyRelative("_Delay");
-            propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve");
+            //propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve");
             propAllowCustomCurveOvershoot = property.FindPropertyRelative("_AllowCustomCurveOvershoot");
             propTweenCurve = property.FindPropertyRelative("_TweenCurve");
             propTweenEase = property.FindPropertyRelative("_TweenEase");
             propOnEndAction = property.FindPropertyRelative("OnEndAction");
-
-            isSerializedPropertySetup = true;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -69,13 +66,6 @@ namespace BXFW.ScriptEditor
 
             if (property.isExpanded)
             {
-                Debug.Log("[CTweenPropertyEditor] Rects from 0 to 6");
-                for (int i = 0; i < 6; i++)
-                {
-                    Debug.Log($"{i} : {GetPropertyRect(position, i)}");
-                }
-                Debug.Log("[CTweenPropertyEditor] Why this doesn't correctly render.");
-
                 //Rect rectType = new Rect(position.min.x + EditorGUIUtility.labelWidth, position.min.y + EditorGUIUtility.singleLineHeight, position.size.x - EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
                 //Rect rectPower = new Rect(position.min.x, position.min.y + 3 * EditorGUIUtility.singleLineHeight, position.size.x, EditorGUIUtility.singleLineHeight);
                 //Rect rectCooldown = new Rect(position.min.x, position.min.y + 2 * EditorGUIUtility.singleLineHeight, position.size.x, EditorGUIUtility.singleLineHeight);
