@@ -50,7 +50,7 @@ namespace BXFW.Tools.Editor
 
         private Vector2 ScrollPos = Vector2.zero;
 
-        // (Maybe) TODO : Draw a pivot editor
+        // (Maybe) TODO : Draw an object pivot editor
         //private static void OnSceneGUI(SceneView currentView)
         //{
         //    Handles.BeginGUI();

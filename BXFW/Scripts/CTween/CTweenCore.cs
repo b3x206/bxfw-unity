@@ -5,13 +5,23 @@
 ///     <example>
 ///     // basically dotween but crappier
 ///     objectOrPropertyThatHasTypeThatSupportsCTweenExtensions.CTw{ExtensionContext}({EndValue}, {Duration});
+///     // or you can start a manual one
+///     CTween.To((supportedType t) => { /* Setter function goes here, example one looks like : */ variableThatNeedTween.somethingThatIsFloat = t; }, {StartValue}, {EndValue}, {Duration});
 ///     
-///     CTween.To((supportedType t) => { /* Setter function goes here, example one looks like : */ variableThatNeedTween.something = t; }, {StartValue}, {EndValue}, {Duration});
+///     // even better, you can declare a CTweenProperty{Type goes here, don't use the generic version}
+///     // This example code interpolates the alpha of a canvas group.
+///     ... declared in the monobehaviour, serializable variable scope 'public or private with serialize field', 
+///     CTweenPropertyFloat interpolateThing = new CTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
+///     ... called inside a method, you should already know this
+///     // Always setup property before calling StartTween!!
+///     interpolateThing.SetupProperty((float f) => { canvasGroupThatIsDeclared.alpha = f; }); // you can also declare start-end values like ({StartValue}, {EndValue}, {Setter})
+///     interpolateThing.StartTween(canvasGroupThatIsDeclared.alpha, 1f);
+///     // congrats now you know how to use ctween enjoy very performance
 ///     </example>
 /// 
 /// What else?  :
 ///     1 : Has many features (bugs, but i call them features)
-///     2 : Runs with very high performance (about 1 tween per 3 hours!! wow such fast)
+///     2 : Runs with very high performance (about 1 tween per 3 hours!! [that is equal to 1,54320987654321e-6 tweens per second] wow such fast)
 ///     3 : Very coding pattern (what)
 /// 
 /// But why did you spend effort on this? there are better alternatives :
@@ -19,7 +29,6 @@
 ///
 /// How long have you been writing this? :
 ///     For 2 years (actually i probably spent like 2 weeks on initial writing, which is the most of the functionality, then it's just bug fixes and some duct tape)
-
 
 /** -------------------------------------------------- 
 // GENERAL TODO :
@@ -125,7 +134,10 @@ namespace BXFW.Tweening
                 );
         }
         // Verbose tween information logs
-
+        public static readonly string Log_CTwCTXTimeCurveAlreadyNull =
+            string.Format("{0} {1}",
+                LogRich("[CTweenCTX::SetCustomCurve]", true),
+                LogRich("The tween time curve (related stuff) is already null. You are setting it null again"));
         #endregion
 
         #region Warnings
@@ -322,7 +334,7 @@ namespace BXFW.Tweening
             // Note that this is boilerplate code as everything here is kinda type independent except for the method
             // (thank god for 'var' keyword)
 
-            // FIXME : Fix this goto thing (turn it into a while loop, the c# compiler does that, but we need code cleanness)
+            // FIXME : Fix this goto thing (turn it into a while loop, the c# compiler does that, but i need code cleanness)
         _Start:
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -1889,10 +1901,12 @@ namespace BXFW.Tweening
         // Curve related
         [SerializeField] protected bool _UseTweenCurve = true;
         // Curve
-        [SerializeField] protected bool _AllowCustomCurveOvershoot = false;
-        [SerializeField] protected AnimationCurve _TweenCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
+        [SerializeField] protected AnimationCurve _TweenCurve;
         // No Curve
         [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
+        // Event
+        public bool InvokeEndingActionOnPrematureStop = false;
         public TweenCoreUnityEvent OnEndAction;
 
         // ---- Refreshing Setters ---- //
@@ -1950,12 +1964,12 @@ namespace BXFW.Tweening
                 }
             }
         }
-        public bool AllowCustomCurveExtrapolation
+        public bool AllowInterpolationEaseOvershoot
         {
-            get { return _AllowCustomCurveOvershoot; }
+            get { return _AllowInterpolationEaseOvershoot; }
             set
             {
-                _AllowCustomCurveOvershoot = value;
+                _AllowInterpolationEaseOvershoot = value;
 
                 UpdateProperty();
             }
@@ -2011,8 +2025,12 @@ namespace BXFW.Tweening
             _Delay = ctx.StartDelay;
             _TweenCurve = ctx.CustomTimeCurve;
             m_Setter = ctx.SetterFunction;
-            ctx.SetCustomCurve(_TweenCurve, !_AllowCustomCurveOvershoot);
-            ctx.SetEndingAction(OnEndAction);
+            // ** Set the other options from the property.
+            UpdateProperty();
+
+            //ctx.SetEase()
+            //ctx.SetCustomCurve(_TweenCurve, !_AllowCustomCurveOvershoot);
+            //ctx.SetEndingAction(OnEndAction);
         }
         public static implicit operator CTweenProperty<T>(CTweenCTX<T> ctxEqual)
         {
@@ -2032,7 +2050,7 @@ namespace BXFW.Tweening
             // We could call 'UpdateProperty' here, but it calls 'SetSetter' which used to 'try' the setter to see whether
             // if the setter was throwing an exception. So we just set the ease properties.
             // While this is bad, it will stay this way as in future 'UpdateProperty' caused some hard to notice bugs.
-            TwContext.SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowCustomCurveOvershoot);
+            TwContext.SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot);
         }
         public void SetupProperty(CTwSetMethod<T> Setter)
         {
@@ -2050,7 +2068,7 @@ namespace BXFW.Tweening
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
-            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowCustomCurveOvershoot);
+            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
             if (OnEndAction != null)
@@ -2077,13 +2095,10 @@ namespace BXFW.Tweening
 
             if (TwContext == null) SetupProperty(StartValue, EndValue, Setter);
 
-            if (TwContext.IsRunning)
-                TwContext.StopTween();
-
             // Make sure to set these values
             TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
 
-            TwContext.StartTween();
+            StartTween();
         }
 
         public void StartTween()
@@ -2096,8 +2111,12 @@ namespace BXFW.Tweening
                 return;
             }
 
+            // Stop tween under control 
+            var invokeEndingOnStop = TwContext.InvokeEndingActionOnStop;
+            TwContext.SetInvokeEndingActionOnStop(InvokeEndingActionOnPrematureStop);
             if (TwContext.IsRunning)
                 TwContext.StopTween();
+            TwContext.SetInvokeEndingActionOnStop(invokeEndingOnStop);
 
             TwContext.StartTween();
         }
@@ -2123,7 +2142,7 @@ namespace BXFW.Tweening
         {
             _Duration = dur;
             _Delay = delay;
-            _AllowCustomCurveOvershoot = exPol;
+            _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
             {
                 _TweenCurve = c;
@@ -2137,7 +2156,7 @@ namespace BXFW.Tweening
         {
             _Duration = dur;
             _Delay = delay;
-            _AllowCustomCurveOvershoot = exPol;
+            _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
             {
                 _TweenCurve = c;
@@ -2151,7 +2170,7 @@ namespace BXFW.Tweening
         {
             _Duration = dur;
             _Delay = delay;
-            _AllowCustomCurveOvershoot = exPol;
+            _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
             {
                 _TweenCurve = c;
@@ -2165,7 +2184,7 @@ namespace BXFW.Tweening
         {
             _Duration = dur;
             _Delay = delay;
-            _AllowCustomCurveOvershoot = exPol;
+            _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
             {
                 _TweenCurve = c;
@@ -2267,6 +2286,11 @@ namespace BXFW.Tweening
         public T EndValue { get; private set; }
 
         // --- Settings
+        /// <summary>
+        /// Whether if context should invoke <see cref="OnEndAction"/> when <see cref="StopTween"/> is called.
+        /// This enables / disables ending actions.
+        /// </summary>
+        public bool InvokeEndingActionOnStop { get; private set; } = true;
         public float Duration { get; private set; } = 0f;
         public float StartDelay { get; private set; } = 0f;
         public int RepeatAmount { get; private set; } = 0;
@@ -2306,6 +2330,10 @@ namespace BXFW.Tweening
         public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
         public bool UseUnclampedLerp { get; private set; } = false;
         // -- Setter (subpart of Interpolation)
+        /// <summary>
+        /// Time interpolation.
+        /// <br>Set when you set a <see cref="SetCustomCurve(AnimationCurve, bool)"/> or <see cref="SetEase(EaseType, bool)"/>.</br>
+        /// </summary>
         public Func<float, float> TimeSetLerp { get; private set; }
         public CTwSetMethod<T> SetterFunction { get; private set; }
         public CTwMethod OnEndAction { get; private set; }
@@ -2363,6 +2391,13 @@ namespace BXFW.Tweening
             UpdateContextCoroutine();
             return this;
         }
+        public CTweenCTX<T> SetInvokeEndingActionOnStop(bool value)
+        {
+            InvokeEndingActionOnStop = value;
+
+            UpdateContextCoroutine();
+            return this;
+        }
         /// <summary>
         /// Sets the duration.
         /// </summary>
@@ -2377,7 +2412,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets starting delay. Has no effect if the tween has already started. 
         /// (Info : Can be applied after construction of the tween as we wait for end of frame.)
-        /// Anything below zero(including zero) is a special value for no delay.
+        /// Anything below zero (including zero) is a special value for no delay.
         /// </summary>
         /// <param name="delay">The delay for tween to wait.</param>
         public CTweenCTX<T> SetDelay(float delay)
@@ -2457,7 +2492,11 @@ namespace BXFW.Tweening
                 // The curve is already null, warn the user.
                 if (!UseCustomTwTimeCurve)
                 {
-                    Debug.LogWarning(CTweenStrings.Warn_CTwCTXTimeCurveNull);
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(CTweenStrings.Log_CTwCTXTimeCurveAlreadyNull);
+                    }
+
                     return this;
                 }
 
@@ -2660,7 +2699,8 @@ namespace BXFW.Tweening
             CurrentRunningTweens.Remove(this);
             if (_CurrentIteratorCoroutine != null)
             {
-                // Coroutine should stop itself, otherwise it's gone rogue.
+                // Coroutine should stop itself HOWEVER when stop is not called by CTweenCore.To
+                // it needs to STOP manually.
                 Current.StopCoroutine(_CurrentIteratorCoroutine);
                 _CurrentIteratorCoroutine = null;
             }
@@ -2676,12 +2716,15 @@ namespace BXFW.Tweening
             // If we call these on the ending of the CTweenCore's To method, the ending method after delay doesn't work.
             // The reason is that in CTweenProperty we call 'StopTween' when we call 'StartTween'
             // So yeah, i need to find a more elegant solution to that.
-            if (OnEndAction != null)
-                OnEndAction.Invoke();
-            if (PersistentOnEndAction != null)
-                PersistentOnEndAction.Invoke();
-            if (OnEndAction_UnityEvent != null)
-                OnEndAction_UnityEvent.Invoke();
+            if (InvokeEndingActionOnStop)
+            {
+                if (OnEndAction != null)
+                    OnEndAction.Invoke();
+                if (PersistentOnEndAction != null)
+                    PersistentOnEndAction.Invoke();
+                if (OnEndAction_UnityEvent != null)
+                    OnEndAction_UnityEvent.Invoke();
+            }
         }
         #endregion
 

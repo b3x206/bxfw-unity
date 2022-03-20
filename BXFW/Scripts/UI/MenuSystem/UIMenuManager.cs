@@ -11,7 +11,7 @@ namespace BXFW.UI
     /// </summary>
     public class UIMenuManager : MonoBehaviour
     {
-        #region Variables
+        #region -- Variables
 
         #region Standard Vars
         [Header(":: UI Menu Manager ::")]
@@ -58,7 +58,6 @@ namespace BXFW.UI
             }
 
             menu.CloseMenu();
-
             if (m_CurrentUIMenu == menu)
             {
                 m_CurrentUIMenu = null;
@@ -75,7 +74,15 @@ namespace BXFW.UI
         public void OpenSubMenu(UISubMenu menu)
         {
             menu.OpenMenu();
-            m_CurrentUISubMenus.Add(menu);
+
+            if (!m_CurrentUISubMenus.Contains(menu))
+            {
+                m_CurrentUISubMenus.Add(menu);
+            }
+            else
+            {
+                Debug.LogWarning(string.Format("[UIMenuManager::OpenSubMenu] Sub menu '{0}' is already open.", menu.transform.GetPath()));
+            }
         }
         public void CloseSubMenu(UISubMenu menu)
         {

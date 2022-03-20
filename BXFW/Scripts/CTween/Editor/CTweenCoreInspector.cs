@@ -16,6 +16,12 @@ namespace BXFW.ScriptEditor
 
             headerTextStyle = new GUIStyle(EditorStyles.boldLabel);
             headerTextStyle.fontSize = 22;
+
+            EditorApplication.update += Repaint;
+        }
+        private void OnDisable()
+        {
+            EditorApplication.update -= Repaint;
         }
 
         public override void OnInspectorGUI()

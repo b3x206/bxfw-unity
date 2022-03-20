@@ -39,7 +39,7 @@ namespace BXFW.ScriptEditor
             #endregion
 
             // Set Unity Stuff
-            Undo.RegisterCreatedObjectUndo(TSystem, "Create " + TSystem.name);
+            Undo.RegisterCreatedObjectUndo(TSystem, string.Format("Create {0}", TSystem.name));
             Selection.activeObject = TSystem;
         }
 
