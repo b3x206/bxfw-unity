@@ -473,6 +473,10 @@ namespace BXFW
                 Debug.LogWarning("[Additionals::ResizeSpriteToScreen] There is a null variable. Returning.");
                 return;
             }
+            if (!relativeCam.orthographic)
+            {
+                Debug.LogWarning("[Additionals::ResizeSpriteToScreen] Camera relative to resize isn't ortographic. The resizing won't be correct.");
+            }
 
             sr.transform.localScale = new Vector3(1, 1, 1);
 
@@ -548,14 +552,13 @@ namespace BXFW
                 return;
             }
             // These lines are probably a bad idea, c# 'probably' will just throw an exception if these lines aren't satisfied.
-            // Basically leave as is, the programmer should know that they should keep directories 'case sensitive'.
             //else if (sourceDirName.Equals(destDirName, StringComparison.OrdinalIgnoreCase) && 
             //    (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor))
             //{
             //    // In windows, it's same directory
             //    // On arch btw systems, directories are case sensitive
             //    // unlike winbloat, it's case sensitive as long as there's no file with same name but different casing)
-
+            //
             //    Debug.LogWarning("[Additionals::DirectoryCopy] The directory you are trying to copy is the same as the destination directory. (case doesn't match but IsWindows == true)");
             //    return;
             //}
@@ -617,7 +620,7 @@ namespace BXFW
             return tgt;
         }
         /// <summary>
-        /// Converts a 3 dimensional array to an array of arrays (lol).
+        /// Converts a 3 dimensional array to an array of arrays.
         /// </summary>
         /// <typeparam name="TSrc">Type of array.</typeparam>
         /// <typeparam name="TDest">Destination type <c>(? Undocumented)</c></typeparam>

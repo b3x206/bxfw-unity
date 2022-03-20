@@ -5,7 +5,7 @@ namespace BXFW
     /// <summary>
     /// Camera that rotates around a pivot object.
     /// </summary>
-    /// TODO : Implement smooth camera movement.
+    /// TODO : Implement smooth camera movement. (with lerp and movement damp)
     [RequireComponent(typeof(Camera))]
     public class PivotRotatingCamera : MonoBehaviour
     {
@@ -61,10 +61,11 @@ namespace BXFW
                 if (ClampCameraRotation)
                 {
                     // Get Rotation to apply
-                    // This is the exact same euler you see on editor view. This fixes the dumb unity issue.
+                    // This is the exact same euler you see on editor view.
+                    // This fixes the dumb unity issue. (Clamp values being inconsistent with editor values)
                     Vector3 CurrentRotationEuler = Additionals.FixEulerRotation(transform.eulerAngles);
 
-                    // X, Y and Z Clamps (we should not use euler for these but idk)
+                    // X, Y and Z Clamps
                     CurrentRotationEuler.x = Mathf.Clamp(CurrentRotationEuler.x, RotLimitMin.x, RotLimitMax.x);
                     CurrentRotationEuler.y = Mathf.Clamp(CurrentRotationEuler.y, RotLimitMin.y, RotLimitMax.y);
                     CurrentRotationEuler.z = 0f;

@@ -11,9 +11,8 @@ namespace BXFW.ScriptEditor
         private Rect GetPropertyRect(Rect parentRect, int index, float customHeight = -1f)
         {
             // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
-            var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight + 4;
-            Debug.LogFormat("[GetPropertyRect] Getting height of rect {0} | min {1} max {2}", parentRect, parentRect.min, parentRect.max);
-            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (index + 1)), parentRect.size.x, propHeight);
+            var propHeight = (customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight);
+            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (index + 1)) + 8, parentRect.size.x, propHeight);
         }
 
         private SerializedProperty propDuration;
@@ -66,10 +65,7 @@ namespace BXFW.ScriptEditor
 
             if (property.isExpanded)
             {
-                //Rect rectType = new Rect(position.min.x + EditorGUIUtility.labelWidth, position.min.y + EditorGUIUtility.singleLineHeight, position.size.x - EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
-                //Rect rectPower = new Rect(position.min.x, position.min.y + 3 * EditorGUIUtility.singleLineHeight, position.size.x, EditorGUIUtility.singleLineHeight);
-                //Rect rectCooldown = new Rect(position.min.x, position.min.y + 2 * EditorGUIUtility.singleLineHeight, position.size.x, EditorGUIUtility.singleLineHeight);
-                //Rect rectDuration = new Rect(position.min.x, position.min.y + 3 * EditorGUIUtility.singleLineHeight, position.size.x, EditorGUIUtility.singleLineHeight);
+                EditorGUI.indentLevel++;
                 EditorGUI.PropertyField(GetPropertyRect(position, 0), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
                 EditorGUI.PropertyField(GetPropertyRect(position, 1), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
                 EditorGUI.PropertyField(GetPropertyRect(position, 2), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve Overshoot", "Tween curve can exceed time values over 0-1."));
@@ -82,6 +78,7 @@ namespace BXFW.ScriptEditor
                     EditorGUI.PropertyField(GetPropertyRect(position, 4), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
                 
                 EditorGUI.PropertyField(GetPropertyRect(position, 5, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
+                EditorGUI.indentLevel--;
             }
 
             EditorGUI.EndProperty();

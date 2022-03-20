@@ -259,7 +259,7 @@ namespace BXFW
         #endregion
 
 #if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
+        protected virtual void OnDrawGizmosSelected()
         {
             if (transform.hasChanged)
             {
