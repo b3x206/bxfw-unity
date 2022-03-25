@@ -53,7 +53,7 @@ namespace BXFW.UI
         /// Progress bar tweened move interpolation.
         /// <br>Only works when <see cref="ChangeProgress(float, bool)"/> is called with UseTween = true.</br>
         /// </summary>
-        public CTweenPropertyFloat ProgressInterp = new CTweenPropertyFloat(.1f);
+        public BXTweenPropertyFloat ProgressInterp = new BXTweenPropertyFloat(.1f);
 
         // -- Methods -- //
         // Initilaze

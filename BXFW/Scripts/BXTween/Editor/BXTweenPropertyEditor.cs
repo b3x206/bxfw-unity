@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomPropertyDrawer(typeof(CTweenPropertyBase), true)]
-    public class CTweenPropertyEditor : PropertyDrawer
+    [CustomPropertyDrawer(typeof(BXTweenPropertyBase), true)]
+    public class BXTweenPropertyEditor : PropertyDrawer
     {
         private Rect GetPropertyRect(Rect parentRect, int index, float customHeight = -1f)
         {
@@ -21,7 +21,7 @@ namespace BXFW.ScriptEditor
         private SerializedProperty propAllowCustomCurveOvershoot;
         private SerializedProperty propTweenCurve;
         private SerializedProperty propTweenEase;
-        private SerializedProperty propInvokeEndOnPrematureStop;
+        private SerializedProperty propInvokeOnManualStop;
         private SerializedProperty propOnEndAction;
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace BXFW.ScriptEditor
             propTweenCurve = property.FindPropertyRelative("_TweenCurve");
             propTweenEase = property.FindPropertyRelative("_TweenEase");
             // -- event
-            propInvokeEndOnPrematureStop = property.FindPropertyRelative("InvokeEndingActionOnPrematureStop");
+            propInvokeOnManualStop = property.FindPropertyRelative("InvokeEventOnManualStop");
             propOnEndAction = property.FindPropertyRelative("OnEndAction");
         }
 
@@ -52,13 +52,13 @@ namespace BXFW.ScriptEditor
         {
             SetupSerializedPropertyRelative(property);
 
-            EditorGUI.BeginProperty(position, label, property);
+            EditorGUI.BeginProperty(position, label, property); // This also sets property.isExpanded and other stuff.
             Rect rectFoldout = new Rect(position.min.x, position.min.y, position.size.x, EditorGUIUtility.singleLineHeight);
             property.isExpanded = EditorGUI.Foldout(rectFoldout, property.isExpanded, label);
 
             // Current property index drawing 
             var targetTw = property.GetTarget();
-            var targetValue = (CTweenPropertyBase)targetTw.Value;
+            var targetValue = (BXTweenPropertyBase)targetTw.Value;
             
             bool useTwCurve = false;
             if (targetValue != null)
@@ -80,7 +80,8 @@ namespace BXFW.ScriptEditor
                 else 
                     EditorGUI.PropertyField(GetPropertyRect(position, 4), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
                 
-                EditorGUI.PropertyField(GetPropertyRect(position, 5), propInvokeEndOnPrematureStop, new GUIContent("Invoke Ending On Stop Before Start", "When 'StartTween' is called, the 'StopTween' will invoke 'OnEnd' function. This prevents that."));
+                EditorGUI.PropertyField(GetPropertyRect(position, 5), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
+                    "When 'StartTween' is called, if the tween is already running 'StopTween' will invoke 'OnEnd' function (this may produce unwanted results on certain occassions). This prevents that. [Property-specific issue.]"));
                 EditorGUI.PropertyField(GetPropertyRect(position, 6, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
                 EditorGUI.indentLevel--;
             }

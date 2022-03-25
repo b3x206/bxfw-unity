@@ -13,7 +13,7 @@ namespace BXFW
 {
     /// <summary>
     /// Snappable transform that uses mesh vertices.
-    /// <br>Working principle is same as <see cref="MBSnappableCubeTransform"/>.</br>
+    /// <br>Working principle is same as <see cref="MBCubeSnappableTransform"/>.</br>
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     public class MBVertSnappableTransform : MonoBehaviour
@@ -171,7 +171,7 @@ namespace BXFW
         /// <param name="pointTarget">Snap point for target.</param>
         /// <param name="snapTarget">Given Snap. Change this to swap the object to move.</param>
         /// <returns>Whether if the SnapTransform operation was successful.</returns>
-        public bool SnapTransform(MBSnappableCubeTransform transformTarget, int pointThis, SnapPoint pointTarget, bool snapTarget = false)
+        public bool SnapTransform(MBCubeSnappableTransform transformTarget, int pointThis, SnapPoint pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
             if (transformTarget == null) return false;

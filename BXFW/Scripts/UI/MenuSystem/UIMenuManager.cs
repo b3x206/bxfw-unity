@@ -19,18 +19,18 @@ namespace BXFW.UI
         public bool AllowTwoMenuAtOnce = false;
 
         // Status
-        public bool InsideMenu { get { return m_CurrentUIMenu != null; } }
+        public bool InsideMenu { get { return _CurrentUIMenu != null; } }
         #endregion
 
         #region Menu Management Vars
-        [SerializeField] protected UIMenu m_CurrentUIMenu;
+        [SerializeField] protected UIMenu _CurrentUIMenu;
         /// <summary>Currently open <see cref="UIMenu"/>.</summary>
-        public UIMenu CurrentUIMenu { get { return m_CurrentUIMenu; } }
-        protected List<UISubMenu> m_CurrentUISubMenus = new List<UISubMenu>();
+        public UIMenu CurrentUIMenu { get { return _CurrentUIMenu; } }
+        protected List<UISubMenu> _CurrentUISubMenus = new List<UISubMenu>();
         /// <summary>Currently open sub-menus.</summary>
         public ReadOnlyCollection<UISubMenu> CurrentUISubMenus
         {
-            get { return m_CurrentUISubMenus.AsReadOnly(); }
+            get { return _CurrentUISubMenus.AsReadOnly(); }
         }
         #endregion
 
@@ -48,7 +48,7 @@ namespace BXFW.UI
             }
 
             menu.OpenMenu();
-            m_CurrentUIMenu = menu;
+            _CurrentUIMenu = menu;
         }
         public void CloseMenu(UIMenu menu)
         {
@@ -58,26 +58,26 @@ namespace BXFW.UI
             }
 
             menu.CloseMenu();
-            if (m_CurrentUIMenu == menu)
+            if (_CurrentUIMenu == menu)
             {
-                m_CurrentUIMenu = null;
+                _CurrentUIMenu = null;
             }
         }
         public void ExitCurrentMenu()
         {
             if (!InsideMenu) { return; }
 
-            m_CurrentUIMenu.CloseMenu();
-            m_CurrentUIMenu = null;
+            _CurrentUIMenu.CloseMenu();
+            _CurrentUIMenu = null;
         }
         // -------- SubMenu
         public void OpenSubMenu(UISubMenu menu)
         {
             menu.OpenMenu();
 
-            if (!m_CurrentUISubMenus.Contains(menu))
+            if (!_CurrentUISubMenus.Contains(menu))
             {
-                m_CurrentUISubMenus.Add(menu);
+                _CurrentUISubMenus.Add(menu);
             }
             else
             {
@@ -87,14 +87,14 @@ namespace BXFW.UI
         public void CloseSubMenu(UISubMenu menu)
         {
             menu.CloseMenu();
-            m_CurrentUISubMenus.Remove(menu);
+            _CurrentUISubMenus.Remove(menu);
         }
         public void CloseAllSubMenus()
         {
-            for (int i = m_CurrentUISubMenus.Count - 1; i > 0; i--)
+            for (int i = _CurrentUISubMenus.Count - 1; i > 0; i--)
             {
-                m_CurrentUISubMenus[i].CloseMenu();
-                m_CurrentUISubMenus.RemoveAt(i);
+                _CurrentUISubMenus[i].CloseMenu();
+                _CurrentUISubMenus.RemoveAt(i);
             }
         }
         #endregion

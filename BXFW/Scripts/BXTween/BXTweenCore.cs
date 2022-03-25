@@ -1,4 +1,4 @@
-﻿/// CTween :
+﻿/// BXTween :
 ///     It does tweens.
 /// 
 /// How do use? :
@@ -6,12 +6,12 @@
 ///     // basically dotween but crappier
 ///     objectOrPropertyThatHasTypeThatSupportsCTweenExtensions.CTw{ExtensionContext}({EndValue}, {Duration});
 ///     // or you can start a manual one
-///     CTween.To((supportedType t) => { /* Setter function goes here, example one looks like : */ variableThatNeedTween.somethingThatIsFloat = t; }, {StartValue}, {EndValue}, {Duration});
+///     BXTween.To((supportedType t) => { /* Setter function goes here, example one looks like : */ variableThatNeedTween.somethingThatIsFloat = t; }, {StartValue}, {EndValue}, {Duration});
 ///     
-///     // even better, you can declare a CTweenProperty{Type goes here, don't use the generic version}
+///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version}
 ///     // This example code interpolates the alpha of a canvas group.
 ///     ... declared in the monobehaviour, serializable variable scope 'public or private with serialize field', 
-///     CTweenPropertyFloat interpolateThing = new CTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
+///     BXTweenPropertyFloat interpolateThing = new BXTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
 ///     ... called inside a method, you should already know this
 ///     // Always setup property before calling StartTween!!
 ///     interpolateThing.SetupProperty((float f) => { canvasGroupThatIsDeclared.alpha = f; }); // you can also declare start-end values like ({StartValue}, {EndValue}, {Setter})
@@ -32,7 +32,7 @@
 
 /** -------------------------------------------------- 
 // GENERAL TODO :
-// 1 : <see cref="BXFW.Tweening.CTweenCTX{T}"/>'s <see cref="BXFW.Tweening.RepeatType.PingPong"/> doesn't work as ping-pong,
+// 1 : <see cref="BXFW.Tweening.BXTweenCTX{T}"/>'s <see cref="BXFW.Tweening.RepeatType.PingPong"/> doesn't work as ping-pong,
 //     but rather as <see cref="BXFW.Tweening.RepeatType.Reset"/>. Reset seems to work fine.
 * -------------------------------------------------- **/
 
@@ -46,7 +46,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using static BXFW.Tweening.CTween;
+using static BXFW.Tweening.BXTween;
 
 #if UNITY_EDITOR
 using BXFW.Tweening.Editor;
@@ -55,14 +55,14 @@ using BXFW.Tweening.Editor;
 namespace BXFW.Tweening
 {
     /// Solution for stylized print strings.
+    /// Maybe TODO : Use exceptions for Err, make a safe mode toggle for no exceptions & safe mode never returns null.
     /// <summary>
-    /// Constant strings for <see cref="CTween"/> messages.
+    /// Constant strings for <see cref="BXTween"/> messages.
     /// <para>-Note about the #if UNITY_EDITOR regions:</para>
     /// <br>----These use rich text tags which will not look pretty on stdout.</br>
     /// <br>----So write no rich text tags (pass no string which look like "") on non UNITY_EDITOR regions.</br>
     /// </summary>
-    /// Maybe TODO : Use exceptions for Err, make a safe mode toggle for no exceptions & safe mode never returns null.
-    internal static class CTweenStrings
+    internal static class BXTweenStrings
     {
         // -- Formatters
         #region (Private) Rich Text Formatting
@@ -71,6 +71,15 @@ namespace BXFW.Tweening
 #if UNITY_EDITOR
             return string.Format
                 (Bold ? "<b><color=#ad9a6f>{0}</color></b>" : "<color=#ad9a6f>{0}</color>", RichFormatTarget);
+#else
+            return RichFormatTarget;
+#endif
+        }
+        private static string LogDiagRich(string RichFormatTarget, bool Bold = false)
+        {
+#if UNITY_EDITOR
+            return string.Format
+                (Bold ? "<b><color=#ff8a00>{0}</color></b>" : "<color=#ad9a6f>{0}</color>", RichFormatTarget);
 #else
             return RichFormatTarget;
 #endif
@@ -98,14 +107,14 @@ namespace BXFW.Tweening
 #if UNITY_EDITOR
         // -- Debug Tools
         /// <summary>
-        /// <c>EDITOR ONLY</c> | List all registered fields in <see cref="CTweenStrings"/>.
+        /// <c>EDITOR ONLY</c> | List all registered fields in <see cref="BXTweenStrings"/>.
         /// <br>Outputs log to Debug.Log.</br>
         /// </summary>
         public static void ListStrings()
         {
-            Debug.Log("<b>[ListStrings] Listing all fields in 'CTweenStrings'.</b>");
+            Debug.Log("<b>[ListStrings] Listing all fields in 'BXTweenStrings'.</b>");
 
-            foreach (FieldInfo field in typeof(CTweenStrings).GetFields())
+            foreach (FieldInfo field in typeof(BXTweenStrings).GetFields())
             {
                 // Pass null as it's static.
                 Debug.Log(string.Format("Field | Name : {0} | ToString : {1}", field.Name, field.GetValue(null)));
@@ -117,55 +126,106 @@ namespace BXFW.Tweening
         // -- Strings
         #region Info-Logs
         // Non-Dynamic
-        /// <see cref="CTween.To"/>
+        /// <see cref="BXTween.To"/>
         public static readonly string Log_CTwDurationZero =
             string.Format("{0} {1}",
-                LogRich("[CTween]->", true),
+                LogRich("[BXTween]->", true),
                 LogRich("The duration is less than zero. Please note that the return is null."));
         // Dynamic
-        public static string GetLog_CTwCTXCustomCurveInvalid(EaseType TypeAttemptSet)
+        public static string GetLog_BXTwCTXCustomCurveInvalid(EaseType TypeAttemptSet)
         {
             return string.Format
                 (   // Main String
                     "{0} {1}",
                     // Format List
-                    LogRich("[CTweenCTX::SetEase]->", true),
+                    LogRich("[BXTweenCTX::SetEase]->", true),
                     LogRich(string.Format("Cannot set ease to predefined {0} mode because there is a Custom Ease Curve set.\nPlease set custom curve to null (Use ::SetCustomCurve()) if you want to set predefined eases.", TypeAttemptSet.ToString()))
                 );
         }
-        // Verbose tween information logs
-        public static readonly string Log_CTwCTXTimeCurveAlreadyNull =
+
+        #region Verbose tween information logs
+        // Basically CTweenSettings.diagnosticMode
+        // IDK : Maybe this should be editor only?
+        internal static string Log_BXTwCTXGetDebugFormatInfo<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format(@"Tween Info => '{0}' with target '{1}'
+Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeActionsOnManualStop={6}.",
+                    gContext.ToString(), gContext.TargetObj, gContext.Duration, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
+        }
+        public static string GetDLog_BXTwCTXOnCtor<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::.ctor()]->", true),
+                    LogRich(string.Format("Constructed tween : \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
+        public static string GetDLog_BXTwCTXOnStart<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::StartTween]->", true),
+                    LogRich(string.Format("Called 'StartTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
+        public static string GetDLog_BXTwCTXOnStop<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::StopTween]->", true),
+                    LogRich(string.Format("Called 'StopTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
+        public static string GetDLog_BXTwCTXOnUpdateContextCoroutine<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::UpdateContextCoroutine]->", true),
+                    LogRich(string.Format("Called 'UpdateContextCoroutine()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
+        public static readonly string DLog_BXTwCTXTimeCurveAlreadyNull =
             string.Format("{0} {1}",
-                LogRich("[CTweenCTX::SetCustomCurve]", true),
+                LogDiagRich("[BXTweenCTX::SetCustomCurve]", true),
                 LogRich("The tween time curve (related stuff) is already null. You are setting it null again"));
+        #endregion
+
         #endregion
 
         #region Warnings
         // Non-Dynamic
         // All
-        /// <see cref="CTweenCore"/>
-        public static readonly string Warn_CTwCoreAlreadyExist =
+        /// <see cref="BXTweenCore"/>
+        public static readonly string Warn_BXTwCoreAlreadyExist =
             string.Format("{0} {1}",
-                WarnRich("[CTweenCore::Editor_InitilazeCTw]->", true),
-                LogRich("The CTween core is already init and it already contains a editor object."));
-        public static readonly string Warn_CTwPropertyTwNull =
+                WarnRich("[BXTweenCore::Editor_InitilazeCTw]->", true),
+                LogRich("The BXTween core is already init and it already contains a editor object."));
+        public static readonly string Warn_BXTwPropertyTwNull =
             string.Format("{0} {1}",
-                WarnRich("[CTweenContext]", true),
+                WarnRich("[BXTweenContext]", true),
                 LogRich("The tween property is null. Make sure you assign all properties in your inspector. If you did that, it's probably an internal error."));
-        public static readonly string Warn_CTwCTXTimeCurveNull =
+        public static readonly string Warn_BXTwCTXTimeCurveNull =
             string.Format("{0} {1}",
-                WarnRich("[CTweenCTX::SetCustomCurve]", true),
+                WarnRich("[BXTweenCTX::SetCustomCurve]", true),
                 LogRich("The tween time curve (related stuff) is null. Make sure you assign all properties in your inspector. If you did that, it's probably an internal error."));
-        public static readonly string Warn_CTwCurrentIteratorNull =
+        public static readonly string Warn_BXTwCurrentIteratorNull =
             string.Format("{0} {1}",
-                WarnRich("[CTween::StopTween]->", true),
+                WarnRich("[BXTween::StopTween]->", true),
                 LogRich("The current running coroutine is null. Probably an internal error, that is not very important."));
 #if UNITY_EDITOR // Editor Only
-        /// <see cref="CTween.To"/> on editor.
-        public static readonly string Warn_EditorCTwCoreNotInit =
+        /// <see cref="BXTween.To"/> on editor.
+        public static readonly string Warn_EditorBXTwCoreNotInit =
             string.Format("{0} {1}",
-                WarnRich("[CTween::To(OnEditor)]->", true),
-                LogRich("Please make sure you initilaze CTween for editor playback. (by calling Editor_InitilazeCTw())"));
+                WarnRich("[BXTween::To(OnEditor)]->", true),
+                LogRich("Please make sure you initilaze BXTween for editor playback. (by calling Editor_InitilazeCTw())"));
 #endif
         // Dynamic
 
@@ -173,46 +233,46 @@ namespace BXFW.Tweening
 
         #region Errors
         // Non-Dynamic
-        public static readonly string Err_CTwCoreNotInit =
+        public static readonly string Err_BXTwCoreNotInit =
             string.Format("{0} {1}",
-                ErrRich("[CTweenCore(Critical)]->", true),
+                ErrRich("[BXTweenCore(Critical)]->", true),
                 LogRich("The 'Current' reference is null. Make sure the Core initilazes properly."));
         /// <summary>
-        /// General failure message for any of the <see cref="CTween.To"/> methods failing.
+        /// General failure message for any of the <see cref="BXTween.To"/> methods failing.
         /// </summary>
-        public static readonly string Err_CTwToCtxFail =
+        public static readonly string Err_BXTwToCtxFail =
             string.Format("{0} {1}",
-                ErrRich("[CTween::To]->", true),
+                ErrRich("[BXTween::To]->", true),
                 LogRich("Failed to return a valid context!"));
-        public static readonly string Err_CTwCTXFailUpdate =
+        public static readonly string Err_BXTwCTXFailUpdate =
             string.Format("{0} {1}",
-                ErrRich("[CTweenCTX(Critical)]->", true),
+                ErrRich("[BXTweenCTX(Critical)]->", true),
                 LogRich("The 'IteratorCoroutine' given variable is null even after update."));
 
         public static readonly string Err_SetterFnNull =
             string.Format("{0} {1}",
-                ErrRich("[CTween(General Error)]->", true),
-                LogRich("The given setter function is null or broken. This can happen in these classes : 'CTweenCTX<T>', 'CTween(To Methods)' or 'CTweenProperty<T>'."));
+                ErrRich("[BXTween(General Error)]->", true),
+                LogRich("The given setter function is null or broken. This can happen in these classes : 'BXTweenCTX<T>', 'BXTween(To Methods)' or 'BXTweenProperty<T>'."));
         public static readonly string Err_TargetNull =
             string.Format("{0} {1}",
-                ErrRich("[CTween::To(Error, Extension Method)]->", true),
+                ErrRich("[BXTween::To(Error, Extension Method)]->", true),
                 LogRich("The given target is null. Returning null context, expect exceptions."));
-        public static readonly string Err_CTwCTXFailUpdateCoroutine =
+        public static readonly string Err_BXTwCTXFailUpdateCoroutine =
             string.Format("{0} {1}",
-                ErrRich("[CTweenCTX::UpdateContextCoroutine]->", true),
+                ErrRich("[BXTweenCTX::UpdateContextCoroutine]->", true),
                 LogRich("Failed to update the coroutine context."));
 
-        public static readonly string Err_CTwCTXSetterNull =
+        public static readonly string Err_BXTwCTXSetterNull =
             string.Format("{0} {1}",
-                ErrRich("[CTweenCTX::SetSetter]->"),
+                ErrRich("[BXTweenCTX::SetSetter]->"),
                 LogRich("Couldn't set action as the variable passed was null."));
-        public static readonly string Err_CTwCTXNoIterator =
+        public static readonly string Err_BXTwCTXNoIterator =
             string.Format("{0} {1}",
-                ErrRich("[CTweenCTX(General Error)]->"),
+                ErrRich("[BXTweenCTX(General Error)]->"),
                 LogRich("The IteratorCoroutine variable is null."));
 
         // Dynamic (Needs to be generated dynamically or smth)
-        /// <see cref="CTween.To"/> methods.
+        /// <see cref="BXTween.To"/> methods.
         public static string GetErr_NonTweenableType(string ReasonNotTwn)
         {
             return string.Format
@@ -242,7 +302,7 @@ namespace BXFW.Tweening
                 (   // Main String
                     "{0} {1}",
                     // Format List
-                    ErrRich("[CTweenCTX::(Critical)]", true),
+                    ErrRich("[BXTweenCTX::(Critical)]", true),
                     LogRich(
                         string.Format(
                         "An exception occured while constructing class.\n--Exception Details--\nMsg:{0}\nStackTrace:{1}",
@@ -252,17 +312,17 @@ namespace BXFW.Tweening
         #endregion
     }
 
-    #region CTween Core Classes
+    #region BXTween Core Classes
     /// <summary>
     /// Core of the CTweenCore.
     /// <br>Dispatches the coroutines.</br>
     /// </summary>
     [ExecuteAlways()]
-    public class CTweenCore : MonoBehaviour
+    public class BXTweenCore : MonoBehaviour
     {
         #region CTweenCore Functions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void InitilazeCTw()
+        private static void InitilazeBXTw()
         {
             // Unity Editor Checks
 #if UNITY_EDITOR
@@ -271,10 +331,10 @@ namespace BXFW.Tweening
 #endif
 
             // Standard creation
-            GameObject twObject = new GameObject("CTweenCore");
+            GameObject twObject = new GameObject("BXTweenCore");
             DontDestroyOnLoad(twObject);
 
-            var CTwComponent = twObject.AddComponent<CTweenCore>();
+            var CTwComponent = twObject.AddComponent<BXTweenCore>();
             Current = CTwComponent;
         }
 
@@ -282,27 +342,27 @@ namespace BXFW.Tweening
 #if UNITY_EDITOR
         private GameObject previewObject;
         /// <summary>
-        /// Initilaze CTween on editor.
+        /// Initilaze BXTween on editor.
         /// The object gets destroyed after the tweens are done.
         /// </summary>
-        public static void EditorInitilazeCTw()
+        public static void EditorInitilazeBXTw()
         {
             if (Current != null)
             {
                 if (Current.previewObject != null)
                 {
-                    Debug.LogWarning(CTweenStrings.Warn_CTwCoreAlreadyExist);
+                    Debug.LogWarning(BXTweenStrings.Warn_BXTwCoreAlreadyExist);
                     return;
                 }
             }
 
             GameObject previewObject = new GameObject
             {
-                name = "Preview CTweenCore",
+                name = "Preview BXTweenCore",
                 tag = "EditorOnly"
             };
 
-            var CTwComp = previewObject.AddComponent<CTweenCore>();
+            var CTwComp = previewObject.AddComponent<BXTweenCore>();
             Current = CTwComp;
             Current.previewObject = previewObject;
         }
@@ -326,7 +386,7 @@ namespace BXFW.Tweening
         #endregion
 
         #region To Methods
-        public IEnumerator To(CTweenCTX<float> ctx)
+        public IEnumerator To(BXTweenCTX<float> ctx)
         {
             // Notes (Do not copy to other methods) :
             // Note that do your enchantments in the 'float' To Method,
@@ -339,7 +399,7 @@ namespace BXFW.Tweening
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -382,7 +442,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -413,14 +473,14 @@ namespace BXFW.Tweening
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
         }
-        public IEnumerator To(CTweenCTX<Color> ctx)
+        public IEnumerator To(BXTweenCTX<Color> ctx)
         {
         _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -463,7 +523,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -491,14 +551,14 @@ namespace BXFW.Tweening
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
         }
-        public IEnumerator To(CTweenCTX<Vector2> ctx)
+        public IEnumerator To(BXTweenCTX<Vector2> ctx)
         {
         _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -541,7 +601,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -569,14 +629,14 @@ namespace BXFW.Tweening
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
         }
-        public IEnumerator To(CTweenCTX<Vector3> ctx)
+        public IEnumerator To(BXTweenCTX<Vector3> ctx)
         {
         _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -619,7 +679,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -647,14 +707,14 @@ namespace BXFW.Tweening
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
         }
-        public IEnumerator To(CTweenCTX<Quaternion> ctx)
+        public IEnumerator To(BXTweenCTX<Quaternion> ctx)
         {
         _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -697,7 +757,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -725,14 +785,14 @@ namespace BXFW.Tweening
             // As this is technically a (OnTweenEnd) call.
             ctx.StopTween();
         }
-        public IEnumerator To(CTweenCTX<Matrix4x4> ctx)
+        public IEnumerator To(BXTweenCTX<Matrix4x4> ctx)
         {
         _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
-                Debug.LogError(CTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -753,8 +813,8 @@ namespace BXFW.Tweening
 
                 // Set lerp (Conditional for unclamped)
                 var SetValue = ctx.UseUnclampedLerp
-                    ? CTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : CTweenCustomLerp.MatrixLerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                    ? BXTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
+                    : BXTweenCustomLerp.MatrixLerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -775,7 +835,7 @@ namespace BXFW.Tweening
                     }
                     if (ctx.OnEndAction_UnityEvent != null)
                     {
-                        ctx.OnEndAction_UnityEvent.Invoke();
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
                     }
                 }
 
@@ -806,7 +866,7 @@ namespace BXFW.Tweening
 
         // -- Animation To Methods
         /*
-        private IEnumerator To(CTweenCTX<int> aCtx, int FPS = 60)
+        private IEnumerator To(BXTweenCTX<int> aCtx, int FPS = 60)
         {
             if (!aCtx.ContextIsValid)
             {
@@ -845,9 +905,9 @@ namespace BXFW.Tweening
     }
 
     /// <summary>
-    /// Custom Lerp methods used by CTween.
+    /// Custom Lerp methods used by BXTween.
     /// </summary>
-    public static class CTweenCustomLerp
+    public static class BXTweenCustomLerp
     {
         public static Matrix4x4 MatrixLerp(Matrix4x4 src, Matrix4x4 dest, float time)
         {
@@ -870,13 +930,13 @@ namespace BXFW.Tweening
     /// Coroutine based tweening system.
     /// Contains all the base clases and others.
     /// </summary>
-    public static class CTween
+    public static class BXTween
     {
-        public static CTweenCore Current;
+        public static BXTweenCore Current;
         public static List<ITweenCTX> CurrentRunningTweens = new List<ITweenCTX>();
-        public static CTweenSettings CurrentSettings = new CTweenSettings();
+        public static BXTweenSettings CurrentSettings = new BXTweenSettings() { diagnosticMode = false };
 
-        private static readonly MethodInfo[] CTweenExtensionMethods = typeof(CTween).GetMethods();
+        private static readonly MethodInfo[] CTweenExtensionMethods = typeof(BXTween).GetMethods();
 
         #region Utility
         /// <summary>
@@ -891,7 +951,7 @@ namespace BXFW.Tweening
             return new KeyValuePair<bool, MethodInfo>(info != null, info);
         }
         /// <summary>
-        /// Check the status of <see cref="CTweenCore"/> <see cref="Current"/> variable.
+        /// Check the status of <see cref="BXTweenCore"/> <see cref="Current"/> variable.
         /// </summary>
         /// <returns>Whether if the tweening '''engine''' is ok.</returns>
         public static bool CheckStatus()
@@ -900,21 +960,22 @@ namespace BXFW.Tweening
             // Editor checks
             if (Current == null && !Application.isPlaying && Application.isEditor)
             {
-                Debug.LogWarning(CTweenStrings.Warn_EditorCTwCoreNotInit);
-                CTweenCore.EditorInitilazeCTw();
+                Debug.LogWarning(BXTweenStrings.Warn_EditorBXTwCoreNotInit);
+                BXTweenCore.EditorInitilazeBXTw();
             }
 #endif
             // Runtime checks
             if (Current == null)
             {
-                Debug.LogError(CTweenStrings.Err_CTwCoreNotInit);
+                // TODO (maybe) : Attempt to re-initilaze BXTween?
+                Debug.LogError(BXTweenStrings.Err_BXTwCoreNotInit);
                 return false;
             }
 
             return true;
         }
         /// <summary>
-        /// Get the status of CTween.
+        /// Get the status of BXTween.
         /// </summary>
         #endregion
 
@@ -928,35 +989,35 @@ namespace BXFW.Tweening
         /// <param name="TargetValue">The end value.</param>
         /// <param name="Setter">The setter. Pass your function.</param>
         /// <param name="Duration">Length of tween.</param>
-        /// <param name="TargetObject">Control the null conditions and setters.</param>
+        /// <param name="TargetObject">Control the null conditions and setters. This is the object that the tween runs on.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<float> To(float StartValue, float TargetValue, float Duration, CTwSetMethod<float> Setter,
+        public static BXTweenCTX<float> To(float StartValue, float TargetValue, float Duration, BXTweenSetMethod<float> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // -- Check CTweenCore --     //
             if (!CheckStatus())
             {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
                 return null;
             }
 
             // -- Check Method Parameters -- //
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
             if (Duration <= 0f)
             {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
                 Setter(TargetValue);
 
                 return null;
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<float>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<float> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<float>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<float> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
             {
@@ -975,79 +1036,33 @@ namespace BXFW.Tweening
         /// <param name="Duration">Length of tween.</param>
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<Color> To(Color StartValue, Color TargetValue, float Duration, CTwSetMethod<Color> Setter,
+        public static BXTweenCTX<Color> To(Color StartValue, Color TargetValue, float Duration, BXTweenSetMethod<Color> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // -- Check CTweenCore --     //
             if (!CheckStatus())
             {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
                 return null;
             }
 
             // -- Check Method Parameters -- //
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
             if (Duration <= 0f)
             {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
                 Setter(TargetValue);
 
                 return null;
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<Color>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Color> ctx) => { return Current.To(ctx); });
-
-            if (StartTween)
-            {
-                Context.StartTween();
-                CurrentRunningTweens.Add(Context);
-            }
-
-            // Return Context
-            return Context;
-        }
-        /// <summary>
-        /// Create a tween manually using this method.
-        /// </summary>
-        /// <param name="StartValue">The start value.</param>
-        /// <param name="TargetValue">The end value.</param>
-        /// <param name="Setter">The setter. Pass your function.</param>
-        /// <param name="Duration">Length of tween.</param>
-        /// <param name="TargetObject">Control the null conditions and setters.</param>
-        /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<Vector2> To(Vector2 StartValue, Vector2 TargetValue, float Duration, CTwSetMethod<Vector2> Setter,
-            UnityEngine.Object TargetObject = null, bool StartTween = true)
-        {
-            // -- Check CTweenCore --     //
-            if (!CheckStatus())
-            {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
-                return null;
-            }
-
-            // -- Check Method Parameters -- //
-            if (Setter == null)
-            {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
-                return null;
-            }
-            if (Duration <= 0f)
-            {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
-                Setter(TargetValue);
-
-                return null;
-            }
-
-            // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<Vector2>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Vector2> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<Color>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Color> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
             {
@@ -1067,33 +1082,33 @@ namespace BXFW.Tweening
         /// <param name="Duration">Length of tween.</param>
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<Vector3> To(Vector3 StartValue, Vector3 TargetValue, float Duration, CTwSetMethod<Vector3> Setter,
+        public static BXTweenCTX<Vector2> To(Vector2 StartValue, Vector2 TargetValue, float Duration, BXTweenSetMethod<Vector2> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // -- Check CTweenCore --     //
             if (!CheckStatus())
             {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
                 return null;
             }
 
             // -- Check Method Parameters -- //
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
             if (Duration <= 0f)
             {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
                 Setter(TargetValue);
 
                 return null;
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<Vector3>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Vector3> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<Vector2>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Vector2> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
             {
@@ -1113,33 +1128,33 @@ namespace BXFW.Tweening
         /// <param name="Duration">Length of tween.</param>
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<Quaternion> To(Quaternion StartValue, Quaternion TargetValue, float Duration, CTwSetMethod<Quaternion> Setter,
+        public static BXTweenCTX<Vector3> To(Vector3 StartValue, Vector3 TargetValue, float Duration, BXTweenSetMethod<Vector3> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // -- Check CTweenCore --     //
             if (!CheckStatus())
             {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
                 return null;
             }
 
             // -- Check Method Parameters -- //
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
             if (Duration <= 0f)
             {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
                 Setter(TargetValue);
 
                 return null;
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<Quaternion>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Quaternion> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<Vector3>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Vector3> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
             {
@@ -1159,33 +1174,79 @@ namespace BXFW.Tweening
         /// <param name="Duration">Length of tween.</param>
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<Matrix4x4> To(Matrix4x4 StartValue, Matrix4x4 TargetValue, float Duration, CTwSetMethod<Matrix4x4> Setter,
+        public static BXTweenCTX<Quaternion> To(Quaternion StartValue, Quaternion TargetValue, float Duration, BXTweenSetMethod<Quaternion> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // -- Check CTweenCore --     //
             if (!CheckStatus())
             {
-                Debug.LogError(CTweenStrings.Err_CTwToCtxFail);
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
                 return null;
             }
 
             // -- Check Method Parameters -- //
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
             if (Duration <= 0f)
             {
-                Debug.Log(CTweenStrings.Log_CTwDurationZero);
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
                 Setter(TargetValue);
 
                 return null;
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(CTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
-            var Context = new CTweenCTX<Matrix4x4>(StartValue, TargetValue, TargetObject, Duration, Setter, (CTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<Quaternion>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Quaternion> ctx) => { return Current.To(ctx); });
+
+            if (StartTween)
+            {
+                Context.StartTween();
+                CurrentRunningTweens.Add(Context);
+            }
+
+            // Return Context
+            return Context;
+        }
+        /// <summary>
+        /// Create a tween manually using this method.
+        /// </summary>
+        /// <param name="StartValue">The start value.</param>
+        /// <param name="TargetValue">The end value.</param>
+        /// <param name="Setter">The setter. Pass your function.</param>
+        /// <param name="Duration">Length of tween.</param>
+        /// <param name="TargetObject">Control the null conditions and setters.</param>
+        /// <param name="StartTween">Should the tween start immediately after creation?</param>
+        public static BXTweenCTX<Matrix4x4> To(Matrix4x4 StartValue, Matrix4x4 TargetValue, float Duration, BXTweenSetMethod<Matrix4x4> Setter,
+            UnityEngine.Object TargetObject = null, bool StartTween = true)
+        {
+            // -- Check CTweenCore --     //
+            if (!CheckStatus())
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
+                return null;
+            }
+
+            // -- Check Method Parameters -- //
+            if (Setter == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
+                return null;
+            }
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.Log_CTwDurationZero);
+                Setter(TargetValue);
+
+                return null;
+            }
+
+            // -- Make Context -- //
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<Matrix4x4>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
             {
@@ -1201,7 +1262,7 @@ namespace BXFW.Tweening
         #region Reflection To
         /// <summary>
         /// Create a tween manually. Note that you have to pass a tweenable type.
-        /// (The ones that exist in <see cref="CTween"/> class.)
+        /// (The ones that exist in <see cref="BXTween"/> class.)
         /// </summary>
         /// <param name="StartValue">The start value.</param>
         /// <param name="TargetValue">The end value.</param>
@@ -1209,7 +1270,7 @@ namespace BXFW.Tweening
         /// <param name="Duration">Length of tween.</param>
         /// <param name="TargetObject">Control the null conditions and setters.</param>
         /// <param name="StartTween">Should the tween start immediately after creation?</param>
-        public static CTweenCTX<T> GenericTo<T>(T StartValue, T TargetValue, float Duration, CTwSetMethod<T> Setter,
+        public static BXTweenCTX<T> GenericTo<T>(T StartValue, T TargetValue, float Duration, BXTweenSetMethod<T> Setter,
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // Call helper method
@@ -1218,13 +1279,13 @@ namespace BXFW.Tweening
             // Check Tweenable
             if (ValCheckPair.Key)
             {
-                /// We get method <see cref="CTween.To"/> returned from this class.
-                return (CTweenCTX<T>)ValCheckPair.Value.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, 
+                /// We get method <see cref="BXTween.To"/> returned from this class.
+                return (BXTweenCTX<T>)ValCheckPair.Value.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, 
                         TargetObject, StartTween });
             }
             else
             {
-                Debug.LogError(CTweenStrings.GetErr_NonTweenableType(typeof(T).ToString()));
+                Debug.LogError(BXTweenStrings.GetErr_NonTweenableType(typeof(T).ToString()));
                 return null;
             }
         }
@@ -1238,11 +1299,11 @@ namespace BXFW.Tweening
 
         #region TextMeshPro
         /// <see cref="TextMeshProUGUI"/>
-        public static CTweenCTX<float> CTwFadeAlpha(this TextMeshProUGUI target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwFadeAlpha(this TextMeshProUGUI target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1250,11 +1311,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Color> CTwChangeColor(this TextMeshProUGUI target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> CTwChangeColor(this TextMeshProUGUI target, Color LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1266,11 +1327,11 @@ namespace BXFW.Tweening
 
         #region UnityEngine.UI
         /// <see cref="CanvasGroup"/>
-        public static CTweenCTX<float> CTwFadeAlpha(this CanvasGroup target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwFadeAlpha(this CanvasGroup target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1280,11 +1341,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Image"/>
-        public static CTweenCTX<Color> CTwChangeColor(this Image target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> CTwChangeColor(this Image target, Color LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1292,11 +1353,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwFadeAlpha(this Image target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwFadeAlpha(this Image target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1305,11 +1366,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwInterpFill(this Image target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwInterpFill(this Image target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1319,11 +1380,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="RectTransform"/>
-        public static CTweenCTX<Vector3> CTwChangePos(this RectTransform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> CTwChangePos(this RectTransform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1331,11 +1392,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosX(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosX(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1344,11 +1405,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosY(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosY(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1357,11 +1418,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosZ(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosZ(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1370,11 +1431,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Vector3> CTwChangeAnchoredPosition(this RectTransform target, Vector2 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> CTwChangeAnchoredPosition(this RectTransform target, Vector2 LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1383,11 +1444,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangeAnchorPosX(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeAnchorPosX(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1396,11 +1457,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangeAnchorPosY(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeAnchorPosY(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1413,11 +1474,11 @@ namespace BXFW.Tweening
 
         #region Standard (UnityEngine)
         /// <see cref="Transform">
-        public static CTweenCTX<Vector3> CTwChangePos(this Transform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> CTwChangePos(this Transform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1426,11 +1487,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosX(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosX(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1439,11 +1500,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosY(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosY(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1452,11 +1513,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangePosZ(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangePosZ(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1465,11 +1526,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Quaternion> CTwRotate(this Transform target, Quaternion LastValue, float Duration)
+        public static BXTweenCTX<Quaternion> CTwRotate(this Transform target, Quaternion LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1478,11 +1539,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Vector3> CTwRotateEuler(this Transform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> CTwRotateEuler(this Transform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1491,11 +1552,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwRotateAngleAxis(this Transform target, float LastValue, Vector3 Axis, float Duration)
+        public static BXTweenCTX<float> CTwRotateAngleAxis(this Transform target, float LastValue, Vector3 Axis, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1521,11 +1582,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Material">
-        public static CTweenCTX<Color> CTwChangeColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
+        public static BXTweenCTX<Color> CTwChangeColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1534,11 +1595,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwFadeAlpha(this Material target, float LastValue, float Duration, string PropertyName = "_Color")
+        public static BXTweenCTX<float> CTwFadeAlpha(this Material target, float LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1553,11 +1614,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="SpriteRenderer"/>
-        public static CTweenCTX<Color> CTwChangeColor(this SpriteRenderer target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> CTwChangeColor(this SpriteRenderer target, Color LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1566,11 +1627,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwFadeAlpha(this SpriteRenderer target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwFadeAlpha(this SpriteRenderer target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1585,11 +1646,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Camera"/>
-        public static CTweenCTX<float> CTwChangeFOV(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeFOV(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
             var Context = To(target.fieldOfView, LastValue, Duration,
@@ -1597,11 +1658,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Matrix4x4> CTwChangeProjectionMatrix(this Camera target, Matrix4x4 LastValue, float Duration)
+        public static BXTweenCTX<Matrix4x4> CTwChangeProjectionMatrix(this Camera target, Matrix4x4 LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
             var Context = To(target.projectionMatrix, LastValue, Duration,
@@ -1609,11 +1670,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangeOrthoSize(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeOrthoSize(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1622,11 +1683,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<Color> CTwChangeBGColor(this Camera target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> CTwChangeBGColor(this Camera target, Color LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1635,11 +1696,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangeNearClipPlane(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeNearClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1648,11 +1709,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static CTweenCTX<float> CTwChangeFarClipPlane(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> CTwChangeFarClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
-                Debug.LogError(CTweenStrings.Err_TargetNull);
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
             }
 
@@ -1667,18 +1728,18 @@ namespace BXFW.Tweening
     }
     #endregion
 
-    #region CTween Ease Classes
+    #region BXTween Ease Classes
     /// <summary>
     /// Includes the hard coded ease types.
-    /// To create custom ease types use the <see cref="AnimationCurve"/>. (in CTween context field : <see cref="CTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
+    /// To create custom ease types use the <see cref="AnimationCurve"/>. (in BXTween context field : <see cref="BXTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
     /// </summary>
-    public static class CTwEase
+    public static class BXTweenEase
     {
         /// <summary>
         /// All ease methods in a hashmap.
         /// NOTE : Read-only in runtime.
         /// </summary>
-        public static readonly IDictionary<EaseType, CTwEaseSetMethod> EaseMethods = new Dictionary<EaseType, CTwEaseSetMethod>
+        public static readonly IDictionary<EaseType, BXTweenEaseSetMethod> EaseMethods = new Dictionary<EaseType, BXTweenEaseSetMethod>
         {
             { EaseType.Linear, Linear },
             { EaseType.QuadIn, QuadIn },
@@ -1858,43 +1919,43 @@ namespace BXFW.Tweening
     }
     #endregion
 
-    #region CTween Delegates
+    #region BXTween Delegates
     // TODO : Put this to a seperate files with an 'Events' namespace.
     // -- Standard c#
     /// <summary>
     /// A blank delegate.
     /// </summary>
-    public delegate void CTwMethod();
+    public delegate void BXTweenMethod();
     /// <summary>
     /// Delegate with generic. Used for setter.
     /// </summary>
     /// <typeparam name="T">Type. Mostly struct types.</typeparam>
     /// Note that i might constraint 'T' only to struct, but idk.
     /// <param name="value">Set value.</param>
-    public delegate void CTwSetMethod<in T>(T value);
+    public delegate void BXTweenSetMethod<in T>(T value);
     /// <summary>
     /// Tween easing method,
-    /// <br>Used in <see cref="CTwEase"/>.</br>
+    /// <br>Used in <see cref="BXTweenEase"/>.</br>
     /// </summary>
     /// <param name="time">Time value. Interpolate time linearly if possible.</param>
     /// <returns>Interpolation value (usually between 0-1)</returns>
-    public delegate float CTwEaseSetMethod(float time, bool clamped = true);
+    public delegate float BXTweenEaseSetMethod(float time, bool clamped = true);
 
     // -- Unity c#
     /// <summary>
-    /// Unity event for <see cref="CTweenProperty{T}"/> and <see cref="CTweenCTX{T}"/>
+    /// Unity event for <see cref="BXTweenProperty{T}"/> and <see cref="BXTweenCTX{T}"/>
     /// </summary>
     [Serializable]
-    public sealed class TweenCoreUnityEvent : UnityEvent
+    public sealed class BXTweenUnityEvent : UnityEvent<ITweenCTX>
     { }
     #endregion
 
-    #region CTween Property Bases
+    #region BXTween Property Bases
     /// <summary>
-    /// Carries the base variables for the <see cref="CTweenProperty{T}"/>.
+    /// Carries the base variables for the <see cref="BXTweenProperty{T}"/>.
     /// </summary>
     [Serializable]
-    public abstract class CTweenPropertyBase
+    public abstract class BXTweenPropertyBase
     {
         [SerializeField] protected float _Duration = 1f;
         [SerializeField] protected float _Delay = 0f;
@@ -1906,8 +1967,8 @@ namespace BXFW.Tweening
         // No Curve
         [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
         // Event
-        public bool InvokeEndingActionOnPrematureStop = false;
-        public TweenCoreUnityEvent OnEndAction;
+        public bool InvokeEventOnManualStop = false;
+        public BXTweenUnityEvent OnEndAction;
 
         // ---- Refreshing Setters ---- //
         public float Duration
@@ -1982,11 +2043,11 @@ namespace BXFW.Tweening
     /// Used for creating convient context, editable by the inspector.
     /// </summary>
     [Serializable]
-    public class CTweenProperty<T> : CTweenPropertyBase
+    public class BXTweenProperty<T> : BXTweenPropertyBase
     {
         #region Generic Variables
         // -----  that don't need editor ----- //
-        public CTwSetMethod<T> SetAction
+        public BXTweenSetMethod<T> SetAction
         {
             set
             {
@@ -1999,18 +2060,18 @@ namespace BXFW.Tweening
         }
 
         // ---- Get Only ---- //
-        public CTweenCTX<T> TwContext { get; private set; }
+        public BXTweenCTX<T> TwContext { get; private set; }
         public bool IsValidContext => IsTweenableType(typeof(T)).Key;
 
         // ---- Private ---- //
-        private CTwSetMethod<T> m_Setter;
+        private BXTweenSetMethod<T> m_Setter;
         public bool IsSetup => m_Setter != null;
         #endregion
 
         #region Ctor / Setup
-        public CTweenProperty()
+        public BXTweenProperty()
         { }
-        public CTweenProperty(CTweenCTX<T> ctx, bool stopTw = true)
+        public BXTweenProperty(BXTweenCTX<T> ctx, bool stopTw = true)
         {
             // ** Stop the context and assign the context.
             if (stopTw)
@@ -2032,16 +2093,16 @@ namespace BXFW.Tweening
             //ctx.SetCustomCurve(_TweenCurve, !_AllowCustomCurveOvershoot);
             //ctx.SetEndingAction(OnEndAction);
         }
-        public static implicit operator CTweenProperty<T>(CTweenCTX<T> ctxEqual)
+        public static implicit operator BXTweenProperty<T>(BXTweenCTX<T> ctxEqual)
         {
             // ** Create & Return property
-            return new CTweenProperty<T>(ctxEqual);
+            return new BXTweenProperty<T>(ctxEqual);
         }
-        public void SetupProperty(T StartValue, T EndValue, CTwSetMethod<T> Setter)
+        public void SetupProperty(T StartValue, T EndValue, BXTweenSetMethod<T> Setter)
         {
             if (Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return;
             }
 
@@ -2052,7 +2113,7 @@ namespace BXFW.Tweening
             // While this is bad, it will stay this way as in future 'UpdateProperty' caused some hard to notice bugs.
             TwContext.SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot);
         }
-        public void SetupProperty(CTwSetMethod<T> Setter)
+        public void SetupProperty(BXTweenSetMethod<T> Setter)
         {
             SetupProperty(default, default, Setter);
         }
@@ -2085,11 +2146,11 @@ namespace BXFW.Tweening
             }
         }
 
-        public void StartTween(T StartValue, T EndValue, CTwSetMethod<T> Setter = null)
+        public void StartTween(T StartValue, T EndValue, BXTweenSetMethod<T> Setter = null)
         {
             if (m_Setter == null && Setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_SetterFnNull);
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return;
             }
 
@@ -2107,16 +2168,16 @@ namespace BXFW.Tweening
             // This takes the parameters from the tween Context.
             if (TwContext == null)
             {
-                Debug.LogWarning(CTweenStrings.Warn_CTwPropertyTwNull);
+                Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
                 return;
             }
 
             // Stop tween under control 
-            var invokeEndingOnStop = TwContext.InvokeEndingActionOnStop;
-            TwContext.SetInvokeEndingActionOnStop(InvokeEndingActionOnPrematureStop);
+            var invokeEndingOnStop = TwContext.InvokeEventOnStop;
+            TwContext.SetInvokeActionOnStop(InvokeEventOnManualStop);
             if (TwContext.IsRunning)
                 TwContext.StopTween();
-            TwContext.SetInvokeEndingActionOnStop(invokeEndingOnStop);
+            TwContext.SetInvokeActionOnStop(invokeEndingOnStop);
 
             TwContext.StartTween();
         }
@@ -2125,7 +2186,7 @@ namespace BXFW.Tweening
         {
             if (TwContext == null)
             {
-                Debug.LogWarning(CTweenStrings.Warn_CTwPropertyTwNull);
+                Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
                 return;
             }
 
@@ -2134,11 +2195,11 @@ namespace BXFW.Tweening
         #endregion
     }
 
-    #region CTween Property Classes
+    #region BXTween Property Classes
     [Serializable]
-    public sealed class CTweenPropertyFloat : CTweenProperty<float>
+    public sealed class BXTweenPropertyFloat : BXTweenProperty<float>
     {
-        public CTweenPropertyFloat(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyFloat(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
             _Duration = dur;
             _Delay = delay;
@@ -2150,9 +2211,9 @@ namespace BXFW.Tweening
         }
     }
     [Serializable]
-    public sealed class CTweenPropertyVector2 : CTweenProperty<Vector2>
+    public sealed class BXTweenPropertyVector2 : BXTweenProperty<Vector2>
     {
-        public CTweenPropertyVector2(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyVector2(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
             _Duration = dur;
             _Delay = delay;
@@ -2164,9 +2225,9 @@ namespace BXFW.Tweening
         }
     }
     [Serializable]
-    public sealed class CTweenPropertyVector3 : CTweenProperty<Vector3>
+    public sealed class BXTweenPropertyVector3 : BXTweenProperty<Vector3>
     {
-        public CTweenPropertyVector3(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyVector3(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
             _Duration = dur;
             _Delay = delay;
@@ -2178,9 +2239,9 @@ namespace BXFW.Tweening
         }
     }
     [Serializable]
-    public sealed class CTweenPropertyColor : CTweenProperty<Color>
+    public sealed class BXTweenPropertyColor : BXTweenProperty<Color>
     {
-        public CTweenPropertyColor(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyColor(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
             _Duration = dur;
             _Delay = delay;
@@ -2195,9 +2256,9 @@ namespace BXFW.Tweening
 
     #endregion
 
-    #region CTw Enums
+    #region Tween Enums
     /// <summary>
-    /// Variable changing mode for <see cref="CTweenCTX{T}"/>.
+    /// Variable changing mode for <see cref="BXTweenCTX{T}"/>.
     /// </summary>
     public enum VariableChangeMode
     {
@@ -2252,7 +2313,7 @@ namespace BXFW.Tweening
     }
     #endregion
 
-    #region CTween Context
+    #region BXTween Context
     /// <summary>Generic tween interface. Used for storing tweens in a generic agnostic way.</summary>
     public interface ITweenCTX
     {
@@ -2273,7 +2334,7 @@ namespace BXFW.Tweening
         void StopTween();
     }
 
-    public sealed class CTweenCTX<T> : ITweenCTX
+    public sealed class BXTweenCTX<T> : ITweenCTX
     {
         #region Variables
         // Should be read-only and only be able to set from methods. 
@@ -2290,7 +2351,7 @@ namespace BXFW.Tweening
         /// Whether if context should invoke <see cref="OnEndAction"/> when <see cref="StopTween"/> is called.
         /// This enables / disables ending actions.
         /// </summary>
-        public bool InvokeEndingActionOnStop { get; private set; } = true;
+        public bool InvokeEventOnStop { get; private set; } = true;
         public float Duration { get; private set; } = 0f;
         public float StartDelay { get; private set; } = 0f;
         public int RepeatAmount { get; private set; } = 0;
@@ -2335,10 +2396,10 @@ namespace BXFW.Tweening
         /// <br>Set when you set a <see cref="SetCustomCurve(AnimationCurve, bool)"/> or <see cref="SetEase(EaseType, bool)"/>.</br>
         /// </summary>
         public Func<float, float> TimeSetLerp { get; private set; }
-        public CTwSetMethod<T> SetterFunction { get; private set; }
-        public CTwMethod OnEndAction { get; private set; }
-        public CTwMethod PersistentOnEndAction { get; private set; }
-        public TweenCoreUnityEvent OnEndAction_UnityEvent { get; private set; }
+        public BXTweenSetMethod<T> SetterFunction { get; private set; }
+        public BXTweenMethod OnEndAction { get; private set; }
+        public BXTweenMethod PersistentOnEndAction { get; private set; }
+        public BXTweenUnityEvent OnEndAction_UnityEvent { get; private set; }
 
         // --- Target (Identifier and Null checks)
         private readonly UnityEngine.Object _TargetObj;
@@ -2348,13 +2409,13 @@ namespace BXFW.Tweening
 
         // --- Private Fields
         // Coroutine / Iterator 
-        private Func<CTweenCTX<T>, IEnumerator> _TweenIteratorFn;   // Delegate to get coroutine suitable for this class
+        private Func<BXTweenCTX<T>, IEnumerator> _TweenIteratorFn;   // Delegate to get coroutine suitable for this class
         private IEnumerator _IteratorCoroutine;                     // Current setup iterator (not running)
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
         #endregion
 
-        #region Set Settable Variables
-        public CTweenCTX<T> ClearEndingAction()
+        #region Variable Setter
+        public BXTweenCTX<T> ClearEndingAction()
         {
             OnEndAction = null;
 
@@ -2363,7 +2424,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets an event to be occured in end.
         /// </summary>
-        public CTweenCTX<T> SetEndingAction(CTwMethod Event, VariableChangeMode mode = VariableChangeMode.ChangeMode_Add)
+        public BXTweenCTX<T> SetEndingAction(BXTweenMethod Event, VariableChangeMode mode = VariableChangeMode.ChangeMode_Add)
         {
             switch (mode)
             {
@@ -2384,16 +2445,16 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets an event to be occured in end.
         /// </summary>
-        public CTweenCTX<T> SetEndingAction(TweenCoreUnityEvent Event)
+        public BXTweenCTX<T> SetEndingAction(BXTweenUnityEvent Event)
         {
             OnEndAction_UnityEvent = Event;
 
             UpdateContextCoroutine();
             return this;
         }
-        public CTweenCTX<T> SetInvokeEndingActionOnStop(bool value)
+        public BXTweenCTX<T> SetInvokeActionOnStop(bool value)
         {
-            InvokeEndingActionOnStop = value;
+            InvokeEventOnStop = value;
 
             UpdateContextCoroutine();
             return this;
@@ -2402,7 +2463,7 @@ namespace BXFW.Tweening
         /// Sets the duration.
         /// </summary>
         /// <param name="dur">Duration to set.</param>
-        public CTweenCTX<T> SetDuration(float dur)
+        public BXTweenCTX<T> SetDuration(float dur)
         {
             Duration = dur;
 
@@ -2415,7 +2476,7 @@ namespace BXFW.Tweening
         /// Anything below zero (including zero) is a special value for no delay.
         /// </summary>
         /// <param name="delay">The delay for tween to wait.</param>
-        public CTweenCTX<T> SetDelay(float delay)
+        public BXTweenCTX<T> SetDelay(float delay)
         {
             StartDelay = delay;
 
@@ -2428,7 +2489,7 @@ namespace BXFW.Tweening
         /// Randomizes the delay between 2 random float values.
         /// </summary>
         /// <param name="delay">The delay for tween to wait.</param>
-        public CTweenCTX<T> SetRandDelay(float min_delay, float max_delay)
+        public BXTweenCTX<T> SetRandDelay(float min_delay, float max_delay)
         {
             StartDelay = UnityEngine.Random.Range(min_delay, max_delay);
 
@@ -2438,7 +2499,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets repeat amount. '0' is default for no repeat. Anything lower than '0' is infinite repeat.
         /// </summary>
-        public CTweenCTX<T> SetRepeatAmount(int repeat)
+        public BXTweenCTX<T> SetRepeatAmount(int repeat)
         {
             RepeatAmount = repeat;
 
@@ -2448,25 +2509,25 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets repeat type.
         /// </summary>
-        public CTweenCTX<T> SetRepeatType(RepeatType type)
+        public BXTweenCTX<T> SetRepeatType(RepeatType type)
         {
             RepeatType = type;
 
             UpdateContextCoroutine();
             return this;
         }
-        public CTweenCTX<T> SetInvokeEventOnRepeat(bool value)
+        public BXTweenCTX<T> SetInvokeEventOnRepeat(bool value)
         {
             InvokeEventOnRepeat = value;
 
             UpdateContextCoroutine();
             return this;
         }
-        public CTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
+        public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
         {
             if (UseCustomTwTimeCurve)
             {
-                Debug.Log(CTweenStrings.GetLog_CTwCTXCustomCurveInvalid(ease));
+                Debug.Log(BXTweenStrings.GetLog_BXTwCTXCustomCurveInvalid(ease));
                 return this;
             }
 
@@ -2474,7 +2535,7 @@ namespace BXFW.Tweening
             TweenEaseType = ease;
 
             // Setup curve
-            var EaseMethod = CTwEase.EaseMethods[TweenEaseType];
+            var EaseMethod = BXTweenEase.EaseMethods[TweenEaseType];
             TimeSetLerp = (float progress) => { return EaseMethod.Invoke(progress, Clamp01); };
 
             // Update
@@ -2484,7 +2545,7 @@ namespace BXFW.Tweening
         /// <summary> Sets a custom animation curve. Pass null to disable custom curve. </summary>
         /// <param name="c">Curve to set.</param>
         /// <param name="Clamp01">Should the curve be clamped?</param>
-        public CTweenCTX<T> SetCustomCurve(AnimationCurve c, bool Clamp01 = true)
+        public BXTweenCTX<T> SetCustomCurve(AnimationCurve c, bool Clamp01 = true)
         {
             // Check curve status
             if (c == null)
@@ -2494,7 +2555,7 @@ namespace BXFW.Tweening
                 {
                     if (CurrentSettings.diagnosticMode)
                     {
-                        Debug.LogWarning(CTweenStrings.Log_CTwCTXTimeCurveAlreadyNull);
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwCTXTimeCurveAlreadyNull);
                     }
 
                     return this;
@@ -2524,12 +2585,12 @@ namespace BXFW.Tweening
         /// Ignores null values completely as a setter is a critical part of the context.
         /// </summary>
         /// <param name="setter">Setter to set.</param>
-        public CTweenCTX<T> SetSetter(CTwSetMethod<T> setter)
+        public BXTweenCTX<T> SetSetter(BXTweenSetMethod<T> setter)
         {
             // -- Check Setter
             if (setter == null)
             {
-                Debug.LogError(CTweenStrings.Err_CTwCTXSetterNull);
+                Debug.LogError(BXTweenStrings.Err_BXTwCTXSetterNull);
                 return this;
             }
 
@@ -2538,7 +2599,7 @@ namespace BXFW.Tweening
             UpdateContextCoroutine();
             return this;
         }
-        public CTweenCTX<T> SetStartValue(T sValue)
+        public BXTweenCTX<T> SetStartValue(T sValue)
         {
             StartValue = sValue;
 
@@ -2551,7 +2612,7 @@ namespace BXFW.Tweening
             UpdateContextCoroutine();
             return this;
         }
-        public CTweenCTX<T> SetEndValue(T eValue)
+        public BXTweenCTX<T> SetEndValue(T eValue)
         {
             EndValue = eValue;
 
@@ -2577,6 +2638,11 @@ namespace BXFW.Tweening
             // Note : If this doesn't work, use the reflection method instead of 'passed coroutine delegate' method.
             _IteratorCoroutine = _TweenIteratorFn.Invoke(this);
 
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnUpdateContextCoroutine(this));
+            }
+
             return _IteratorCoroutine != null;
             // -- Reflection Method --
             // _IteratorCoroutine = (IEnumerator)typeof(CTweenCore).GetMethods().
@@ -2588,10 +2654,10 @@ namespace BXFW.Tweening
         /// <summary>
         /// The main constructor.
         /// </summary>
-        public CTweenCTX(T StartVal, T EndVal, UnityEngine.Object TargetO, float TDuration,
+        public BXTweenCTX(T StartVal, T EndVal, UnityEngine.Object TargetO, float TDuration,
             // Func Variable
-            CTwSetMethod<T> SetFunc, Func<CTweenCTX<T>, IEnumerator> GetTweenIterFn,
-            CTwMethod PersistentEndMthd = null)
+            BXTweenSetMethod<T> SetFunc, Func<BXTweenCTX<T>, IEnumerator> GetTweenIterFn,
+            BXTweenMethod PersistentEndMethod = null)
         {
             try
             {
@@ -2600,7 +2666,7 @@ namespace BXFW.Tweening
                 EndValue = EndVal;
                 SetterFunction = SetFunc; // Setup setter function.
                 SetterFunction += (T valuePause) => { PauseValue = valuePause; }; // Add pausing delegate to the setter function.
-                PersistentOnEndAction = PersistentEndMthd;
+                PersistentOnEndAction = PersistentEndMethod;
 
                 Duration = TDuration;
 
@@ -2614,13 +2680,12 @@ namespace BXFW.Tweening
             catch (Exception e)
             {
                 // Error handling
-                Debug.LogError(CTweenStrings.GetErr_CTwCTXCtorExcept(e));
+                Debug.LogError(BXTweenStrings.GetErr_CTwCTXCtorExcept(e));
             }
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(string.Format("[CTweenCTX<>] Constructed tween '{0}' with target '{1}'\n Tween Details : Duration={2} StartVal={3} EndVal={4} EndActions={5}.",
-                    ToString(), TargetObj, Duration, StartValue, EndValue, OnEndAction == null));
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnCtor(this));
             }
         }
 
@@ -2633,7 +2698,7 @@ namespace BXFW.Tweening
                 // Try updating context.
                 if (!UpdateContextCoroutine())
                 {
-                    Debug.LogError(CTweenStrings.Err_CTwCTXFailUpdate);
+                    Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdate);
                     return;
                 }
             }
@@ -2654,11 +2719,16 @@ namespace BXFW.Tweening
             // Standard
             if (!UpdateContextCoroutine())
             {
-                Debug.LogError(CTweenStrings.Err_CTwCTXFailUpdateCoroutine);
+                Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
             }
             _CurrentIteratorCoroutine = IteratorCoroutine;
             Current.StartCoroutine(_CurrentIteratorCoroutine);
             IsRunning = true;
+
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStart(this));
+            }
         }
 
         public void PauseTween()
@@ -2671,7 +2741,7 @@ namespace BXFW.Tweening
             // Checks
             if (IteratorCoroutine == null)
             {
-                Debug.LogError(CTweenStrings.Err_CTwCTXNoIterator);
+                Debug.LogError(BXTweenStrings.Err_BXTwCTXNoIterator);
                 return;
             }
 
@@ -2699,7 +2769,7 @@ namespace BXFW.Tweening
             CurrentRunningTweens.Remove(this);
             if (_CurrentIteratorCoroutine != null)
             {
-                // Coroutine should stop itself HOWEVER when stop is not called by CTweenCore.To
+                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To
                 // it needs to STOP manually.
                 Current.StopCoroutine(_CurrentIteratorCoroutine);
                 _CurrentIteratorCoroutine = null;
@@ -2713,17 +2783,24 @@ namespace BXFW.Tweening
 
             IsRunning = false;
 
-            // If we call these on the ending of the CTweenCore's To method, the ending method after delay doesn't work.
-            // The reason is that in CTweenProperty we call 'StopTween' when we call 'StartTween'
+            // If we call these on the ending of the BXTweenCore's To method, the ending method after delay doesn't work.
+            // The reason is that in BXTweenProperty we call 'StopTween' when we call 'StartTween'
             // So yeah, i need to find a more elegant solution to that.
-            if (InvokeEndingActionOnStop)
+            if (InvokeEventOnStop)
             {
+                Debug.Log($"[BXTween::InvokeEventOnManualStop] Invoking ending events. Tween Info : {BXTweenStrings.Log_BXTwCTXGetDebugFormatInfo(this)}");
+
                 if (OnEndAction != null)
                     OnEndAction.Invoke();
                 if (PersistentOnEndAction != null)
                     PersistentOnEndAction.Invoke();
                 if (OnEndAction_UnityEvent != null)
-                    OnEndAction_UnityEvent.Invoke();
+                    OnEndAction_UnityEvent.Invoke(this);
+            }
+
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
             }
         }
         #endregion
@@ -2731,7 +2808,7 @@ namespace BXFW.Tweening
         #region Debug
         public override string ToString()
         {
-            return string.Format("CTWContext | Type : {0}", typeof(T).ToString());
+            return string.Format("BXTWContext | Type : {0}", typeof(T).ToString());
         }
         /// <summary>
         /// Get the message for 'why context wasnt valid?'.
@@ -2754,7 +2831,7 @@ namespace BXFW.Tweening
             // -------------------------------------- These might happen due to user error or dev error.
             if (SetterFunction == null)
             {
-                return "(Context)The given setter function is null. If you called 'CTween.To()' manually please make sure you set a setter function, otherwise it's a developer error.";
+                return "(Context)The given setter function is null. If you called 'BXTween.To()' manually please make sure you set a setter function, otherwise it's a developer error.";
             }
             if (IteratorCoroutine == null)
             {

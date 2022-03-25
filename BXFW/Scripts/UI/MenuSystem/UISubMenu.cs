@@ -19,7 +19,7 @@ namespace BXFW.UI
         public UISubMenuEvent_MenuData UISubMenuEvent;
 
         private RectTransform menuRectTransform;
-        public RectTransform MenuRectTransform
+        public RectTransform RectTransform
         {
             get
             {
@@ -37,6 +37,7 @@ namespace BXFW.UI
 
         private void Start()
         {
+            // If the object is already inactive, it's not visible and closed.
             if (gameObject.activeInHierarchy)
             {
                 // Call the activation events if the object is active.

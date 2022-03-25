@@ -2,14 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// About the 'SnappableTransforms' being a class that you inherit from :
+///     * That may cause issues on multiple classes that use a component system instead of a 'oop' approach
+///     * However, this approach has the advantage of not calling <see cref="GameObject.GetComponent{T}"/> twice.
+///     
+///     * Because of this, i may make these classes as sealed class components instead of inheritable classes.
+///     * so, a maybe TODO moment here again??
+///     (this method is fine though if you are careful enough)
+
 namespace BXFW
 {
     /// <summary>
     /// Snap points.
     /// <br>(assuming the cube's front point is looking to <see cref="Vector3.forward"/> 
-    /// and we are looking straight to <see cref="Transform.forward"/>.)</br>
+    /// and we are looking towards the cube's <see cref="Transform.forward"/>.)</br>
     /// </summary>
-    public enum SnapPoint : int
+    public enum SnapPoint
     {
         // Corners
         LowerDwnLeft,       // 0: (-1, -1, -1)
@@ -31,7 +39,7 @@ namespace BXFW
         LowerRightCenter,
         UpperRightCenter,
 
-        // Dead center (it's literally the center)
+        // Center (it's literally the center)
         ObjCenter
     }
 
@@ -40,7 +48,7 @@ namespace BXFW
     /// Also includes the <see cref="MonoBehaviour"/>, use it as a class that you inherit from.
     /// </summary>
     [Serializable]
-    public class MBSnappableCubeTransform : MonoBehaviour
+    public class MBCubeSnappableTransform : MonoBehaviour
     {
         /// <summary>
         /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
@@ -228,7 +236,7 @@ namespace BXFW
         /// <param name="pointTarget">Snap point for target.</param>
         /// <param name="snapTarget">Given Snap. Change this to swap the object to move.</param>
         /// <returns>Whether if the SnapTransform operation was successful.</returns>
-        public bool SnapTransform(MBSnappableCubeTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, bool snapTarget = false)
+        public bool SnapTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
             if (transformTarget == null) return false;
@@ -322,7 +330,7 @@ namespace BXFW
         /// <param name="alignToTarget"></param>
         /// <param name="customTargetDist"></param>
         /// <returns></returns>
-        public bool AlignTransform(MBSnappableCubeTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget,
+        public bool AlignTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget,
             Vector3 alignAxis, bool alignToTarget = true, float? customTargetDist = null)
         {
             // Check target. (if null do nothing)

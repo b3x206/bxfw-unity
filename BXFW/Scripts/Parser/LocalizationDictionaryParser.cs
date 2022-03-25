@@ -1,15 +1,15 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using UnityEngine;
-using BXFW;
-using System.Text;
-using UnityEngine.Assertions;
 using System.Linq;
+using System.Text;
+using System.Collections.Generic;
+
+using UnityEngine;
 
 namespace BXFW.Data
 {
+    /// <summary>
+    /// Data for the localized text.
+    /// </summary>
     [Serializable]
     public class LocalizedText
     {
@@ -22,6 +22,28 @@ namespace BXFW.Data
             get
             {
                 return LocalizedValues;
+            }
+        }
+        /// <summary>
+        /// Returns the total size (approximation, takes the length of the dictionary strings) of the <see cref="LocalizedText"/> data.
+        /// </summary>
+        public int Size
+        {
+            get
+            {
+                int sizeValues = 0;
+                int sizeKeys = 0;
+
+                foreach (var value in LocalizedValues.Values)
+                {
+                    sizeValues += value.Length;
+                }
+                foreach (var key in LocalizedValues.Keys)
+                {
+                    sizeKeys += key.Length;
+                }
+
+                return sizeValues + sizeKeys;
             }
         }
 
@@ -61,7 +83,7 @@ namespace BXFW.Data
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
-    /// // For some reason github does not correctly display the turkish characters.
+    /// // For some reason git does not correctly commit the turkish characters.
     /// TEXT_ID => en="Text Content", tr="Yazi icerik"
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
     /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
@@ -81,13 +103,17 @@ namespace BXFW.Data
         /// </summary>
         private static Dictionary<TKey, TValue> CreateDictFromLists<TKey, TValue>(List<TKey> listKeys, List<TValue> listValues)
         {
-            // Make sure the assertion is correct.
-            Assert.IsTrue(listKeys.Count >= listValues.Count);
+            if (listKeys.Count < listValues.Count)
+            {
+                Debug.LogError($"[LocalizedAssetParser::CreateDictFromLists] Key list has less elements than value list. It should be equal or less. K:{listKeys.Count} < V:{listValues.Count}");
+                return null;
+            }
 
             var dict = new Dictionary<TKey, TValue>(listKeys.Count);
 
             for (int i = 0; i < listKeys.Count; i++)
             {
+                // This method ignores no values in corresponding key. (by assigning a default value)
                 var valueAdd = (TValue)default;
                 if (i < listValues.Count)
                 {
@@ -135,6 +161,9 @@ namespace BXFW.Data
 
             foreach (var line in parseLn)
             {
+                // this is what happens when you don't know regex
+                // you have to resort to 'C' methods
+
                 // Ignore blank lines.
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
@@ -142,6 +171,7 @@ namespace BXFW.Data
                 // Get identification of the text registries (TEXT_ID)
                 var TextID = line.Substring(0, line.IndexOf(TextIDChar)).Trim();
                 var LocaleDefStringLine = line.Substring(line.LastIndexOf(TextIDChar) + TextIDChar.Length).Trim(' ');
+                // Definitions split (en="bla bla" tr="bla bla")
                 var LocaleDefsSplit = LocaleDefStringLine.Split(LocaleDefSeperateChar);
 
                 var listLocaleLang = new List<string>();
@@ -336,9 +366,11 @@ namespace BXFW.Data
             if (assets.Count <= 0)
                 return string.Empty;
 
-            // NOTE : This is still an inefficient way of making this.
-            // But it will do for now.
-            StringBuilder sb = new StringBuilder();
+            // Save using the string builder.
+            // Approximate capacity of the 'StringBuilder' is the length of the dictionary strings.
+            int strSize = 0;
+            assets.ForEach((LocalizedText t) => { strSize += t.Size; });
+            StringBuilder sb = new StringBuilder(strSize);
 
             foreach (var text in assets)
             {

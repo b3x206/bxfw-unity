@@ -6,7 +6,7 @@ using UnityEditor;
 /// You can use these.
 namespace BXFW.Tweening.Editor
 {
-    /// NOTE : Part of <see cref="CTween"/>.
+    /// NOTE : Part of <see cref="BXTween"/>.
     /// Same stuff applies here too. (This is just some simple editor scripts)
     /////////////////////////////////////////////////////////////////////////////
     /// <summary> <c>EXPERIMENTAL</c>, editor playback. </summary>            /// 
