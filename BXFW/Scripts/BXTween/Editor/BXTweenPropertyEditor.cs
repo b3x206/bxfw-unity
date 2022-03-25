@@ -98,7 +98,7 @@ namespace BXFW.ScriptEditor
                 totalLinesDrawn = 13;
             }
 
-            return EditorGUIUtility.singleLineHeight * totalLinesDrawn + 4;
+            return (EditorGUIUtility.singleLineHeight * totalLinesDrawn) + 4;
         }
     }
 }
