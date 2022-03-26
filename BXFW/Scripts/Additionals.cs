@@ -1650,8 +1650,11 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Draw default inspector with commands inbetween. (Allowing to put custom gui between)
         /// </summary>
-        /// <param name="target">The targeted method target.</param>
-        /// <param name="onStringMatchEvent">The event <see cref="MatchGUIActionOrder"/> match.</param>
+        /// <param name="target">Method target.</param>
+        /// <param name="onStringMatchEvent">
+        /// The event <see cref="MatchGUIActionOrder"/> match. 
+        /// If passed <see langword="null"/> this method will act like <see cref="UnityEditor.Editor.DrawDefaultInspector"/>.
+        /// </param>
         /// <example>
         /// // Info : The Generic '/\' is replaced with '[]'.
         /// serializedObject.DrawDefaultInspector(new Dictionary[string, KeyValuePair[MatchGUIActionOrder, Action]] 
@@ -1666,64 +1669,78 @@ namespace BXFW.Tools.Editor
         /// <returns><see cref="EditorGUI.EndChangeCheck"/> (whether if a field was modified inside this method)</returns>
         public static bool DrawCustomDefaultInspector(this SerializedObject obj, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent)
         {
+            if (obj == null)
+            {
+                Debug.LogError("[BXFW::EditorAdditionals::DrawCustomDefaultInspector] Passed serialized object is null.");
+                return false;
+            }
+
             // Do the important steps (otherwise the inspector won't work)
             EditorGUI.BeginChangeCheck();
             obj.UpdateIfRequiredOrScript();
 
             // Loop through properties and create one field (including children) foreach top level property.
-            // wHY UNity, includeChildren = 'expanded' WTFFFFFF
+            // Why unity? includeChildren = 'expanded'
             SerializedProperty property = obj.GetIterator();
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
-                // Disable if 
+                // Disable if 'm_Script' field that unity adds automatically is being drawn.
                 using (new EditorGUI.DisabledScope("m_Script" == property.propertyPath))
                 {
                     // -- Check if there is a match
-                    string MatchingKey = null;
-                    foreach (string s in onStringMatchEvent.Keys)
+                    if (onStringMatchEvent != null)
                     {
-                        if (s.Equals(property.name))
+                        string MatchingKey = null;
+                        foreach (string s in onStringMatchEvent.Keys)
                         {
-                            MatchingKey = s;
-                            break;
-                        }
-                    }
-
-                    // -- If there's a match of events, use the event.
-                    if (!string.IsNullOrEmpty(MatchingKey))
-                    {
-                        var Pair = onStringMatchEvent[MatchingKey];
-
-                        if (Pair.Key == MatchGUIActionOrder.OmitAndInvoke)
-                        {
-                            Pair.Value?.Invoke();
-                            goto _Exit;
+                            if (s.Equals(property.name))
+                            {
+                                MatchingKey = s;
+                                break;
+                            }
                         }
 
-                        // -- Omit GUI
-                        if (Pair.Key == MatchGUIActionOrder.Omit)
-                        { goto _Exit; }
+                        // -- If there's a match of events, use the event.
+                        // Once the scope enters here, the upcoming 'EditorGUILayout.PropertyField' is not invoked.
+                        if (!string.IsNullOrEmpty(MatchingKey))
+                        {
+                            var Pair = onStringMatchEvent[MatchingKey];
 
-                        // -- Standard draw
-                        if (Pair.Key == MatchGUIActionOrder.After)
-                        { EditorGUILayout.PropertyField(property, true); }
+                            if (Pair.Key == MatchGUIActionOrder.OmitAndInvoke)
+                            {
+                                if (Pair.Value != null)
+                                    Pair.Value();
 
-                        Pair.Value?.Invoke();
+                                expanded = false;
+                                continue;
+                            }
 
-                        if (Pair.Key == MatchGUIActionOrder.Before)
-                        { EditorGUILayout.PropertyField(property, true); }
+                            // -- Omit GUI
+                            if (Pair.Key == MatchGUIActionOrder.Omit)
+                            {
+                                expanded = false;
+                                continue;
+                            }
 
-                        goto _Exit;
+                            // -- Standard draw
+                            if (Pair.Key == MatchGUIActionOrder.After)
+                            { EditorGUILayout.PropertyField(property, true); }
+
+                            if (Pair.Value != null)
+                                Pair.Value();
+
+                            if (Pair.Key == MatchGUIActionOrder.Before)
+                            { EditorGUILayout.PropertyField(property, true); }
+
+                            expanded = false;
+                            continue;
+                        }
                     }
 
                     EditorGUILayout.PropertyField(property, true);
                 }
 
-                // why goto here ?
-                // because i went insane at this point
-                // goto is bad code, don't do this (FIXME)
-                _Exit:
                 expanded = false;
             }
 
@@ -1801,7 +1818,8 @@ namespace BXFW.Tools.Editor
 
                 GUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(prop);
-                OnArrayFieldDrawn?.Invoke(i);
+                if (OnArrayFieldDrawn != null)
+                    OnArrayFieldDrawn(i);
                 GUILayout.EndHorizontal();
             }
 

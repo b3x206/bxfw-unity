@@ -120,6 +120,15 @@ namespace BXFW
                 {
                     MoveVec += Vector3.right;
                 }
+                // Ascend / Descend
+                if (InputMoveDescend)
+                {
+                    MoveVec += Vector3.down;
+                }
+                if (InputMoveAscend)
+                {
+                    MoveVec += Vector3.up;
+                }
                 MoveVec = MoveVec.normalized;
 
                 Vector3 MoveTranslate;
@@ -138,18 +147,8 @@ namespace BXFW
                     if (Input.mouseScrollDelta != Vector2.zero)
                     {
                         CameraMoveSpeed = Mathf.Clamp(CameraMoveSpeed + Input.mouseScrollDelta.y, 1f, float.MaxValue);
-                        Debug.Log($"[CameraDebugMove::Update] Set Move speed to : {CameraMoveSpeed}");
+                        Debug.Log(string.Format("[CameraDebugMove::Update] Set Move speed to : {0}", CameraMoveSpeed));
                     }
-                }
-
-                // Ascend / Descend
-                if (InputMoveAscend)
-                {
-                    MoveTranslate += Vector3.down;
-                }
-                if (InputMoveAscend)
-                {
-                    MoveTranslate += Vector3.up;
                 }
 
                 transform.Translate(MoveTranslate);

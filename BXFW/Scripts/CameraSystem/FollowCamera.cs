@@ -57,7 +57,7 @@ namespace BXFW
 
         // ** Variables (Hidden)
         private Camera _camComponent;
-        public Camera CameraComponent 
+        public Camera CameraComponent
         {
             get
             {
