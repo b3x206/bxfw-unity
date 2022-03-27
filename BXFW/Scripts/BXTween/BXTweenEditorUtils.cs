@@ -2,16 +2,25 @@
 // 1 : Need to access some of the classes inside this file.
 // No other reasons?
 #if UNITY_EDITOR
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+
 using BXFW.Tools.Editor;
+using System;
+using System.IO;
 
 /// Editor utils go on this namespace.
 /// You can use these.
 namespace BXFW.Tweening.Editor
 {
+    #region BXFW Settings
     /// <summary>
     /// Override class for inspector of <see cref="BXTweenSettings"/>.
     /// <br>This does not affect <see cref="BXTweenSettingsEditor"/>.</br>
@@ -66,31 +75,102 @@ namespace BXFW.Tweening.Editor
                 return currentSettings;
             }
         }
-        private SerializedObject currentSettingsSO;
-        private SerializedObject CurrentSettingsSO
-        {
-            get
-            {
-                if (currentSettingsSO == null)
-                    currentSettingsSO = new SerializedObject(CurrentSettings);
 
-                return currentSettingsSO;
-            }
-        }
-
+        private BXTweenSettings.HashHelper.OnHashMatchFailAction currentToSetFailAction = BXTweenPersistentSettings.OnHashMatchFailAction;
+        private bool currentCheckBXTweenSettingsHash = BXTweenPersistentSettings.CheckBXTweenSettingsHash;
         private void OnGUI()
         {
-            // Draw the default property field for BXTweenSettings.
-            CurrentSettingsSO.DrawCustomDefaultInspector(null);
+            // Draw custom GUI for 'CurrentSettings'
+            EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
+            CurrentSettings.LogColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
+            CurrentSettings.LogDiagColor = EditorGUILayout.ColorField("Log Diagnostic Color", CurrentSettings.LogDiagColor);
+            CurrentSettings.WarnColor = EditorGUILayout.ColorField("Warning Color", CurrentSettings.WarnColor);
+            CurrentSettings.ErrColor = EditorGUILayout.ColorField("Error Color", CurrentSettings.ErrColor);
 
-            // Other GUI
-            //if (Application.isPlaying)
-            //{
-            //    // Not necessary as it uses a scriptable object.
-            //    EditorGUILayout.HelpBox("[Warning] : BXTween settings may NOT save after you modified it in runtime!", MessageType.Warning);
-            //}
+            EditorGUILayout.LabelField(new GUIContent(":: Default Settings"), EditorStyles.boldLabel);
+            CurrentSettings.DefaultEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
+            CurrentSettings.DefaultRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
+
+            EditorGUILayout.LabelField(new GUIContent(":: Debug"), EditorStyles.boldLabel);
+            CurrentSettings.diagnosticMode = EditorGUILayout.Toggle(new GUIContent("Diagnostic Mode", "Enables extensive 'Debug.Log()'."), CurrentSettings.diagnosticMode);
+            
+            EditorGUILayout.LabelField(new GUIContent(":: Persistent Settings"), EditorStyles.boldLabel);
+            currentCheckBXTweenSettingsHash = EditorGUILayout.Toggle(new GUIContent("Verify Hash", "Should you be a bad guy and disable fun?"), currentCheckBXTweenSettingsHash);
+            if (currentCheckBXTweenSettingsHash)
+            {
+                currentToSetFailAction = (BXTweenSettings.HashHelper.OnHashMatchFailAction)EditorGUILayout.EnumPopup(new GUIContent("Enable Hash Check : ", "If this is disabled, changes to BXTweenSettings are ignored completely."), currentToSetFailAction);
+            }
+
+            // If the settings doesn't match, use an apply button.
+            if (currentCheckBXTweenSettingsHash != BXTweenPersistentSettings.CheckBXTweenSettingsHash || currentToSetFailAction != BXTweenPersistentSettings.OnHashMatchFailAction)
+            {
+                if (GUILayout.Button("Apply"))
+                {
+                    if (EditorUtility.DisplayDialog("Warning", "Do you 'really' wanna apply these hash settings?", "Yes", "No"))
+                    {
+                        // Generate & find file
+                        // Note that this is a 'REALLY' dumb method of finding this file's directory.
+                        var fileDir = string.Empty;
+                        foreach (var file in Directory.GetFiles(string.Format("{0}/Assets", Directory.GetCurrentDirectory()), "*.cs"))
+                        {
+                            // Sole reason of using 'typeof' is older c# support.
+                            if (file.Contains(typeof(BXTweenPersistentSettings).Name))
+                            {
+                                // This is the file we are looking for
+                                fileDir = file;
+                                break;
+                            }
+                        }
+
+                        File.WriteAllText(fileDir, string.Format(@"
+using BXFW.Tweening;
+/// <summary>
+/// Automatically generated persistent settings file.
+/// <br>Modified in <see cref={0}BXFW.Tweening.Editor.BXTweenSettingsEditor{0}/>.</br>
+/// <br>NOTE : For this class to be safe, COMPILE PROJECT USING IL2CPP!</br>
+/// </summary>
+public static class BXTweenPersistentSettings
+{
+    public const bool CheckBXTweenSettingsHash = {1};
+    public const BXTweenSettings.HashHelper.OnHashMatchFailAction OnHashMatchFailAction = {2};
+}
+", '"', currentToSetFailAction, currentCheckBXTweenSettingsHash));
+
+                        Debug.Log(string.Format("[BXTweenEditorUtils::SetPersistentSettings] Write all text to '{0}'.", fileDir));
+                    }
+                }
+            }
         }
     }
+
+    // -- These classes do hash related stuff for protecting the settings.
+    // If it's modified then the game will check a compiled 'ProtectedBXTweenSettings' for other stuff. 
+    internal class BXTweenSettingsBuildPreProcessor : IPreprocessBuildWithReport
+    {
+        public int callbackOrder { get { return 0; } }
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            if (report.summary.result == BuildResult.Failed) return;
+
+            // Save hash data of BXTween to 'Resources'
+            AssetDatabase.CreateAsset(BXTweenSettings.HashHelper.GetTweenSettingsHashObject(), 
+                string.Format("{0}.asset", BXTweenSettings.HashResourceName));
+            AssetDatabase.Refresh();
+        }
+    }
+    internal class BXTweenSettingsBuildPostProcessor : IPostprocessBuildWithReport
+    {
+        public int callbackOrder { get { return 0; } }
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            // Delete the hash data from resources.
+            AssetDatabase.DeleteAsset(string.Format("{0}.asset", BXTweenSettings.HashResourceName));
+            AssetDatabase.Refresh();
+        }
+    }
+    #endregion
 
     /// NOTE : Part of <see cref="BXTween"/>.
     /// Same stuff applies here too. (This is just some simple editor scripts)

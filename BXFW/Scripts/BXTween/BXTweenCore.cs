@@ -348,6 +348,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 ErrRich("[BXTweenCTX(General Error)]->"),
                 LogRich("The IteratorCoroutine variable is null."));
+        public static readonly string Err_BXTweenSettingsModified =
+           string.Format("{0} {1}",
+                ErrRich("[BXTweenSettings::IsModified]->"),
+                LogRich("BXTweenSettings was modified. Doing what i was told in BXTweenPersistentSettings."));
 
         // Dynamic (Needs to be generated dynamically or smth)
         /// <see cref="BXTween.To"/> methods.
@@ -414,9 +418,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             var BXTwComponent = twObject.AddComponent<BXTweenCore>();
             Current = BXTwComponent;
-
-            // Also initilaze the 'Resources.Load' thing
-            RefreshCurrentSettings();
         }
 
         #region Editor Playback (Experimental)
@@ -1028,7 +1029,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public static void RefreshCurrentSettings()
         {
+            // Check if current settings are modified.
             _CurrentSettings = BXTweenSettings.GetBXTweenSettings();
+            if (BXTweenSettings.IsModified)
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTweenSettingsModified);
+            }
+
+#if !UNITY_EDITOR
+
+#endif
         }
 
         private static readonly MethodInfo[] BXTweenExtensionMethods = typeof(BXTween).GetMethods();
@@ -2100,7 +2110,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
         [SerializeField] protected AnimationCurve _TweenCurve;
         // No Curve
-        [SerializeField] protected EaseType _TweenEase;
+        [SerializeField] protected EaseType _TweenEase = CurrentSettings.DefaultEaseType;
         // Event
         public bool InvokeEventOnManualStop = false;
         public BXTweenUnityEvent OnEndAction;
@@ -2434,7 +2444,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public float Duration { get; private set; } = 0f;
         public float StartDelay { get; private set; } = 0f;
         public int RepeatAmount { get; private set; } = 0;
-        public RepeatType RepeatType { get; private set; } = RepeatType.PingPong;
+        public RepeatType RepeatType { get; private set; } = CurrentSettings.DefaultRepeatType;
         public bool InvokeEventOnRepeat { get; private set; } = true;
 
         // --- Status
@@ -2465,7 +2475,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public float CoroutineElapsed;
 
         // --- Interpolation
-        public EaseType TweenEaseType { get; private set; } = EaseType.QuadInOut;
+        public EaseType TweenEaseType { get; private set; } = CurrentSettings.DefaultEaseType;
         public AnimationCurve CustomTimeCurve { get; private set; } = null;
         public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
         public bool UseUnclampedLerp { get; private set; } = false;
