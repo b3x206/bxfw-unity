@@ -61,7 +61,7 @@ namespace BXFW.Tweening
         }
 
         /// <summary>Path that contains the <see cref="Application.streamingAssetsPath"/> for <see cref="BXTweenSettings"/>.</summary>
-        public static readonly string SettingsObjectDirectory = string.Format("{0}/BXTween", Application.streamingAssetsPath);
+        public static readonly string SettingsObjectDirectory = string.Format("{0}/BXTween/", Application.streamingAssetsPath);
         /// <summary>Name of the .json file.</summary>
         public const string SettingsObjectName = "BXTweenSettings";
 
@@ -102,9 +102,9 @@ namespace BXFW.Tweening
 
             var settingsResPath = string.Format("{0}{1}", SettingsObjectDirectory, SettingsObjectName);
 #if UNITY_EDITOR
-            var settingsAbsPath = string.Format("{0}{1}/{2}", Directory.GetCurrentDirectory(), SettingsObjectDirectory, SettingsObjectName);
+            // Exclude 'Directory.GetCurrentDirectory()' as it's not necessary (unity adds these later)
+            var settingsAbsPath = string.Format("{0}{1}", SettingsObjectDirectory, SettingsObjectName);
 #else
-            // Exclude 'Directory.GetCurrentDirectory()' as it's not necessary on builds?
             var settingsAbsPath = string.Format("{0}{1}", SettingsObjectDirectory, SettingsObjectName);
 #endif
             /// In android, we need to create an <see cref="UnityEngine.Networking.UnityWebRequest"/>.

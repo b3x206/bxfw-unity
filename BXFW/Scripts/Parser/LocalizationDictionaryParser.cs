@@ -52,7 +52,7 @@ namespace BXFW.Data
             get
             {
                 if (!LocalizedValues.TryGetValue(key, out string value))
-                    return $"{key} (no-locale) | {TextID}"; // OnError, just return the problematic TextID.
+                    return string.Format("{0} (no-locale) | {1}", key, TextID); // OnError, just return the problematic TextID.
 
                 return value;
             }
@@ -105,7 +105,7 @@ namespace BXFW.Data
         {
             if (listKeys.Count < listValues.Count)
             {
-                Debug.LogError($"[LocalizedAssetParser::CreateDictFromLists] Key list has less elements than value list. It should be equal or less. K:{listKeys.Count} < V:{listValues.Count}");
+                Debug.LogError(string.Format("[LocalizedAssetParser::CreateDictFromLists] Key list has less elements than value list. It should be equal or less. K:{0} < V:{1}", listKeys.Count, listValues.Count));
                 return null;
             }
 
@@ -154,8 +154,17 @@ namespace BXFW.Data
             return newStr.ToString();
         }
 
+        /// <summary>
+        /// Parses the text into a list of localized text.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
         public static List<LocalizedText> Parse(string fromString)
         {
+            if (string.IsNullOrWhiteSpace(fromString))
+            {
+                throw new ArgumentNullException("[LocalizedAssetParser::Parse] Error while parsing : argument named 'fromString' passed is null.");
+            }
+
             var parseLn = fromString.Split(NewLineChar);
             var currentAsset = new List<LocalizedText>();
 
@@ -171,11 +180,11 @@ namespace BXFW.Data
                 // Get identification of the text registries (TEXT_ID)
                 var TextID = line.Substring(0, line.IndexOf(TextIDChar)).Trim();
                 var LocaleDefStringLine = line.Substring(line.LastIndexOf(TextIDChar) + TextIDChar.Length).Trim(' ');
-                // Definitions split (en="bla bla" tr="bla bla")
+                // Definitions split ([0]='en="bla bla"' [1]='tr="bla bla"')
                 var LocaleDefsSplit = LocaleDefStringLine.Split(LocaleDefSeperateChar);
 
-                var listLocaleLang = new List<string>();
-                var listLocaleData = new List<string>();
+                var listLocaleLang = new List<string>(); // Parsed language definitions 'en, tr, de, ...'
+                var listLocaleData = new List<string>(); // Parsed language definition data, to combine it in a dict
 
                 foreach (var localeKeyValueNonSplit in LocaleDefsSplit)
                 {
@@ -198,7 +207,7 @@ namespace BXFW.Data
                             }
                             else
                             {
-                                Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : Locale {localeKeyValue} already exists on ID {TextID}. Line parsed :\n{line}");
+                                Debug.LogError(string.Format("[LocalizedAssetParser::Parse] Error while parsing : Locale {0} already exists on ID {1}. Line parsed :\n{2}", localeKeyValue, TextID, line));
                                 listLocaleLang = null;
                                 listLocaleData = null;
                                 break;
@@ -277,78 +286,12 @@ namespace BXFW.Data
                     {
                         if (listLocaleLang.Count == 0 || listLocaleData.Count == 0)
                         {
-                            Debug.LogError($"[LocalizedAssetParser::Parse] Error while parsing : No locale / data was found while searching. String parsed :\n{line}");
+                            Debug.LogError(string.Format("[LocalizedAssetParser::Parse] Error while parsing : No locale / data was found while searching. String parsed :\n{0}", line));
                             continue;
                         }
 
                         currentAsset.Add(new LocalizedText(TextID, CreateDictFromLists(listLocaleLang, listLocaleData)));
                     }
-
-
-                    //    // -- Add listLocaleData -- //
-                    //    // Parse the text covered in "" marks.
-                    //    // This is because we parse assuming that the escape characters are written in code as is.
-                    //    // Basically if we parse a plain text file '\' has no meaning.
-                    //    // Maybe TODO : Make a escape fixer method for strings.
-                    //    var localeKeyValueConverted = localeKeyValue[1].ConvertQuotationString();
-
-                    //    // Parse the string.
-                    //    var currDataStr = string.Empty;
-                    //    var encSurroundChar = false;
-                    //    var currDataStrIsEscapeChar = false;
-
-                    //    foreach (var currDataChar in localeKeyValue[1])
-                    //    {
-                    //        // Escape char (not the SurrondChar)
-                    //        if (currDataChar == EscapeChar)
-                    //        {
-                    //            if (currDataStrIsEscapeChar)
-                    //            {
-                    //                // Escape char is written as '\\'.
-                    //                currDataStr += currDataChar;
-                    //                currDataStrIsEscapeChar = false;
-                    //            }
-
-                    //            currDataStrIsEscapeChar = true;
-                    //            continue;
-                    //        }
-
-                    //        // Surrounding character (either denotes the start or the end)
-                    //        if (currDataChar == SurroundChar)
-                    //        {
-                    //            // Ending of string if we are not in an escape char.
-                    //            if (currDataStrIsEscapeChar)
-                    //            {
-                    //                currDataStr += currDataChar;
-                    //                currDataStrIsEscapeChar = false;
-                    //                continue;
-                    //            }
-
-                    //            // String is null. We 'most likely' still have text to parse
-                    //            if (string.IsNullOrEmpty(currDataStr) && !encSurroundChar)
-                    //            {
-                    //                // This means that we encountered an escapeless Surround character.
-                    //                encSurroundChar = true;
-                    //                continue;
-                    //            }
-
-                    //            // End the string, both conditions are not satisfied.
-                    //            break;
-                    //        }
-
-                    //        if (currDataStrIsEscapeChar)
-                    //        {
-                    //            // Ignore the 'Invalidly Escaped' character.
-                    //            currDataStrIsEscapeChar = false;
-                    //        }
-
-                    //        currDataStr += currDataChar;
-                    //    }
-
-                    //    // If the string is still null, accept as is.
-                    //    // Add to the list of locales anyway.
-                    //    listLocaleLang.Add(currDataStr);
-                    //}
                 }
             }
 
@@ -359,10 +302,11 @@ namespace BXFW.Data
         /// Saves the list.
         /// </summary>
         /// <returns>The resulting string to be written.</returns>
+        /// <exception cref="ArgumentNullException"/>
         public static string Save(List<LocalizedText> assets)
         {
             if (assets == null)
-                throw new ArgumentNullException($"[LocalizedAssetParser::Save] Error while saving : argument named {nameof(assets)} passed is null.");
+                throw new ArgumentNullException("[LocalizedAssetParser::Save] Error while saving : argument named 'assets' passed is null.");
             if (assets.Count <= 0)
                 return string.Empty;
 
@@ -376,7 +320,7 @@ namespace BXFW.Data
             {
                 // Append the textID
                 sb.Append(text.TextID);
-                sb.Append($" {TextIDChar} ");
+                sb.Append(string.Format(" {0} ", TextIDChar));
 
                 for (int i = 0; i < text.Data.Count; i++)
                 {
@@ -384,8 +328,14 @@ namespace BXFW.Data
                     var textWLocaleValue = text.Data.Values.ToArray()[i];
 
                     // Append the dictionary data
-                    // Translates (roughly, the value is subject to change) to | TEXT_ID => localeValue = "whatever here is there.", (comma added if other elements exist)
-                    sb.Append($"{textWLocaleKey} {LocaleDefChar} {SurroundChar}{textWLocaleValue.ConvertQuotationString()}{SurroundChar}{(i != assets.Count - 1 ? LocaleDefSeperateChar : ' ')} ");
+                    // Translates (roughly, the value is subject to change) to =
+                    // TEXT_ID => localeValue = "whatever here is there.", (comma added if other elements exist)
+                    sb.Append(
+                        // yes, inferred string (whatever the '$' thing is called) is indeed nicer to work with
+                        // unfortunately c# versions lower than 7 doesn't support it.
+                        string.Format("{0} {1} {2}{3}{2}{4} ",
+                        textWLocaleKey, LocaleDefChar, SurroundChar, textWLocaleValue.ConvertQuotationString(), (i != assets.Count - 1 ? LocaleDefSeperateChar : ' '))
+                        );
                 }
 
                 // Create a new line
