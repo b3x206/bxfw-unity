@@ -1366,7 +1366,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         }
         public static implicit operator int(ObfuscatedInt i)
         {
-            return i.Value >> i.RandShiftValue;
+            return (i.Value >> i.RandShiftValue) & 0x7FFFFFFF;
         }
     }
 
@@ -1452,6 +1452,14 @@ namespace BXFW.Tools.Editor
 
     public static class EditorAdditionals
     {
+        #region Other
+        /// <summary>
+        /// Directory of the 'Resources' file.
+        /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
+        /// </summary>
+        public static readonly string ResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "/Assets/Resources");
+        #endregion
+
         #region Property Field Helpers
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 

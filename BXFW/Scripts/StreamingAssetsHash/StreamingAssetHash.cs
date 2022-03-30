@@ -20,15 +20,22 @@ namespace BXFW.Tools
     public class StreamingAssetHash
     {
         public const string DEFAULT_HASH = "NOT_DEFINED";
+        /// <summary>
+        /// Hash that is serialized in editor.
+        /// </summary>
+        [SerializeField, InspectorReadOnlyView] private string _serializedCurrentAssetHash = DEFAULT_HASH;
+        /// <summary>
+        /// Hash that is currently calculated.
+        /// </summary>
         private string _currentAssetHash = DEFAULT_HASH;
         public string CurrentAssetHash
         {
             get 
             {
-                if (_currentAssetHash == DEFAULT_HASH)
+                if (_serializedCurrentAssetHash == DEFAULT_HASH)
                     ComputeHash();
 
-                return _currentAssetHash; 
+                return _serializedCurrentAssetHash; 
             }
         }
         public readonly string CurrentRelativeAssetDirectory;
@@ -36,8 +43,15 @@ namespace BXFW.Tools
         {
             get
             {
-                return string.Format("{0}{1}", Application.streamingAssetsPath, CurrentRelativeAssetDirectory);
+                return Path.Combine(Application.streamingAssetsPath, CurrentRelativeAssetDirectory);
             }
+        }
+        /// <summary>
+        /// Controls & does actions depending whether if the hash matches.
+        /// </summary>
+        public void ControlHash()
+        {
+
         }
 
         /// <summary>
@@ -64,7 +78,7 @@ namespace BXFW.Tools
             // HOWEVER you can use UnityWebRequest for mostly anything.
             var loadingRequest = UnityWebRequest.Get(Path.Combine(Application.streamingAssetsPath, CurrentRelativeAssetDirectory));
             loadingRequest.SendWebRequest();
-            while (!loadingRequest.isDone)
+            while (!loadingRequest.isDone) // This method isn't async.
             {
                 if (loadingRequest.result == UnityWebRequest.Result.ConnectionError ||
                     loadingRequest.result == UnityWebRequest.Result.DataProcessingError ||
@@ -84,7 +98,23 @@ namespace BXFW.Tools
             //
             //}
 
-            _currentAssetHash = Encoding.UTF8.GetString(sha.ComputeHash(loadingRequest.downloadHandler.data));
+            // UnityWebRequest returns the 'byte[]'.
+            // For 'StreamReader' we need to convert it using Encoding.UTF8.GetBytes()
+            var assetHash = GetHexFromHash(sha.ComputeHash(loadingRequest.downloadHandler.data));
+#if UNITY_EDITOR
+            _serializedCurrentAssetHash = assetHash;
+#endif
+            _currentAssetHash = assetHash;
+            Debug.Log($"Computed hash success : Dir={CurrentAssetDirectory} | Hash={_currentAssetHash} | SerializedHash={_serializedCurrentAssetHash}");
+        }
+        private static string GetHexFromHash(byte[] hash)
+        {
+            var hexString = new StringBuilder(hash.Length * 2);
+
+            foreach (var b in hash)
+                hexString.Append(b.ToString("x2"));
+
+            return hexString.ToString();
         }
 
         public static bool operator ==(StreamingAssetHash lhs, StreamingAssetHash rhs)
