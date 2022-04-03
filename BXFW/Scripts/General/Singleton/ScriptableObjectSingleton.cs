@@ -23,8 +23,8 @@ namespace BXFW
                 if (soCurrent.Length <= 0)
                 {
                     // Error message not necessary, error checking should be implemented.
-                    // OnInstanceNotFound(); // There is no such thing as 'virtual static' method lol
-                    // we could use delegates but yeah, it's finicky at best.
+                    // OnInstanceNotFound();
+                    // we could use delegates or temporary instances of 'T' but yeah, it's finicky at best.
                     return null;
                 }
                 if (soCurrent.Length > 1)

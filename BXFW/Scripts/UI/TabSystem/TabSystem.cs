@@ -191,7 +191,7 @@ namespace BXFW.UI
         /// Creates Button for TabSystem.
         /// Info : This command already adds to the list <see cref="TabButtons"/>.
         /// </summary>
-        /// <param name="Parent"></param>
+        /// <param name="UseRefTab">Whether to use the referenced tab from index <see cref="CurrentReferenceTabButton"/>.</param>
         /// <returns>Creation button result.</returns>
         public TabButton CreateTab(bool UseRefTab = true)
         {

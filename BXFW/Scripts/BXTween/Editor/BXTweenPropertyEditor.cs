@@ -96,6 +96,8 @@ namespace BXFW.ScriptEditor
             currentPropRect = -1;
             if (property.isExpanded)
             {
+                EditorGUI.BeginChangeCheck();
+
                 // (maybe) TODO : Use properties of 'targetValue' for updating the property.
                 EditorGUI.indentLevel++;
                 EditorGUI.PropertyField(GetPropertyRect(position), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
@@ -118,6 +120,11 @@ namespace BXFW.ScriptEditor
                     "When 'StartTween' is called, if the tween is already running 'StopTween' will invoke 'OnEnd' function (this may produce unwanted results on certain occassions). This prevents that. [Property-specific issue.]"));
                 EditorGUI.PropertyField(GetPropertyRect(position, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
                 EditorGUI.indentLevel--;
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    targetValue.UpdateProperty();
+                }
             }
 
             EditorGUI.EndProperty();

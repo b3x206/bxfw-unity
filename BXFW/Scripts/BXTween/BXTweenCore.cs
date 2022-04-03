@@ -26,9 +26,6 @@
 /// 
 /// But why did you spend effort on this? there are better alternatives :
 ///     I don't know, but yeah
-///
-/// How long have you been writing this? :
-///     For 2 years (actually i probably spent like 2 weeks on initial writing, which is the most of the functionality, then it's just bug fixes and some duct tape)
 
 /** -------------------------------------------------- 
 // GENERAL TODO :
@@ -243,7 +240,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public static readonly string Warn_BXTwCoreNotInit =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCore]->", true),
-                LogRich("The 'Current' reference is null. Re-initilazing. This can happen after script compiles and such."));
+                LogRich("The 'Current' reference is null. Re-initilazing. This can happen after script recompiles and other factors."));
 #if UNITY_EDITOR // Editor Only
         /// <see cref="BXTween.To"/> on editor.
         public static readonly string Warn_EditorBXTwCoreNotInit =
@@ -425,9 +422,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // Note that do your enchantments in the 'float' To Method,
             // than port it over to more complicated types.
             // Note that this is boilerplate code as everything here is kinda type independent except for the method
-            // (thank god for 'var' keyword)
 
-            // FIXME : Fix this goto thing (turn it into a while loop, the c# compiler does that, but i need code cleanness)
+            // FIXME : goto used here, this can be turned into a 'while' loop.
         _Start:
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -2300,12 +2296,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // Stop tween under control 
             var invokeEventOnStop = TwContext.InvokeEventOnStop;
             TwContext.SetInvokeActionOnStop(InvokeEventOnManualStop);
-            Debug.Log($"Time = {Time.time} Set InvokeEventOnStop to => {TwContext.InvokeEventOnStop} | Previous was => {invokeEventOnStop}.");
             if (TwContext.IsRunning)
                 TwContext.StopTween();
             TwContext.SetInvokeActionOnStop(invokeEventOnStop);
 
             TwContext.StartTween();
+            TwContext.PrintAllVariables();
         }
 
         public void StopTween()
@@ -2586,6 +2582,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             UpdateContextCoroutine();
             return this;
         }
+        /// <summary>
+        /// Sets whether to invoke the <see cref="OnEndAction"/>'s when the tween repeats.
+        /// </summary>
         public BXTweenCTX<T> SetInvokeEventOnRepeat(bool value)
         {
             InvokeEventOnRepeat = value;
@@ -2593,11 +2592,18 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             UpdateContextCoroutine();
             return this;
         }
+        /// <summary>
+        /// Sets the easing of the tween.
+        /// </summary>
         public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
         {
             if (UseCustomTwTimeCurve)
             {
-                Debug.Log(BXTweenStrings.GetLog_BXTwCTXCustomCurveInvalid(ease));
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.Log(BXTweenStrings.GetLog_BXTwCTXCustomCurveInvalid(ease));
+                }
+
                 return this;
             }
 
@@ -2643,9 +2649,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             // Clamp value between 0-1
             if (Clamp01)
-            { TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); }; }
+            { 
+                TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); }; 
+            }
             else
-            { TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); }; }
+            { 
+                TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); }; 
+            }
 
             UpdateContextCoroutine();
             return this;
@@ -2669,6 +2679,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             UpdateContextCoroutine();
             return this;
         }
+        /// <summary>
+        /// Sets a starting value to the tween.
+        /// </summary>
         public BXTweenCTX<T> SetStartValue(T sValue)
         {
             StartValue = sValue;
@@ -2682,6 +2695,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             UpdateContextCoroutine();
             return this;
         }
+        /// <summary>
+        /// Sets an ending value to the tween.
+        /// </summary>
         public BXTweenCTX<T> SetEndValue(T eValue)
         {
             EndValue = eValue;
@@ -2759,7 +2775,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
         }
 
-        #region Start-Stop (Part of the Generic Interface)
+        #region Start-Stop
         public void StartTween()
         {
             // Checks
@@ -2843,8 +2859,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             CurrentRunningTweens.Remove(this);
             if (_CurrentIteratorCoroutine != null)
             {
-                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To
-                // it needs to STOP manually.
+                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To it needs to stop 'manually'.
                 Current.StopCoroutine(_CurrentIteratorCoroutine);
                 _CurrentIteratorCoroutine = null;
             }
@@ -2864,8 +2879,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // So yeah, i need to find a more elegant solution to that.
             if (InvokeEventOnStop)
             {
-                Debug.Log($"[BXTween::InvokeEventOnManualStop] Invoking ending events. Tween Info : {BXTweenStrings.Log_BXTwCTXGetDebugFormatInfo(this)}");
-
                 if (OnEndAction != null)
                     OnEndAction.Invoke();
                 if (PersistentOnEndAction != null)
@@ -2920,6 +2933,20 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return "(Context)Unknown or no reason.";
         }
+#if UNITY_EDITOR
+        /// <summary>
+        /// Prints all variables using <see cref="Debug.Log(object)"/>.
+        /// </summary>
+        public void PrintAllVariables()
+        {
+            Debug.Log(BXTweenStrings.LogRich(string.Format("[BXTweenCTX<{0}>] Printing all variables (using reflection).", typeof(T).Name)));
+
+            foreach (var v in GetType().GetProperties())
+            {
+                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("Variable = {0}:{1} Value = {2}", v.Name, v.PropertyType, v.GetValue(this))));
+            }
+        }
+#endif
         #endregion
     }
     #endregion

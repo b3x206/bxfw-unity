@@ -24,7 +24,6 @@ namespace BXFW
 {
     /// <summary>
     /// The additionals class.
-    /// INFO : This class depends on unity engine.
     /// </summary>
     public static class Additionals
     {
@@ -710,15 +709,20 @@ namespace BXFW
                              .Concat(type.GetInterfaces().SelectMany(GetBaseTypes))
                              .Concat(type.BaseType.GetBaseTypes());
         }
-        /// <summary>Converts <see cref="Vector3"/> to negative values.</summary>
-        public static Vector3 NegativeAbs(this Vector3 v)
+        /// <summary>Converts <see cref="Vector2"/> to positive values.</summary>
+        public static Vector2 Abs(this Vector2 v)
         {
-            return -v.Abs();
+            return new Vector2(Mathf.Abs(v.x), Mathf.Abs(v.y));
         }
         /// <summary>Converts <see cref="Vector3"/> to positive values.</summary>
         public static Vector3 Abs(this Vector3 v)
         {
             return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
+        }
+        /// <summary>Converts <see cref="Vector4"/> to positive values.</summary>
+        public static Vector4 Abs(this Vector4 v)
+        {
+            return new Vector4(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z), Mathf.Abs(v.w));
         }
         /// <summary>Get types that has the <paramref name="AttributeType"/> attribute from <see cref="Assembly"/> <paramref name="AttributeAssem"/>.</summary>
         /// <returns>The types with the attribute <paramref name="AttributeType"/>.</returns>
@@ -1014,7 +1018,6 @@ namespace BXFW
         public static void BSave<T>(T serializableObject, string filePath, bool OverWrite = false)
         {
             // Make sure the generic is serializable.
-            // Require attribute.
             if (typeof(T).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
                 Debug.LogError(string.Format("[Additionals::BSave] Is serializable is false for given type '{0}'.", typeof(T).Name));
@@ -1145,7 +1148,7 @@ namespace BXFW
         /// <typeparam name="ExpectT">The expected type. If you get it wrong you will get an exception.</typeparam>
         /// <param name="fileContents">The content of the folder to make data from. Make sure the file is utf8.</param>
         /// <returns></returns>
-        public static ExpectT Load<ExpectT>(char[] fileContents)
+        public static ExpectT BLoad<ExpectT>(char[] fileContents)
         {
             // Require attribute.
             if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
@@ -1158,7 +1161,7 @@ namespace BXFW
             for (int i = 0; i < fileContents.Length; i++)
             { fileContentData[i] = Convert.ToByte(fileContents[i]); }
 
-            return Load<ExpectT>(fileContentData);
+            return BLoad<ExpectT>(fileContentData);
         }
         /// <summary>
         /// Loads binary saved data from bytes.
@@ -1166,7 +1169,7 @@ namespace BXFW
         /// <typeparam name="ExpectT"></typeparam>
         /// <param name="fileContents">The content of the folder to make data from.</param>
         /// <returns></returns>
-        public static ExpectT Load<ExpectT>(byte[] fileContents)
+        public static ExpectT BLoad<ExpectT>(byte[] fileContents)
         {
             // Require attribute.
             if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
@@ -1224,9 +1227,9 @@ namespace BXFW
                 return ms.ToArray();
             }
         }
-#endregion
+        #endregion
 
-#endregion
+        #endregion
     }
 
     #region Helper Enums
@@ -1269,6 +1272,19 @@ namespace BXFW
     #endregion
 
     #region Helper Class / Struct
+    /// <summary>
+    /// Class that contains a reference.
+    /// </summary>
+    public class Ref<T>
+    {
+        private T backing;
+        public T Value { get { return backing; } }
+        public Ref(T reference)
+        {
+            backing = reference;
+        }
+    }
+
     /// <summary>
     /// Serializable dictionary.
     /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>

@@ -5,7 +5,6 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 using System.Collections;
-using System.Runtime.CompilerServices;
 
 namespace BXFW.UI
 {
@@ -162,10 +161,10 @@ namespace BXFW.UI
         private IEnumerator DoColorFade(Color Target, float Duration)
         {
             // Color manipulation
-            Color CachedPrevColor = ButtonImage.color;
+            Color CurrentPrevColor = ButtonImage.color;
             bool TargetIsPrevColor = Target == PrevColor;
 
-            Color ManipulatedTarget = ParentTabSystem.TabButtonSubtractFromCurrentColor ? (TargetIsPrevColor ? Target : CachedPrevColor - Target) : Target;
+            Target = ParentTabSystem.TabButtonSubtractFromCurrentColor ? (TargetIsPrevColor ? Target : CurrentPrevColor - Target) : Target;
 
             if (Duration <= 0f)
             {
@@ -180,12 +179,12 @@ namespace BXFW.UI
             while (T <= 1.0f)
             {
                 T += Time.deltaTime / Duration;
-                ButtonImage.color = Color.Lerp(CachedPrevColor, ManipulatedTarget, Mathf.SmoothStep(0, 1, T));
+                ButtonImage.color = Color.Lerp(CurrentPrevColor, Target, Mathf.SmoothStep(0, 1, T));
                 yield return null;
             }
-            // Set end value. NOTE : MAKE THIS THE MANIPULATED TARGET NOT THE COLOR VALUE PASSED AS TARGET.
-            // THE REASONING BEHIND THIS IS THE TARGET VALUE CAN BE A SUBTRACT COLOR. (infuriation noises)
-            ButtonImage.color = ManipulatedTarget;
+
+            // Set end value.
+            ButtonImage.color = Target;
         }
         #endregion
     }
