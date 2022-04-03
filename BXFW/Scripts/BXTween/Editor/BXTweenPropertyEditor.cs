@@ -8,21 +8,44 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(BXTweenPropertyBase), true)]
     public class BXTweenPropertyEditor : PropertyDrawer
     {
-        private Rect GetPropertyRect(Rect parentRect, int index, float customHeight = -1f)
+        private int currentPropRect = -1;
+        private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
         {
             // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
-            var propHeight = (customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight);
-            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (index + 1)) + 8, parentRect.size.x, propHeight);
+            currentPropRect++;
+            var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
+            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (currentPropRect + 1)) + 8, parentRect.size.x, propHeight);
         }
 
         private SerializedProperty propDuration;
         private SerializedProperty propDelay;
+        private SerializedProperty propRepeatAmount;
+        private SerializedProperty propRepeatType;
         //private SerializedProperty propUseTweenCurve;
         private SerializedProperty propAllowCustomCurveOvershoot;
         private SerializedProperty propTweenCurve;
         private SerializedProperty propTweenEase;
         private SerializedProperty propInvokeOnManualStop;
         private SerializedProperty propOnEndAction;
+
+        private BXTweenSettings currentSettings;
+        private BXTweenSettings CurrentSettings
+        {
+            get
+            {
+                if (currentSettings == null)
+                    currentSettings = BXTweenSettings.Instance;
+
+                if (currentSettings == null)
+                {
+                    // We are still null, create instance at given const resources directory.
+                    // Maybe we can add a EditorPref for creation directory?
+                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                }
+
+                return currentSettings;
+            }
+        }
 
         /// <summary>
         /// Sets up the relative property variables inside this class.
@@ -39,7 +62,10 @@ namespace BXFW.ScriptEditor
 
             propDuration = property.FindPropertyRelative("_Duration");
             propDelay = property.FindPropertyRelative("_Delay");
-            //propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve");
+            propRepeatAmount = property.FindPropertyRelative("_RepeatAmount");
+            propRepeatType = property.FindPropertyRelative("_TweenRepeatType");
+            // This is drawn using EditorGUI.Toggle to activate the property getter-setter.
+            //propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve"); 
             propAllowCustomCurveOvershoot = property.FindPropertyRelative("_AllowInterpolationEaseOvershoot");
             propTweenCurve = property.FindPropertyRelative("_TweenCurve");
             propTweenEase = property.FindPropertyRelative("_TweenEase");
@@ -66,23 +92,31 @@ namespace BXFW.ScriptEditor
                 useTwCurve = targetValue.UseTweenCurve;
             }
 
+            // Reset 'GetPropertyRect' positioning.
+            currentPropRect = -1;
             if (property.isExpanded)
             {
+                // (maybe) TODO : Use properties of 'targetValue' for updating the property.
                 EditorGUI.indentLevel++;
-                EditorGUI.PropertyField(GetPropertyRect(position, 0), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
-                EditorGUI.PropertyField(GetPropertyRect(position, 1), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
-                EditorGUI.PropertyField(GetPropertyRect(position, 2), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
+                EditorGUI.PropertyField(GetPropertyRect(position), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
+                EditorGUI.PropertyField(GetPropertyRect(position), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
+                EditorGUI.PropertyField(GetPropertyRect(position), propRepeatAmount, new GUIContent("Repeat Amount", "Repeat amount of the tween. 0 and lower is no repeat."));
+                // Show repeat type if we are using repeats
+                if (propRepeatAmount.intValue > 0)
+                    EditorGUI.PropertyField(GetPropertyRect(position), propRepeatType, new GUIContent("Repeat Type", "Repeat type of the tween. PingPong: Switch values for 1 repeat, Reset:"));
+                EditorGUI.PropertyField(GetPropertyRect(position), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
 
-                targetValue.UseTweenCurve = EditorGUI.Toggle(GetPropertyRect(position, 3), new GUIContent("Use Custom Curve", "Use a custom easing curve."), targetValue.UseTweenCurve);
+                // This is an 'EditorGUI.Toggle' for proper checking of the inspector.
+                targetValue.UseTweenCurve = EditorGUI.Toggle(GetPropertyRect(position), new GUIContent("Use Custom Curve", "Use a custom easing curve."), targetValue.UseTweenCurve);
 
                 if (useTwCurve)
-                    EditorGUI.PropertyField(GetPropertyRect(position, 4), propTweenCurve, new GUIContent("Curve", "Custom easing curve."));
+                    EditorGUI.PropertyField(GetPropertyRect(position), propTweenCurve, new GUIContent("Curve", "Custom easing curve."));
                 else 
-                    EditorGUI.PropertyField(GetPropertyRect(position, 4), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
+                    EditorGUI.PropertyField(GetPropertyRect(position), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
                 
-                EditorGUI.PropertyField(GetPropertyRect(position, 5), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
+                EditorGUI.PropertyField(GetPropertyRect(position), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
                     "When 'StartTween' is called, if the tween is already running 'StopTween' will invoke 'OnEnd' function (this may produce unwanted results on certain occassions). This prevents that. [Property-specific issue.]"));
-                EditorGUI.PropertyField(GetPropertyRect(position, 6, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
+                EditorGUI.PropertyField(GetPropertyRect(position, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
                 EditorGUI.indentLevel--;
             }
 
@@ -95,7 +129,8 @@ namespace BXFW.ScriptEditor
 
             if (property.isExpanded)
             {
-                totalLinesDrawn = 13;
+                // Was 15, this automatically receives the height from 'GetPropertyRect' calls.
+                totalLinesDrawn = currentPropRect + 7;
             }
 
             return (EditorGUIUtility.singleLineHeight * totalLinesDrawn) + 4;

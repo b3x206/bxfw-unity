@@ -1348,6 +1348,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
     /// <summary>
     /// Obfuscated integer. Stores values with offsets.
     /// </summary>
+    [Serializable]
     public struct ObfuscatedInt
     {
         private int Value;
@@ -1355,7 +1356,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
 
         public ObfuscatedInt(int value)
         {
-            RandShiftValue = UnityEngine.Random.Range(sizeof(int) + 1, int.MaxValue);
+            RandShiftValue = UnityEngine.Random.Range(0, int.MaxValue);
 
             Value = value << RandShiftValue;
         }
@@ -1367,6 +1368,15 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         public static implicit operator int(ObfuscatedInt i)
         {
             return (i.Value >> i.RandShiftValue) & 0x7FFFFFFF;
+        }
+
+        public static int operator+(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs + (int)rhs;
+        }
+        public static int operator-(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs - (int)rhs;
         }
     }
 
@@ -1457,7 +1467,7 @@ namespace BXFW.Tools.Editor
         /// Directory of the 'Resources' file.
         /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
         /// </summary>
-        public static readonly string ResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "/Assets/Resources");
+        public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
         #endregion
 
         #region Property Field Helpers

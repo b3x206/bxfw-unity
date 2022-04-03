@@ -17,13 +17,14 @@ namespace BXFW
 
                 // If instance isn't loaded, we need to load it.
                 // Simplest way to find instance is to call Resources.LoadAll<>() with a empty directory.
-                // While inefficient and 'MonoBehaviour Constructor' types of error prone, it will work for now.
+                // While inefficient and 'u call load on MonoBehaviour Constructor thats illegal' types of error prone, it will work for now.
                 var soCurrent = Resources.LoadAll<T>(string.Empty);
 
                 if (soCurrent.Length <= 0)
                 {
                     // Error message not necessary, error checking should be implemented.
-                    // Debug.LogError(string.Format("[ScriptableObjectSingleton::Instance] There is no scriptable object found in resources with type '{0}'.", typeof(T).Name));
+                    // OnInstanceNotFound(); // There is no such thing as 'virtual static' method lol
+                    // we could use delegates but yeah, it's finicky at best.
                     return null;
                 }
                 if (soCurrent.Length > 1)
@@ -42,41 +43,37 @@ namespace BXFW
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory.
-        /// <br>NOTE : Only one instance can be created.</br>
+        /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called</br>
         /// </summary>
-        /// <param name="relDir">Relative directory to the file.</param>
-        public static void CreateEditorInstance(string relDir, string fileName)
+        /// <param name="relDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
+        public static T CreateEditorInstance(string relDir, string fileName)
         {
             if (Instance != null)
             {
                 Debug.LogWarning(string.Format("[ScriptableObjectSingleton::CreateEditorInstance] Create instance called for type '{0}' even though an instance exists.", typeof(T).Name));
-                return;
+                return default;
             }
 
             // Create & serialize instance of the resource.
             // Find the directory
-            var sStrRelDir = relDir.Substring(relDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1); 
-            var absPath = Path.Combine(Tools.Editor.EditorAdditionals.ResourcesDirectory, relDir);
-
-            if (sStrRelDir.Length != relDir.Length)
-            {
-                Debug.LogWarning(string.Format("[ScriptableObjectSingleton::CreateEditorInstance] Passed directory may not be a relative directory. Directories were : {0} != {1}", relDir, sStrRelDir));
-                absPath = sStrRelDir;
-            }
+            var relativeParentDir = Path.Combine("Assets/Resources/", relDir.Substring(relDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1));
+            var absParentDirectory = Path.Combine(Tools.Editor.EditorAdditionals.ResourcesDirectory);
 
             // If the relative directory isn't created, the creation will fail.
             // For that, i will actually get the combined path.
-            if (!Directory.Exists(absPath))
+            if (!Directory.Exists(absParentDirectory))
             {
-                Directory.CreateDirectory(absPath);
+                Directory.CreateDirectory(absParentDirectory);
             }
 
             // Actually create the thing.
             var cInstance = CreateInstance<T>();
-            UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(sStrRelDir, fileName));
+
+            UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(relativeParentDir, fileName));
             UnityEditor.AssetDatabase.Refresh();
 
             instance = Instance;
+            return instance;
         }
 #endif
     }

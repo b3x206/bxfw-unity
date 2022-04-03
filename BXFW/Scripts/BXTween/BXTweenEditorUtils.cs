@@ -2,19 +2,10 @@
 // 1 : Need to access some of the classes inside this file.
 // No other reasons?
 #if UNITY_EDITOR
-using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-
-using UnityEngine;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
-
-using BXFW.Tools.Editor;
-using System;
-using System.IO;
+using UnityEngine;
 
 /// Editor utils go on this namespace.
 /// You can use these.
@@ -70,104 +61,57 @@ namespace BXFW.Tweening.Editor
             get
             {
                 if (currentSettings == null)
-                    currentSettings = BXTweenSettings.GetBXTweenSettings();
+                    currentSettings = BXTweenSettings.Instance;
+
+                if (currentSettings == null)
+                {
+                    // We are still null, create instance at given const resources directory.
+                    // Maybe we can add a EditorPref for creation directory?
+                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                }
 
                 return currentSettings;
             }
         }
 
-        private BXTweenSettings.HashHelper.OnHashMatchFailAction currentToSetFailAction = BXTweenPersistentSettings.OnHashMatchFailAction;
-        private bool currentCheckBXTweenSettingsHash = BXTweenPersistentSettings.CheckBXTweenSettingsHash;
         private void OnGUI()
         {
             // Draw custom GUI for 'CurrentSettings'
+            EditorGUI.BeginChangeCheck();
             EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
-            CurrentSettings.LogColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
-            CurrentSettings.LogDiagColor = EditorGUILayout.ColorField("Log Diagnostic Color", CurrentSettings.LogDiagColor);
-            CurrentSettings.WarnColor = EditorGUILayout.ColorField("Warning Color", CurrentSettings.WarnColor);
-            CurrentSettings.ErrColor = EditorGUILayout.ColorField("Error Color", CurrentSettings.ErrColor);
+            var lColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
+            var ldColor = EditorGUILayout.ColorField("Log Diagnostic Color", CurrentSettings.LogDiagColor);
+            var wColor = EditorGUILayout.ColorField("Warning Color", CurrentSettings.WarnColor);
+            var errColor = EditorGUILayout.ColorField("Error Color", CurrentSettings.ErrColor);
 
-            EditorGUILayout.LabelField(new GUIContent(":: Default Settings"), EditorStyles.boldLabel);
-            CurrentSettings.DefaultEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
-            CurrentSettings.DefaultRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
+            EditorGUILayout.LabelField(new GUIContent(":: Default Settings (For BXTweenCTX<T>)"), EditorStyles.boldLabel);
+            var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
+            var dRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
 
             EditorGUILayout.LabelField(new GUIContent(":: Debug"), EditorStyles.boldLabel);
-            CurrentSettings.diagnosticMode = EditorGUILayout.Toggle(new GUIContent("Diagnostic Mode", "Enables extensive 'Debug.Log()'."), CurrentSettings.diagnosticMode);
-            
-            EditorGUILayout.LabelField(new GUIContent(":: Persistent Settings"), EditorStyles.boldLabel);
-            currentCheckBXTweenSettingsHash = EditorGUILayout.Toggle(new GUIContent("Verify Hash", "Should you be a bad guy and disable fun?"), currentCheckBXTweenSettingsHash);
-            if (currentCheckBXTweenSettingsHash)
+            var dbgMode = EditorGUILayout.Toggle(new GUIContent("Diagnostic Mode", "Enables extensive 'Debug.Log()'."), CurrentSettings.diagnosticMode);
+
+            if (EditorGUI.EndChangeCheck())
             {
-                currentToSetFailAction = (BXTweenSettings.HashHelper.OnHashMatchFailAction)EditorGUILayout.EnumPopup(new GUIContent("Enable Hash Check : ", "If this is disabled, changes to BXTweenSettings are ignored completely."), currentToSetFailAction);
+                Undo.RecordObject(CurrentSettings, "Change BXTween Settings");
+                // We can't know what setting we changed, so we just use variables
+                // This is bad
+                CurrentSettings.LogColor = lColor;
+                CurrentSettings.LogDiagColor = ldColor;
+                CurrentSettings.WarnColor = wColor;
+                CurrentSettings.ErrColor = errColor;
+
+                CurrentSettings.DefaultEaseType = dEaseType;
+                CurrentSettings.DefaultRepeatType = dRepeatType;
+
+                CurrentSettings.diagnosticMode = dbgMode;
             }
 
-            // If the settings doesn't match, use an apply button.
-            if (currentCheckBXTweenSettingsHash != BXTweenPersistentSettings.CheckBXTweenSettingsHash || currentToSetFailAction != BXTweenPersistentSettings.OnHashMatchFailAction)
+            if (GUILayout.Button("Reset", GUILayout.Width(50f)))
             {
-                if (GUILayout.Button("Apply"))
-                {
-                    if (EditorUtility.DisplayDialog("Warning", "Do you 'really' wanna apply these hash settings?", "Yes", "No"))
-                    {
-                        // Generate & find file
-                        // Note that this is a 'REALLY' dumb method of finding this file's directory.
-                        var fileDir = string.Empty;
-                        foreach (var file in Directory.GetFiles(string.Format("{0}/Assets", Directory.GetCurrentDirectory()), "*.cs"))
-                        {
-                            // Sole reason of using 'typeof' is older c# support.
-                            if (file.Contains(typeof(BXTweenPersistentSettings).Name))
-                            {
-                                // This is the file we are looking for
-                                fileDir = file;
-                                break;
-                            }
-                        }
-
-                        File.WriteAllText(fileDir, string.Format(@"
-using BXFW.Tweening;
-/// <summary>
-/// Automatically generated persistent settings file.
-/// <br>Modified in <see cref={0}BXFW.Tweening.Editor.BXTweenSettingsEditor{0}/>.</br>
-/// <br>NOTE : For this class to be safe, COMPILE PROJECT USING IL2CPP!</br>
-/// </summary>
-public static class BXTweenPersistentSettings
-{
-    public const bool CheckBXTweenSettingsHash = {1};
-    public const BXTweenSettings.HashHelper.OnHashMatchFailAction OnHashMatchFailAction = {2};
-}
-", '"', currentToSetFailAction, currentCheckBXTweenSettingsHash));
-
-                        Debug.Log(string.Format("[BXTweenEditorUtils::SetPersistentSettings] Write all text to '{0}'.", fileDir));
-                    }
-                }
+                Undo.RecordObject(CurrentSettings, "Reset BXTween Settings");
+                CurrentSettings.FromSettings(CreateInstance<BXTweenSettings>());
             }
-        }
-    }
-
-    // -- These classes do hash related stuff for protecting the settings.
-    // If it's modified then the game will check a compiled 'ProtectedBXTweenSettings' for other stuff. 
-    internal class BXTweenSettingsBuildPreProcessor : IPreprocessBuildWithReport
-    {
-        public int callbackOrder { get { return 0; } }
-
-        public void OnPreprocessBuild(BuildReport report)
-        {
-            if (report.summary.result == BuildResult.Failed) return;
-
-            // Save hash data of BXTween to 'Resources'
-            AssetDatabase.CreateAsset(BXTweenSettings.HashHelper.GetTweenSettingsHashObject(), 
-                string.Format("{0}.asset", BXTweenSettings.HashResourceName));
-            AssetDatabase.Refresh();
-        }
-    }
-    internal class BXTweenSettingsBuildPostProcessor : IPostprocessBuildWithReport
-    {
-        public int callbackOrder { get { return 0; } }
-
-        public void OnPostprocessBuild(BuildReport report)
-        {
-            // Delete the hash data from resources.
-            AssetDatabase.DeleteAsset(string.Format("{0}.asset", BXTweenSettings.HashResourceName));
-            AssetDatabase.Refresh();
         }
     }
     #endregion

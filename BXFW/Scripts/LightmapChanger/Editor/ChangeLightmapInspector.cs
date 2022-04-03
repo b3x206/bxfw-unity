@@ -20,15 +20,15 @@ namespace BXFW.ScriptEditor
             if (string.IsNullOrWhiteSpace(lmapName))
                 return false;
 
-            var EnumArray = System.Enum.GetValues(typeof(LightmapEnum)).ToTypeArray<LightmapEnum>();
+            //var EnumArray = System.Enum.GetValues(typeof(LightmapEnum)).ToTypeArray<LightmapEnum>();
 
-            foreach (LightmapEnum s in EnumArray)
-            {
-                if (s.ToString().Equals(lmapName))
-                {
-                    return false;
-                }
-            }
+            //foreach (LightmapEnum s in EnumArray)
+            //{
+            //    if (s.ToString().Equals(lmapName))
+            //    {
+            //        return false;
+            //    }
+            //}
 
             return true;
         }

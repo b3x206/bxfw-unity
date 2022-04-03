@@ -47,6 +47,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using static BXFW.Tweening.BXTween;
+using System.Text;
 
 #if UNITY_EDITOR
 using BXFW.Tweening.Editor;
@@ -57,113 +58,53 @@ namespace BXFW.Tweening
     /// Solution for stylized print strings.
     /// <summary>
     /// Constant strings for <see cref="BXTween"/> messages.
-    /// <para>-Note about the #if UNITY_EDITOR regions:</para>
-    /// <br>----These use rich text tags which will not look pretty on stdout.</br>
-    /// <br>----So write no rich text tags (pass no string which look like "") on non UNITY_EDITOR regions.</br>
+    /// <br>Doesn't apply styling on builds of the game.</br>
     /// </summary>
-    internal static class BXTweenStrings
+    public static class BXTweenStrings
     {
         // -- Formatters
         #region (Private) Rich Text Formatting
-        private static string LogRich(string RichFormatTarget, bool Bold = false)
+        private static string FmtRichText(string RichFmtTarget, bool Bold, Color FmtColor)
         {
 #if UNITY_EDITOR
             // Format colors
-            string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(CurrentSettings.LogColor));
+            string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(FmtColor).ToLowerInvariant());
             // Split and cover the \n's with the color tag for proper coloring.
-            string fmtTarget = string.Empty;
-            foreach (var c in RichFormatTarget)
+            StringBuilder fmtTarget = new StringBuilder(RichFmtTarget.Length);
+            foreach (var c in RichFmtTarget)
             {
                 if (c == '\n')
                 {
                     // last </color> is added on the last line anyways
-                    fmtTarget += string.Format("</color>\n{0}", logColorTag);
+                    // This append looks like = '</color>\n<color=#{0}>'
+                    fmtTarget.Append(string.Format("</color>\n{0}", logColorTag));
+                    Debug.Log(fmtTarget.ToString());
                     continue;
                 }
 
-                fmtTarget += c;
+                fmtTarget.Append(c);
             }
 
-            return string.Format
-                (Bold ? "<b><color=#{1}>{0}</color></b>" : "<color=#{1}>{0}</color>", fmtTarget, logColorTag);
+            return string.Format(Bold ? "<b>{1}{0}</color></b>" : "{1}{0}</color>", fmtTarget.ToString(), logColorTag);
 #else
             return RichFormatTarget;
 #endif
         }
-        private static string LogDiagRich(string RichFormatTarget, bool Bold = false)
+        internal static string LogRich(string s, bool Bold = false)
         {
-#if UNITY_EDITOR
-            // Format colors
-            string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(CurrentSettings.LogDiagColor));
-            // Split and cover the \n's with the color tag for proper coloring.
-            string fmtTarget = string.Empty;
-            foreach (var c in RichFormatTarget)
-            {
-                if (c == '\n')
-                {
-                    // last </color> is added on the last line anyways
-                    fmtTarget += string.Format("</color>\n{0}", logColorTag);
-                    continue;
-                }
-
-                fmtTarget += c;
-            }
-
-            return string.Format
-                (Bold ? "<b><color=#{1}>{0}</color></b>" : "<color=#{1}>{0}</color>", fmtTarget, logColorTag);
-#else
-            return RichFormatTarget;
-#endif
+            return FmtRichText(s, Bold, CurrentSettings.LogColor);
         }
-        private static string WarnRich(string RichFormatTarget, bool Bold = false)
+        internal static string LogDiagRich(string s, bool Bold = false)
         {
-#if UNITY_EDITOR
-            // Format colors
-            string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(CurrentSettings.WarnColor));
-            // Split and cover the \n's with the color tag for proper coloring.
-            string fmtTarget = string.Empty;
-            foreach (var c in RichFormatTarget)
-            {
-                if (c == '\n')
-                {
-                    // last </color> is added on the last line anyways
-                    fmtTarget += string.Format("</color>\n{0}", logColorTag);
-                    continue;
-                }
-
-                fmtTarget += c;
-            }
-
-            return string.Format
-                (Bold ? "<b><color=#{1}>{0}</color></b>" : "<color=#{1}>{0}</color>", fmtTarget, logColorTag);
-#else
-            return RichFormatTarget;
-#endif
+            return FmtRichText(s, Bold, CurrentSettings.LogDiagColor);
         }
-        private static string ErrRich(string RichFormatTarget, bool Bold = false)
+        internal static string WarnRich(string s, bool Bold = false)
         {
-#if UNITY_EDITOR
-            // Format colors
-            string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(CurrentSettings.ErrColor));
-            // Split and cover the \n's with the color tag for proper coloring.
-            string fmtTarget = string.Empty;
-            foreach (var c in RichFormatTarget)
-            {
-                if (c == '\n')
-                {
-                    // last </color> is added on the last line anyways
-                    fmtTarget += string.Format("</color>\n{0}", logColorTag);
-                    continue;
-                }
-
-                fmtTarget += c;
-            }
-
-            return string.Format
-                (Bold ? "<b><color=#{1}>{0}</color></b>" : "<color=#{1}>{0}</color>", fmtTarget, logColorTag);
-#else
-            return RichFormatTarget;
-#endif
+            return FmtRichText(s, Bold, CurrentSettings.WarnColor);
+        }
+        internal static string ErrRich(string s, bool Bold = false)
+        {
+            return FmtRichText(s, Bold, CurrentSettings.ErrColor);
         }
         #endregion
 
@@ -187,6 +128,11 @@ namespace BXFW.Tweening
         }
 #endif
         // -- Strings
+        #region Data
+        public const string SettingsResourceCreatePath = "";
+        public const string SettingsResourceCreateName = "BXTweenSettings.asset";
+        #endregion
+
         #region Info-Logs
         // Non-Dynamic
         /// <see cref="BXTween.To"/>
@@ -294,6 +240,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 WarnRich("[BXTween::StopTween]->", true),
                 LogRich("The current running coroutine is null. Probably an internal error, that is not very important."));
+        public static readonly string Warn_BXTwCoreNotInit =
+            string.Format("{0} {1}",
+                WarnRich("[BXTweenCore]->", true),
+                LogRich("The 'Current' reference is null. Re-initilazing. This can happen after script compiles and such."));
 #if UNITY_EDITOR // Editor Only
         /// <see cref="BXTween.To"/> on editor.
         public static readonly string Warn_EditorBXTwCoreNotInit =
@@ -307,10 +257,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         #region Errors
         // Non-Dynamic
-        public static readonly string Err_BXTwCoreNotInit =
+        public static readonly string Err_BXTwCoreFailInit =
             string.Format("{0} {1}",
                 ErrRich("[BXTweenCore(Critical)]->", true),
-                LogRich("The 'Current' reference is null. Make sure the Core initilazes properly."));
+                LogRich("The 'Current' reference is null and failed to initilaze. Make sure the Core initilazes properly."));
         /// <summary>
         /// General failure message for any of the <see cref="BXTween.To"/> methods failing.
         /// </summary>
@@ -404,7 +354,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     {
         #region BXTweenCore Functions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void InitilazeBXTw()
+        internal static void InitilazeBXTw()
         {
             // Unity Editor Checks
 #if UNITY_EDITOR
@@ -427,7 +377,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// Initilaze BXTween on editor.
         /// The object gets destroyed after the tweens are done.
         /// </summary>
-        public static void EditorInitilazeBXTw()
+        internal static void EditorInitilazeBXTw()
         {
             if (Current != null)
             {
@@ -468,6 +418,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         #endregion
 
         #region To Methods
+        // (maybe) TODO : Make a generic lerp 'To' method, setting using a dictionary of generic delegates for lerping.
         public IEnumerator To(BXTweenCTX<float> ctx)
         {
             // Notes (Do not copy to other methods) :
@@ -1022,26 +973,20 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             get
             {
                 if (_CurrentSettings == null)
-                    RefreshCurrentSettings();
+                    _CurrentSettings = BXTweenSettings.Instance;
+
+                if (_CurrentSettings == null)
+                {
+                    // We are still null, create instance at given const resources directory.
+                    // Maybe we can add a EditorPref for creation directory?
+                    _CurrentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                }
 
                 return _CurrentSettings;
             }
         }
-        public static void RefreshCurrentSettings()
-        {
-            // Check if current settings are modified.
-            _CurrentSettings = BXTweenSettings.GetBXTweenSettings();
-            if (BXTweenSettings.IsModified)
-            {
-                Debug.LogError(BXTweenStrings.Err_BXTweenSettingsModified);
-            }
 
-#if !UNITY_EDITOR
-
-#endif
-        }
-
-        private static readonly MethodInfo[] BXTweenExtensionMethods = typeof(BXTween).GetMethods();
+        private static readonly MethodInfo[] BXTweenMethods = typeof(BXTween).GetMethods();
 
         #region Utility
         /// <summary>
@@ -1051,37 +996,42 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// <returns>Bool = If it's tweenable | MethodInfo = For usage if tweenable</returns>
         public static KeyValuePair<bool, MethodInfo> IsTweenableType(Type t)
         {
-            /* Get method if it's tweenable (dynamic) */
-            var info = BXTweenExtensionMethods.Single(x => x.Name == nameof(To) && x.GetParameters()[0].ParameterType == t);
+            // Get method if it's tweenable (dynamic using reflection)
+            var info = BXTweenMethods.Single(x => x.Name == nameof(To) && x.GetParameters()[0].ParameterType == t);
             return new KeyValuePair<bool, MethodInfo>(info != null, info);
         }
         /// <summary>
         /// Check the status of <see cref="BXTweenCore"/> <see cref="Current"/> variable.
         /// </summary>
-        /// <returns>Whether if the tweening '''engine''' is ok.</returns>
+        /// <returns>Whether if the tweening 'engine' is ok.</returns>
         public static bool CheckStatus()
         {
-#if UNITY_EDITOR
             // Editor checks
-            if (Current == null && !Application.isPlaying && Application.isEditor)
-            {
-                Debug.LogWarning(BXTweenStrings.Warn_EditorBXTwCoreNotInit);
-                BXTweenCore.EditorInitilazeBXTw();
-            }
-#endif
-            // Runtime checks
             if (Current == null)
             {
-                // TODO (maybe) : Attempt to re-initilaze BXTween?
-                Debug.LogError(BXTweenStrings.Err_BXTwCoreNotInit);
+                if (!Application.isPlaying && Application.isEditor)
+                {
+#if UNITY_EDITOR
+                    Debug.LogWarning(BXTweenStrings.Warn_EditorBXTwCoreNotInit);
+                    BXTweenCore.EditorInitilazeBXTw();
+#endif
+                }
+                else // Not editor or playing
+                {
+                    // Re-initilaze on editor.
+                    Debug.LogWarning(BXTweenStrings.Warn_BXTwCoreNotInit);
+                    BXTweenCore.InitilazeBXTw();
+                }
+            }
+            // It still is null, print error and return false.
+            if (Current == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTwCoreFailInit);
                 return false;
             }
 
             return true;
         }
-        /// <summary>
-        /// Get the status of BXTween.
-        /// </summary>
         #endregion
 
         #region Context Creation (To Methods)
@@ -1886,6 +1836,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public static readonly IDictionary<EaseType, BXTweenEaseSetMethod> EaseMethods = new Dictionary<EaseType, BXTweenEaseSetMethod>
         {
+            // None = Linear
+            // The option 'None' was added to detect default settings.
             { EaseType.Linear, Linear },
             { EaseType.QuadIn, QuadIn },
             { EaseType.QuadOut, QuadOut },
@@ -2104,18 +2056,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     {
         [SerializeField] protected float _Duration = 1f;
         [SerializeField] protected float _Delay = 0f;
-        // Curve related
+        [SerializeField] protected int _RepeatAmount = 0;
+        [SerializeField] protected RepeatType _TweenRepeatType = RepeatType.PingPong;
+
         [SerializeField] protected bool _UseTweenCurve = true;
-        // Curve
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
         [SerializeField] protected AnimationCurve _TweenCurve;
-        // No Curve
-        [SerializeField] protected EaseType _TweenEase = CurrentSettings.DefaultEaseType;
-        // Event
+        [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
         public bool InvokeEventOnManualStop = false;
         public BXTweenUnityEvent OnEndAction;
 
-        // ---- Refreshing Setters ---- //
         public float Duration
         {
             get { return _Duration; }
@@ -2136,6 +2086,26 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 UpdateProperty();
             }
         }
+        public int RepeatAmount
+        {
+            get { return _RepeatAmount; }
+            set
+            {
+                _RepeatAmount = value;
+
+                UpdateProperty();
+            }
+        }
+        public RepeatType TweenRepeatType
+        {
+            get { return _TweenRepeatType; }
+            set
+            {
+                _TweenRepeatType = value;
+
+                UpdateProperty();
+            }
+        }
         public AnimationCurve TweenCurve
         {
             get { return _TweenCurve; }
@@ -2151,11 +2121,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public EaseType TweenEase
         {
             get { return _TweenEase; }
-            set { _TweenEase = value; }
+            set 
+            { 
+                _TweenEase = value;
+
+                UpdateProperty();
+            }
         }
-        /// <summary>
-        /// Whether if we want to use a tween curve.
-        /// </summary>
         public bool UseTweenCurve
         {
             get { return _TweenCurve != null && _UseTweenCurve; }
@@ -2168,6 +2140,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 {
                     _TweenCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
                 }
+
+                // Don't call 'UpdateProperty' here as the inspector calls this every frame.
             }
         }
         public bool AllowInterpolationEaseOvershoot
@@ -2184,8 +2158,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public abstract void UpdateProperty();
     }
     /// <summary>
-    /// <c>Experimental</c>, the tween property.
-    /// Used for creating convient context, editable by the inspector.
+    /// Tween property that contains a <see cref="BXTweenCTX{T}"/>
+    /// <br>Used for creating convient context, editable by the inspector.</br>
+    /// <br>
+    /// NOTE : Do not create a public field with this class's generic versions. 
+    /// Instead inherit from types that have defined the '<typeparamref name="T"/>'. (otherwise unity doesn't serialize it)
+    /// </br>
     /// </summary>
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
@@ -2274,7 +2252,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
-            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot);
+            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).
+                SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).
+                SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
             if (OnEndAction != null)
@@ -2423,6 +2403,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         void StopTween();
     }
 
+    /// <summary>Tween context. Not serializable, but contains the currently running tween data.</summary>
     public sealed class BXTweenCTX<T> : ITweenCTX
     {
         #region Variables

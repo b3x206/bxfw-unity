@@ -32,11 +32,17 @@ namespace BXFW.Tools
         private void OnGUI()
         {
             // Create 'StreamingAssetHashOptions' if it doesn't exist.
-            if (StreamingAssetHashOptions.Instance == null)
-                StreamingAssetHashOptions.CreateEditorInstance(OptionsResourceDir, OptionsResourceName);
+            //if (StreamingAssetHashOptions.Instance == null)
+            //    StreamingAssetHashOptions.CreateEditorInstance(OptionsResourceDir, OptionsResourceName);
 
-            // Draw the array of StreamingAssetHashOptions
-            SOCurrentHashObject.DrawCustomDefaultInspector(null);
+            EditorGUILayout.HelpBox("[StreamingAssetsHash] This is still TODO, i need to find a better structure for this asset.", MessageType.Warning);
+            if (GUILayout.Button("Close"))
+            {
+                Close();
+            }
+
+            //// Draw the array of StreamingAssetHashOptions
+            //SOCurrentHashObject.DrawCustomDefaultInspector(null);
         }
     }
 }

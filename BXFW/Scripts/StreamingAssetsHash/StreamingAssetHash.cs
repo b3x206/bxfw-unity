@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,16 +18,25 @@ namespace BXFW.Tools
     [Serializable]
     public class StreamingAssetHash
     {
+        public enum OnHashMatchFailAction
+        {
+            Ignore = 0,
+            Exception = 1,
+            Crash = 2,
+            Custom = 3
+        }
+
         public const string DEFAULT_HASH = "NOT_DEFINED";
         /// <summary>
         /// Hash that is serialized in editor.
         /// </summary>
         [SerializeField, InspectorReadOnlyView] private string _serializedCurrentAssetHash = DEFAULT_HASH;
+        public OnHashMatchFailAction onFailAction = OnHashMatchFailAction.Exception;
         /// <summary>
         /// Hash that is currently calculated.
         /// </summary>
         private string _currentAssetHash = DEFAULT_HASH;
-        public string CurrentAssetHash
+        public string SerializedCurrentAssetHash
         {
             get 
             {
@@ -51,7 +59,10 @@ namespace BXFW.Tools
         /// </summary>
         public void ControlHash()
         {
+            if (SerializedCurrentAssetHash != _currentAssetHash)
+            {
 
+            }
         }
 
         /// <summary>
@@ -75,8 +86,12 @@ namespace BXFW.Tools
             var sha = new SHA256Managed();
             // Load the file
             // NOTE : In android, we need UnityWebRequest for StreamingAssets.
-            // HOWEVER you can use UnityWebRequest for mostly anything.
+            // HOWEVER you can use UnityWebRequest for mostly anything. (including file loading, we just need to append 'file://' to start)
+#if UNITY_ANDROID && !UNITY_EDITOR
+            var loadingRequest = UnityWebRequest.Get("file://" + Path.Combine(Application.streamingAssetsPath, CurrentRelativeAssetDirectory));
+#else
             var loadingRequest = UnityWebRequest.Get(Path.Combine(Application.streamingAssetsPath, CurrentRelativeAssetDirectory));
+#endif
             loadingRequest.SendWebRequest();
             while (!loadingRequest.isDone) // This method isn't async.
             {
@@ -119,7 +134,7 @@ namespace BXFW.Tools
 
         public static bool operator ==(StreamingAssetHash lhs, StreamingAssetHash rhs)
         {
-            return lhs.CurrentAssetHash == rhs.CurrentAssetHash;
+            return lhs.SerializedCurrentAssetHash == rhs.SerializedCurrentAssetHash;
         }
         public static bool operator !=(StreamingAssetHash lhs, StreamingAssetHash rhs)
         {
@@ -135,7 +150,7 @@ namespace BXFW.Tools
         }
         public override int GetHashCode()
         {
-            return CurrentAssetHash.GetHashCode();
+            return SerializedCurrentAssetHash.GetHashCode();
         }
     }
 }

@@ -15,9 +15,12 @@ namespace BXFW.Tools
         public static void CheckCurrentHashes()
         {
             // Check currentHashes array for each stuff.
+            if (Instance == null)
+                return;
+
             foreach (var assetHash in Instance.currentHashes)
             {
-                if (assetHash.)
+                assetHash.ControlHash();
             }
         }
     }
