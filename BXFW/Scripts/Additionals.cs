@@ -1737,7 +1737,7 @@ namespace BXFW.Tools.Editor
             while (property.NextVisible(expanded))
             {
                 // Disable if 'm_Script' field that unity adds automatically is being drawn.
-                using (new EditorGUI.DisabledScope("m_Script" == property.propertyPath))
+                using (new EditorGUI.DisabledScope(property.propertyPath == "m_Script"))
                 {
                     // -- Check if there is a match
                     if (onStringMatchEvent != null)

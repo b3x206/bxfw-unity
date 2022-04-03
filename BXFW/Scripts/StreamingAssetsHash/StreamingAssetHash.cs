@@ -61,7 +61,7 @@ namespace BXFW.Tools
         {
             if (SerializedCurrentAssetHash != _currentAssetHash)
             {
-
+                Debug.Log("[StreamingAssetHash] Hashes don't match.");
             }
         }
 

@@ -46,12 +46,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using static BXFW.Tweening.BXTween;
 using System.Text;
 
 #if UNITY_EDITOR
 using BXFW.Tweening.Editor;
 #endif
+using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening
 {
