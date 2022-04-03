@@ -119,6 +119,8 @@ namespace BXFW.Tools.Editor
 }
 #endif
 
+// TODO : Use string array with dropdown resource (basically use the monobehaviour or a scriptable object) instead of 'LightmapEnum'
+// That was a bad idea.
 namespace BXFW
 {
     /// <summary>
@@ -165,7 +167,7 @@ namespace BXFW
     {
         public string LightmapName;
 
-        public LightmapEnum DefaultLightmap;
+        public int DefaultLightmap;
         public bool SetDefaultLightmapOnAwake;
 
         // Const & Hidden variables.
@@ -177,11 +179,11 @@ namespace BXFW
         // Runtime methods (without the editor stuff)
         private void Awake()
         {
-            if (SetDefaultLightmapOnAwake && Enum.GetValues(typeof(LightmapEnum)).Length != 0)
+            if (SetDefaultLightmapOnAwake/* && Enum.GetValues(typeof(LightmapEnum)).Length != 0*/)
             { SetLightmap(DefaultLightmap); }
         }
 
-        public void SetLightmap(LightmapEnum option)
+        public void SetLightmap(int option)
         { LightmapScenarioData.ApplyToLightmapOptions(LInfos[(int)option]); }
 
         #region Unity Editor
@@ -309,14 +311,14 @@ namespace BXFW
             }
 
             // Gather the names of the enum.
-            var EnumArr = Enum.GetValues(typeof(LightmapEnum));
+            var EnumArr = new int[1]/*Enum.GetValues(typeof(LightmapEnum))*/;
             string[] DataAssetNames = new string[0];
             if (EnumArr.Length != 0)
             {
                 Array.Resize(ref DataAssetNames, EnumArr.Length + 1);
 
                 for (int i = 0; i < EnumArr.Length; i++)
-                    DataAssetNames[i] = ((LightmapEnum)EnumArr.GetValue(i)).ToString();
+                    DataAssetNames[i] = EnumArr[i].ToString();
 
                 DataAssetNames[EnumArr.Length - 1] = LightmapName;
             }
@@ -372,13 +374,13 @@ namespace BXFW
 
             /* Cast the enum values into strings
              * We store the Enum names in (you guessed it) the Enum itself. */
-            var EnumArr = Enum.GetValues(typeof(LightmapEnum));
+            var EnumArr = new int[1]/*Enum.GetValues(typeof(LightmapEnum))*/;
             List<string> DataAssetNames = new List<string>();
 
             if (EnumArr.Length != 0)
             {
                 for (int i = 0; i < EnumArr.Length; i++)
-                { DataAssetNames.Add(((LightmapEnum)EnumArr.GetValue(i)).ToString()); }
+                { DataAssetNames.Add(EnumArr[i].ToString()); }
             }
 
             DataAssetNames.Add(UseUserdefStr ? LightmapName : inf.Name);

@@ -4,14 +4,14 @@
 #if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using BXFW.Tools.Editor;
+using UnityEngine;
 
 /// Editor utils go on this namespace.
 /// You can use these.
 namespace BXFW.Tweening.Editor
 {
+    #region BXFW Settings
     /// <summary>
     /// Override class for inspector of <see cref="BXTweenSettings"/>.
     /// <br>This does not affect <see cref="BXTweenSettingsEditor"/>.</br>
@@ -61,36 +61,60 @@ namespace BXFW.Tweening.Editor
             get
             {
                 if (currentSettings == null)
-                    currentSettings = BXTweenSettings.GetBXTweenSettings();
+                    currentSettings = BXTweenSettings.Instance;
+
+                if (currentSettings == null)
+                {
+                    // We are still null, create instance at given const resources directory.
+                    // Maybe we can add a EditorPref for creation directory?
+                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                }
 
                 return currentSettings;
-            }
-        }
-        private SerializedObject currentSettingsSO;
-        private SerializedObject CurrentSettingsSO
-        {
-            get
-            {
-                if (currentSettingsSO == null)
-                    currentSettingsSO = new SerializedObject(CurrentSettings);
-
-                return currentSettingsSO;
             }
         }
 
         private void OnGUI()
         {
-            // Draw the default property field for BXTweenSettings.
-            CurrentSettingsSO.DrawCustomDefaultInspector(null);
+            // Draw custom GUI for 'CurrentSettings'
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
+            var lColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
+            var ldColor = EditorGUILayout.ColorField("Log Diagnostic Color", CurrentSettings.LogDiagColor);
+            var wColor = EditorGUILayout.ColorField("Warning Color", CurrentSettings.WarnColor);
+            var errColor = EditorGUILayout.ColorField("Error Color", CurrentSettings.ErrColor);
 
-            // Other GUI
-            //if (Application.isPlaying)
-            //{
-            //    // Not necessary as it uses a scriptable object.
-            //    EditorGUILayout.HelpBox("[Warning] : BXTween settings may NOT save after you modified it in runtime!", MessageType.Warning);
-            //}
+            EditorGUILayout.LabelField(new GUIContent(":: Default Settings (For BXTweenCTX<T>)"), EditorStyles.boldLabel);
+            var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
+            var dRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
+
+            EditorGUILayout.LabelField(new GUIContent(":: Debug"), EditorStyles.boldLabel);
+            var dbgMode = EditorGUILayout.Toggle(new GUIContent("Diagnostic Mode", "Enables extensive 'Debug.Log()'."), CurrentSettings.diagnosticMode);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(CurrentSettings, "Change BXTween Settings");
+                // We can't know what setting we changed, so we just use variables
+                // This is bad
+                CurrentSettings.LogColor = lColor;
+                CurrentSettings.LogDiagColor = ldColor;
+                CurrentSettings.WarnColor = wColor;
+                CurrentSettings.ErrColor = errColor;
+
+                CurrentSettings.DefaultEaseType = dEaseType;
+                CurrentSettings.DefaultRepeatType = dRepeatType;
+
+                CurrentSettings.diagnosticMode = dbgMode;
+            }
+
+            if (GUILayout.Button("Reset", GUILayout.Width(50f)))
+            {
+                Undo.RecordObject(CurrentSettings, "Reset BXTween Settings");
+                CurrentSettings.FromSettings(CreateInstance<BXTweenSettings>());
+            }
         }
     }
+    #endregion
 
     /// NOTE : Part of <see cref="BXTween"/>.
     /// Same stuff applies here too. (This is just some simple editor scripts)

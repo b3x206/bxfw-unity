@@ -14,9 +14,12 @@ namespace BXFW.ScriptEditor
         {
             Target = (BXTweenCore)target;
 
-            headerTextStyle = new GUIStyle(EditorStyles.boldLabel);
-            headerTextStyle.fontSize = 22;
+            headerTextStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 22
+            };
 
+            // Put repaint of this inspector to update to get realtime data viewed on inspector.
             EditorApplication.update += Repaint;
         }
         private void OnDisable()

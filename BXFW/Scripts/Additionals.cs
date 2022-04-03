@@ -17,6 +17,9 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
+using BXFW;
+using BXFW.Tools.Editor;
+
 namespace BXFW
 {
     /// <summary>
@@ -229,7 +232,7 @@ namespace BXFW
             // Law of sine to calculate length of p2
             var d = r.magnitude * Mathf.Sin(a * Mathf.Deg2Rad) / Mathf.Sin(c * Mathf.Deg2Rad);
 
-            if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0)
+            if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0f)
                 return cPoint0 + (v2 * 0.5f) - (pd2 * d);
 
             return cPoint0 + (v2 * 0.5f) + (pd2 * d);
@@ -1226,6 +1229,7 @@ namespace BXFW
 #endregion
     }
 
+    #region Helper Enums
     /// <summary>
     /// Transform Axis.
     /// <br>(Used in few helper methods)</br>
@@ -1262,7 +1266,9 @@ namespace BXFW
 
         XYAxis = XAxis | YAxis
     }
+    #endregion
 
+    #region Helper Class / Struct
     /// <summary>
     /// Serializable dictionary.
     /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>
@@ -1339,12 +1345,49 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
             }
         }
     }
+    /// <summary>
+    /// Obfuscated integer. Stores values with offsets.
+    /// </summary>
+    [Serializable]
+    public struct ObfuscatedInt
+    {
+        private int Value;
+        private int RandShiftValue;
+
+        public ObfuscatedInt(int value)
+        {
+            RandShiftValue = UnityEngine.Random.Range(0, int.MaxValue);
+
+            Value = value << RandShiftValue;
+        }
+
+        public static implicit operator ObfuscatedInt(int i)
+        {
+            return new ObfuscatedInt(i);
+        }
+        public static implicit operator int(ObfuscatedInt i)
+        {
+            return (i.Value >> i.RandShiftValue) & 0x7FFFFFFF;
+        }
+
+        public static int operator+(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs + (int)rhs;
+        }
+        public static int operator-(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs - (int)rhs;
+        }
+    }
+
+    #endregion
 }
 
 #region Unity Editor Additionals
+
+#region ---- Utils
 namespace BXFW.Tools.Editor
 {
-#if UNITY_EDITOR
     /// <summary>
     /// Allows for coroutine execution in Edit Mode.
     /// </summary>
@@ -1419,6 +1462,14 @@ namespace BXFW.Tools.Editor
 
     public static class EditorAdditionals
     {
+        #region Other
+        /// <summary>
+        /// Directory of the 'Resources' file.
+        /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
+        /// </summary>
+        public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
+        #endregion
+
         #region Property Field Helpers
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
@@ -1686,7 +1737,7 @@ namespace BXFW.Tools.Editor
             while (property.NextVisible(expanded))
             {
                 // Disable if 'm_Script' field that unity adds automatically is being drawn.
-                using (new EditorGUI.DisabledScope("m_Script" == property.propertyPath))
+                using (new EditorGUI.DisabledScope(property.propertyPath == "m_Script"))
                 {
                     // -- Check if there is a match
                     if (onStringMatchEvent != null)
@@ -1935,6 +1986,81 @@ namespace BXFW.Tools.Editor
         }
         #endregion
     }
+}
+
+#region --- Inspector Variable Attributes
+namespace BXFW
+{
+    /// <summary>
+    /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
+    /// </summary>
+    public class InspectorLineAttribute : PropertyAttribute
+    {
+#if UNITY_EDITOR
+        public Color LineColor { get; private set; }
+        public int LineThickness { get; private set; }
+        public int LinePadding { get; private set; }
+#endif
+        public InspectorLineAttribute(float colorR, float colorG, float colorB, int thickness = 2, int padding = 3)
+        {
+#if UNITY_EDITOR
+            LineColor = new Color(colorR, colorG, colorB);
+            LineThickness = thickness;
+            LinePadding = padding;
+#endif
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Return the draw height.
+        /// </summary>
+        /// <param name="parentRect"></param>
+        /// <returns></returns>
+        public float GetYPosHeightOffset()
+        {
+            return LineThickness + LinePadding;
+        }
+#endif
+    }
+
+    /// <summary>
+    /// Attribute to disable gui on property fields.
+    /// </summary>
+    public class InspectorReadOnlyViewAttribute : PropertyAttribute { }
+}
+#endregion
+
+#endregion
+
+#region ---- Additionals Class Inspectors
+
+namespace BXFW.ScriptEditor
+{
+    [CustomPropertyDrawer(typeof(ObfuscatedInt))]
+    public class ObfuscatedIntPropertyDrawer : PropertyDrawer
+    {
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUIUtility.singleLineHeight + 4;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            // This property is drawn like an integer.
+            var targetPropField = property.GetTarget().Key;
+            var targetProp = (ObfuscatedInt)property.GetTarget().Value;
+
+            EditorGUI.BeginChangeCheck();
+            var iField = EditorGUI.IntField(position, new GUIContent(label.text, "Edit obfuscated integer. NOTE : Won't display correctly on 'Debug' inspector"), targetProp);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                targetPropField.SetValue(property.serializedObject, iField);
+            }
+
+            EditorGUI.HelpBox(new Rect(position.x, position.y + EditorGUIUtility.singleLineHeight + 4, position.width, position.height), "Not complete", MessageType.Warning);
+        }
+    }
 
     #region Inspector Attributes Drawers
     // (maybe) TODO : Carry these 'Inspector Attribute Drawers' over to a seperate file.
@@ -1981,48 +2107,6 @@ namespace BXFW.Tools.Editor
     }
 
     #endregion
-#endif
-}
-
-#region Inspector Variable Attributes
-namespace BXFW
-{
-    /// <summary>
-    /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
-    /// </summary>
-    public class InspectorLineAttribute : PropertyAttribute
-    {
-#if UNITY_EDITOR
-        public Color LineColor { get; private set; }
-        public int LineThickness { get; private set; }
-        public int LinePadding { get; private set; }
-#endif
-        public InspectorLineAttribute(float colorR, float colorG, float colorB, int thickness = 2, int padding = 3)
-        {
-#if UNITY_EDITOR
-            LineColor = new Color(colorR, colorG, colorB);
-            LineThickness = thickness;
-            LinePadding = padding;
-#endif
-        }
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// Return the draw height.
-        /// </summary>
-        /// <param name="parentRect"></param>
-        /// <returns></returns>
-        public float GetYPosHeightOffset()
-        {
-            return LineThickness + LinePadding;
-        }
-#endif
-    }
-
-    /// <summary>
-    /// Attribute to disable gui on property fields.
-    /// </summary>
-    public class InspectorReadOnlyViewAttribute : PropertyAttribute { }
 }
 #endregion
 
