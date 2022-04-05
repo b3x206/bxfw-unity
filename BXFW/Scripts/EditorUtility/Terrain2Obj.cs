@@ -35,11 +35,12 @@ namespace BXFW.Tools.Editor
             _terrain = null;
             var terrainObject = Selection.activeObject as Terrain;
 
-            if (!terrainObject)
+            if (terrainObject == null)
             {
                 terrainObject = Terrain.activeTerrain;
             }
-            if (terrainObject)
+            // don't throw null reference exception if the terrain is still null.
+            if (terrainObject != null)
             {
                 _terrain = terrainObject.terrainData;
                 _terrainPos = terrainObject.transform.position;
@@ -50,9 +51,19 @@ namespace BXFW.Tools.Editor
 
         private void OnGUI()
         {
-            if (!_terrain)
+            if (_terrain == null)
             {
-                GUILayout.Label("- No terrain found. Make sure the terrain is selected. -");
+                GUILayout.Label("- No terrain found.");
+
+                // Create a terrain field.
+                Terrain tCurrent = null;
+                tCurrent = EditorGUILayout.ObjectField("Terrain to convert : ", tCurrent, typeof(Terrain), true) as Terrain;
+
+                if (tCurrent != null)
+                {
+                    _terrain = tCurrent.terrainData;
+                    _terrainPos = tCurrent.transform.position;
+                }
 
                 if (GUILayout.Button("Exit"))
                 {
@@ -62,6 +73,7 @@ namespace BXFW.Tools.Editor
                 return;
             }
 
+            EditorGUILayout.LabelField("Note : To change terrains after selection, select another terrain.", EditorStyles.miniBoldLabel);
             _saveFormat = (SaveFormat)EditorGUILayout.EnumPopup("Export Format", _saveFormat);
             _saveResolution = (SaveResolution)EditorGUILayout.EnumPopup("Resolution", _saveResolution);
 

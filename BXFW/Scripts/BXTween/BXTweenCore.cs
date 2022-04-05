@@ -1,4 +1,10 @@
-﻿/// BXTween :
+﻿/// BXTween Version : 0.4.0
+///                  (state, major, minor) : 
+///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
+///                  major => Major revision introducing features & api renamings (this is going to be very messy in alpha)
+///                  minor => minor bug fixes (hotfixes also enter to this category)
+/// <remarks>
+/// BXTween :
 ///     It does tweens.
 /// 
 /// How do use? :
@@ -26,6 +32,7 @@
 /// 
 /// But why did you spend effort on this? there are better alternatives :
 ///     I don't know, but yeah
+/// </remarks>
 
 /** -------------------------------------------------- 
 // GENERAL TODO :
@@ -38,6 +45,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 using TMPro;
 using UnityEngine;
@@ -75,7 +83,6 @@ namespace BXFW.Tweening
                     // last </color> is added on the last line anyways
                     // This append looks like = '</color>\n<color=#{0}>'
                     fmtTarget.Append(string.Format("</color>\n{0}", logColorTag));
-                    Debug.Log(fmtTarget.ToString());
                     continue;
                 }
 
@@ -132,12 +139,14 @@ namespace BXFW.Tweening
 
         #region Info-Logs
         // Non-Dynamic
-        /// <see cref="BXTween.To"/>
-        public static readonly string Log_BXTwDurationZero =
-            string.Format("{0} {1}",
-                LogRich("[BXTween]->", true),
-                LogRich("The duration is less than zero. Please note that the return is null."));
+        
         // Dynamic
+        public static string GetLog_BXTwDurationZero([CallerMemberName] string method = "Unknown")
+        {
+            return string.Format("{0} {1}",
+                LogRich(string.Format("[BXTween::{0}]->", method), true),
+                LogRich("The duration for tween is less than zero. Please set values higher than 0."));
+        }
         public static string GetLog_BXTwCTXCustomCurveInvalid(EaseType TypeAttemptSet)
         {
             return string.Format
@@ -236,7 +245,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public static readonly string Warn_BXTwCurrentIteratorNull =
             string.Format("{0} {1}",
                 WarnRich("[BXTween::StopTween]->", true),
-                LogRich("The current running coroutine is null. Probably an internal error, that is not very important."));
+                LogRich("The current running coroutine is null. Probably an internal thing that is not very important."));
         public static readonly string Warn_BXTwCoreNotInit =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCore]->", true),
@@ -894,12 +903,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
 
         // -- Animation To Methods
-        /*
+#if UNITY_EDITOR
+        // NOTE : This method is still wip
+        // This is 'NOT FUNCTIONAL' and not called by ANY methods.
         private IEnumerator To(BXTweenCTX<int> aCtx, int FPS = 60)
         {
             if (!aCtx.ContextIsValid)
             {
-                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(aCtx.Debug_GetContextValidMsg()));
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(aCtx.DebugGetContextInvalidMsg()));
                 yield break;
             }
 
@@ -922,14 +933,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 aCtx.SetterFunction(i);
 
                 // Wait for FPS tick
-                // TODO : Why
-                yield return new WaitForSeconds(1000 / FPS / 1000f);
+                // 1 sec : 1000 ms
+                yield return new WaitForSeconds(FPS / 1000f);
                 //yield return null;
             }
 
             yield return null;
         }
-        */
+#endif
         #endregion
     }
 
@@ -1060,7 +1071,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -1103,7 +1114,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -1146,7 +1157,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -1189,7 +1200,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -1232,7 +1243,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -1275,7 +1286,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
             if (Duration <= 0f)
             {
-                Debug.Log(BXTweenStrings.Log_BXTwDurationZero);
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
                 Setter(TargetValue);
 
                 return null;
@@ -2301,7 +2312,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             TwContext.SetInvokeActionOnStop(invokeEventOnStop);
 
             TwContext.StartTween();
-            TwContext.PrintAllVariables();
+            //TwContext.PrintAllVariables();
         }
 
         public void StopTween()
@@ -2597,6 +2608,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
         {
+            // Setup curve
+            TweenEaseType = ease;
+
             if (UseCustomTwTimeCurve)
             {
                 if (CurrentSettings.diagnosticMode)
@@ -2607,10 +2621,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 return this;
             }
 
-            // Note : This is only set for getting read-only data.
-            TweenEaseType = ease;
-
-            // Setup curve
             var EaseMethod = BXTweenEase.EaseMethods[TweenEaseType];
             TimeSetLerp = (float progress) => { return EaseMethod.Invoke(progress, Clamp01); };
 
@@ -2730,10 +2740,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
 
             return _IteratorCoroutine != null;
-            // -- Reflection Method --
-            // _IteratorCoroutine = (IEnumerator)typeof(BXTweenCore).GetMethods().
-            //    Single(x => x.Name == nameof(BXTweenCore.To) && x.GetParameters()[0].ParameterType == GetType()).
-            //    Invoke(Current, new object[] { this });
         }
         #endregion
 
@@ -2796,14 +2802,22 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 return;
             }
 #endif
+            /// Note : The duration can be 0 or less in <see cref="BXTweenProperty{T}"/>
+            /// Because of this we will check the duration.
+            /// While this check is bad, there's no other way of enforcing it.
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                // Call the setter with last value & ignore other stuff.
+                SetterFunction.Invoke(EndValue);
+                return;
+            }
 
-            // Default behaviour.
+            // Usual
             if (IsRunning)
             {
                 StopTween();
             }
-
-            // Standard
             if (!UpdateContextCoroutine())
             {
                 Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
@@ -2935,15 +2949,15 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
 #if UNITY_EDITOR
         /// <summary>
-        /// Prints all variables using <see cref="Debug.Log(object)"/>.
+        /// <b>EDITOR ONLY :</b> Prints all variables (properties) using <see cref="Debug.Log(object)"/>.
         /// </summary>
         public void PrintAllVariables()
         {
-            Debug.Log(BXTweenStrings.LogRich(string.Format("[BXTweenCTX<{0}>] Printing all variables (using reflection).", typeof(T).Name)));
+            Debug.Log(BXTweenStrings.LogRich(string.Format("[BXTweenCTX({0})] Printing all variables (using reflection).", typeof(T).Name)));
 
             foreach (var v in GetType().GetProperties())
             {
-                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("Variable = {0}:{1} Value = {2}", v.Name, v.PropertyType, v.GetValue(this))));
+                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("{0}:{1} = {2}", v.Name, v.PropertyType, v.GetValue(this))));
             }
         }
 #endif
