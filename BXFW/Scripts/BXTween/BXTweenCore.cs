@@ -2259,8 +2259,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
-            TwContext.SetDelay(_Delay).SetDuration(_Duration).SetEase(_TweenEase).
-                SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).
+            TwContext.SetDelay(_Delay).SetDuration(_Duration).
+                SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).SetEase(_TweenEase).
                 SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
@@ -2287,6 +2287,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
 
             if (TwContext == null) SetupProperty(StartValue, EndValue, Setter);
+
+            // Update the 'TwContext' because the 'TwContext' may be modified externally and it may not have matching settings with this context.
+            UpdateProperty();
 
             // Make sure to set these values
             TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
@@ -2608,7 +2611,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
         {
-            // Setup curve
+            // Setup curve 
             TweenEaseType = ease;
 
             if (UseCustomTwTimeCurve)
