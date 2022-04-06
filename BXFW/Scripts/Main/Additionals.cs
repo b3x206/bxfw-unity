@@ -1402,6 +1402,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
 #region Unity Editor Additionals
 
 #region ---- Utils
+#if UNITY_EDITOR
 namespace BXFW.Tools.Editor
 {
     /// <summary>
@@ -2003,6 +2004,7 @@ namespace BXFW.Tools.Editor
         #endregion
     }
 }
+#endif
 
 #region --- Inspector Variable Attributes
 namespace BXFW

@@ -2,9 +2,9 @@
     "name": "BXFW.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:305496fb72a398242a67550e4dd5e3c9",
-        "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:6546d7765b4165b40850b3667f981c26"
+        "BXFW",
+        "Unity.TextMeshPro",
+        "Unity.TextMeshPro.Editor"
     ],
     "includePlatforms": [
         "Editor"
