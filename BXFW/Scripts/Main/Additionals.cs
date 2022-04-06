@@ -2049,7 +2049,7 @@ namespace BXFW
 #endregion
 
 #region ---- Additionals Class Inspectors
-
+#if UNITY_EDITOR
 namespace BXFW.ScriptEditor
 {
     [CustomPropertyDrawer(typeof(ObfuscatedInt))]
@@ -2124,6 +2124,7 @@ namespace BXFW.ScriptEditor
 
     #endregion
 }
+#endif
 #endregion
 
 #endregion

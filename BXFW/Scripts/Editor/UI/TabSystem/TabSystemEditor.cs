@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using UnityEditor;
-using BXFW.UI;
 using UnityEngine.UI;
+
 using TMPro;
+using BXFW.UI;
 
 namespace BXFW.ScriptEditor
 {
