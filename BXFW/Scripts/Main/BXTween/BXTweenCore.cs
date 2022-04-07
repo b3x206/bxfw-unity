@@ -1001,7 +1001,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         private static readonly MethodInfo[] BXTweenMethods = typeof(BXTween).GetMethods();
 
-#region Utility
+        #region Utility
         /// <summary>
         /// Utility for checking if the type is tweenable.
         /// </summary>
@@ -1045,11 +1045,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return true;
         }
-#endregion
+        #endregion
 
-#region Context Creation (To Methods)
+        #region Context Creation (To Methods)
 
-#region Static To
+        #region Static To
         /// <summary>
         /// Create a tween manually using this method.
         /// </summary>
@@ -1308,9 +1308,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // Return Context
             return Context;
         }
-#endregion
+        #endregion
 
-#region Reflection To
+        #region Reflection To
         /// <summary>
         /// Create a tween manually. Note that you have to pass a tweenable type.
         /// (The ones that exist in <see cref="BXTween"/> class.)
@@ -1340,15 +1340,15 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 return null;
             }
         }
-#endregion
+        #endregion
 
-#endregion
+        #endregion
 
         // TODO : Put this to a seperate class in a seperate file.
         // Maybe call the file 'BXTweenExtensions'?
-#region Shortcuts for Unity Objects
+        #region Shortcuts for Unity Objects
 
-#region TextMeshPro
+        #region TextMeshPro
         /// <see cref="TextMeshProUGUI"/>
         public static BXTweenCTX<float> BXTwFadeAlpha(this TextMeshProUGUI target, float LastValue, float Duration)
         {
@@ -1374,9 +1374,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return Context;
         }
-#endregion
+        #endregion
 
-#region UnityEngine.UI
+        #region UnityEngine.UI
         /// <see cref="CanvasGroup"/>
         public static BXTweenCTX<float> BXTwFadeAlpha(this CanvasGroup target, float LastValue, float Duration)
         {
@@ -1521,9 +1521,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return Context;
         }
-#endregion
+        #endregion
 
-#region Standard (UnityEngine)
+        #region Standard (UnityEngine)
         /// <see cref="Transform">
         public static BXTweenCTX<Vector3> BXTwChangePos(this Transform target, Vector3 LastValue, float Duration)
         {
@@ -1773,13 +1773,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return Context;
         }
-#endregion
+        #endregion
 
-#endregion
+        #endregion
     }
-#endregion
+    #endregion
 
-#region BXTween Enums
+    #region BXTween Enums
     /// <summary>
     /// Variable changing mode for <see cref="BXTweenCTX{T}"/>.
     /// </summary>
@@ -1834,9 +1834,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         PingPong = 0,
         Reset = 1
     }
-#endregion
+    #endregion
 
-#region BXTween Ease Classes
+    #region BXTween Ease Classes
     /// <summary>
     /// Includes the hard coded ease types.
     /// To create custom ease types use the <see cref="AnimationCurve"/>. (in BXTween context field : <see cref="BXTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
@@ -1881,7 +1881,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             { EaseType.ExponentialInOut, ExponentialInOut }
         };
 
-#region Ease Methods
+        #region Ease Methods
         // Note : All ease methods change between -Infinity~Infinity.
         // Clamping is done by setting a bool.
         public static float Linear(float t, bool clamped = true)
@@ -2025,11 +2025,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             var tVal = -0.5f * (Mathf.Cos(Mathf.PI * t) - 1f);
             return clamped ? Mathf.Clamp01(tVal) : tVal;
         }
-#endregion
+        #endregion
     }
-#endregion
+    #endregion
 
-#region BXTween Delegates
+    #region BXTween Delegates
     // TODO : Put this to a seperate files with an 'Events' namespace.
     // -- Standard c#
     /// <summary>
@@ -2058,9 +2058,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public sealed class BXTweenUnityEvent : UnityEvent<ITweenCTX>
     { }
-#endregion
+    #endregion
 
-#region BXTween Property Bases
+    #region BXTween Property Bases
     /// <summary>
     /// Carries the base variables for the <see cref="BXTweenProperty{T}"/>.
     /// </summary>
@@ -2181,7 +2181,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
     {
-#region Generic Variables
+        #region Generic Variables
         // -----  that don't need editor ----- //
         public BXTweenSetMethod<T> SetAction
         {
@@ -2202,9 +2202,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         // ---- Private ---- //
         private BXTweenSetMethod<T> m_Setter;
         public bool IsSetup => m_Setter != null;
-#endregion
+        #endregion
 
-#region Ctor / Setup
+        #region Ctor / Setup
         public BXTweenProperty()
         { }
         public BXTweenProperty(BXTweenCTX<T> ctx, bool stopTw = true)
@@ -2253,9 +2253,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         {
             SetupProperty(default, default, Setter);
         }
-#endregion
+        #endregion
 
-#region Methods
+        #region Methods
         /// <summary>
         /// Sets the property's variables after something is changed.
         /// </summary>
@@ -2337,7 +2337,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 #endregion
     }
 
-#region BXTween Property Classes
+    #region BXTween Property Classes
     [Serializable]
     public sealed class BXTweenPropertyFloat : BXTweenProperty<float>
     {
@@ -2394,11 +2394,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
         }
     }
-#endregion
+    #endregion
 
-#endregion
+    #endregion
 
-#region BXTween Context
+    #region BXTween Context
     /// <summary>Generic tween interface. Used for storing tweens in a generic agnostic way.</summary>
     public interface ITweenCTX
     {
@@ -2972,5 +2972,5 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 #endif
 #endregion
     }
-#endregion
+    #endregion
 }

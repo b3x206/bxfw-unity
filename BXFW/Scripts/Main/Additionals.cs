@@ -2042,7 +2042,7 @@ namespace BXFW
     }
 
     /// <summary>
-    /// Attribute to disable gui on property fields.
+    /// Attribute to disable gui on fields.
     /// </summary>
     public class InspectorReadOnlyViewAttribute : PropertyAttribute { }
 }
