@@ -431,7 +431,7 @@ namespace BXFW
         /// <param name="relativeCam">Orthographic camera to resize.</param>
         /// <param name="sr">Sprite renderer to resize.</param>
         /// <param name="axis">Axis to resize.</param>
-        public static void ResizeSpriteToScreen(this Camera relativeCam, SpriteRenderer sr, TransformAxis axis = TransformAxis.XYAxis)
+        public static void ResizeSpriteToScreen(this Camera relativeCam, SpriteRenderer sr, TransformAxis2D axis = TransformAxis2D.XYAxis)
         {
             if (sr == null || relativeCam == null)
             {
@@ -450,15 +450,15 @@ namespace BXFW
             switch (axis)
             {
                 default:
-                case TransformAxis.XYAxis:
+                case TransformAxis2D.XYAxis:
                     sr.transform.localScale =
                         new Vector3(worldScreenWidth / width, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
-                case TransformAxis.XAxis:
+                case TransformAxis2D.XAxis:
                     sr.transform.localScale =
                         new Vector3(worldScreenWidth / width, sr.transform.localScale.y, sr.transform.localScale.z);
                     break;
-                case TransformAxis.YAxis:
+                case TransformAxis2D.YAxis:
                     sr.transform.localScale =
                         new Vector3(sr.transform.localScale.x, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
@@ -1235,23 +1235,47 @@ namespace BXFW
     #region Helper Enums
     /// <summary>
     /// Transform Axis.
-    /// <br>(Used in few helper methods)</br>
+    /// <br>(Used in few helper methods.)</br>
     /// </summary>
-    [Flags]
     public enum TransformAxis
     {
         None = 0,
 
-        XAxis = 1 << 0,
-        YAxis = 1 << 1,
-        ZAxis = 1 << 2,
+        XAxis = 1,
+        YAxis = 2,
+        ZAxis = 3,
 
-        XYAxis = XAxis | YAxis,
-        YZAxis = YAxis | ZAxis,
-        XZAxis = XAxis | ZAxis,
+        XYAxis = 4,
+        YZAxis = 5,
+        XZAxis = 6,
 
         // All Axis
-        XYZAxis = XAxis | YAxis | ZAxis,
+        XYZAxis = 7
+    }
+
+    /// <summary>
+    /// Quaternion axis.
+    /// Isn't used for anything useful.
+    /// </summary>
+    public enum QuatAxis
+    {
+        None = 0,
+
+        XAxis = 1,
+        YAxis = 2,
+        ZAxis = 3,
+        WAxis = 4,
+
+        XYAxis = 5,
+        XZAxis = 6,
+        XWAxis = 7,
+        YZAxis = 8,
+        YWAxis = 9,
+        ZWAxis = 10,
+
+        XYZAxis = 11,
+        XYWAxis = 12,
+        XYZWAxis = 13
     }
 
     /// <summary>
@@ -1259,15 +1283,14 @@ namespace BXFW
     /// <br>NOTE : This is an axis value for position.
     /// For rotation, please use the <see cref="TransformAxis"/>.</br>
     /// </summary>
-    [Flags]
     public enum TransformAxis2D
     {
         None = 0,
 
-        XAxis = 1 << 0,
-        YAxis = 1 << 1,
+        XAxis = 1,
+        YAxis = 2,
 
-        XYAxis = XAxis | YAxis
+        XYAxis = 3
     }
     #endregion
 
