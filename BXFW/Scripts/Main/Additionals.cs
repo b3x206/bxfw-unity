@@ -553,17 +553,6 @@ namespace BXFW
                 Debug.LogWarning("[Additionals::DirectoryCopy] The directory you are trying to copy is the same as the destination directory.");
                 return;
             }
-            // These lines are probably a bad idea, c# 'probably' will just throw an exception if these lines aren't satisfied.
-            //else if (sourceDirName.Equals(destDirName, StringComparison.OrdinalIgnoreCase) && 
-            //    (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor))
-            //{
-            //    // In windows, it's same directory
-            //    // On arch btw systems, directories are case sensitive
-            //    // unlike winbloat, it's case sensitive as long as there's no file with same name but different casing)
-            //
-            //    Debug.LogWarning("[Additionals::DirectoryCopy] The directory you are trying to copy is the same as the destination directory. (case doesn't match but IsWindows == true)");
-            //    return;
-            //}
 
             DirectoryInfo[] dirs = dir.GetDirectories();
 
@@ -730,18 +719,27 @@ namespace BXFW
         {
             if (AttributeAssem == null)
             {
-                AttributeAssem = Assembly.GetExecutingAssembly();
+                AttributeAssem = AttributeType.Assembly;
             }
 
             foreach (Type type in AttributeAssem.GetTypes())
             {
                 if (type.GetCustomAttributes(AttributeType, true).Length > 0)
                 {
-                    // what
                     yield return type;
                 }
             }
         }
+
+        /// <summary>
+        /// Gets types that inherit from 'T'.
+        /// </summary>
+        public static IEnumerable<Type> GetEnumerableOfType<T>() where T : class
+        {
+            return Assembly.GetAssembly(typeof(T)).GetTypes()
+                .Where((Type myType) => { return myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)); });
+        }
+
         /// <summary>Replaces multiple chars in a string built by <paramref name="builder"/>.</summary>
         /// <param name="builder">The string to modify. Put in a string builder.</param>
         /// <param name="toReplace">Chars to replace.</param>
@@ -760,7 +758,7 @@ namespace BXFW
         }
 
         // -- Array Utils
-#if CSHARP_7_OR_LATER 
+#if CSHARP_7_3_OR_NEWER
         // Tuple definition like (a, b) was added in c# 7
         /// <summary>
         /// Similar to the python's <c>'enumerate()'</c> keyword for it's <see langword="for"/> loops.
@@ -797,7 +795,6 @@ namespace BXFW
                     list.Capacity = sz;
 
                 list.AddRange(Enumerable.Repeat(newT, sz - cur));
-                Debug.Log(list.Count);
             }
         }
         /// <summary>Resize array.</summary>
@@ -1241,16 +1238,16 @@ namespace BXFW
     {
         None = 0,
 
-        XAxis = 1,
-        YAxis = 2,
-        ZAxis = 3,
+        XAxis,
+        YAxis,
+        ZAxis,
 
-        XYAxis = 4,
-        YZAxis = 5,
-        XZAxis = 6,
+        XYAxis,
+        YZAxis,
+        XZAxis,
 
         // All Axis
-        XYZAxis = 7
+        XYZAxis
     }
 
     /// <summary>
@@ -1259,13 +1256,16 @@ namespace BXFW
     /// </summary>
     public enum QuatAxis
     {
+        // P(4,0)
         None = 0,
 
+        // P(4,1)
         XAxis = 1,
         YAxis = 2,
         ZAxis = 3,
         WAxis = 4,
 
+        // P(4,2)
         XYAxis = 5,
         XZAxis = 6,
         XWAxis = 7,
@@ -1273,9 +1273,14 @@ namespace BXFW
         YWAxis = 9,
         ZWAxis = 10,
 
+        // P(4,3)
         XYZAxis = 11,
         XYWAxis = 12,
-        XYZWAxis = 13
+        YZWAxis = 13,
+        XZWAxis = 14,
+
+        // P(4,4)
+        XYZWAxis = 15
     }
 
     /// <summary>
@@ -1287,10 +1292,10 @@ namespace BXFW
     {
         None = 0,
 
-        XAxis = 1,
-        YAxis = 2,
+        XAxis,
+        YAxis,
 
-        XYAxis = 3
+        XYAxis
     }
     #endregion
 
@@ -1301,13 +1306,16 @@ namespace BXFW
     public class Ref<T>
     {
         private T backing;
-        public T Value { get { return backing; } }
+        public T Value 
+        { 
+            get { return backing; } 
+            set { if (value != null) backing = value; } 
+        }
         public Ref(T reference)
         {
             backing = reference;
         }
     }
-
     /// <summary>
     /// Serializable dictionary.
     /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>
@@ -1416,6 +1424,14 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         public static int operator-(ObfuscatedInt lhs, ObfuscatedInt rhs)
         {
             return (int)lhs - (int)rhs;
+        }
+        public static int operator /(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs / (int)rhs;
+        }
+        public static int operator *(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        {
+            return (int)lhs * (int)rhs;
         }
     }
 
