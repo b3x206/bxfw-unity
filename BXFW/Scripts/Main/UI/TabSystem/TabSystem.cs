@@ -1,17 +1,11 @@
-﻿using UnityEditor;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine;
 using UnityEngine.Events;
-using TMPro;
 
-using System.Linq;
-using System.Collections;
+using TMPro;
 using System.Collections.Generic;
 
 namespace BXFW.UI
 {
-    #region External Classes
-
     /// <summary>
     /// The fading type of TabButton.
     /// </summary>
@@ -22,11 +16,9 @@ namespace BXFW.UI
         SpriteSwap,
         CustomUnityEvent
     }
-    #endregion
 
     /// <summary>
-    /// The tab system. Only use constructs if you don't identify as a button.
-    /// TODO : Make names more understandable
+    /// The tab system. Only use properties if you don't identify as a button.
     /// </summary>
     [ExecuteInEditMode()]
     public class TabSystem : MonoBehaviour
@@ -49,8 +41,9 @@ namespace BXFW.UI
         }
         [SerializeField] private int _TabButtonAmount = 1;
 
-        public FadeType ButtonFadeType = FadeType.ColorFade;
-
+        /// <summary>
+        /// The index of the currently referenced tab button.
+        /// </summary>
         public int CurrentReferenceTabButton
         {
             get
@@ -67,6 +60,8 @@ namespace BXFW.UI
         [SerializeField] private int _CurrentReferenceTabButton = 0;
 
         // -- Fade Styles
+        // - This part is button settings.
+        public FadeType ButtonFadeType = FadeType.ColorFade;
         // ButtonFadeType = ColorFade
         public float TabButtonFadeSpeed = .15f;
         public Color TabButtonFadeColorTargetHover = new Color(.95f, .95f, .95f);
@@ -80,14 +75,13 @@ namespace BXFW.UI
         public TabButton.TabButtonUnityEvent TabButtonCustomEventHover;
         public TabButton.TabButtonUnityEvent TabButtonCustomEventClick;
 
-        // Standard event
+        // -- Standard event
         public IntUnityEvent OnTabButtonsClicked;
 
-        //////////// Public Constructs
         /// <summary>
-        /// Returns the current selected tab. Make sure it's assigned properly.
+        /// Returns the current selected tab.
         /// </summary>
-        public TabButton CurrentSelectedTab { get; set; }
+        public TabButton CurrentSelectedTab { get; internal set; }
         public TabButton this[int index]
         {
             get
@@ -250,7 +244,6 @@ namespace BXFW.UI
             return TabButtonScript;
         }
 
-        #region Button Organize
         /// <summary>
         /// Cleans the <see cref="TabButtons"/> list in case of null and other stuff.
         /// </summary>
@@ -301,6 +294,5 @@ namespace BXFW.UI
         {
             return CurrentSelectedTab.ButtonIndex;
         }
-        #endregion
     }
 }

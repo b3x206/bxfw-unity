@@ -17,20 +17,19 @@ namespace BXFW.UI
         [System.Serializable]
         public class TabButtonUnityEvent : UnityEvent<Image, TabButton> { }
 
-        /////// Private
         protected Image ButtonImage;
         // color fade
         public Color PrevColor { get; private set; }
         // sprite swap
         private Sprite PrevSprite;
-        // script accessing.
-        [HideInInspector] public TabSystem ParentTabSystem;
 
         public FadeType FadeType { get; set; } = FadeType.ColorFade;
 
-        [HideInInspector] public int ButtonIndex = 0;
+        [InspectorReadOnlyView] public int ButtonIndex = 0;
+        [InspectorReadOnlyView] internal TabSystem ParentTabSystem;
         [HideInInspector] public TextMeshProUGUI ButtonText;
 
+        // -- Initilaze
         private void Awake()
         {
             if (ParentTabSystem == null)
@@ -44,7 +43,7 @@ namespace BXFW.UI
             PrevColor = ButtonImage.color;
 
             // Set Images
-            PrevSprite = ButtonImage.sprite ?? null;
+            PrevSprite = ButtonImage.sprite;
 
             // If first object.
             if (ButtonIndex == 0)

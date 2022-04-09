@@ -6,6 +6,9 @@ using UnityEngine.EventSystems;
 
 namespace BXFW.UI
 {
+    /// <summary>
+    /// Swipable UI canvas with menus.
+    /// </summary>
     public class SwipableUI : MonoBehaviour, IDragHandler, IEndDragHandler
     {
         #region Event Class
@@ -16,7 +19,7 @@ namespace BXFW.UI
         #region Variables
         [Header(":: Settings")]
         public int ClampItemMenu = -1;
-        public Vector2 ClampItemContainer;
+        public float ClampContentDragOnMenuEnd = 200f;
         [Range(0.01f, 2f)] public float PercentSwipeToOtherMenuThreshold = .3f;
         [Range(0.01f, 32f)] public float SwipeToOtherMenuAnimTime = .2f;
 
@@ -24,8 +27,8 @@ namespace BXFW.UI
         public RectTransform ItemContainer;
 
         [Header(":: Current")]
+        [SerializeField, InspectorReadOnlyView] private int _CurrentMenu;
         public SwipableUIOnMenuChangeEvent OnMenuChangeEvent;
-        [SerializeField] private int _CurrentMenu;
         public int CurrentMenu
         {
             get
@@ -78,10 +81,24 @@ namespace BXFW.UI
         #region Menu Drag
         public void OnDrag(PointerEventData data)
         {
-            float swipedifference = data.pressPosition.x - data.position.x;
-            var posX = ClampItemContainer == Vector2.zero ? ContainerInitialPosition.x - swipedifference : Mathf.Clamp(ContainerInitialPosition.x - swipedifference,
-                ClampItemContainer.x, ClampItemContainer.y);
+            float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
+            // yay it worked on first try.
+            // (maybe) TODO : Add smooth slowdown on swipe limit, like the clash royales and other ui options.
+            if (!Mathf.Approximately(ClampContentDragOnMenuEnd, 0f))
+            {
+                if (_CurrentMenu >= ClampItemMenu)
+                {
+                    // We are swiping RTL and we should clamp.
+                    swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd), ClampContentDragOnMenuEnd);
+                }
+                if (_CurrentMenu <= 0)
+                {
+                    // We are swiping LTR and we should clamp.
+                    swipeDelta = Mathf.Clamp(swipeDelta, -ClampContentDragOnMenuEnd, (ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd);
+                }
+            }
 
+            var posX = ContainerInitialPosition.x - swipeDelta; // Local position to set.
             ItemContainer.localPosition = new Vector2(posX, ContainerInitialPosition.y);
         }
         public void OnEndDrag(PointerEventData data)
@@ -119,22 +136,13 @@ namespace BXFW.UI
                     newLocation += new Vector2(ItemContainer.rect.width, 0);
 
                     // Do not toggle the end dragging routine if we in 0'th menu.
-                    if (_CurrentMenu <= 0f)
+                    if (_CurrentMenu <= 0)
                     {
                         ResetDragDefault();
                         return;
                     }
                     _CurrentMenu--;
                     OnMenuChangeEvent?.Invoke(_CurrentMenu);
-                }
-
-                if (ClampItemContainer != Vector2.zero)
-                {
-                    if (ItemContainer.localPosition.x <= ClampItemContainer.x || ItemContainer.localPosition.x >= ClampItemContainer.y)
-                    {
-                        ResetDragDefault();
-                        return;
-                    }
                 }
 
                 if (CurrentSwipeToOtherCoroutine != null)
@@ -151,7 +159,6 @@ namespace BXFW.UI
             }
         }
 
-        /// maybe use CTween here?
         /// <summary>
         /// Interpolates the swiping transition.
         /// </summary>
@@ -176,27 +183,22 @@ namespace BXFW.UI
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            var prevColor = Gizmos.color;
-
-            if (ClampItemContainer != Vector2.zero)
+            var gColor = Gizmos.color;
+            if (_CurrentMenu >= ClampItemMenu)
             {
-                if (ItemContainer == null)
-                {
-                    if (!TryGetComponent(out ItemContainer))
-                    {
-                        return;
-                        // Debug.LogError($"[SwipableUI::Awake] The object \"{name}\" doesn't have a ItemContainer assigned. Please assign one.");
-                    }
-                }
-
+                // Show the gizmo on right (According to menu).
                 Gizmos.color = Color.green;
-                Gizmos.DrawWireCube(new Vector3(ItemContainer.transform.position.x + ClampItemContainer.x, ItemContainer.transform.position.y),
-                    new Vector3(20f, ItemContainer.rect.height));
-                Gizmos.DrawWireCube(new Vector3(ItemContainer.transform.position.x + ClampItemContainer.y, ItemContainer.transform.position.y),
-                    new Vector3(20f, ItemContainer.rect.height));
+                var linePos = new Vector2(ItemContainer.transform.position.x + ((ItemContainer.rect.width / 2f) - ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
+                Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
-
-            Gizmos.color = prevColor;
+            if (_CurrentMenu <= 0)
+            {
+                // Show the gizmo on left.
+                Gizmos.color = Color.red;
+                var linePos = new Vector2(ItemContainer.transform.position.x - ((ItemContainer.rect.width / 2f) + ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
+                Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
+            }
+            Gizmos.color = gColor;
         }
 #endif
     }
