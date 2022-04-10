@@ -9,10 +9,19 @@ namespace BXFW
     public class CustomInputEvent
     {
         public KeyCode[] KeyCodeReq;
+        public bool SetIsInvokable { get; set; } = false;
+        /// <summary>
+        /// Sets the event to be invokable.
+        /// <br>Use <b>only</b> with method <see cref="IsKey"/>. (Other methods still poll for the key.)</br>
+        /// </summary> 
+        public void SetInvokeEvent(bool setValue)
+        {
+            SetIsInvokable = setValue;
+        }
 
         public bool IsKey()
         {
-            bool IsInvokable = false;
+            bool IsInvokable = SetIsInvokable;
 
             foreach (KeyCode key in KeyCodeReq)
             {

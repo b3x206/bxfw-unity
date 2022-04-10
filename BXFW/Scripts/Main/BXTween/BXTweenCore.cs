@@ -1,4 +1,4 @@
-﻿/// BXTween Version : 0.4.0
+﻿/// BXTween Version : 0.4.1
 ///                  (state, major, minor) : 
 ///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
 ///                  major => Major revision introducing features & api renamings (this is going to be very messy in alpha)
@@ -222,6 +222,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 LogDiagRich("[BXTweenCTX::SetCustomCurve]", true),
                 LogRich("The tween time curve (related stuff) is already null. You are setting it null again"));
+        internal static readonly string DLog_BXTwWorkplaceOnFire =
+            string.Format("{0} {1}",
+                LogDiagRich("[BXTween]", true),
+                LogRich("The building is on fire. Please use 'git add; git commit -m \"stuff\"; git push' and then use a fire extingusher."));
         #endregion
 
         #endregion

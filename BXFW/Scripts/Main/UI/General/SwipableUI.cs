@@ -37,9 +37,11 @@ namespace BXFW.UI
             }
             set
             {
+                // The reason why this is written in a weird way is to invoke the 'Events' and such.
                 var menuValue = Mathf.Clamp(value, 0, ClampItemMenu < 0 ? int.MaxValue : ClampItemMenu);
                 var diffBetweenMenu = value - _CurrentMenu;
 
+                // Value is different.
                 if (diffBetweenMenu != 0)
                 {
                     var newLocation = ContainerInitialPosition + (new Vector2(-ItemContainer.rect.width, 0f) * diffBetweenMenu);
@@ -82,8 +84,7 @@ namespace BXFW.UI
         public void OnDrag(PointerEventData data)
         {
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
-            // yay it worked on first try.
-            // (maybe) TODO : Add smooth slowdown on swipe limit, like the clash royales and other ui options.
+            // (maybe) TODO : Add smooth slowdown until swipe limit.
             if (!Mathf.Approximately(ClampContentDragOnMenuEnd, 0f))
             {
                 if (_CurrentMenu >= ClampItemMenu)
@@ -188,7 +189,7 @@ namespace BXFW.UI
             {
                 // Show the gizmo on right (According to menu).
                 Gizmos.color = Color.green;
-                var linePos = new Vector2(ItemContainer.transform.position.x + ((ItemContainer.rect.width / 2f) - ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
+                var linePos = new Vector2(ItemContainer.transform.position.x + ((ItemContainer.rect.width / 2f) + ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             if (_CurrentMenu <= 0)
