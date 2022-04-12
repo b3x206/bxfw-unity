@@ -49,8 +49,14 @@ namespace BXFW.ScriptEditor
             // Standard
             var Target = (TabSystem)target;
             var Tso = serializedObject;
-
             Tso.Update();
+
+            // Draw the 'm_Script' field that monobehaviour makes (with disabled gui)
+            var gEnabled = GUI.enabled;
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(Tso.FindProperty("m_Script"));
+            GUI.enabled = gEnabled;
+
             EditorGUI.BeginChangeCheck();
 
             // Setup variables

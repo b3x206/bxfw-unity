@@ -32,18 +32,18 @@ namespace BXFW.UI
             }
         }
         public bool AddSetActiveEvent = true;
-        [SerializeField] private bool _IsClosedOnStart = true;
-        public bool IsClosedOnStart { get { return _IsClosedOnStart; } }
+        [SerializeField] private bool _IsClosedOnAwake = true;
+        public bool IsClosedOnAwake { get { return _IsClosedOnAwake; } }
 
-        private void Start()
+        private void Awake()
         {
             // If the object is already inactive, it's not visible and closed.
             if (gameObject.activeInHierarchy)
             {
                 // Call the activation events if the object is active.
                 // NOTE : This only applies for the sub menu.
-                UISubMenuEventSimple?.Invoke(!IsClosedOnStart);
-                UISubMenuEvent?.Invoke(this, !IsClosedOnStart);
+                UISubMenuEventSimple?.Invoke(!IsClosedOnAwake);
+                UISubMenuEvent?.Invoke(this, !IsClosedOnAwake);
             }
         }
 

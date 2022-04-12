@@ -73,8 +73,6 @@ namespace BXFW.UI
         // -------- SubMenu
         public void OpenSubMenu(UISubMenu menu)
         {
-            menu.OpenMenu();
-
             if (!_CurrentUISubMenus.Contains(menu))
             {
                 _CurrentUISubMenus.Add(menu);
@@ -82,7 +80,11 @@ namespace BXFW.UI
             else
             {
                 Debug.LogWarning(string.Format("[UIMenuManager::OpenSubMenu] Sub menu '{0}' is already open.", menu.transform.GetPath()));
+                // No need to open sub menu twice.
+                return;
             }
+
+            menu.OpenMenu();
         }
         public void CloseSubMenu(UISubMenu menu)
         {

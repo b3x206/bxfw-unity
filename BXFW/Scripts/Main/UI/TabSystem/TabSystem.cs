@@ -237,7 +237,7 @@ namespace BXFW.UI
             // Init button
             TabButtonScript.ButtonIndex = TabButtons.Count;
             TabButtonScript.ParentTabSystem = this;
-            TabButtonScript.name = $"{TabButtonScript.name}_{TabButtons.Count}".Replace("(Clone)", "");
+            TabButtonScript.name = string.Format("{0}_{1}", TabButtonScript.name, TabButtons.Count).Replace("(Clone)", "");
 
             TabButtons.Add(TabButtonScript);
 

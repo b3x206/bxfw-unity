@@ -2123,9 +2123,17 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 UpdateProperty();
             }
         }
+        /// <summary>Default tween curve value. Will be set if <see cref="UseTweenCurve"/> is true and <see cref="TweenCurve"/> is null.</summary>
+        protected readonly AnimationCurve DEFAULT_TWCURVE_VALUE = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         public AnimationCurve TweenCurve
         {
-            get { return _TweenCurve; }
+            get 
+            {
+                if (_TweenCurve == null)
+                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                
+                return _TweenCurve; 
+            }
             set
             {
                 if (value == null) return;
@@ -2155,7 +2163,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set default value if null.
                 if (_UseTweenCurve && _TweenCurve == null)
                 {
-                    _TweenCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
                 }
 
                 // Don't call 'UpdateProperty' here as the inspector calls this every frame.
@@ -2325,7 +2333,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             TwContext.SetInvokeActionOnStop(invokeEventOnStop);
 
             TwContext.StartTween();
-            //TwContext.PrintAllVariables();
+            TwContext.PrintAllVariables();
         }
 
         public void StopTween()
@@ -2426,7 +2434,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     /// <summary>Tween context. Not serializable, but contains the currently running tween data.</summary>
     public sealed class BXTweenCTX<T> : ITweenCTX
     {
-#region Variables
+        #region Variables
         // Should be read-only and only be able to set from methods. 
         // Most of the info is contained in the here.
 
@@ -2460,7 +2468,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// <br>Usually returns false if the repeat type is <see cref="RepeatType.Reset"/> 
         ///     or if repeat amount is zero.</br>
         /// </summary>
-        public bool IsValuesSwitched { get { return _IsValuesSwitched || !(RepeatType == RepeatType.Reset || RepeatAmount == 0); } }
+        public bool IsValuesSwitched { get { return _IsValuesSwitched && !(RepeatType == RepeatType.Reset || RepeatAmount <= 0); } }
 
         public bool ContextIsValid
         {
@@ -2504,7 +2512,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
 #endregion
 
-#region Variable Setter
+        #region Variable Setter
         public BXTweenCTX<T> ClearEndingAction()
         {
             OnEndAction = null;
@@ -2710,10 +2718,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             StartValue = sValue;
 
             // Bad way of checking whether the values are about to be switched.
-            if (sValue.Equals(EndValue))
-            {
-                _IsValuesSwitched = !_IsValuesSwitched;
-            }
+            //if (sValue.Equals(EndValue))
+            //{
+            //    _IsValuesSwitched = !_IsValuesSwitched;
+            //}
 
             UpdateContextCoroutine();
             return this;
@@ -2726,10 +2734,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             EndValue = eValue;
 
             // Bad way of checking whether the values are about to be switched.
-            if (eValue.Equals(EndValue))
-            {
-                _IsValuesSwitched = !_IsValuesSwitched;
-            }
+            //if (eValue.Equals(EndValue))
+            //{
+            //    _IsValuesSwitched = !_IsValuesSwitched;
+            //}
 
             UpdateContextCoroutine();
             return this;
@@ -2754,7 +2762,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             return _IteratorCoroutine != null;
         }
-#endregion
+        #endregion
 
         /// <summary>
         /// The main constructor.
@@ -2794,7 +2802,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
         }
 
-#region Start-Stop
+        #region Start-Stop
         public void StartTween()
         {
             // Checks
@@ -2919,9 +2927,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
             }
         }
-#endregion
+        #endregion
 
-#region Debug
+        #region Debug
         public override string ToString()
         {
             return string.Format("BXTWContext | Type : {0}", typeof(T).ToString());
@@ -2974,7 +2982,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
         }
 #endif
-#endregion
+        #endregion
     }
     #endregion
 }

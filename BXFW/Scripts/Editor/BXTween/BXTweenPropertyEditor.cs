@@ -124,6 +124,7 @@ namespace BXFW.ScriptEditor
                 if (EditorGUI.EndChangeCheck())
                 {
                     targetValue.UpdateProperty();
+                    EditorUtility.SetDirty(property.serializedObject.targetObject); // FIXME : this may be not required
                 }
             }
 
