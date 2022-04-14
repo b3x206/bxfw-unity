@@ -234,13 +234,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 LogRich("BXTween has used up all your resources and crashed and set your computer on fire."));
         #endregion
 
-        public static string DLog_BXTwDisabled =
+        public static readonly string DLog_BXTwDisabled =
             string.Format("{0} {1}",
                 LogDiagRich("[BXTween]", true),
                 LogRich("BXTween is currently disabled. Calling any method will cause exceptions."));
-        public static string DLog_BXTwCallGenericTo = string.Format("{0} {1}",
+        public static readonly string DLog_BXTwCallGenericTo = string.Format("{0} {1}",
                 LogDiagRich("[BXTween::GenericTo]", true),
                 LogRich("Generic To is called."));
+        public static readonly string DLog_BXTwSetupPropertyTwCTXAlreadyExist = string.Format("{0} {1}",
+                LogDiagRich("[BXTweenProperty[T]::SetupProperty]", true),
+                LogRich("Called 'SetupProperty()' even though the tween context already isn't null."));
         #endregion
 
         #region Warnings
@@ -325,6 +328,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
            string.Format("{0} {1}",
                 ErrRich("[BXTweenSettings::IsModified]->"),
                 LogRich("BXTweenSettings was modified. Doing what i was told in BXTweenPersistentSettings."));
+        public static readonly string Err_BXTwPropNoTwCTX =
+           string.Format("{0} {1}",
+                ErrRich("[BXTweenProperty::(get)TwContext]->"),
+                LogRich("Trying to get TwContext variable even though the property wasn't setup. Please setup property before getting TwContext."));
 
         // Dynamic (Needs to be generated dynamically or smth)
         /// <see cref="BXTween.To"/> methods.
@@ -2221,6 +2228,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
     {
+        // This class is a mess.
+        // To fix this : 
+
         #region Generic Variables
         // -----  that don't need editor ----- //
         public BXTweenSetMethod<T> SetAction
@@ -2230,18 +2240,37 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Ignore null values
                 if (value == null) return;
 
-                m_Setter = value;
+                _Setter = value;
                 UpdateProperty();
             }
         }
 
         // ---- Get Only ---- //
-        public BXTweenCTX<T> TwContext { get; private set; }
+        /// <summary>
+        /// Internal Tween context.
+        /// <br>Only use this variable only & only inside this class.</br>
+        /// </summary>
+        private BXTweenCTX<T> _TwContext;
+        /// <summary>
+        /// The tween context.
+        /// </summary>
+        /// Note to BXTween developer : Don't compare this variable with null
+        /// FIXME : This needs to be cleaned up, but it's the only place i will do this mess.
+        public BXTweenCTX<T> TwContext 
+        {
+            get 
+            {
+                if (_TwContext == null)
+                    Debug.LogError(BXTweenStrings.Err_BXTwPropNoTwCTX);
+                
+                return _TwContext; 
+            }
+        }
         public bool IsValidContext => IsTweenableType(typeof(T)).Key;
 
         // ---- Private ---- //
-        private BXTweenSetMethod<T> m_Setter;
-        public bool IsSetup => m_Setter != null;
+        private BXTweenSetMethod<T> _Setter;
+        public bool IsSetup => _Setter != null;
         #endregion
 
         #region Ctor / Setup
@@ -2255,13 +2284,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 ctx.StopTween();
             }
 
-            TwContext = ctx;
+            _TwContext = ctx;
 
             // ** Gather values from context.
             _Duration = ctx.Duration;
             _Delay = ctx.StartDelay;
             _TweenCurve = ctx.CustomTimeCurve;
-            m_Setter = ctx.SetterFunction;
+            _Setter = ctx.SetterFunction;
             // ** Set the other options from the property.
             UpdateProperty();
         }
@@ -2278,13 +2307,19 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 return;
             }
 
-            m_Setter = Setter;
+            _Setter = Setter;
+
             // Only update TwContext with a new tween if it's not initialized.
-            if (TwContext == null)
+            // ofc this is redundant, i need to fix the spaghetti.
+            if (_TwContext == null)
             {
                 // this single line of code made me suffer more than i could
                 // thank visual studio and it's verrry slow debugging skills.
-                TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
+                _TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
+            }
+            else if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
             }
 
             UpdateProperty();
@@ -2301,7 +2336,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public override void UpdateProperty()
         {
-            if (TwContext == null) return;
+            if (_TwContext == null) return;
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
@@ -2318,21 +2353,21 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // Basically whenever we call 'SetSetter', the BXTweenContext tries whether if the setter is valid by calling it on a try block
             // This type of error checking is dumb so i removed it. (because it resets the object to c# default)
             // Thus making a need of 'applySetter' parameter obsolete.
-            if (m_Setter != null)
+            if (_Setter != null)
             {
-                TwContext.SetSetter(m_Setter);
+                TwContext.SetSetter(_Setter);
             }
         }
 
         public void StartTween(T StartValue, T EndValue, BXTweenSetMethod<T> Setter = null)
         {
-            if (m_Setter == null && Setter == null)
+            if (_Setter == null && Setter == null)
             {
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return;
             }
 
-            if (TwContext == null) SetupProperty(StartValue, EndValue, Setter);
+            if (_TwContext == null) SetupProperty(StartValue, EndValue, Setter);
 
             // Make sure to set these values
             TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
@@ -2347,7 +2382,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         {
             // ** Parameterless 'StartTween()'
             // This takes the parameters from the tween Context.
-            if (TwContext == null)
+            if (_TwContext == null)
             {
                 Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
                 return;
@@ -2365,7 +2400,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         public void StopTween()
         {
-            if (TwContext == null)
+            if (_TwContext == null)
             {
                 Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
                 return;
