@@ -9,6 +9,9 @@ namespace BXFW
     public class CustomInputEvent
     {
         public KeyCode[] KeyCodeReq;
+        /// <summary>
+        /// Bool to set to make <see cref="IsKey"/> or <c><see cref="(bool)this"/></c> return true.
+        /// </summary>
         public bool SetIsInvokable { get; set; } = false;
         /// <summary>
         /// Sets the event to be invokable.
@@ -21,7 +24,7 @@ namespace BXFW
 
         public bool IsKey()
         {
-            bool IsInvokable = SetIsInvokable;
+            bool IsInvokable = false;
 
             foreach (KeyCode key in KeyCodeReq)
             {
@@ -32,7 +35,7 @@ namespace BXFW
                 }
             }
 
-            return IsInvokable;
+            return IsInvokable || SetIsInvokable;
         }
         public bool IsKeyDown()
         {

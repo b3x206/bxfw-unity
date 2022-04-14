@@ -15,6 +15,9 @@ namespace BXFW.Tweening
     public class BXTweenSettings : ScriptableObjectSingleton<BXTweenSettings>
     {
         // -- BXTweenStrings Settings
+        // :: General
+        public bool enableBXTween = true;
+
         // :: Default
         public EaseType DefaultEaseType = EaseType.QuadInOut;
         public RepeatType DefaultRepeatType = RepeatType.PingPong;
@@ -33,6 +36,8 @@ namespace BXFW.Tweening
         /// </summary>
         public void FromSettings(BXTweenSettings from)
         {
+            enableBXTween = from.enableBXTween;
+
             DefaultEaseType = from.DefaultEaseType;
             DefaultRepeatType = from.DefaultRepeatType;
 

@@ -45,13 +45,11 @@ namespace BXFW.Tweening.Editor
         [MenuItem(WindowMenuItemRegister)]
         public static void OpenSettingsEditor()
         {
-            var w = CreateWindow<BXTweenSettingsEditor>();
-
-            // Set window title
-            w.titleContent = new GUIContent("BXTween Settings");
-
+            var w = GetWindow<BXTweenSettingsEditor>(utility: true, "BXTween Settings", focus: true);
             // Set size constraints
             w.minSize = new Vector2(250f, 400f);
+            // Show already hidden window.
+            w.Show();
         }
 
         // -- Variables
@@ -78,6 +76,11 @@ namespace BXFW.Tweening.Editor
         {
             // Draw custom GUI for 'CurrentSettings'
             EditorGUI.BeginChangeCheck();
+
+
+            EditorGUILayout.LabelField(new GUIContent(":: General"), EditorStyles.boldLabel);
+            var enableTw = EditorGUILayout.Toggle(new GUIContent("Enable BXTween", "Enables BXTween. If this option is false, BXTween won't run on start."), CurrentSettings.enableBXTween);
+
             EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
             var lColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
             var ldColor = EditorGUILayout.ColorField("Log Diagnostic Color", CurrentSettings.LogDiagColor);
@@ -96,6 +99,8 @@ namespace BXFW.Tweening.Editor
                 Undo.RecordObject(CurrentSettings, "Change BXTween Settings");
                 // We can't know what setting we changed, so we just use variables
                 // This is bad
+                CurrentSettings.enableBXTween = enableTw;
+
                 CurrentSettings.LogColor = lColor;
                 CurrentSettings.LogDiagColor = ldColor;
                 CurrentSettings.WarnColor = wColor;

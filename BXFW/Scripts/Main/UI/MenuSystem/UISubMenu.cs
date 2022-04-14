@@ -18,6 +18,8 @@ namespace BXFW.UI
         public sealed class UISubMenuEvent_MenuData : UnityEvent<UISubMenu, bool> { }
         public UISubMenuEvent_MenuData UISubMenuEvent;
 
+        [SerializeField, Tooltip("The menu rect transform. Leave blank if you don't want to set a custom rect transform.\n" +
+            "It is recommended to set this as a child of the UISubMenu component object.")] 
         private RectTransform menuRectTransform;
         public RectTransform RectTransform
         {

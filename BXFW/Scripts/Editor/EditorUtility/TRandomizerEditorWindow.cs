@@ -29,7 +29,7 @@ namespace BXFW.Tools.Editor
 
         public static void OpenWindow()
         {
-            var window = GetWindow<TRandomizerEditorWindow>("Transform Randomizer");
+            _ = GetWindow<TRandomizerEditorWindow>("Transform Randomizer");
             //SceneView.duringSceneGui += OnSceneGUI;
             //OnWindowClose = () =>
             //{

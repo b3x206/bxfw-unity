@@ -8,6 +8,7 @@ namespace BXFW.UI
 {
     /// <summary>
     /// The fading type of TabButton.
+    /// TODO : Make this class internal.
     /// </summary>
     public enum FadeType
     {

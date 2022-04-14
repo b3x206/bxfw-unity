@@ -10,7 +10,7 @@ namespace BXFW.Tools
         [MenuItem("Tools/Streaming Asset Hash")]
         public static void OpenHashFileEditor()
         {
-            var w = CreateInstance<StreamingAssetHashOptionsEditor>();
+            var w = GetWindow<StreamingAssetHashOptionsEditor>("Streaming Asset Integrity Thing");
             w.Show();
         }
 
