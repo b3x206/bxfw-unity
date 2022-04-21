@@ -2228,11 +2228,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
     {
-        // This class is a mess.
-        // To fix this : 
-
-        #region Generic Variables
-        // -----  that don't need editor ----- //
+        // ----- variables that don't need editor ----- //
         public BXTweenSetMethod<T> SetAction
         {
             set
@@ -2270,8 +2266,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         // ---- Private ---- //
         private BXTweenSetMethod<T> _Setter;
+        /// <summary>
+        /// Returns whether if the context is setup.
+        /// </summary>
         public bool IsSetup => _Setter != null;
-        #endregion
 
         #region Ctor / Setup
         public BXTweenProperty()
@@ -2310,16 +2308,18 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             _Setter = Setter;
 
             // Only update TwContext with a new tween if it's not initialized.
-            // ofc this is redundant, i need to fix the spaghetti.
             if (_TwContext == null)
             {
-                // this single line of code made me suffer more than i could
-                // thank visual studio and it's verrry slow debugging skills.
                 _TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
             }
-            else if (CurrentSettings.diagnosticMode)
+            else 
             {
-                Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
+                if (CurrentSettings.diagnosticMode)
+                    Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
+                
+                // Set the setter too.
+                // Since this is called when 'StartTween' is also called, 
+                TwContext.SetSetter(Setter);
             }
 
             UpdateProperty();
@@ -2361,13 +2361,17 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         public void StartTween(T StartValue, T EndValue, BXTweenSetMethod<T> Setter = null)
         {
-            if (_Setter == null && Setter == null)
+            if (!IsSetup)
             {
-                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
-                return;
-            }
+                if (Setter == null)
+                {
+                    Debug.LogError(BXTweenStrings.Err_SetterFnNull);
+                    return;
+                }
 
-            if (_TwContext == null) SetupProperty(StartValue, EndValue, Setter);
+                // Setup not setup property if the setter isn't null.
+                SetupProperty(StartValue, EndValue, Setter);
+            }
 
             // Make sure to set these values
             TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
@@ -2496,7 +2500,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     /// <summary>Tween context. Not serializable, but contains the currently running tween data.</summary>
     public sealed class BXTweenCTX<T> : ITweenCTX
     {
-        #region Variables
+        // -- Variables
         // Should be read-only and only be able to set from methods. 
         // Most of the info is contained in the here.
 
@@ -2545,7 +2549,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// <summary>
         /// The current value of the coroutine.
         /// </summary>
-        public T PauseValue { get; private set; }
+        public T CurrentValue { get; private set; }
         /// <summary>
         /// The coroutine elapsed value.
         /// <br>This value is bigger than -1 when the coroutine starts.</br>
@@ -2579,7 +2583,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         private Func<BXTweenCTX<T>, IEnumerator> _TweenIteratorFn;   // Delegate to get coroutine suitable for this class
         private IEnumerator _IteratorCoroutine;                     // Current setup iterator (not running)
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
-#endregion
 
         #region Variable Setter
         public BXTweenCTX<T> ClearEndingAction()
@@ -2763,7 +2766,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
 
             // -- Set Setter
-            SetterFunction = setter;
+            SetterFunction = setter; // Subtract this as we are going to reuse the pause setter delegate.
+            SetterFunction += (T sValue) => { CurrentValue = sValue; };
             return this;
         }
         /// <summary>
@@ -2828,7 +2832,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 StartValue = StartVal;
                 EndValue = EndVal;
                 SetterFunction = SetFunc; // Setup setter function.
-                SetterFunction += (T pValue) => { PauseValue = pValue; }; // Add pausing delegate to the setter function.
+                SetterFunction += (T pValue) => { CurrentValue = pValue; }; // Add pausing delegate to the setter function.
                 PersistentOnEndAction = PersistentEndMethod;
 
                 Duration = TDuration;
