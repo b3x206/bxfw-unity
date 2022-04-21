@@ -43,10 +43,20 @@ namespace BXFW.UI
                 ChangeProgress(m_ProgressValue);
             }
         }
+        private RectTransform _rectTransform;
         /// <summary>
         /// The <see cref="UnityEngine.RectTransform"/> of this Image.
         /// </summary>
-        public RectTransform RectTransform { get; private set; }
+        public RectTransform RectTransform
+        { 
+            get
+            {
+                if (_rectTransform == null)
+                    _rectTransform = GetComponent<RectTransform>();
+
+                return _rectTransform;
+            } 
+        }
 
         // -- Public
         /// <summary>
@@ -83,8 +93,6 @@ namespace BXFW.UI
                 m_ProgressBarImg.type = Image.Type.Filled;
                 m_ProgressBarImg.fillMethod = Image.FillMethod.Horizontal; // Default fillMethod.
             }
-
-            RectTransform = GetComponent<RectTransform>();
         }
         
         // Progress
