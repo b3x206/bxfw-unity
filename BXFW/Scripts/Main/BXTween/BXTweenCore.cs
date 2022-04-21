@@ -270,6 +270,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCore]->", true),
                 LogRich("The 'Current' reference is null. Re-initilazing. This can happen after script recompiles and other factors."));
+        
+        // -- Diagnostic mode warning(s)
+        public static readonly string DWarn_BXTwUpdatePropertyCTXNull =
+            string.Format("{0} {1}",
+                WarnRich("[BXTweenProperty[T]::UpdateProperty]->", true),
+                LogRich("The '_TwContext' is null. Cannot update."));
+
 #if UNITY_EDITOR // Editor Only
         /// <see cref="BXTween.To"/> on editor.
         public static readonly string Warn_EditorBXTwCoreNotInit =
@@ -474,25 +481,33 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                // We added option to ignore the timescale, so this is standard procedure.
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
-                // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : Mathf.Lerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                // Set lerp
+                // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
+                var SetValue = Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
-                Elapsed += Time.deltaTime / ctx.Duration;
+                Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
                 yield return null;
             }
             ctx.SetterFunction(ctx.EndValue);
@@ -555,22 +570,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
-                // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? Color.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : Color.Lerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                // Set lerp
+                var SetValue = Color.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -633,22 +654,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
-                // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? Vector2.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : Vector2.Lerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                // Set lerp
+                var SetValue = Vector2.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -711,22 +738,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
                 // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? Vector3.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : Vector3.Lerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                var SetValue = Vector3.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -789,22 +822,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
                 // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? Quaternion.SlerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : Quaternion.Slerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                var SetValue = Quaternion.SlerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -867,22 +906,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // -- Start Tween Coroutine -- //
             yield return new WaitForEndOfFrame();
             if (ctx.StartDelay > 0f)
-            { yield return new WaitForSeconds(ctx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
 
             // Start Interpolator
             float Elapsed = 0f;
             bool UseCustom = ctx.CustomTimeCurve != null;
             while (Elapsed <= 1f)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
                 // Set lerp (Conditional for unclamped)
-                var SetValue = ctx.UseUnclampedLerp
-                    ? BXTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed))
-                    : BXTweenCustomLerp.MatrixLerp(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                var SetValue = BXTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
                 ctx.SetterFunction(SetValue);
                 Elapsed += Time.deltaTime / ctx.Duration;
@@ -948,17 +993,25 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             yield return new WaitForEndOfFrame();
 
             if (aCtx.StartDelay > 0f)
-            { yield return new WaitForSeconds(aCtx.StartDelay); }
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(aCtx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(aCtx.StartDelay);
+            }
 
             // (1000 / FPS) returns ms delay, splitting with 1000 to make it float delay.
             // TODO : Make this function proper and find a more efficient way of waiting for seconds.
             // - Maybe try FixedUpdate delegate running coroutine tied to BXTweenCore?
             for (int i = 0; i < aCtx.EndValue; i++)
             {
-                // Check if the timescale is tampered with
-                // if it's below zero, just skip the frame
-                if (Time.timeScale <= 0f)
-                { yield return null; }
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
 
                 aCtx.SetterFunction(i);
 
@@ -1019,6 +1072,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     // Maybe we can add a EditorPref for creation directory?
                     _CurrentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
 #else
+                    // maybe throw exception? making it more obvious that something has went wrong on compilation-generation process?
                     Debug.LogError(BXTweenStrings.Err_BXTwSettingsNoResource);
                     // Create a tempoary resource using default settings.
                     _CurrentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
@@ -2336,7 +2390,15 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public override void UpdateProperty()
         {
-            if (_TwContext == null) return;
+            if (_TwContext == null)
+            {
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DWarn_BXTwUpdatePropertyCTXNull);
+                }
+
+                return;
+            }
 
             // -- Set the settings
             // This class is essentially a settings wrapper.
@@ -2560,7 +2622,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public EaseType TweenEaseType { get; private set; } = CurrentSettings.DefaultEaseType;
         public AnimationCurve CustomTimeCurve { get; private set; } = null;
         public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
-        public bool UseUnclampedLerp { get; private set; } = false;
         // -- Setter (subpart of Interpolation)
         /// <summary>
         /// Time interpolation.
