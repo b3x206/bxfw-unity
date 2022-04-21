@@ -447,21 +447,29 @@ namespace BXFW
             var worldScreenHeight = relativeCam.orthographicSize * 2.0f;
             var worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
 
+            Vector3 scale;
             switch (axis)
             {
                 default:
                 case TransformAxis2D.XYAxis:
-                    sr.transform.localScale =
-                        new Vector3(worldScreenWidth / width, worldScreenHeight / height, sr.transform.localScale.z);
+                    scale = new Vector3(worldScreenWidth / width, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
                 case TransformAxis2D.XAxis:
-                    sr.transform.localScale =
-                        new Vector3(worldScreenWidth / width, sr.transform.localScale.y, sr.transform.localScale.z);
+                    scale = new Vector3(worldScreenWidth / width, sr.transform.localScale.y, sr.transform.localScale.z);
                     break;
                 case TransformAxis2D.YAxis:
-                    sr.transform.localScale =
-                        new Vector3(sr.transform.localScale.x, worldScreenHeight / height, sr.transform.localScale.z);
+                    scale = new Vector3(sr.transform.localScale.x, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
+            }
+
+            if (sr.drawMode != SpriteDrawMode.Tiled)
+            {
+                sr.transform.localScale = scale;
+            }
+            else
+            {
+                // If the drawing is tiled, resize to screen using the tile properties.
+                sr.size = scale;
             }
         }
         /// <summary>Resizes an mesh renderer to the size of the camera fit.</summary>
@@ -1518,15 +1526,15 @@ namespace BXFW.Tools.Editor
 
     public static class EditorAdditionals
     {
-        #region Other
+#region Other
         /// <summary>
         /// Directory of the 'Resources' file.
         /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
         /// </summary>
         public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
-        #endregion
+#endregion
 
-        #region Property Field Helpers
+#region Property Field Helpers
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
         /// <summary>
@@ -1638,9 +1646,9 @@ namespace BXFW.Tools.Editor
             // Name field on doesn't exist? Some weird unity bug? Help 
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find {0} on {1} and it's children.", name, target));
         }
-        #endregion
+#endregion
 
-        #region Gizmos
+#region Gizmos
         /// <summary>
         /// Draws box collider gizmo according to the rotation of the parent transform.
         /// </summary>
@@ -1739,9 +1747,9 @@ namespace BXFW.Tools.Editor
 
             return cam != null ? cam.ScreenToWorldPoint(cam.WorldToScreenPoint(position) + translateBy) : position;
         }
-        #endregion
+#endregion
 
-        #region Inspector-Editor Draw
+#region Inspector-Editor Draw
         public static void CreateReadOnlyTextField(string label, string text = null)
         {
             EditorGUILayout.BeginHorizontal();
@@ -1939,6 +1947,7 @@ namespace BXFW.Tools.Editor
 
         ///// <summary>Internal unity icon for icon pointing downwards.</summary>
         //private const string UInternal_PopupTex = "Icon Dropdown";
+
         /// <summary>
         /// Create custom array with fields.
         /// <br>Known issues : Only support standard arrays (because <see cref="List{T}"/> is read only), everything has to be passed by reference.</br>
@@ -1947,7 +1956,7 @@ namespace BXFW.Tools.Editor
         /// <param name="toggleDropdwnState">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
         /// <param name="GenericDrawList">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
         /// <param name="OnArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
-        public static void UnityArrayGUICustom<T>(ref bool toggleDropdwnState, ref T[] GenericDrawList, RefIndexDelegate<T> OnArrayFieldDrawn) where T : new()
+        public static bool UnityArrayGUICustom<T>(bool toggleDropdwnState, ref T[] GenericDrawList, RefIndexDelegate<T> OnArrayFieldDrawn) where T : new()
         {
             int prev_indent = EditorGUI.indentLevel;
 
@@ -1955,7 +1964,7 @@ namespace BXFW.Tools.Editor
             // Create the size & dropdown field
             GUILayout.BeginHorizontal();
             //toggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, new GUIContent(EditorGUIUtility.IconContent(UInternal_PopupTex)));
-            toggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
+            var currToggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
             EditorGUILayout.LabelField(string.Format("{0} List", typeof(T).Name), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             int curr_arr_Size = EditorGUILayout.IntField("Size", GenericDrawList.Length, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f));
@@ -2000,6 +2009,7 @@ namespace BXFW.Tools.Editor
 
             // Keep previous indent
             EditorGUI.indentLevel = prev_indent;
+            return currToggleDropdwnState;
         }
 
         /// <summary>
@@ -2040,7 +2050,7 @@ namespace BXFW.Tools.Editor
 
             return returnRect;
         }
-        #endregion
+#endregion
     }
 }
 #endif
