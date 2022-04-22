@@ -25,7 +25,7 @@ namespace BXFW.UI
         public bool AddSetActiveEvent = true;
         public bool IsClosed { get { return gameObject.activeInHierarchy; } }
 
-        private RectTransform menuRectTransform;
+        [SerializeField] private RectTransform menuRectTransform;
         public RectTransform RectTransform
         {
             get
