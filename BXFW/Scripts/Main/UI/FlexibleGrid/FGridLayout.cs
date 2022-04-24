@@ -12,7 +12,8 @@ namespace BXFW.UI
             Width = 1,
             Height = 2,
             FixedRows = 3,
-            FixedColumns = 4
+            FixedColumns = 4,
+            FixedAll = 5 // Fixed tile with scaling (scaled correctly when the condition of child item amount is satisfied).
         }
 
         [Space]
@@ -41,13 +42,13 @@ namespace BXFW.UI
                 Columns = Mathf.CeilToInt(sqrRt);
             }
 
-            if (fitType == FitType.Width || fitType == FitType.FixedColumns)
-            {
-                Rows = Mathf.CeilToInt(transform.childCount / (float)Columns);
-            }
             if (fitType == FitType.Height || fitType == FitType.FixedRows)
             {
                 Rows = Mathf.CeilToInt(transform.childCount / (float)Rows);
+            }
+            if (fitType == FitType.Width || fitType == FitType.FixedColumns)
+            {
+                Columns = Mathf.CeilToInt(transform.childCount / (float)Columns);
             }
 
             float parentWidth = rectTransform.rect.width;
@@ -63,6 +64,12 @@ namespace BXFW.UI
 
             CellSize.x = fitX ? cellWidth : CellSize.x;
             CellSize.y = fitY ? cellHeight : CellSize.y;
+
+            // Invalid value clamping (this method is called OnValidate [hah that fits])
+            if (Columns <= 0) 
+                Columns = 1;
+            if (Rows <= 0)
+                Rows = 1;
 
             int columnCount;
             int rowCount;

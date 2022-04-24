@@ -80,6 +80,7 @@ namespace BXFW.Tweening.Editor
 
             EditorGUILayout.LabelField(new GUIContent(":: General"), EditorStyles.boldLabel);
             var enableTw = EditorGUILayout.Toggle(new GUIContent("Enable BXTween", "Enables BXTween. If this option is false, BXTween won't run on start."), CurrentSettings.enableBXTween);
+            var ignoreTS = EditorGUILayout.Toggle(new GUIContent("Ignore Time.timeScale", "Ignores Time.timeScale. Basically slowing down game won't affect the tweens."), CurrentSettings.ignoreTimeScale);
 
             EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
             var lColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
@@ -100,6 +101,7 @@ namespace BXFW.Tweening.Editor
                 // We can't know what setting we changed, so we just use variables
                 // This is bad
                 CurrentSettings.enableBXTween = enableTw;
+                CurrentSettings.ignoreTimeScale = ignoreTS;
 
                 CurrentSettings.LogColor = lColor;
                 CurrentSettings.LogDiagColor = ldColor;

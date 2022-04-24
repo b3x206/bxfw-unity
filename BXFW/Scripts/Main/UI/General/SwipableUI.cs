@@ -72,7 +72,7 @@ namespace BXFW.UI
             {
                 if (!TryGetComponent(out ItemContainer))
                 {
-                    Debug.LogError($"[SwipableUI::Awake] The object \"{name}\" doesn't have a ItemContainer assigned. Please assign one.");
+                    Debug.LogError($"[SwipableUI::Awake] The object \"{transform.GetPath()}\" doesn't have a ItemContainer assigned. Please assign one.");
                 }
             }
 
@@ -85,17 +85,21 @@ namespace BXFW.UI
         {
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
             // (maybe) TODO : Add smooth slowdown until swipe limit.
-            if (!Mathf.Approximately(ClampContentDragOnMenuEnd, 0f))
+            // Only apply swipe clamping if the ClampItemMenu is in valid range for clamping.
+            if (ClampItemMenu > 0)
             {
-                if (_CurrentMenu >= ClampItemMenu)
+                if (!Mathf.Approximately(ClampContentDragOnMenuEnd, 0f))
                 {
-                    // We are swiping RTL and we should clamp.
-                    swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd), ClampContentDragOnMenuEnd);
-                }
-                if (_CurrentMenu <= 0)
-                {
-                    // We are swiping LTR and we should clamp.
-                    swipeDelta = Mathf.Clamp(swipeDelta, -ClampContentDragOnMenuEnd, (ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd);
+                    if (_CurrentMenu >= ClampItemMenu)
+                    {
+                        // We are swiping RTL and we should clamp.
+                        swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd), ClampContentDragOnMenuEnd);
+                    }
+                    if (_CurrentMenu <= 0)
+                    {
+                        // We are swiping LTR and we should clamp.
+                        swipeDelta = Mathf.Clamp(swipeDelta, -ClampContentDragOnMenuEnd, (ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd);
+                    }
                 }
             }
 
@@ -185,18 +189,20 @@ namespace BXFW.UI
         private void OnDrawGizmosSelected()
         {
             var gColor = Gizmos.color;
+            var rTransform = ItemContainer == null ? GetComponent<RectTransform>() : ItemContainer;
+
             if (_CurrentMenu >= ClampItemMenu)
             {
                 // Show the gizmo on right (According to menu).
                 Gizmos.color = Color.green;
-                var linePos = new Vector2(ItemContainer.transform.position.x + ((ItemContainer.rect.width / 2f) + ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
+                var linePos = new Vector2(rTransform.transform.position.x + ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd), rTransform.transform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             if (_CurrentMenu <= 0)
             {
                 // Show the gizmo on left.
                 Gizmos.color = Color.red;
-                var linePos = new Vector2(ItemContainer.transform.position.x - ((ItemContainer.rect.width / 2f) + ClampContentDragOnMenuEnd), ItemContainer.transform.position.y);
+                var linePos = new Vector2(rTransform.transform.position.x - ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd), rTransform.transform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             Gizmos.color = gColor;

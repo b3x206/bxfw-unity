@@ -17,6 +17,7 @@ namespace BXFW.Tweening
         // -- BXTweenStrings Settings
         // :: General
         public bool enableBXTween = true;
+        public bool ignoreTimeScale = false;
 
         // :: Default
         public EaseType DefaultEaseType = EaseType.QuadInOut;
@@ -37,6 +38,7 @@ namespace BXFW.Tweening
         public void FromSettings(BXTweenSettings from)
         {
             enableBXTween = from.enableBXTween;
+            ignoreTimeScale = from.ignoreTimeScale;
 
             DefaultEaseType = from.DefaultEaseType;
             DefaultRepeatType = from.DefaultRepeatType;
