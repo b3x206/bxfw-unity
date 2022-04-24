@@ -1,6 +1,7 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
+#if UNITY_ANDROID
 namespace BXFW
 {
     /// <summary>
@@ -19,20 +20,20 @@ namespace BXFW
         {
             if (Application.isEditor)
             {
+                // Note : Handheld class is only available when compiling for mobile platforms.
                 Handheld.Vibrate();
                 return;
             }
 
-#if UNITY_ANDROID
             if (vibrateDelegate == null)
             {
                 vibrateDelegate = new AndroidJavaClass("com.unity3d.player.UnityPlayer") // Get the Unity Player.
                 .GetStatic<AndroidJavaObject>("currentActivity")                         // Get the Current Activity from the Unity Player.
                 .Call<AndroidJavaObject>("getSystemService", "vibrator");                // Then get the Vibration Service from the Current Activity.
             }
-#else
-            Debug.LogError("[AndroidUtils::(static ctor)] Couldn't construct. Not android.");
-#endif
+
+            // This is realistically never printed as this class is android exclusive.
+            // Debug.LogError("[AndroidUtils::(static ctor)] Couldn't construct. Not android.");
         }
         /// <summary>
         /// Vibrates device.
@@ -59,3 +60,4 @@ namespace BXFW
         }
     }
 }
+#endif

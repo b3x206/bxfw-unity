@@ -145,7 +145,7 @@ namespace BXFW.Tweening
 
         #region Info-Logs
         // Non-Dynamic
-        
+
         // Dynamic
         public static string GetLog_BXTwDurationZero([CallerMemberName] string method = "Unknown")
         {
@@ -244,6 +244,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public static readonly string DLog_BXTwSetupPropertyTwCTXAlreadyExist = string.Format("{0} {1}",
                 LogDiagRich("[BXTweenProperty[T]::SetupProperty]", true),
                 LogRich("Called 'SetupProperty()' even though the tween context already isn't null."));
+        public static readonly string DLog_BXTwCTXStopInvalidCall = string.Format("{0} {1}",
+                LogDiagRich("[BXTweenCTX[T]::StopTween]", true),
+                LogRich("Called 'StopTween()' even though the tween wasn't running."));
         #endregion
 
         #region Warnings
@@ -457,12 +460,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         // (maybe) TODO : Make a generic lerp 'To' method, setting using a dictionary of generic delegates for lerping.
         public IEnumerator To(BXTweenCTX<float> ctx)
         {
-            // Notes (Do not copy to other methods) :
-            // Note that do your enchantments in the 'float' To Method,
-            // than port it over to more complicated types.
-            // Note that this is boilerplate code as everything here is kinda type independent except for the method
+        // Notes (Do not copy to other methods) :
+        // Note that do your enchantments in the 'float' To Method,
+        // than port it over to more complicated types.
+        // Note that this is boilerplate code as everything here is kinda type independent except for the method
 
-            // FIXME : goto used here, this can be turned into a 'while' loop.
+        // FIXME : goto used here, this can be turned into a 'while' loop.
         _Start:
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -1119,7 +1122,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             if (StartTween)
                 Context.StartTween();
-            
+
             // Return Context
             return Context;
         }
@@ -1366,7 +1369,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             if (ValCheckPair.Key)
             {
                 /// We get method <see cref="BXTween.To"/> returned from this class.
-                return (BXTweenCTX<T>)ValCheckPair.Value.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, 
+                return (BXTweenCTX<T>)ValCheckPair.Value.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter,
                         TargetObject, StartTween });
             }
             else
@@ -2167,7 +2170,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 if (_TweenCurve.keys.Length <= 0)
                     _TweenCurve = DEFAULT_TWCURVE_VALUE;
 
-                return _TweenCurve; 
+                return _TweenCurve;
             }
             set
             {
@@ -2181,8 +2184,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public EaseType TweenEase
         {
             get { return _TweenEase; }
-            set 
-            { 
+            set
+            {
                 _TweenEase = value;
 
                 UpdateProperty();
@@ -2191,10 +2194,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public bool UseTweenCurve
         {
             get { return _TweenCurve != null && _UseTweenCurve; }
-            set 
-            { 
-                _UseTweenCurve = value; 
-            
+            set
+            {
+                _UseTweenCurve = value;
+
                 // Set default value if null.
                 if (_UseTweenCurve && _TweenCurve == null)
                 {
@@ -2256,14 +2259,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         /// Note to BXTween developer : Don't compare this variable with null
         /// FIXME : This needs to be cleaned up, but it's the only place i will do this mess.
-        public BXTweenCTX<T> TwContext 
+        public BXTweenCTX<T> TwContext
         {
-            get 
+            get
             {
                 if (_TwContext == null)
                     Debug.LogError(BXTweenStrings.Err_BXTwPropNoTwCTX);
-                
-                return _TwContext; 
+
+                return _TwContext;
             }
         }
         public bool IsValidContext => IsTweenableType(typeof(T)).Key;
@@ -2310,15 +2313,15 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             _Setter = Setter;
 
             // Only update TwContext with a new tween if it's not initialized.
-            // ofc this is redundant, i need to fix the spaghetti.
+            // Note that the null check here is necessary as 'SetupProperty' calls this.
             if (_TwContext == null)
             {
-                // this single line of code made me suffer more than i could
-                // thank visual studio and it's verrry slow debugging skills.
                 _TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
             }
             else if (CurrentSettings.diagnosticMode)
             {
+                _TwContext.SetStartValue(StartValue).SetEndValue(EndValue).SetSetter(Setter);
+
                 Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
             }
 
@@ -2408,7 +2411,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             TwContext.StopTween();
         }
-#endregion
+        #endregion
     }
 
     #region BXTween Property Classes
@@ -2545,7 +2548,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// <summary>
         /// The current value of the coroutine.
         /// </summary>
-        public T PauseValue { get; private set; }
+        public T CurrentValue { get; private set; }
         /// <summary>
         /// The coroutine elapsed value.
         /// <br>This value is bigger than -1 when the coroutine starts.</br>
@@ -2579,7 +2582,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         private Func<BXTweenCTX<T>, IEnumerator> _TweenIteratorFn;   // Delegate to get coroutine suitable for this class
         private IEnumerator _IteratorCoroutine;                     // Current setup iterator (not running)
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
-#endregion
+        #endregion
 
         #region Variable Setter
         public BXTweenCTX<T> ClearEndingAction()
@@ -2738,12 +2741,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             // Clamp value between 0-1
             if (Clamp01)
-            { 
-                TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); }; 
+            {
+                TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
             }
             else
-            { 
-                TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); }; 
+            {
+                TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); };
             }
 
             return this;
@@ -2764,6 +2767,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             // -- Set Setter
             SetterFunction = setter;
+            SetterFunction += (T value) => { CurrentValue = value; };
             return this;
         }
         /// <summary>
@@ -2828,7 +2832,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 StartValue = StartVal;
                 EndValue = EndVal;
                 SetterFunction = SetFunc; // Setup setter function.
-                SetterFunction += (T pValue) => { PauseValue = pValue; }; // Add pausing delegate to the setter function.
+                SetterFunction += (T pValue) => { CurrentValue = pValue; }; // Add pausing delegate to the setter function.
                 PersistentOnEndAction = PersistentEndMethod;
 
                 Duration = TDuration;
@@ -2903,7 +2907,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             {
                 Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStart(this));
             }
-            
+
             CurrentRunningTweens.Add(this);
         }
 
@@ -2919,10 +2923,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // Debug.Log($"StopTween called by : {MethodBase.GetCurrentMethod().ReflectedType}::{MethodCall}");
             // Debug.Log($"Current Running Tween is : {_CurrentIteratorCoroutine}");
 
-            // For nowe
+            // For now
             if (!IsRunning)
             {
-                Debug.Log("StopTween was called even tho we weren't running.");
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+                }
                 return;
             }
 
