@@ -156,7 +156,7 @@ namespace BXFW.UI
                     // Do status update - management
                     // This should have been done all in 'CreateTab' method but yeah
                     firstTBtn.ParentTabSystem = this;
-                    OnCreateTabButton?.Invoke(0, TabButtons[0]);
+                    OnCreateTabButton?.Invoke(0, firstTBtn);
                 }
                 else
                 {
@@ -354,8 +354,7 @@ namespace BXFW.UI
         /// Whether if the <see cref="OnTabButtonsClicked"/> event should invoke. 
         /// This is set to <see langword="true"/> by default.
         /// </param>
-        /// <returns>If the button selection succeeded.</returns>
-        public bool SetSelectedButtonIndex(int btnSelect, bool silentSelect = false)
+        public void SetSelectedButtonIndex(int btnSelect, bool silentSelect = false)
         {
             var IndexSelect = Mathf.Clamp(btnSelect, 0, TabButtons.Count - 1);
             TabButton ButtonToSelScript = TabButtons[IndexSelect];
@@ -371,11 +370,11 @@ namespace BXFW.UI
             else
             {
                 Debug.LogError($"[TabSystem] The tab button to select is null. The index was {IndexSelect}.");
-                return false;
             }
-
-            return true;
         }
+        /// <summary>
+        /// Returns the currently selected buttons index.
+        /// </summary>
         public int GetSelectedButtonIndex()
         {
             return CurrentSelectedTab.ButtonIndex;

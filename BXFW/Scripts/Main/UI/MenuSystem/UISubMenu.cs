@@ -37,6 +37,7 @@ namespace BXFW.UI
         public bool AddSetActiveEvent = true;
         [SerializeField] private bool _IsClosedOnAwake = true;
         public bool IsClosedOnAwake { get { return _IsClosedOnAwake; } }
+        public bool IsOpen => gameObject.activeInHierarchy;
 
         private void Awake()
         {

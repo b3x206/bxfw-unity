@@ -32,6 +32,7 @@
 /// for Tasks is done through this component.
 /// 
 /// TODO : (maybe) Add editor support?
+/// NOTE : <see cref="BXFW.Tweening.BXTween"/> does not use this task manager. Instead it uses it's own task manager.
 
 using UnityEngine;
 using System.Collections;
@@ -85,7 +86,7 @@ namespace BXFW
                 Start();
         }
 
-        /// <summary> Begins execution of the coroutine </summary>
+        /// <summary> Begins execution of the coroutine. </summary>
         public void Start()
         {
             task.Start();

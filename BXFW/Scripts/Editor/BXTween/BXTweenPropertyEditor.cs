@@ -28,25 +28,6 @@ namespace BXFW.ScriptEditor
         private SerializedProperty propInvokeOnManualStop;
         private SerializedProperty propOnEndAction;
 
-        private BXTweenSettings currentSettings;
-        private BXTweenSettings CurrentSettings
-        {
-            get
-            {
-                if (currentSettings == null)
-                    currentSettings = BXTweenSettings.Instance;
-
-                if (currentSettings == null)
-                {
-                    // We are still null, create instance at given const resources directory.
-                    // Maybe we can add a EditorPref for creation directory?
-                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
-                }
-
-                return currentSettings;
-            }
-        }
-
         /// <summary>
         /// Sets up the relative property variables inside this class.
         /// </summary>

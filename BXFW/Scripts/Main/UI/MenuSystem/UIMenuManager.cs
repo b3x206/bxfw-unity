@@ -93,7 +93,7 @@ namespace BXFW.UI
         }
         public void CloseAllSubMenus()
         {
-            for (int i = _CurrentUISubMenus.Count - 1; i > 0; i--)
+            for (int i = _CurrentUISubMenus.Count - 1; i > -1; i--)
             {
                 _CurrentUISubMenus[i].CloseMenu();
                 _CurrentUISubMenus.RemoveAt(i);

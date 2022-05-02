@@ -685,8 +685,8 @@ namespace BXFW
                     // Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] Multiple enum value '{0}' passed in array. Ignoring.", value));
                     continue;
                 }
-                
-                ListValues.Add(value); 
+
+                ListValues.Add(value);
             }
 
             if (EnumToIgnore != null)
@@ -1314,10 +1314,10 @@ namespace BXFW
     public class Ref<T>
     {
         private T backing;
-        public T Value 
-        { 
-            get { return backing; } 
-            set { if (value != null) backing = value; } 
+        public T Value
+        {
+            get { return backing; }
+            set { if (value != null) backing = value; }
         }
         public Ref(T reference)
         {
@@ -1425,11 +1425,11 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
             return (i.Value >> i.RandShiftValue) & 0x7FFFFFFF;
         }
 
-        public static int operator+(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        public static int operator +(ObfuscatedInt lhs, ObfuscatedInt rhs)
         {
             return (int)lhs + (int)rhs;
         }
-        public static int operator-(ObfuscatedInt lhs, ObfuscatedInt rhs)
+        public static int operator -(ObfuscatedInt lhs, ObfuscatedInt rhs)
         {
             return (int)lhs - (int)rhs;
         }
@@ -1526,15 +1526,15 @@ namespace BXFW.Tools.Editor
 
     public static class EditorAdditionals
     {
-#region Other
+        #region Other
         /// <summary>
         /// Directory of the 'Resources' file.
         /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
         /// </summary>
         public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
-#endregion
+        #endregion
 
-#region Property Field Helpers
+        #region Property Field Helpers
         private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
         /// <summary>
@@ -1646,9 +1646,9 @@ namespace BXFW.Tools.Editor
             // Name field on doesn't exist? Some weird unity bug? Help 
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find {0} on {1} and it's children.", name, target));
         }
-#endregion
+        #endregion
 
-#region Gizmos
+        #region Gizmos
         /// <summary>
         /// Draws box collider gizmo according to the rotation of the parent transform.
         /// </summary>
@@ -1747,9 +1747,9 @@ namespace BXFW.Tools.Editor
 
             return cam != null ? cam.ScreenToWorldPoint(cam.WorldToScreenPoint(position) + translateBy) : position;
         }
-#endregion
+        #endregion
 
-#region Inspector-Editor Draw
+        #region Inspector-Editor Draw
         public static void CreateReadOnlyTextField(string label, string text = null)
         {
             EditorGUILayout.BeginHorizontal();
@@ -1862,6 +1862,37 @@ namespace BXFW.Tools.Editor
             // Save & end method
             obj.ApplyModifiedProperties();
             return EditorGUI.EndChangeCheck();
+        }
+
+        /// <summary>
+        /// Returns the children of the SerializedProperty.
+        /// </summary>
+        public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)
+        {
+            property = property.Copy();
+            var nextElement = property.Copy();
+            bool hasNextElement = nextElement.NextVisible(false);
+            if (!hasNextElement)
+            {
+                nextElement = null;
+            }
+
+            property.NextVisible(true);
+            while (true)
+            {
+                if (SerializedProperty.EqualContents(property, nextElement))
+                {
+                    yield break;
+                }
+
+                yield return property;
+
+                bool hasNext = property.NextVisible(false);
+                if (!hasNext)
+                {
+                    break;
+                }
+            }
         }
 
         [Flags]
@@ -2050,7 +2081,7 @@ namespace BXFW.Tools.Editor
 
             return returnRect;
         }
-#endregion
+        #endregion
     }
 }
 #endif
