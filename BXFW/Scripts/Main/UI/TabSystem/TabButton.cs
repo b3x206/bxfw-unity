@@ -25,16 +25,16 @@ namespace BXFW.UI
 
         public FadeType FadeType { get; set; } = FadeType.ColorFade;
 
-        [InspectorReadOnlyView] public int ButtonIndex = 0;
+        [InspectorReadOnlyView] internal int ButtonIndex = 0;
         [InspectorReadOnlyView] internal TabSystem ParentTabSystem;
         [HideInInspector] public TextMeshProUGUI ButtonText;
 
         // -- Initilaze
-        private void Awake()
+        private void Start()
         {
             if (ParentTabSystem == null)
             {
-                Debug.LogError("[TabButton] The parent tab system is null.");
+                Debug.LogError($"[TabButton (name -> '{transform.GetPath()}')] The parent tab system is null.");
                 return;
             }
 

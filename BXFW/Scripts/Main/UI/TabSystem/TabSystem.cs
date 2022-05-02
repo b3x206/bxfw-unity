@@ -26,8 +26,13 @@ namespace BXFW.UI
     {
         [System.Serializable]
         public class IntUnityEvent : UnityEvent<int> { }
+        [System.Serializable]
+        public class TabButtonUnityEvent : UnityEvent<int, TabButton> { }
 
         ///////////// Public
+        /// <summary>
+        /// The amount of the tab buttons. 0 means disabled.
+        /// </summary>
         public int TabButtonAmount
         {
             get
@@ -36,8 +41,9 @@ namespace BXFW.UI
             }
             set
             {
-                _TabButtonAmount = Mathf.Clamp(value, 1, ushort.MaxValue);
-                GenerateTabs();
+                int prevValue = _TabButtonAmount;
+                _TabButtonAmount = Mathf.Clamp(value, 0, ushort.MaxValue);
+                GenerateTabs(prevValue);
             }
         }
         [SerializeField] private int _TabButtonAmount = 1;
@@ -49,13 +55,15 @@ namespace BXFW.UI
         {
             get
             {
-                return _CurrentReferenceTabButton;
+                // Also clamp the return as that's necessary to protect sanity
+                // (Note : clamp with TabButtons.Count as that's the actual button amount).
+                return Mathf.Clamp(_CurrentReferenceTabButton, 0, TabButtons.Count - 1);
             }
             set
             {
                 if (_CurrentReferenceTabButton == value) return;
 
-                _CurrentReferenceTabButton = Mathf.Clamp(value, 0, TabButtonAmount - 1);
+                _CurrentReferenceTabButton = Mathf.Clamp(value, 0, TabButtons.Count - 1);
             }
         }
         [SerializeField] private int _CurrentReferenceTabButton = 0;
@@ -77,6 +85,13 @@ namespace BXFW.UI
         public TabButton.TabButtonUnityEvent TabButtonCustomEventClick;
 
         // -- Standard event
+        // This variable is added to take more control of the generation of the buttons.
+        /// <summary>
+        /// Called when a tab button is created.
+        /// <br><see langword="int"/> parameter : Returns the index.</br> 
+        /// <br><see cref="TabButton"/> parameter : Returns the created button.</br>
+        /// </summary>
+        public TabButtonUnityEvent OnCreateTabButton;
         public IntUnityEvent OnTabButtonsClicked;
 
         /// <summary>
@@ -94,8 +109,71 @@ namespace BXFW.UI
         // Private
         [SerializeField] private List<TabButton> TabButtons = new List<TabButton>();
 
+        /// <summary>
+        /// Internal call of <see cref="GenerateTabs"/>
+        /// <br>Required to check 0/1 disable-enable state.</br>
+        /// </summary>
+        /// <param name="prevIndex">Previous index passed by the <see cref="TabButtonAmount"/>'s setter.</param>
+        private void GenerateTabs(int prevIndex)
+        {
+            // Ignore if count is 0 or less
+            // While this isn't a suitable place for tab management, i wanted to add an '0' state to it. 
+            TabButton firstTBtn = TabButtons[0];
+
+            if (TabButtonAmount <= 0)
+            {
+                // Make sure the first tab button exists as we need to call 'GenerateTabs' for first spawn.
+                if (firstTBtn != null)
+                {
+                    firstTBtn.gameObject.SetActive(false);
+
+                    // Clean the buttons as that's necessary. (otherwise there's stray buttons)
+                    for (int i = 1; i < TabButtons.Count; i++)
+                    {
+                        if (Application.isEditor)
+                        {
+                            DestroyImmediate(TabButtons[i].gameObject);
+                        }
+                        if (Application.isPlaying)
+                        {
+                            Destroy(TabButtons[i].gameObject);
+                        }
+                    }
+
+                    CleanTabButtonsList();
+                    return;
+                }
+                // In this case of this if statement, it's not necessary as the button amount is already 0.
+            }
+            else if (TabButtonAmount == 1 && prevIndex <= 0)
+            {
+                // Make sure the first tab button exists as we need to call 'GenerateTabs' for first spawn.
+                if (firstTBtn != null)
+                {
+                    // This is bad, calling event here.
+                    // But the thing is : 0 tab button amount mean disabled
+                    firstTBtn.gameObject.SetActive(true);
+                    // Do status update - management
+                    // This should have been done all in 'CreateTab' method but yeah
+                    firstTBtn.ParentTabSystem = this;
+                    OnCreateTabButton?.Invoke(0, TabButtons[0]);
+                }
+                else
+                {
+                    // List needs to be cleaned (has null member that we can access without any exceptions)
+                    CleanTabButtonsList();
+                }
+            }
+
+            GenerateTabs();
+        }
+
+        /// <summary>
+        /// Generates tabs.
+        /// </summary>
         public void GenerateTabs()
         {
+            // Normal creation
             while (TabButtons.Count > TabButtonAmount)
             {
                 if (Application.isEditor)
@@ -211,11 +289,8 @@ namespace BXFW.UI
                 ButtonText.alignment = TextAlignmentOptions.Center;
                 TText.transform.localScale = Vector3.one;
 
-                // Set Text Anchor.
-                // Replaces this command.
-                // RectTransformExtensions.SetAnchor(TText.GetComponent<RectTransform>(), AnchorPresets.StretchAll);
+                // Set Text Anchor. (Stretch all)
                 var TTextRect = ButtonText.rectTransform;
-                // Stretch all.
                 TTextRect.anchorMin = new Vector2(0, 0);
                 TTextRect.anchorMax = new Vector2(1, 1);
                 TTextRect.offsetMin = Vector2.zero;
@@ -226,6 +301,7 @@ namespace BXFW.UI
                 var TabButtonInstTarget = TabButtons[CurrentReferenceTabButton];
                 if (TabButtonInstTarget == null)
                 {
+                    // No reference tab.
                     return CreateTab(false);
                 }
 
@@ -238,9 +314,10 @@ namespace BXFW.UI
             // Init button
             TabButtonScript.ButtonIndex = TabButtons.Count;
             TabButtonScript.ParentTabSystem = this;
-            TabButtonScript.name = string.Format("{0}_{1}", TabButtonScript.name, TabButtons.Count).Replace("(Clone)", "");
+            TabButtonScript.name = string.Format("{0}_{1}", TabButtonScript.name, TabButtons.Count).Replace("(Clone)", string.Empty);
 
             TabButtons.Add(TabButtonScript);
+            OnCreateTabButton?.Invoke(TabButtons.Count - 1, TabButtonScript);
 
             return TabButtonScript;
         }
@@ -272,24 +349,32 @@ namespace BXFW.UI
         /// <summary>
         /// Selects a button if it's selectable.
         /// </summary>
-        /// <param name="BtnSelect">Index to select. Clamped value.</param>
+        /// <param name="btnSelect">Index to select. Clamped value.</param>
+        /// <param name="silentSelect">
+        /// Whether if the <see cref="OnTabButtonsClicked"/> event should invoke. 
+        /// This is set to <see langword="true"/> by default.
+        /// </param>
         /// <returns>If the button selection succeeded.</returns>
-        public void SetSelectedButtonIndex(int BtnSelect)
+        public bool SetSelectedButtonIndex(int btnSelect, bool silentSelect = false)
         {
-            var IndexSelect = Mathf.Clamp(BtnSelect, 0, TabButtons.Count - 1);
+            var IndexSelect = Mathf.Clamp(btnSelect, 0, TabButtons.Count - 1);
             TabButton ButtonToSelScript = TabButtons[IndexSelect];
 
             if (ButtonToSelScript != null)
             {
                 CurrentSelectedTab = ButtonToSelScript;
                 ButtonToSelScript.SelectButtonAppearance();
-                OnTabButtonsClicked?.Invoke(IndexSelect);
+                if (!silentSelect)
+                    OnTabButtonsClicked?.Invoke(IndexSelect);
                 CheckUnClickedButtons();
             }
             else
             {
                 Debug.LogError($"[TabSystem] The tab button to select is null. The index was {IndexSelect}.");
+                return false;
             }
+
+            return true;
         }
         public int GetSelectedButtonIndex()
         {

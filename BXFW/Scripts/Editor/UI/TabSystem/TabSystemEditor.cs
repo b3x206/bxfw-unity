@@ -67,6 +67,9 @@ namespace BXFW.ScriptEditor
             if (GUILayout.Button("+", GUILayout.Width(20f))) { TBtnAmount++; }
             if (GUILayout.Button("-", GUILayout.Width(20f))) { TBtnAmount--; }
             GUILayout.EndHorizontal();
+            // Show warning if TabButtonAmount is 0 or lower.
+            if (TBtnAmount <= 0)
+                EditorGUILayout.HelpBox("Warning : TabSystem is disabled. To enable it again set TabButtonAmount to 1 or more.", MessageType.Warning);
 
             EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.ButtonFadeType)));
             var CRefTB = EditorGUILayout.IntField(nameof(Target.CurrentReferenceTabButton), Target.CurrentReferenceTabButton);
@@ -106,6 +109,8 @@ namespace BXFW.ScriptEditor
 
             if (EditorGUI.EndChangeCheck())
             {
+                Undo.RecordObject(Target, string.Format("Change variable on TabSystem {0}", Target.name));
+
                 // Apply properties
                 if (Target.TabButtonAmount != TBtnAmount)
                 {
@@ -116,7 +121,6 @@ namespace BXFW.ScriptEditor
 
                 // Apply serializedObject
                 Tso.ApplyModifiedProperties();
-                Undo.RegisterCompleteObjectUndo(Target, $"Change variable on TabSystem {Target.name}");
             }
 
             // -- Tab List Actions
