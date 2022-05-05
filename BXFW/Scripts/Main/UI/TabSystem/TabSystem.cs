@@ -42,6 +42,7 @@ namespace BXFW.UI
             set
             {
                 int prevValue = _TabButtonAmount;
+                // The weird value is because that the 'TabButtonAmount' will kill your pc if not clampped.
                 _TabButtonAmount = Mathf.Clamp(value, 0, ushort.MaxValue);
                 GenerateTabs(prevValue);
             }
@@ -160,7 +161,7 @@ namespace BXFW.UI
                 }
                 else
                 {
-                    // List needs to be cleaned (has null member that we can access without any exceptions)
+                    // List needs to be cleaned (has null member that we can't access, will throw exceptions)
                     CleanTabButtonsList();
                 }
             }

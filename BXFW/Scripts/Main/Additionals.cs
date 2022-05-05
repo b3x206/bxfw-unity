@@ -17,7 +17,6 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
-using BXFW;
 using BXFW.Tools.Editor;
 
 namespace BXFW
@@ -86,6 +85,38 @@ namespace BXFW
             Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
             Debug.DrawRay(pos + direction, right * arrowHeadLength, color);
             Debug.DrawRay(pos + direction, left * arrowHeadLength, color);
+        }
+        /// <summary>
+        /// Draws a sphere in <see cref="Debug"/> context.
+        /// </summary>
+        public static void DrawSphereDebug(Vector4 pos, float radius, Color color)
+        {
+            // Make unit sphere.
+            var lenSphere = 16;
+            var v = new Vector4[lenSphere * 3]; // Sphere vector
+            for (int i = 0; i < lenSphere; i++)
+            {
+                var f = i / (float)lenSphere;
+                float c = Mathf.Cos(f * (float)(Math.PI * 2.0));
+                float s = Mathf.Sin(f * (float)(Math.PI * 2.0));
+                v[0 * lenSphere + i] = new Vector4(c, s, 0, 1);
+                v[1 * lenSphere + i] = new Vector4(0, c, s, 1);
+                v[2 * lenSphere + i] = new Vector4(s, 0, c, 1);
+            }
+            
+            int len = v.Length / 3;
+            for (int i = 0; i < len; i++)
+            {
+                var sX = pos + radius * v[0 * len + i];
+                var eX = pos + radius * v[0 * len + (i + 1) % len];
+                var sY = pos + radius * v[1 * len + i];
+                var eY = pos + radius * v[1 * len + (i + 1) % len];
+                var sZ = pos + radius * v[2 * len + i];
+                var eZ = pos + radius * v[2 * len + (i + 1) % len];
+                Debug.DrawLine(sX, eX, color);
+                Debug.DrawLine(sY, eY, color);
+                Debug.DrawLine(sZ, eZ, color);
+            }
         }
         #endregion
 

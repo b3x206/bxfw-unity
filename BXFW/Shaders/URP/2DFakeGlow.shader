@@ -1,4 +1,7 @@
 // TODO : Add instancing of material properties : See https://docs.unity3d.com/Manual/GPUInstancing.html
+// Fakes glow on objects that already have color gradient on background (basically makes glow strong)
+// TODO 2 : Create a custom 'SpriteRenderer' that sets up the mesh for the glow
+//          Add outline & apply effect to that (for now i failed to do that)
 
 Shader "Custom/Sprite/2DFakeGlow"
 {
@@ -6,7 +9,8 @@ Shader "Custom/Sprite/2DFakeGlow"
     {
         _Color ("Color", Color) = (1,1,1,1)
         [HDR] _OutlineColor("Emission Color", Color) = (1,1,1,1)
-        _GlowThickness("Glow Thickness", Range(0.01, 0.99)) = .5
+        //_GlowOutlineSize("Glow Outline (Added)", Range(0.0, 1.0)) = 0.2 
+        _GlowThickness("Glow Thickness", Range(0.0, 2.0)) = .5
         _GlowMaxAlphaThreshold("Glow Alpha Threshold (Edge Glow)", Range(0.01, 1)) = .88
         _MainTex ("Texture", 2D) = "white" {}
     }
@@ -37,6 +41,7 @@ Shader "Custom/Sprite/2DFakeGlow"
             float4 _MainTex_ST; // bug fix for TRANSFORM_TEX because unity big dumb
             // Other
             fixed4 _Color;
+            float _GlowOutlineSize;
             //float4 _OutlineColor; // float4 because hdr
             //float _GlowThickness;
 
@@ -69,6 +74,15 @@ Shader "Custom/Sprite/2DFakeGlow"
                 // Add standard color
                 col *= _Color;
                 col *= i.color;
+                //// Draw outline
+                //// Thicc offseted uv
+                //fixed4 tOutlineUVLeft = tex2D(_MainTex, float2(i.uv.x - _GlowOutlineSize, i.uv.y));
+                //fixed4 tOutlineUVRight = tex2D(_MainTex, float2(i.uv.x + _GlowOutlineSize, i.uv.y));
+                //fixed4 tOutlineUVUp = tex2D(_MainTex, float2(i.uv.x, i.uv.y + _GlowOutlineSize));
+                //fixed4 tOutlineUVDown = tex2D(_MainTex, float2(i.uv.x, i.uv.y - _GlowOutlineSize));
+                //// Do the same for up & down and add both outline diffs
+                //float outlineDiff = col.a - clamp(tOutlineUVLeft.a + tOutlineUVRight.a + tOutlineUVUp.a + tOutlineUVDown.a, 0, 1);
+                //col += outlineDiff;
                 return col;
             }
             ENDCG
@@ -127,7 +141,8 @@ Shader "Custom/Sprite/2DFakeGlow"
 
             fixed4 frag(v2f i) : SV_TARGET
             {
-                fixed4 texColor = tex2D(_MainTex, i.uv);
+                // This pass also effects the outline.
+                fixed4 texColor = tex2D(_MainTex, i.uv); // Unmodified texture
 
                 // Add step outline (this pass is additive)
                 float stepAlphaTexture = step(texColor.a, 0.0); // Gets the edge of alpha (note : this edge is rough)

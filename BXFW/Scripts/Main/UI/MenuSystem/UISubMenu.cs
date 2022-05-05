@@ -39,7 +39,11 @@ namespace BXFW.UI
         public bool IsClosedOnAwake { get { return _IsClosedOnAwake; } }
         public bool IsOpen => gameObject.activeInHierarchy;
 
-        private void Awake()
+        /// <summary>
+        /// The awake method.
+        /// <br>Call this method like <c><see langword="base"/>.<see cref="Awake"/></c> when overriden.</br>
+        /// </summary>
+        protected virtual void Awake()
         {
             // If the object is already inactive, it's not visible and closed.
             if (gameObject.activeInHierarchy)

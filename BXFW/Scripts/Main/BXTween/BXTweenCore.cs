@@ -175,9 +175,7 @@ namespace BXFW.Tweening
                 );
         }
 
-        #region Verbose tween information logs
-        // Basically BXTweenSettings.diagnosticMode
-        // IDK : Maybe this should be editor only?
+        #region Diagnostic Mode Strings
         internal static string Log_BXTwCTXGetDebugFormatInfo<T>(BXTweenCTX<T> gContext)
         {
             return string.Format(@"Tween Info => '{0}' with target '{1}'
@@ -222,6 +220,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     // Format List
                     LogDiagRich("[BXTweenCTX::UpdateContextCoroutine]->", true),
                     LogRich(string.Format("Called 'UpdateContextCoroutine()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
+        public static string DLog_BXTwWarnExceptOnCoroutine(Exception e)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCore::To]->", true),
+                    LogRich(string.Format("Coroutine stopped with exception : \"{0}\". Please make sure you are stopping tween / attaching tweens to a valid object. StackTrace:\"{1}\"", e.Message, e.StackTrace))
                 );
         }
         public static readonly string DLog_BXTwCTXTimeCurveAlreadyNull =
@@ -273,7 +281,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCore]->", true),
                 LogRich("The 'Current' reference is null. Re-initilazing. This can happen after script recompiles and other factors."));
-        
+
         // -- Diagnostic mode warning(s)
         public static readonly string DWarn_BXTwUpdatePropertyCTXNull =
             string.Format("{0} {1}",
@@ -464,16 +472,17 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         #endregion
 
         #region To Methods
+        // TODO : Make error checking less boilerplate
         // (maybe) TODO : Make a generic lerp 'To' method, setting using a dictionary of generic delegates for lerping.
         public IEnumerator To(BXTweenCTX<float> ctx)
         {
-        // Notes (Do not copy to other methods) :
-        // Note that do your enchantments in the 'float' To Method,
-        // than port it over to more complicated types.
-        // Note that this is boilerplate code as everything here is kinda type independent except for the method
+            // Notes (Do not copy to other methods) :
+            // Note that do your enchantments in the 'float' To Method,
+            // than port it over to more complicated types.
+            // Note that this is boilerplate code as everything here is kinda type independent except for the method
 
-        // FIXME : goto used here, this can be turned into a 'while' loop.
-        _Start:
+            // FIXME : goto used here, this can be turned into a 'while' loop.
+            _Start:
             // -- Check Context
             if (!ctx.ContextIsValid)
             {
@@ -509,11 +518,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
                 var SetValue = Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -540,14 +577,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 }
 
                 // Do a swap between values.
-                // TODO : Save this value switching so that when the user stops the tween it defaults back.
-                // TODO Needs to be tested properly.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(end_value).SetEndValue(st_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -561,7 +593,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public IEnumerator To(BXTweenCTX<Color> ctx)
         {
-        _Start:
+            _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -596,11 +628,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp
                 var SetValue = Color.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += Time.deltaTime / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -629,10 +689,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(st_value).SetEndValue(end_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -645,7 +702,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public IEnumerator To(BXTweenCTX<Vector2> ctx)
         {
-        _Start:
+            _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -680,11 +737,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp
                 var SetValue = Vector2.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += Time.deltaTime / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -713,10 +798,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(st_value).SetEndValue(end_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -729,7 +811,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public IEnumerator To(BXTweenCTX<Vector3> ctx)
         {
-        _Start:
+            _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -764,11 +846,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp (Conditional for unclamped)
                 var SetValue = Vector3.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += Time.deltaTime / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -797,10 +907,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(st_value).SetEndValue(end_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -813,7 +920,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public IEnumerator To(BXTweenCTX<Quaternion> ctx)
         {
-        _Start:
+            _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -848,11 +955,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp (Conditional for unclamped)
                 var SetValue = Quaternion.SlerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += Time.deltaTime / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -881,10 +1016,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(st_value).SetEndValue(end_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -897,7 +1029,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         public IEnumerator To(BXTweenCTX<Matrix4x4> ctx)
         {
-        _Start:
+            _Start:
 
             // -- Check Context
             if (!ctx.ContextIsValid)
@@ -932,11 +1064,39 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp (Conditional for unclamped)
                 var SetValue = BXTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
 
-                ctx.SetterFunction(SetValue);
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
                 Elapsed += Time.deltaTime / ctx.Duration;
                 yield return null;
             }
-            ctx.SetterFunction(ctx.EndValue);
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
             // End Interpolator
 
             // Repeating
@@ -965,10 +1125,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
-                    var st_value = ctx.StartValue;
-                    var end_value = ctx.EndValue;
-
-                    ctx.SetStartValue(st_value).SetEndValue(end_value);
+                    ctx.SwitchStartEndValues();
                 }
 
                 goto _Start;
@@ -1016,7 +1173,21 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     { yield return null; }
                 }
 
-                aCtx.SetterFunction(i);
+                try
+                {
+                    aCtx.SetterFunction(i);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    aCtx.StopTween();
+                    yield break;
+                }
 
                 // Wait for FPS tick
                 // 1 sec : 1000 ms
@@ -2369,11 +2540,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             {
                 _TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
             }
-            else 
+            else
             {
                 if (CurrentSettings.diagnosticMode)
                     Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
-                
+
                 // Set the setter too.
                 // Since this is called when 'StartTween' is also called, 
                 TwContext.SetSetter(Setter);
@@ -2599,7 +2770,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// <br>Usually returns false if the repeat type is <see cref="RepeatType.Reset"/> 
         ///     or if repeat amount is zero.</br>
         /// </summary>
-        public bool IsValuesSwitched { get { return _IsValuesSwitched && !(RepeatType == RepeatType.Reset || RepeatAmount <= 0); } }
+        public bool IsValuesSwitched 
+        { 
+            get 
+            { 
+                return _IsValuesSwitched && RepeatType != RepeatType.Reset; 
+                /*&& !(RepeatType == RepeatType.Reset || RepeatAmount <= 0);*/ 
+            } 
+        }
 
         public bool ContextIsValid
         {
@@ -2738,6 +2916,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// </summary>
         public BXTweenCTX<T> SetRepeatType(RepeatType type)
         {
+            if (IsRunning && type == RepeatType.Reset)
+            {
+                // Set start and end values to normal
+                if (IsValuesSwitched)
+                {
+                    // No longer switched.
+                    SwitchStartEndValues();
+                }
+            }
+
             RepeatType = type;
 
             return this;
@@ -2854,11 +3042,17 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
         internal void SwitchStartEndValues()
         {
-            _IsValuesSwitched = true;
-            var sValue = StartValue;
+            _IsValuesSwitched = !_IsValuesSwitched;
+#if CSHARP_7_3_OR_NEWER
+            // Swap variables (nice)
+            (StartValue, EndValue) = (EndValue, StartValue);
+#else
+            // Swap variables without tuples
+            T sValue = StartValue;
 
             StartValue = EndValue;
             EndValue = sValue;
+#endif
         }
 
         /// <summary>
@@ -2999,14 +3193,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             if (IsValuesSwitched)
             {
-                var st_value = StartValue;
-                var end_value = EndValue;
-
-                StartValue = end_value;
-                EndValue = st_value;
-
                 // No longer switched.
-                _IsValuesSwitched = false;
+                SwitchStartEndValues();
             }
 
 #if UNITY_EDITOR
