@@ -1559,7 +1559,7 @@ namespace BXFW.Tools.Editor
     {
         #region Other
         /// <summary>
-        /// Directory of the 'Resources' file.
+        /// Directory of the 'Resources' file (for bxfw assets generally).
         /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
         /// </summary>
         public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
@@ -1674,7 +1674,6 @@ namespace BXFW.Tools.Editor
                 return GetField(target, name, targetType.BaseType);
             }
 
-            // Name field on doesn't exist? Some weird unity bug? Help 
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find {0} on {1} and it's children.", name, target));
         }
         #endregion

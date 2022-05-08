@@ -41,7 +41,7 @@ namespace BXFW.UI
                 var menuValue = Mathf.Clamp(value, 0, ClampItemMenu < 0 ? int.MaxValue : ClampItemMenu);
                 var diffBetweenMenu = value - _CurrentMenu;
 
-                // Value is different.
+                // Value is different. (out of bounds)
                 if (diffBetweenMenu != 0)
                 {
                     var newLocation = ContainerInitialPosition + (new Vector2(-ItemContainer.rect.width, 0f) * diffBetweenMenu);

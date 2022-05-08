@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
 namespace BXFW
@@ -22,9 +21,7 @@ namespace BXFW
 
                 if (soCurrent.Length <= 0)
                 {
-                    // Error message not necessary, error checking should be implemented.
-                    // OnInstanceNotFound();
-                    // we could use delegates or temporary instances of 'T' but yeah, it's finicky at best.
+                    // Error message not necessary, error checking should be implemented. (on target code)
                     return null;
                 }
                 if (soCurrent.Length > 1)
@@ -57,13 +54,13 @@ namespace BXFW
             // Create & serialize instance of the resource.
             // Find the directory
             var relativeParentDir = Path.Combine("Assets/Resources/", relDir.Substring(relDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1));
-            var absParentDirectory = Path.Combine(Tools.Editor.EditorAdditionals.ResourcesDirectory);
+            var absoluteParentDir = Tools.Editor.EditorAdditionals.ResourcesDirectory;
 
             // If the relative directory isn't created, the creation will fail.
             // For that, i will actually get the combined path.
-            if (!Directory.Exists(absParentDirectory))
+            if (!Directory.Exists(absoluteParentDir))
             {
-                Directory.CreateDirectory(absParentDirectory);
+                Directory.CreateDirectory(absoluteParentDir);
             }
 
             // Actually create the thing.
