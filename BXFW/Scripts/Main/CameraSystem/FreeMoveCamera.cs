@@ -21,9 +21,6 @@ namespace BXFW
             {
                 isEnabled = value;
                 enabled = value;
-#if UNITY_EDITOR
-                if (!Application.isPlaying) return;
-#endif
             }
         }
         [SerializeField] private bool isEnabled = true;

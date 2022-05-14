@@ -77,10 +77,10 @@ namespace BXFW.ScriptEditor
 
             // Base Inspector
             base.OnInspectorGUI();
+            EditorGUILayout.BeginVertical(GUI.skin.box);
             Target.CurrentCameraOffsetIndex = EditorGUILayout.IntField("Current Camera Offset Index", Target.CurrentCameraOffsetIndex);
             // Custom Inspector
             GUILayout.Label($"---- Current Index : {Target.CurrentCameraOffsetIndex}", StyleLabel);
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Set Camera Position Offset From Position"))
             {
                 var FollowPosition = Target.FollowTransform == null ? Target.FollowVector3 : Target.FollowTransform.position;
@@ -97,7 +97,7 @@ namespace BXFW.ScriptEditor
                 Target.transform.position = Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position + FollowPosition;
                 Target.transform.rotation = Quaternion.Euler(Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation);
             }
-            GUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
         }
     }
 }

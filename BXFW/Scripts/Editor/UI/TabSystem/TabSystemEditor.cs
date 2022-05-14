@@ -48,13 +48,13 @@ namespace BXFW.ScriptEditor
         {
             // Standard
             var Target = (TabSystem)target;
-            var Tso = serializedObject;
-            Tso.Update();
+            var tabSO = serializedObject;
+            tabSO.Update();
 
             // Draw the 'm_Script' field that monobehaviour makes (with disabled gui)
             var gEnabled = GUI.enabled;
             GUI.enabled = false;
-            EditorGUILayout.PropertyField(Tso.FindProperty("m_Script"));
+            EditorGUILayout.PropertyField(tabSO.FindProperty("m_Script"));
             GUI.enabled = gEnabled;
 
             EditorGUI.BeginChangeCheck();
@@ -71,7 +71,7 @@ namespace BXFW.ScriptEditor
             if (TBtnAmount <= 0)
                 EditorGUILayout.HelpBox("Warning : TabSystem is disabled. To enable it again set TabButtonAmount to 1 or more.", MessageType.Warning);
 
-            EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.ButtonFadeType)));
+            EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.ButtonFadeType)));
             var CRefTB = EditorGUILayout.IntField(nameof(Target.CurrentReferenceTabButton), Target.CurrentReferenceTabButton);
 
             EditorGUILayout.Space();
@@ -80,22 +80,22 @@ namespace BXFW.ScriptEditor
             switch (Target.ButtonFadeType)
             {
                 case FadeType.ColorFade:
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonFadeSpeed)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonFadeColorTargetHover)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonFadeColorTargetClick)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonSubtractFromCurrentColor)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeSpeed)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeColorTargetHover)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeColorTargetClick)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonSubtractFromCurrentColor)));
                     break;
                 case FadeType.SpriteSwap:
                     EditorGUILayout.LabelField(
                         "Note : Default sprite is the image that is currently inside the Image component.",
                         EditorStyles.centeredGreyMiniLabel);
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.HoverSpriteToSwap)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TargetSpriteToSwap)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.HoverSpriteToSwap)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TargetSpriteToSwap)));
                     break;
                 case FadeType.CustomUnityEvent:
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonCustomEventOnReset)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonCustomEventHover)));
-                    EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.TabButtonCustomEventClick)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventOnReset)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventHover)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventClick)));
                     break;
 
                 default:
@@ -105,7 +105,7 @@ namespace BXFW.ScriptEditor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Tab Event", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(Tso.FindProperty(nameof(Target.OnTabButtonsClicked)));
+            EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.OnTabButtonsClicked)));
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -120,7 +120,7 @@ namespace BXFW.ScriptEditor
                 Target.CurrentReferenceTabButton = CRefTB;
 
                 // Apply serializedObject
-                Tso.ApplyModifiedProperties();
+                tabSO.ApplyModifiedProperties();
             }
 
             // -- Tab List Actions
@@ -129,7 +129,7 @@ namespace BXFW.ScriptEditor
 
             EditorGUI.indentLevel++; // indentLevel = normal + 1
             GUI.enabled = false;
-            EditorGUILayout.PropertyField(Tso.FindProperty("TabButtons"));
+            EditorGUILayout.PropertyField(tabSO.FindProperty("TabButtons"));
             GUI.enabled = true;
 
             GUILayout.BeginHorizontal();

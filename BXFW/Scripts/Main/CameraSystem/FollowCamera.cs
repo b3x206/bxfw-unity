@@ -6,7 +6,7 @@ namespace BXFW
     /// Following camera.
     /// <br>Tracks the <see cref="FollowTransform"/> smoothly.</br>
     /// </summary>
-    [RequireComponent(typeof(Camera), typeof(AudioListener))]
+    [RequireComponent(typeof(Camera))]
     public class FollowCamera : MonoBehaviour
     {
         // ** Variables (Inspector)

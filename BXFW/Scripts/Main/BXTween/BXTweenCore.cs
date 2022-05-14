@@ -2456,19 +2456,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
     {
-        // ----- variables that don't need editor ----- //
-        public BXTweenSetMethod<T> SetAction
-        {
-            set
-            {
-                // Ignore null values
-                if (value == null) return;
-
-                _Setter = value;
-                UpdateProperty();
-            }
-        }
-
         // ---- Get Only ---- //
         /// <summary>
         /// Internal Tween context.
@@ -2607,6 +2594,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Setup not setup property if the setter isn't null.
                 SetupProperty(StartValue, EndValue, Setter);
+            }
+            else if (Setter != null)
+            {
+                // Already setup, but wanting to change the setter.
+                _Setter = Setter;
             }
 
             // Make sure to set these values
