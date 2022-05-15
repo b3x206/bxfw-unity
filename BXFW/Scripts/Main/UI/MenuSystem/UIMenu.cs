@@ -23,7 +23,7 @@ namespace BXFW.UI
         public UIMenuEventBool ExtraUIEvents_Simple;
         public UIMenuEventMenuData ExtraUIEvents;
         public bool AddSetActiveEvent = true;
-        public bool IsClosed { get { return gameObject.activeInHierarchy; } }
+        public bool IsOpen { get { return gameObject.activeInHierarchy; } }
 
         [SerializeField] private RectTransform menuRectTransform;
         public RectTransform RectTransform

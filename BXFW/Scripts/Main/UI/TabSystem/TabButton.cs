@@ -53,6 +53,9 @@ namespace BXFW.UI
                 // Set visuals.
                 SelectButtonAppearance();
             }
+
+            // Setup tempoary variables
+            FadeType = ParentTabSystem.ButtonFadeType;
         }
 
         #region PointerClick Events
