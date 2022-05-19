@@ -8,13 +8,9 @@ namespace BXFW.Tools.Editor
 {
     public enum SaveFormat { Triangles, Quads }
     public enum SaveResolution { Full = 0, Half, Quarter, Eighth, Sixteenth }
-
-    // Important Note about this class : I stole this from unify community (which is 'probably' long gone).
-    // If the author of this file wants to do something with this file, please open an issue or mail.
     
     // TODO :
     // 1 : Import materials too (if possible, .obj doesn't have mats but we can import them seperately or use an different format)
-    // 2 : Make the naming / coding convention similar.
     /// <summary> Converts terrain to obj. </summary>
     public class Terrain2Obj : EditorWindow
     {
@@ -46,7 +42,9 @@ namespace BXFW.Tools.Editor
                 _terrainPos = terrainObject.transform.position;
             }
 
-            GetWindow<Terrain2Obj>().Show();
+            var window = GetWindow<Terrain2Obj>();
+            window.Show();
+            window.titleContent = new GUIContent("Terrain -> '.obj' File");
         }
 
         private void OnGUI()

@@ -1780,6 +1780,46 @@ namespace BXFW.Tools.Editor
         #endregion
 
         #region Inspector-Editor Draw
+        /// <summary>
+        /// Make gui area drag and droppable.
+        /// <br>This applies to global gui layout.</br>
+        /// </summary>
+        public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
+        {
+            Event evt = Event.current;
+            switch (evt.type)
+            {
+                case EventType.DragUpdated:
+                case EventType.DragPerform:
+                    Rect dropArea = customRect ?? GUILayoutUtility.GetRect(0.0f, 0.0f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                    /* Drawing graphics on drop area is not necessary, optional.
+                    GUIStyle Boxstyle = GUI.skin.box;
+                    Boxstyle.fontSize = 24;
+                    Boxstyle.fontStyle = FontStyle.Bold;
+                    Boxstyle.alignment = TextAnchor.MiddleCenter;
+                    GUI.Box(drop_area, "Drop sprites here...", Boxstyle);
+                    */
+                    if (!dropArea.Contains(evt.mousePosition))
+                        return;
+
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    var shouldAcceptDrag = shouldAcceptDragCheck?.Invoke();
+
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        // dumb, but not doing this 'this' way causes null exception.
+                        if (shouldAcceptDrag.HasValue)
+                        {
+                            if (!shouldAcceptDrag.Value) return;
+                        }
+
+                        DragAndDrop.AcceptDrag();
+                        onDragAcceptAction?.Invoke();
+                    }
+                    break;
+            }
+        }
+
         public static void CreateReadOnlyTextField(string label, string text = null)
         {
             EditorGUILayout.BeginHorizontal();
