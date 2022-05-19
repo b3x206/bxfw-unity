@@ -2543,6 +2543,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         {
             SetupProperty(default, default, Setter);
         }
+
+        /// <summary>
+        /// Returns whether if the property is setup.
+        /// </summary>
+        public static implicit operator bool(BXTweenProperty<T> property)
+        {
+            return property.IsSetup;
+        }
         #endregion
 
         #region Methods

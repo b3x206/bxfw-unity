@@ -130,6 +130,7 @@ namespace BXFW
 
         /// <summary>
         /// Get the path of the gameobject.
+        /// <br>This is useful for <see cref="Debug.Log"/>-ging with better troubleshooting.</br>
         /// </summary>
         public static string GetPath(this Transform target)
         {
