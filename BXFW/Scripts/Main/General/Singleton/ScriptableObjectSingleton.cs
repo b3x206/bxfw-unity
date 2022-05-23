@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace BXFW
 {
+    /// <summary>
+    /// Singleton that is for <see cref="ScriptableObject"/>'s.
+    /// <br>Loads asset using <see cref="Resources.Load"/></br>
+    /// </summary>
     public class ScriptableObjectSingleton<T> : ScriptableObject
         where T : ScriptableObject
     {
@@ -42,8 +46,9 @@ namespace BXFW
         /// Creates instance at given relative directory.
         /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called</br>
         /// </summary>
-        /// <param name="relDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
-        public static T CreateEditorInstance(string relDir, string fileName)
+        /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
+        /// <param name="fileName">Name of hte file to create.</param>
+        public static T CreateEditorInstance(string relativeDir, string fileName)
         {
             if (Instance != null)
             {
@@ -53,8 +58,9 @@ namespace BXFW
 
             // Create & serialize instance of the resource.
             // Find the directory
-            var relativeParentDir = Path.Combine("Assets/Resources/", relDir.Substring(relDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1));
-            var absoluteParentDir = Tools.Editor.EditorAdditionals.ResourcesDirectory;
+            var checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
+            var relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
+            var absoluteParentDir = Path.Combine(Tools.Editor.EditorAdditionals.ResourcesDirectory, checkedRelativeDir);
 
             // If the relative directory isn't created, the creation will fail.
             // For that, i will actually get the combined path.
