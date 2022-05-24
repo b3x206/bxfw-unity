@@ -39,8 +39,6 @@ namespace BXFW
         }
 
 #if UNITY_EDITOR
-        /// Please do not be like me and mix runtime scripts with editor scripts.
-        /// Since the nature of <see cref="ScriptableObject"/>'s are editor, this is why this method is here.
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory.

@@ -2,6 +2,7 @@
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.ProjectWindowCallback;
 #endif
 
 using System;
@@ -103,7 +104,7 @@ namespace BXFW
                 v[(1 * lenSphere) + i] = new Vector4(0, c, s, 1);
                 v[(2 * lenSphere) + i] = new Vector4(s, 0, c, 1);
             }
-            
+
             int len = v.Length / 3;
             for (int i = 0; i < len; i++)
             {
@@ -1566,8 +1567,109 @@ namespace BXFW.Tools.Editor
         public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
         #endregion
 
+        #region Prefab Utility
+        /// <summary>
+        /// NOTES ABOUT THIS CLASS:
+        /// <para>
+        ///     1: It handles creation 
+        ///     <br>2: It edits (because it's callback of <see cref="ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int, EndNameEditAction, string, Texture2D, string)"/>, what type of method is that?)</br>
+        /// </para>
+        /// </summary>
+        internal class CreateAssetEndNameEditAction : EndNameEditAction
+        {
+            /// <summary>
+            /// Called when the creation ends.
+            /// <br>The int parameter returns the <see cref="UnityEngine.Object.GetInstanceID"/>.</br>
+            /// </summary>
+            internal event Action<int> OnRenameEnd;
+
+            /// <summary>
+            /// Action to invoke.
+            /// <br>If the object exists (<paramref name="instanceId"/> isn't invalid) it will use <see cref="AssetDatabase.CreateAsset(UnityEngine.Object, string)"/></br>
+            /// <br>If the object does NOT exist (<paramref name="instanceId"/> IS invalid) it will use <see cref="AssetDatabase.CopyAsset(string, string)"/>.</br>
+            /// </summary>
+            public override void Action(int instanceId, string pathName, string resourceFile)
+            {
+                string uniqueName = AssetDatabase.GenerateUniqueAssetPath(pathName);
+                if ((instanceId == 0 || instanceId == int.MaxValue - 1) && !string.IsNullOrEmpty(resourceFile))
+                {
+                    // Copy existing asset (if no reference asset was given)
+                    AssetDatabase.CopyAsset(resourceFile, uniqueName);
+                }
+                else
+                {
+                    // Create new asset from asset (if reference asset was given)
+                    AssetDatabase.CreateAsset(EditorUtility.InstanceIDToObject(instanceId), uniqueName);
+                }
+
+                // Handle events
+                OnRenameEnd?.Invoke(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(uniqueName).GetInstanceID());
+            }
+        }
+
+        /// <summary>
+        /// Creates an instance of prefab <paramref name="prefabReferenceTarget"/> and renames it like an new object was created.
+        /// <br>NOTE : Make sure 'prefabTarget' is an prefab.</br>
+        /// </summary>
+        /// <param name="prefabReferenceTarget">The prefab target. Make sure this is an prefab.</param>
+        /// <param name="path">Creation path. If left null the current folder will be selected.</param>
+        /// <param name="onRenameEnd">Called when object is renamed. The <see cref="int"/> parameter is the InstanceID of the object.</param>
+        // Use <see cref="EditorUtility"/> & <see cref="AssetDatabase"/>'s utility functions to make meaning out of it.
+        public static void CopyPrefabReferenceAndRename(GameObject prefabReferenceTarget, string path = null, Action<int> onRenameEnd = null)
+        {
+            // Create at the selected directory
+            if (string.IsNullOrEmpty(path))
+                path = Selection.activeObject == null ? "Assets" : AssetDatabase.GetAssetPath(Selection.activeObject);
+
+            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), path)))
+            {
+                Debug.LogError(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Directory '{0}' does not exist.", path));
+                return;
+            }
+            if (PrefabUtility.GetCorrespondingObjectFromSource(prefabReferenceTarget) == null)
+            {
+                Debug.LogError(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Prefab to copy is invalid (not a prefab). prefabTarget was = '{0}'", prefabReferenceTarget));
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                // Get path & target prefab to copy
+                GameObject targetPrefabInst = prefabReferenceTarget;
+                path = AssetDatabase.GenerateUniqueAssetPath($"{Path.Combine(path, targetPrefabInst.name)}.prefab"); // we are copying prefabs anyway
+
+                // Register 'OnFileNamingEnd' function.
+                var assetEndNameAction = ScriptableObject.CreateInstance<CreateAssetEndNameEditAction>();
+                assetEndNameAction.OnRenameEnd += (int instanceIDSaved) =>
+                {
+                    var createdObject = EditorUtility.InstanceIDToObject(instanceIDSaved);
+
+                    Selection.activeObject = createdObject; // Select renamed object
+                };
+                assetEndNameAction.OnRenameEnd += onRenameEnd;
+
+                // wow very obvious (unity api moment)
+                Texture2D icon = AssetPreview.GetMiniThumbnail(targetPrefabInst); // Get the thumbnail from the target prefab
+
+                // instanceID   = Target instance ID to edit
+                //      (if it exists it will also edit that file alongside, we will create our own asset path so we pass invalid value, otherwise the object will be cloned.)
+                // pathName     = Directory to file of the destination asset
+                // resourceName = Directory to file of the source asset
+                // icon         = Asset icon, not very necessary (can be null)
+                // THIS. IS. SO. DUMB. (that even unity's asset developers wrote a wrapper function for this method lol)
+                ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int.MaxValue - 1, assetEndNameAction, path, icon, AssetDatabase.GetAssetPath(targetPrefabInst.GetInstanceID()));
+            }
+            else
+            {
+                Debug.LogWarning($"[ShopItemPreviewEditor::CopyPrefabInstanceAndRename] Path received for creating prefab '{path}' is not a path.");
+            }
+        }
+
+        // TODO : Add method to also copy from already existing instance id (overwrite method?)
+        #endregion
+
         #region Property Field Helpers
-        private static Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
+        private static readonly Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
         /// <summary>
         /// Returns the c# object's fieldInfo and the instance object it comes with.
@@ -1834,7 +1936,8 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
-        /// Draw default inspector with commands inbetween. (Allowing to put custom gui between)
+        /// Draw default inspector with commands inbetween. (Allowing to put custom gui between).
+        /// <br>This works as same as <see cref="UnityEditor.Editor.OnInspectorGUI"/>'s <see langword="base"/> call.</br>
         /// </summary>
         /// <param name="target">Method target.</param>
         /// <param name="onStringMatchEvent">
