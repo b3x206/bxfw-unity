@@ -6,7 +6,7 @@ namespace BXFW.UI
 {
     /// <summary>
     /// The sub ui menu. Good for popup windows, etc.
-    /// <br>Restrictions that apply to <see cref="UIMenu"/> doesn't apply to this sub menu.</br>
+    /// <br>Restrictions that apply to <see cref="UIMenu"/> (in <see cref="UIMenuManager"/>) doesn't apply to this sub menu.</br>
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class UISubMenu : MonoBehaviour
@@ -37,7 +37,7 @@ namespace BXFW.UI
         public bool AddSetActiveEvent = true;
         [SerializeField] private bool _IsClosedOnAwake = true;
         public bool IsClosedOnAwake { get { return _IsClosedOnAwake; } }
-        public bool IsOpen => gameObject.activeInHierarchy;
+        public bool IsOpen { get { return gameObject.activeInHierarchy; } }
 
         /// <summary>
         /// The awake method.

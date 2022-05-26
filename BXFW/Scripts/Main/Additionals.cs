@@ -2264,6 +2264,23 @@ namespace BXFW.Tools.Editor
 namespace BXFW
 {
     /// <summary>
+    /// Attribute to draw <see cref="Sprite"/> fields as a big preview.
+    /// <br>Limitations -> Doesn't support scene objects.</br>
+    /// </summary>
+    public class InspectorBigSpriteFieldAttribute : PropertyAttribute
+    {
+#if UNITY_EDITOR
+        public readonly float spriteBoxRectHeight = 44f;
+#endif
+        public InspectorBigSpriteFieldAttribute(float spriteHeight = 44f)
+        {
+#if UNITY_EDITOR
+            spriteBoxRectHeight = spriteHeight;
+#endif
+        }
+    }
+
+    /// <summary>
     /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
     /// </summary>
     public class InspectorLineAttribute : PropertyAttribute
@@ -2286,9 +2303,7 @@ namespace BXFW
         /// <summary>
         /// Return the draw height.
         /// </summary>
-        /// <param name="parentRect"></param>
-        /// <returns></returns>
-        public float GetYPosHeightOffset()
+        internal float GetYPosHeightOffset()
         {
             return LineThickness + LinePadding;
         }
@@ -2336,8 +2351,63 @@ namespace BXFW.ScriptEditor
 
     #region Inspector Attributes Drawers
     // (maybe) TODO : Carry these 'Inspector Attribute Drawers' over to a seperate file.
+    /// <summary>
+    /// Draws the '<see cref="Texture2D"/>' inspector for sprites.
+    /// <br>Limitations -> Doesn't support scene objects.</br>
+    /// </summary>
+    [CustomPropertyDrawer(typeof(InspectorBigSpriteFieldAttribute))]
+    internal class InspectorBigSpriteFieldDrawer : PropertyDrawer
+    {
+        private const float warnHelpBoxRectHeight = 22f;
+        private KeyValuePair<FieldInfo, object> target;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float addHeight = 0f;
+            if (target.Key == null)
+                target = property.GetTarget();
+
+            var targetAttribute = (InspectorBigSpriteFieldAttribute)target.Key.GetCustomAttribute(typeof(InspectorBigSpriteFieldAttribute), true);
+
+            // Draw an object field for sprite property
+            if (target.Key.FieldType != typeof(Sprite))
+            {
+                // Same story, calling 'GetPropertyHeight' before drawing gui or not allowing to dynamically change height while drawing is dumb
+                addHeight += warnHelpBoxRectHeight; 
+            }
+            else
+            {
+                addHeight += targetAttribute.spriteBoxRectHeight; // Hardcode the size as unity doesn't change it.
+            }
+
+            return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (target.Key == null)
+                target = property.GetTarget();
+
+            // Draw an object field for sprite property
+            if (target.Key.FieldType != typeof(Sprite))
+            {
+                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, position.height), 
+                    string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name), 
+                    MessageType.Warning);
+                return;
+            }
+
+            EditorGUI.BeginChangeCheck();
+            Sprite setValue = (Sprite)EditorGUI.ObjectField(new Rect(position.x, position.y, position.width, position.height), label, property.objectReferenceValue, typeof(Sprite), false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(property.objectReferenceValue, "Inspector");
+                property.objectReferenceValue = setValue;
+            }
+        }
+    }
     [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
-    public class InspectorLineDrawer : PropertyDrawer
+    internal class InspectorLineDrawer : PropertyDrawer
     {
         private InspectorLineAttribute targetAttribute;
 
@@ -2361,7 +2431,7 @@ namespace BXFW.ScriptEditor
         }
     }
     [CustomPropertyDrawer(typeof(InspectorReadOnlyViewAttribute))]
-    public class ReadOnlyDrawer : PropertyDrawer
+    internal class ReadOnlyDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

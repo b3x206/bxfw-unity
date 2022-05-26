@@ -1,7 +1,7 @@
-﻿/// BXTween Version : 0.4.2
+﻿/// BXTween Version : 0.5
 ///                  (state, major, minor) : 
 ///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
-///                  major => Major revision introducing features & api renamings (this is going to be very messy in alpha)
+///                  major => Major revision introducing features & api change (this is going to be very messy in alpha)
 ///                  minor => minor bug fixes (hotfixes also enter to this category)
 /// <remarks>
 /// BXTween :
@@ -19,8 +19,8 @@
 ///     }, {StartValue}, {EndValue}, {Duration});
 ///     
 ///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version}
-///     // This example code interpolates the alpha of a canvas group.
-///     ... declared in the monobehaviour, serializable variable scope 'public or private with serialize field', 
+///     // .. This example code interpolates the alpha of a canvas group.
+///     ... declared in the monobehaviour/scriptableobject/anything unity can serialize, serializable variable scope 'public or private with serialize field', 
 ///     BXTweenPropertyFloat interpolateThing = new BXTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
 ///     ... called inside a method, you should already know this
 ///     // Always setup property before calling StartTween!!
@@ -41,9 +41,8 @@
 /// </remarks>
 
 /** -------------------------------------------------- 
-// GENERAL TODO :
-// 1 : <see cref="BXFW.Tweening.BXTweenCTX{T}"/>'s <see cref="BXFW.Tweening.RepeatType.PingPong"/> doesn't work as ping-pong,
-//     but rather as <see cref="BXFW.Tweening.RepeatType.Reset"/>. Reset seems to work fine.
+/// General TODO:
+/// There is none (for now, see issues || projects to do with this)
 * -------------------------------------------------- **/
 
 using System;
@@ -353,14 +352,14 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
         // Dynamic (Needs to be generated dynamically or smth)
         /// <see cref="BXTween.To"/> methods.
-        public static string GetErr_NonTweenableType(string ReasonNotTwn)
+        public static string GetErr_NonTweenableType(string Type)
         {
             return string.Format
                 (   // Main String
                     "{0} {1}",
                     // Format List
                     ErrRich("[BXTweenCore(Error)]->", true),
-                    LogRich(string.Format("The type ({0}) is not tweenable!", ReasonNotTwn))
+                    LogRich(string.Format("The type ({0}) is not tweenable!", Type))
                 );
         }
         public static string GetErr_ContextInvalidMsg(string ReasonInvalid)
@@ -1141,7 +1140,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 #if UNITY_EDITOR
         // NOTE : This method is still wip
         // This is 'NOT FUNCTIONAL' and not called by ANY methods.
-        private IEnumerator To(BXTweenCTX<int> aCtx, int FPS = 60)
+        private IEnumerator To(BXTweenCTX<int> aCtx, float frameSec = .040f)
         {
             if (!aCtx.ContextIsValid)
             {
@@ -1160,6 +1159,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     yield return new WaitForSecondsRealtime(aCtx.StartDelay);
             }
 
+            var wfsFrame = new WaitForSeconds(frameSec);
             // (1000 / FPS) returns ms delay, splitting with 1000 to make it float delay.
             // TODO : Make this function proper and find a more efficient way of waiting for seconds.
             // - Maybe try FixedUpdate delegate running coroutine tied to BXTweenCore?
@@ -1191,9 +1191,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Wait for FPS tick
                 // 1 sec : 1000 ms
-                yield return new WaitForSeconds(FPS / 1000f);
-                //yield return null;
+                yield return wfsFrame;
             }
+            // No need to set end value (this isn't lerped float)
 
             yield return null;
         }
@@ -1206,10 +1206,18 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     /// </summary>
     public static class BXTweenCustomLerp
     {
+        /// <summary>
+        /// Interpolates a Matrix4x4.
+        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
+        /// </summary>
         public static Matrix4x4 MatrixLerp(Matrix4x4 src, Matrix4x4 dest, float time)
         {
             return MatrixLerpUnclamped(src, dest, Mathf.Clamp01(time));
         }
+        /// <summary>
+        /// Interpolates a Matrix4x4. (Unclamped)
+        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
+        /// </summary>
         public static Matrix4x4 MatrixLerpUnclamped(Matrix4x4 src, Matrix4x4 dest, float time)
         {
             Matrix4x4 ret = new Matrix4x4();
