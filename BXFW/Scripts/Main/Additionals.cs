@@ -2351,6 +2351,9 @@ namespace BXFW.ScriptEditor
 
     #region Inspector Attributes Drawers
     // (maybe) TODO : Carry these 'Inspector Attribute Drawers' over to a seperate file.
+    // TODO : Use a class named => DecoratorDrawer
+    //      -> This will be useful for the 'InspectorLine' and other drawers being compliant with each other
+    //      -> (PropertyDrawer is the most manual way of doing it)
     /// <summary>
     /// Draws the '<see cref="Texture2D"/>' inspector for sprites.
     /// <br>Limitations -> Doesn't support scene objects.</br>
@@ -2398,10 +2401,14 @@ namespace BXFW.ScriptEditor
             }
 
             EditorGUI.BeginChangeCheck();
-            Sprite setValue = (Sprite)EditorGUI.ObjectField(new Rect(position.x, position.y, position.width, position.height), label, property.objectReferenceValue, typeof(Sprite), false);
+            Sprite setValue = (Sprite)EditorGUI.ObjectField(position, label, property.objectReferenceValue, typeof(Sprite), false);
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(property.objectReferenceValue, "Inspector");
+                if (property.objectReferenceValue != null)
+                {
+                    Undo.RecordObject(property.objectReferenceValue, "Inspector");
+                }
+
                 property.objectReferenceValue = setValue;
             }
         }
@@ -2425,7 +2432,6 @@ namespace BXFW.ScriptEditor
         {
             targetAttribute = (InspectorLineAttribute)property.GetTarget().Key.GetCustomAttribute(typeof(InspectorLineAttribute));
 
-            // Draw line and draw UI line.
             var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
             EditorGUI.PropertyField(posRect, property, label, true);
         }

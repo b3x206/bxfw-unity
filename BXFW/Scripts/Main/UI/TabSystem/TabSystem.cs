@@ -1,14 +1,16 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
-
+using UnityEngine.EventSystems;
 using TMPro;
+
+using System;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 namespace BXFW.UI
 {
     /// <summary>
     /// The fading type of TabButton.
-    /// TODO : Make this class internal.
     /// </summary>
     public enum FadeType
     {
@@ -21,12 +23,12 @@ namespace BXFW.UI
     /// <summary>
     /// The tab system. Only use properties if you don't identify as a button.
     /// </summary>
-    [ExecuteInEditMode()]
-    public class TabSystem : MonoBehaviour
+    [ExecuteAlways, DisallowMultipleComponent]
+    public class TabSystem : UIBehaviour
     {
-        [System.Serializable]
+        [Serializable]
         public class IntUnityEvent : UnityEvent<int> { }
-        [System.Serializable]
+        [Serializable]
         public class TabButtonUnityEvent : UnityEvent<int, TabButton> { }
 
         ///////////// Public
@@ -73,17 +75,19 @@ namespace BXFW.UI
         // - This part is button settings.
         public FadeType ButtonFadeType = FadeType.ColorFade;
         // ButtonFadeType = ColorFade
-        public float TabButtonFadeSpeed = .15f;
-        public Color TabButtonFadeColorTargetHover = new Color(.95f, .95f, .95f);
-        public Color TabButtonFadeColorTargetClick = new Color(.9f, .9f, .9f);
-        public bool TabButtonSubtractFromCurrentColor = false;
+        [Range(0f, 4f)] public float FadeSpeed = .15f;
+        public Color FadeColorTargetHover = new Color(.95f, .95f, .95f);
+        public Color FadeColorTargetClick = new Color(.9f, .9f, .9f);
+        public Color FadeColorTargetDisabled = new Color(.5f, .5f, .5f, .5f);
+        public bool FadeSubtractFromCurrentColor = false;
         // ButtonFadeType = SpriteSwap
         public Sprite HoverSpriteToSwap;
         public Sprite TargetSpriteToSwap;
+        public Sprite DisabledSpriteToSwap;
         // ButtonFadeType = CustomUnityEvent
-        public TabButton.TabButtonUnityEvent TabButtonCustomEventOnReset;
-        public TabButton.TabButtonUnityEvent TabButtonCustomEventHover;
-        public TabButton.TabButtonUnityEvent TabButtonCustomEventClick;
+        public TabButton.TabButtonUnityEvent ButtonCustomEventOnReset;
+        public TabButton.TabButtonUnityEvent ButtonCustomEventOnHover;
+        public TabButton.TabButtonUnityEvent ButtonCustomEventOnClick;
 
         // -- Standard event
         // This variable is added to take more control of the generation of the buttons.
@@ -110,12 +114,85 @@ namespace BXFW.UI
         // Private
         [SerializeField] private List<TabButton> TabButtons = new List<TabButton>();
 
+        // UIBehaviour
+        #region Interaction Status
+        [Tooltip("Can the TabButton be interacted with?")]
+        [SerializeField] private bool interactable = true;
+        public bool Interactable
+        {
+            get { return IsInteractable(); }
+            set
+            {
+                interactable = value;
+
+                UpdateButtonAppearances();
+            }
+        }
+        /// <summary>
+        /// Runtime variable for whether if the object is allowed to be interacted with.
+        /// </summary>
+        private bool groupsAllowInteraction = true;
+        /// <summary>
+        /// Whether if the UI element is allowed to be interactable.
+        /// </summary>
+        /// <returns></returns>
+        internal virtual bool IsInteractable()
+        {
+            if (groupsAllowInteraction)
+            {
+                return interactable;
+            }
+            return false;
+        }
+        private readonly List<CanvasGroup> canvasGroupCache = new List<CanvasGroup>();
+        protected override void OnCanvasGroupChanged()
+        {
+            // This event is part of UIBehaviour.
+            // Search for 'CanvasGroup' behaviours & apply preferences to this object.
+            // 1: Search for transforms that contain 'CanvasGroup'
+            // 2: Keep them in cache
+            // 3: Update the interaction state accordingly
+            bool groupAllowInteraction = true;
+            Transform t = transform;
+
+            while (t != null)
+            {
+                t.GetComponents(canvasGroupCache);
+                bool shouldBreak = false;
+
+                for (int i = 0; i < canvasGroupCache.Count; i++)
+                {
+                    if (!canvasGroupCache[i].interactable)
+                    {
+                        groupAllowInteraction = false;
+                        shouldBreak = true;
+                    }
+                    if (canvasGroupCache[i].ignoreParentGroups)
+                    {
+                        shouldBreak = true;
+                    }
+                }
+                if (shouldBreak)
+                {
+                    break;
+                }
+
+                t = t.parent;
+            }
+            if (groupAllowInteraction != groupsAllowInteraction)
+            {
+                groupsAllowInteraction = groupAllowInteraction;
+                UpdateButtonAppearances();
+            }
+        }
+        #endregion
+
         /// <summary>
         /// Internal call of <see cref="GenerateTabs"/>
-        /// <br>Required to check 0/1 disable-enable state.</br>
+        /// <br>Required to check 0 / 1 tabs disable-enable state.</br>
         /// </summary>
         /// <param name="prevIndex">Previous index passed by the <see cref="TabButtonAmount"/>'s setter.</param>
-        private void GenerateTabs(int prevIndex)
+        protected void GenerateTabs(int prevIndex)
         {
             // Ignore if count is 0 or less
             // While this isn't a suitable place for tab management, i wanted to add an '0' state to it. 
@@ -166,9 +243,9 @@ namespace BXFW.UI
                 }
             }
 
+            // Generate tabs normally after dealing with the '0' stuff.
             GenerateTabs();
         }
-
         /// <summary>
         /// Generates tabs.
         /// </summary>
@@ -193,7 +270,10 @@ namespace BXFW.UI
                 CreateTab();
             }
         }
-
+        /// <summary>
+        /// Reset tabs.
+        /// <br>Call this method if you have an issue with your tabs.</br>
+        /// </summary>
         public void ResetTabs()
         {
             ClearTabs(true, true);
@@ -221,22 +301,25 @@ namespace BXFW.UI
             TabButtons.Clear();
             TabButtons.Add(tab);
         }
-
-        public void ClearTabs(bool ResetTbBtnAmount = true, bool ClearAll = false)
+        /// <summary>
+        /// Clears tabs.
+        /// </summary>
+        /// <param name="resetTabBtnAmount">Sets internal variable of TabButtonAmount to be 1.</param>
+        /// <param name="clearAll">Clears all of the buttons (hard reset parameter).</param>
+        public void ClearTabs(bool resetTabBtnAmount = true, bool clearAll = false)
         {
             CleanTabButtonsList();
 
             // Destroy array.
             foreach (TabButton button in TabButtons)
             {
-                if (button.ButtonIndex == 0 && !ClearAll) continue;
+                if (button.ButtonIndex == 0 && !clearAll) continue;
 
                 if (Application.isPlaying)
                 {
                     Destroy(button.gameObject);
                 }
-
-                if (Application.isEditor)
+                else if (Application.isEditor) // && !isPlaying
                 {
                     DestroyImmediate(button.gameObject);
                 }
@@ -247,7 +330,7 @@ namespace BXFW.UI
                 TabButtons.RemoveRange(1, Mathf.Max(1, TabButtons.Count - 1));
             }
 
-            if (!ClearAll)
+            if (!clearAll)
             {
                 var tempTabBtn = TabButtons[0];
                 TabButtons.Clear();
@@ -255,7 +338,7 @@ namespace BXFW.UI
                 tempTabBtn.ButtonIndex = 0;
             }
 
-            if (ResetTbBtnAmount)
+            if (resetTabBtnAmount)
             {
                 _TabButtonAmount = 1;
             }
@@ -279,9 +362,9 @@ namespace BXFW.UI
 
                 TabButtonScript = TButton.AddComponent<TabButton>();
 
+                // -- Text
                 GameObject TText = new GameObject("Tab Text");
                 TText.transform.SetParent(TButton.transform);
-
                 TextMeshProUGUI ButtonText = TText.AddComponent<TextMeshProUGUI>();
                 TabButtonScript.ButtonText = ButtonText;
                 // Set Text Options.
@@ -289,13 +372,27 @@ namespace BXFW.UI
                 ButtonText.color = Color.black;
                 ButtonText.alignment = TextAlignmentOptions.Center;
                 TText.transform.localScale = Vector3.one;
-
                 // Set Text Anchor. (Stretch all)
-                var TTextRect = ButtonText.rectTransform;
-                TTextRect.anchorMin = new Vector2(0, 0);
-                TTextRect.anchorMax = new Vector2(1, 1);
-                TTextRect.offsetMin = Vector2.zero;
-                TTextRect.offsetMax = Vector2.zero;
+                ButtonText.rectTransform.anchorMin = new Vector2(.33f, 0f);
+                ButtonText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                ButtonText.rectTransform.offsetMin = Vector2.zero;
+                ButtonText.rectTransform.offsetMax = Vector2.zero;
+
+                // -- Image
+                GameObject TImage = new GameObject("Tab Image");
+                TImage.transform.SetParent(TButton.transform);
+                Image ButtonImage = TImage.AddComponent<Image>();
+                TabButtonScript.ButtonImage = ButtonImage;
+                // Image Options
+                TImage.transform.localScale = Vector3.one;
+                ButtonImage.preserveAspect = true;
+                // Set anchor to left & stretch along the anchor.
+                ButtonImage.rectTransform.anchorMin = new Vector2(0f, 0f);
+                ButtonImage.rectTransform.anchorMax = new Vector2(.33f, 1f);
+                ButtonImage.rectTransform.offsetMin = Vector2.zero;
+                ButtonImage.rectTransform.offsetMax = Vector2.zero;
+
+                TabButtonScript.GenerateButtonContent();
             }
             else
             {
@@ -323,6 +420,27 @@ namespace BXFW.UI
             return TabButtonScript;
         }
 
+        // Tab Cleanup
+        /// <summary>
+        /// Updates the appearances of the buttons.
+        /// <br>Call this when you need to visually update the button.</br>
+        /// </summary>
+        public void UpdateButtonAppearances()
+        {
+            foreach (var button in TabButtons)
+            {
+                if (button == null)
+                    continue;
+
+                if (!Interactable)
+                {
+                    button.SetButtonAppearance(TabButton.ButtonState.Disable);
+                    continue;
+                }
+
+                button.SetButtonAppearance(CurrentSelectedTab == button ? TabButton.ButtonState.Click : TabButton.ButtonState.Reset);
+            }
+        }
         /// <summary>
         /// Cleans the <see cref="TabButtons"/> list in case of null and other stuff.
         /// </summary>
@@ -330,23 +448,6 @@ namespace BXFW.UI
         {
             TabButtons.RemoveAll((x) => x == null);
         }
-        /// <summary>
-        /// Resets button appearances of unselected ones.
-        /// </summary>
-        public void CheckUnClickedButtons()
-        {
-            foreach (TabButton b in TabButtons)
-            {
-                if (b == null)
-                { continue; }
-
-                if (b != CurrentSelectedTab)
-                {
-                    b.ResetButtonAppearance();
-                }
-            }
-        }
-
         /// <summary>
         /// Selects a button if it's selectable.
         /// </summary>
@@ -363,10 +464,12 @@ namespace BXFW.UI
             if (ButtonToSelScript != null)
             {
                 CurrentSelectedTab = ButtonToSelScript;
-                ButtonToSelScript.SelectButtonAppearance();
+                ButtonToSelScript.SetButtonAppearance(TabButton.ButtonState.Click);
+
                 if (!silentSelect)
                     OnTabButtonsClicked?.Invoke(IndexSelect);
-                CheckUnClickedButtons();
+
+                UpdateButtonAppearances();
             }
             else
             {

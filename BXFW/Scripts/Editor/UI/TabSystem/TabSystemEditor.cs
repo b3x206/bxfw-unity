@@ -80,10 +80,11 @@ namespace BXFW.ScriptEditor
             switch (Target.ButtonFadeType)
             {
                 case FadeType.ColorFade:
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeSpeed)));
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeColorTargetHover)));
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonFadeColorTargetClick)));
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonSubtractFromCurrentColor)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeSpeed)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetHover)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetClick)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetDisabled)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeSubtractFromCurrentColor)));
                     break;
                 case FadeType.SpriteSwap:
                     EditorGUILayout.LabelField(
@@ -91,11 +92,12 @@ namespace BXFW.ScriptEditor
                         EditorStyles.centeredGreyMiniLabel);
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.HoverSpriteToSwap)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TargetSpriteToSwap)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.DisabledSpriteToSwap)));
                     break;
                 case FadeType.CustomUnityEvent:
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventOnReset)));
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventHover)));
-                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TabButtonCustomEventClick)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.ButtonCustomEventOnReset)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.ButtonCustomEventOnHover)));
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.ButtonCustomEventOnClick)));
                     break;
 
                 default:
