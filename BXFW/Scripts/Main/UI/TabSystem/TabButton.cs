@@ -88,7 +88,7 @@ namespace BXFW.UI
         {
             get { return buttonContent; }
             set
-            {   
+            {
                 buttonContent = value ?? new Content(); // Set new Content as 'GenerateButtonContent' doesn't like null content.
 
                 GenerateButtonContent();

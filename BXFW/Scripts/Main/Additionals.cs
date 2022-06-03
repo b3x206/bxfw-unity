@@ -1651,12 +1651,15 @@ namespace BXFW.Tools.Editor
                 // wow very obvious (unity api moment)
                 Texture2D icon = AssetPreview.GetMiniThumbnail(targetPrefabInst); // Get the thumbnail from the target prefab
 
-                // instanceID   = Target instance ID to edit
+                // Since this method is 'very well documented' here's what i found =>
+                // instanceID   = Target instance ID to edit (this is handled in the file rename callback ending)
                 //      (if it exists it will also edit that file alongside, we will create our own asset path so we pass invalid value, otherwise the object will be cloned.)
                 // pathName     = Directory to file of the destination asset
                 // resourceName = Directory to file of the source asset
                 // icon         = Asset icon, not very necessary (can be null)
+
                 // THIS. IS. SO. DUMB. (that even unity's asset developers wrote a wrapper function for this method lol)
+                // Note : Pass invalid 'Instance ID' for editing an new object
                 ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int.MaxValue - 1, assetEndNameAction, path, icon, AssetDatabase.GetAssetPath(targetPrefabInst.GetInstanceID()));
             }
             else
