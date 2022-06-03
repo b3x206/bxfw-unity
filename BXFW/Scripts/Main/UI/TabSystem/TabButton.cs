@@ -27,7 +27,7 @@ namespace BXFW.UI
             [Tooltip("Text content that this button stores.   ")] public string text;
             // [Tooltip("Tooltip content that this button stores.")] public string tooltip; (TODO : Unity UGUI UI tooltips system.)
             [InspectorBigSpriteField, Tooltip("Sprite content.")] public Sprite image;
-            [Tooltip("Whether if we should receive content from already existing components.")]
+            [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
             public bool receiveContentFromComponents = false;
 
             public Content()
@@ -143,7 +143,11 @@ namespace BXFW.UI
         /// <summary>
         /// <br>Generates content from <see cref="buttonContent"/>.</br>
         /// </summary>
-        internal void GenerateButtonContent()
+        /// <param name="onValidateCall">
+        /// This parameter specifies whether if this method was called from an 'OnValidate' method.
+        /// <br>Do not touch this unless you are calling this from 'OnValidate' (Changes <see cref="Debug.Log"/> behaviour)</br>
+        /// </param>
+        internal void GenerateButtonContent(bool onValidateCall = false)
         {
             if (ButtonText != null)
             {
@@ -163,6 +167,10 @@ namespace BXFW.UI
                     ButtonText.gameObject.SetActive(false);
                 }
             }
+            else if (Application.isPlaying && !onValidateCall)
+            {
+                Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonText field in button \"{transform.GetPath()}\" is null.");
+            }
 
             if (ButtonImage != null)
             {
@@ -181,10 +189,14 @@ namespace BXFW.UI
                     ButtonImage.gameObject.SetActive(false);
                 }
             }
+            else if (Application.isPlaying && !onValidateCall)
+            {
+                Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonImage field in button \"{transform.GetPath()}\" is null.");
+            }
         }
         private void OnValidate()
         {
-            GenerateButtonContent();
+            GenerateButtonContent(true);
         }
 
         #region PointerClick Events
@@ -226,6 +238,10 @@ namespace BXFW.UI
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
                 SetButtonAppearance(ButtonState.Reset);
+            }
+            else // ParentTabSystem.CurrentSelectedTab == this
+            {
+                SetButtonAppearance(ButtonState.Click);
             }
         }
 
@@ -310,8 +326,10 @@ namespace BXFW.UI
             Color CurrentPrevColor = ButtonBackgroundImage.color;
             bool TargetIsPrevColor = Target == PrevColor;
 
-            Target = ParentTabSystem.FadeSubtractFromCurrentColor ? (TargetIsPrevColor ? Target : CurrentPrevColor - Target) : Target;
-
+            if (ParentTabSystem.FadeSubtractFromCurrentColor)
+                Target = TargetIsPrevColor ? Target : CurrentPrevColor - Target;
+            // else, leave it unchanged
+            
             if (!Application.isPlaying)
             {
                 // Set the color instantly as the 'UnityEditor' doesn't support tween.
