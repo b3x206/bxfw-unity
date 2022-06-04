@@ -45,7 +45,7 @@ namespace BXFW
         /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called</br>
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
-        /// <param name="fileName">Name of hte file to create.</param>
+        /// <param name="fileName">Name of the file to create.</param>
         public static T CreateEditorInstance(string relativeDir, string fileName)
         {
             if (Instance != null)
