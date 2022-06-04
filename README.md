@@ -1,15 +1,14 @@
 # bxfw-unity
+
 [![CodeFactor](https://www.codefactor.io/repository/github/b3x206/bxfw-unity/badge)](https://www.codefactor.io/repository/github/b3x206/bxfw-unity)
 
 Some useful stuff.
+Contains certain utilites for problems and makes development 'easier' (for me, this is very personal and absolutely not documented).
 
 ## How to use : 
-* Write ```git clone https://github.com/b3x206/bxfw-unity.git``` or download zip.
-* Import the file contents to project.
+* NOTE : For the time being, clone the nightly branch as the stable 'master' branch is out of date.
+* Once the 'nightly' branch is complete, it will be merged.
+* Clone using ```git clone -b nightly https://github.com/b3x206/bxfw-unity.git ``` for now. (Or download the zip of the 'nightly' branch)
 
 ## Problem / Bug? :
-* If it's in the 'nightly' or not in 'master' branch OR if the bug wasn't fixed and merged in master create an issue.
-* Note that you can create issues for bugs commented in code but not made in git. (i am lazy)
-
-<!-- ## In progress? : -->
-<!-- ### Note : Will add a .unitypackage release, just wait. (not gonna make a unitypackage for now, don't get yo hopes up) -->
+* idk create issue i guess
