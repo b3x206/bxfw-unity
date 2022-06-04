@@ -1,0 +1,20 @@
+{
+    "name": "BXFW.Editor",
+    "rootNamespace": "",
+    "references": [
+        "BXFW",
+        "Unity.TextMeshPro",
+        "Unity.TextMeshPro.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
