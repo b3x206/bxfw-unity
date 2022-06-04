@@ -1609,7 +1609,7 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Creates an instance of prefab <paramref name="prefabReferenceTarget"/> and renames it like an new object was created.
-        /// <br>NOTE : Make sure 'prefabTarget' is an prefab.</br>
+        /// <br><b>NOTE</b> : Make sure '<paramref name="prefabReferenceTarget"/>' is an prefab!</br>
         /// </summary>
         /// <param name="prefabReferenceTarget">The prefab target. Make sure this is an prefab.</param>
         /// <param name="path">Creation path. If left null the current folder will be selected.</param>
@@ -2080,7 +2080,11 @@ namespace BXFW.Tools.Editor
             ListLabel = 2,
             Default = ListSize | ListLabel
         }
-
+        /// <summary>
+        /// Shows an array inspector (using unity default).
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="options"></param>
         public static void ShowEditorList(SerializedProperty list, EditorListOption options = EditorListOption.Default)
         {
             bool showListLabel = (options & EditorListOption.ListLabel) != 0, showListSize = (options & EditorListOption.ListSize) != 0;
@@ -2195,7 +2199,7 @@ namespace BXFW.Tools.Editor
 
                     // GUILayout.BeginVertical(gsBG);
                     EditorGUI.indentLevel--;
-                    EditorGUILayout.LabelField(string.Format("Element {0} --------", i), EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(string.Format("Element {0}", i), EditorStyles.boldLabel);
                     EditorGUI.indentLevel++;
                     OnArrayFieldDrawn.Invoke(i, ref GenericDrawList[i]);
                     // GUILayout.EndVertical();

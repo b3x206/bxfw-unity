@@ -5,27 +5,21 @@ using UnityEngine.EventSystems;
 
 namespace BXFW.UI
 {
-    /// TODO : This is crying for optimization (especially when there's a lot of ui's)
     /// <summary>
     /// Size constraint, containing the entire 'TextMeshPro' text inside as a rect transform.
     /// <br>Useful for stuff such as "Resizing Text backgrounds" and others.</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-    public class TMPTextUIResizer : UIBehaviour/*, ILayoutController, ILayoutSelfController*/
+    public class TMPTextUIResizer : UIBehaviour
     {
         [Header(":: Settings")]
         public float paddingX = 0f;
         public float paddingY = 0f;
         public bool applyX = true, applyY = true;
-        public TextAlignment alignPivot = TextAlignment.Left;
+        public TextAnchor alignPivot = TextAnchor.MiddleCenter;
         [Header(":: Reference")]
         [SerializeField] private TMP_Text target;
 
-        // <summary>
-        // Used as an 'SizeDelta' constraint.
-        // Apparently using this causes the rect transform bug (maybe dirty thing? but content size fitter work well? wtf)
-        // </summary>
-        //private DrivenRectTransformTracker tracker;
         private Vector2 prevPrefValues;
         private Vector2 CurrentPrefValues
         {
@@ -48,26 +42,6 @@ namespace BXFW.UI
                 return _rectTransform;
             }
         }
-
-        //protected override void OnEnable()
-        //{
-        //    base.OnEnable();
-        //    tracker.Add(this, RectTransform, DrivenTransformProperties.SizeDeltaX | DrivenTransformProperties.SizeDeltaY);
-        //}
-        //protected override void OnDisable()
-        //{
-        //    tracker.Clear();
-        //    LayoutRebuilder.MarkLayoutForRebuild(RectTransform);
-        //    base.OnDisable();
-        //}
-
-        //private void SetDirty()
-        //{
-        //    if (IsActive())
-        //    {
-        //        LayoutRebuilder.MarkLayoutForRebuild(RectTransform);
-        //    }
-        //}
 
         private void Update()
         {
@@ -100,7 +74,6 @@ namespace BXFW.UI
                 return;
 
             Canvas.ForceUpdateCanvases(); // Call this || yield return new WaitForEndOfFrame()
-            // DO NOT USE THE 
 
             var rectWidth = RectTransform.rect.width;
             var rectHeight = RectTransform.rect.height;
@@ -109,7 +82,9 @@ namespace BXFW.UI
             {
                 switch (alignPivot)
                 {
-                    case TextAlignment.Left:
+                    case TextAnchor.UpperLeft:
+                    case TextAnchor.MiddleLeft:
+                    case TextAnchor.LowerLeft:
                         {
                             var setSize = CurrentPrefValues.x + paddingX;
                             var offsetSize = (setSize - rectWidth) / 2f;
@@ -118,12 +93,16 @@ namespace BXFW.UI
                             transform.localPosition = new Vector2(transform.localPosition.x + offsetSize, transform.localPosition.y);
                         }
                         break;
-                    case TextAlignment.Center:
+                    case TextAnchor.UpperCenter:
+                    case TextAnchor.MiddleCenter:
+                    case TextAnchor.LowerCenter:
                         {
                             RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, CurrentPrefValues.x + paddingX);
                         }
                         break;
-                    case TextAlignment.Right:
+                    case TextAnchor.UpperRight:
+                    case TextAnchor.MiddleRight:
+                    case TextAnchor.LowerRight:
                         {
                             var setSize = CurrentPrefValues.x + paddingX;
                             var offsetSize = (setSize - rectWidth) / 2f;
@@ -139,7 +118,9 @@ namespace BXFW.UI
             {
                 switch (alignPivot)
                 {
-                    case TextAlignment.Left:
+                    case TextAnchor.UpperLeft:
+                    case TextAnchor.UpperCenter:
+                    case TextAnchor.UpperRight:
                         {
                             var setSize = CurrentPrefValues.y + paddingY;
                             var offsetSize = (setSize - rectHeight) / 2f;
@@ -148,12 +129,16 @@ namespace BXFW.UI
                             transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - offsetSize);
                         }
                         break;
-                    case TextAlignment.Center:
+                    case TextAnchor.MiddleLeft:
+                    case TextAnchor.MiddleCenter:
+                    case TextAnchor.MiddleRight:
                         {
                             RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, CurrentPrefValues.y + paddingY);
                         }
                         break;
-                    case TextAlignment.Right:
+                    case TextAnchor.LowerLeft:
+                    case TextAnchor.LowerCenter:
+                    case TextAnchor.LowerRight:
                         {
                             var setSize = CurrentPrefValues.y + paddingY;
                             var offsetSize = (setSize - rectHeight) / 2f;
