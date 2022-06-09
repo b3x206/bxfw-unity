@@ -2348,6 +2348,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
         [SerializeField] protected AnimationCurve _TweenCurve;
         [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
+        /// <summary>
+        /// When this option is <see langword="true"/>, the <see cref="BXTweenCTX{T}.OnEndAction"/> is invoked when 
+        /// <see cref="BXTweenCTX{T}.StopTween"/> is called explicitly (without being called by the coroutine end)
+        /// </summary>
         public bool InvokeEventOnManualStop = false;
         public BXTweenUnityEvent OnEndAction;
 

@@ -21,7 +21,8 @@ namespace BXFW.UI
     }
 
     /// <summary>
-    /// The tab system. Only use properties if you don't identify as a button.
+    /// The tab system.
+    /// <br>Use this to make, well, tab systems in game.</br>
     /// </summary>
     [ExecuteAlways, DisallowMultipleComponent]
     public class TabSystem : UIBehaviour
@@ -76,11 +77,13 @@ namespace BXFW.UI
         public FadeType ButtonFadeType = FadeType.ColorFade;
         // ButtonFadeType = ColorFade
         [Range(0f, 4f)] public float FadeSpeed = .15f;
+        public Color FadeColorTargetDefault = new Color(1f, 1f, 1f);
         public Color FadeColorTargetHover = new Color(.95f, .95f, .95f);
         public Color FadeColorTargetClick = new Color(.9f, .9f, .9f);
         public Color FadeColorTargetDisabled = new Color(.5f, .5f, .5f, .5f);
         public bool FadeSubtractFromCurrentColor = false;
         // ButtonFadeType = SpriteSwap
+        public Sprite DefaultSpriteToSwap;
         public Sprite HoverSpriteToSwap;
         public Sprite TargetSpriteToSwap;
         public Sprite DisabledSpriteToSwap;
@@ -88,6 +91,7 @@ namespace BXFW.UI
         public TabButton.TabButtonUnityEvent ButtonCustomEventOnReset;
         public TabButton.TabButtonUnityEvent ButtonCustomEventOnHover;
         public TabButton.TabButtonUnityEvent ButtonCustomEventOnClick;
+        public TabButton.TabButtonUnityEvent ButtonCustomEventOnDisable;
 
         // -- Standard event
         // This variable is added to take more control of the generation of the buttons.

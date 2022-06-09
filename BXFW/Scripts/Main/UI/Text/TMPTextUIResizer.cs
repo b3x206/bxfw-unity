@@ -2,6 +2,7 @@ using TMPro;
 
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace BXFW.UI
 {
@@ -10,7 +11,7 @@ namespace BXFW.UI
     /// <br>Useful for stuff such as "Resizing Text backgrounds" and others.</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-    public class TMPTextUIResizer : UIBehaviour
+    public class TMPTextUIResizer : UIBehaviour, ILayoutSelfController, ILayoutController
     {
         [Header(":: Settings")]
         public float paddingX = 0f;
@@ -45,40 +46,65 @@ namespace BXFW.UI
 
         private void Update()
         {
-            UpdateRectTransform();
-        }
+            // -- Editor Update
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UpdateRectTransform();
+            }
+#endif
 
-        protected bool ShouldUpdate()
-        {
-            if (target == null)
-                return false;
-
+            // Disable object if the text is disabled too.
             if (!target.gameObject.activeInHierarchy)
             {
                 gameObject.SetActive(false);
-                return false;
             }
             else
             {
                 gameObject.SetActive(true);
             }
+        }
 
+        protected override void OnEnable()
+        {
+            // Enable the text if this object is also enabled
+            target.gameObject.SetActive(true);
+            
+            base.OnEnable();
+        }
+
+        protected bool ShouldUpdate()
+        {
+            // Check target
+            if (target == null)
+                return false;
+
+            // Check if target is enabled (note : this object is disabled in update if the target is disabled)
+            // Disabling the object here, unity doesn't allow it.
+            if (!target.gameObject.activeInHierarchy)
+                return false;
+
+            // Check preferenced values
             if (CurrentPrefValues == prevPrefValues)
-                return false; // prefValues != prevPrefValues beyond this point
+                return false;
 
             return true;
         }
-        protected void UpdateRectTransform()
+        protected void UpdateRectTransform(bool xAxisUpdate = true, bool yAxisUpdate = true)
         {
             if (!ShouldUpdate())
                 return;
 
-            Canvas.ForceUpdateCanvases(); // Call this || yield return new WaitForEndOfFrame()
+            // No need to update canvases if we are calling this from events
+            // This way we get rid of bad code & make use of events & get proper rect size
+            // (Basically this method is called when the canvas is updated)
+
+            // Canvas.ForceUpdateCanvases(); // Call this || yield return new WaitForEndOfFrame()
 
             var rectWidth = RectTransform.rect.width;
             var rectHeight = RectTransform.rect.height;
 
-            if (applyX)
+            if (applyX && xAxisUpdate)
             {
                 switch (alignPivot)
                 {
@@ -114,7 +140,7 @@ namespace BXFW.UI
                 }
             }
 
-            if (applyY)
+            if (applyY && yAxisUpdate)
             {
                 switch (alignPivot)
                 {
@@ -151,6 +177,16 @@ namespace BXFW.UI
             }
 
             prevPrefValues = CurrentPrefValues;
+        }
+
+        public void SetLayoutHorizontal()
+        {
+            UpdateRectTransform(true, false);
+        }
+
+        public void SetLayoutVertical()
+        {
+            UpdateRectTransform(false, true);
         }
     }
 }

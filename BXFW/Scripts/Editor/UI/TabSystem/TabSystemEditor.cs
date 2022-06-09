@@ -81,15 +81,20 @@ namespace BXFW.ScriptEditor
             {
                 case FadeType.ColorFade:
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeSpeed)));
+                    // Set the default color dynamically on the editor
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetDefault)));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Target.UpdateButtonAppearances();
+                    }
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetHover)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetClick)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeColorTargetDisabled)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.FadeSubtractFromCurrentColor)));
                     break;
                 case FadeType.SpriteSwap:
-                    EditorGUILayout.LabelField(
-                        "Note : Default sprite is the image that is currently inside the Image component.",
-                        EditorStyles.centeredGreyMiniLabel);
+                    EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.DefaultSpriteToSwap)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.HoverSpriteToSwap)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.TargetSpriteToSwap)));
                     EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.DisabledSpriteToSwap)));

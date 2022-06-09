@@ -24,8 +24,8 @@ namespace BXFW.UI
         [Serializable]
         public class Content
         {
-            [Tooltip("Text content that this button stores.   ")] public string text;
-            // [Tooltip("Tooltip content that this button stores.")] public string tooltip; (TODO : Unity UGUI UI tooltips system.)
+            [Tooltip("Text content that this button stores.")] [TextArea] public string text;
+            // [Tooltip("Tooltip content that this button stores.")] public string tooltip; (TODO : Unity UI tooltips system.)
             [InspectorBigSpriteField, Tooltip("Sprite content.")] public Sprite image;
             [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
             public bool receiveContentFromComponents = false;
@@ -255,10 +255,10 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            StartCoroutine(TweenColorFade(PrevColor, ParentTabSystem.FadeSpeed));
+                            StartCoroutine(TweenColorFade(ParentTabSystem.FadeColorTargetDefault, ParentTabSystem.FadeSpeed));
                             break;
                         case FadeType.SpriteSwap:
-                            if (PrevSprite != null) { ButtonBackgroundImage.sprite = PrevSprite; }
+                            if (PrevSprite != null) { ButtonBackgroundImage.sprite = ParentTabSystem.DefaultSpriteToSwap; }
                             else { ButtonBackgroundImage.sprite = null; }
                             break;
                         case FadeType.CustomUnityEvent:
@@ -305,7 +305,7 @@ namespace BXFW.UI
                             else { ButtonBackgroundImage.sprite = null; }
                             break;
                         case FadeType.CustomUnityEvent:
-                            ParentTabSystem.ButtonCustomEventOnReset?.Invoke(ButtonBackgroundImage, this);
+                            ParentTabSystem.ButtonCustomEventOnDisable?.Invoke(ButtonBackgroundImage, this);
                             break;
                     }
                     break;
