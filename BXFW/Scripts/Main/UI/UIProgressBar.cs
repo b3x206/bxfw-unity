@@ -145,6 +145,8 @@ namespace BXFW.UI
             // Create another gameObject, with stretch of this object.
             var PBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
             PBarImage.transform.SetParent(PBar.transform);
+            // Scale is weird when you put something to a rect transform
+            PBarImage.transform.localScale = Vector3.one;
             // This sets the UI stretch (after setting parent ofc)
             PBarImage.rectTransform.anchorMin = new Vector2(0, 0);
             PBarImage.rectTransform.anchorMax = new Vector2(1, 1);

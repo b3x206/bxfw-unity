@@ -139,7 +139,6 @@ namespace BXFW.UI
         /// <summary>
         /// Whether if the UI element is allowed to be interactable.
         /// </summary>
-        /// <returns></returns>
         internal virtual bool IsInteractable()
         {
             if (groupsAllowInteraction)

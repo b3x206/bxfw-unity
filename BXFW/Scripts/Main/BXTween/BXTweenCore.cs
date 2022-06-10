@@ -43,7 +43,7 @@
 /** -------------------------------------------------- 
 /// General TODO:
 /// 1: Make BXTweenCore mostly static (BXTweenCore will become only a coroutine runner) 
-///    & make the coroutine runner generic (use a reflection delegate for lerp? idk)
+///    & make the coroutine runner generic (use a dictionary of delegates for lerp? idk)
 * -------------------------------------------------- **/
 
 using System;

@@ -67,9 +67,10 @@ namespace BXFW.UI
 
         protected override void OnEnable()
         {
-            // Enable the text if this object is also enabled
-            target.gameObject.SetActive(true);
-            
+            if (target != null)
+                // Enable the text if this object is also enabled
+                target.gameObject.SetActive(true);
+
             base.OnEnable();
         }
 
