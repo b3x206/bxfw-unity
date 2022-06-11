@@ -10,6 +10,7 @@ namespace BXFW.UI
     /// <summary>
     /// Swipable UI canvas with menus.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class SwipableUI : MonoBehaviour, IDragHandler, IEndDragHandler
     {
         #region Event Class
@@ -208,14 +209,14 @@ namespace BXFW.UI
             {
                 // Show the gizmo on right (According to menu).
                 Gizmos.color = Color.green;
-                var linePos = new Vector2(rTransform.transform.position.x + ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd), rTransform.transform.position.y);
+                var linePos = new Vector2((rTransform.position.x + ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd)) * ClampItemMenu, rTransform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             if (_CurrentMenu <= 0)
             {
                 // Show the gizmo on left.
                 Gizmos.color = Color.red;
-                var linePos = new Vector2(rTransform.transform.position.x - ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd), rTransform.transform.position.y);
+                var linePos = new Vector2(rTransform.position.x - ((rTransform.rect.width / 2f) + ClampContentDragOnMenuEnd), rTransform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             Gizmos.color = gColor;

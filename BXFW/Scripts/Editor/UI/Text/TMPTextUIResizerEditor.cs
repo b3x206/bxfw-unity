@@ -41,7 +41,7 @@ namespace BXFW.ScriptEditor
             var target = base.target as TMPTextUIResizer;
 
             scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
-            scriptPath = Path.GetDirectoryName(scriptPath);
+            scriptPath = Path.GetDirectoryName(scriptPath); // omit the file name
 
             texPreviews[0] = AssetDatabase.LoadAssetAtPath<Texture2D>(TexNameCubeUpperLeft);
             texPreviews[1] = AssetDatabase.LoadAssetAtPath<Texture2D>(TexNameCubeUpperCenter);
@@ -58,7 +58,7 @@ namespace BXFW.ScriptEditor
             EditorApplication.playModeStateChanged += SetRectTransformTrackerState;
             tracker.Add(target, target.RectTransform, DrivenTransformProperties.SizeDeltaX | DrivenTransformProperties.SizeDeltaY);
         }
-        // Disable tracker.
+        // Disable rect transform tracker (rect transform tracker is buggy)
         private void OnDisable()
         {
             tracker.Clear();

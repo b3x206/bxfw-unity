@@ -1,5 +1,4 @@
-﻿using BXFW.Tools.Editor;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace BXFW.ScriptEditor
@@ -16,6 +15,7 @@ namespace BXFW.ScriptEditor
             // Unity editor GUI is pain.
             bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
 
+            // Atleast this ui is 'not very dynamic'
             return (DrawXYZClamp ? EditorGUIUtility.singleLineHeight * 6 : EditorGUIUtility.singleLineHeight * 3) + 12;
         }
 
@@ -59,7 +59,7 @@ namespace BXFW.ScriptEditor
         public static void CreatePlayerCamera()
         {
             var objCamera = new GameObject("PlayerCamera").AddComponent<FollowCamera>();
-            objCamera.tag = "Main Camera";
+            objCamera.tag = "MainCamera";
             objCamera.FollowTransform = Selection.activeTransform;
             objCamera.SetCurrentCameraOffsetIndex(0);
         }
@@ -67,7 +67,7 @@ namespace BXFW.ScriptEditor
         public override void OnInspectorGUI()
         {
             // Variable
-            var Target = target as FollowCamera;
+            var target = base.target as FollowCamera;
             var StyleLabel = new GUIStyle
             {
                 alignment = TextAnchor.UpperCenter,
@@ -78,24 +78,24 @@ namespace BXFW.ScriptEditor
             // Base Inspector
             base.OnInspectorGUI();
             EditorGUILayout.BeginVertical(GUI.skin.box);
-            Target.CurrentCameraOffsetIndex = EditorGUILayout.IntField("Current Camera Offset Index", Target.CurrentCameraOffsetIndex);
+            target.CurrentCameraOffsetIndex = EditorGUILayout.IntField("Current Camera Offset Index", target.CurrentCameraOffsetIndex);
             // Custom Inspector
-            GUILayout.Label($"---- Current Index : {Target.CurrentCameraOffsetIndex}", StyleLabel);
+            GUILayout.Label($"---- Current Index : {target.CurrentCameraOffsetIndex}", StyleLabel);
             if (GUILayout.Button("Set Camera Position Offset From Position"))
             {
-                var FollowPosition = Target.FollowTransform == null ? Target.FollowVector3 : Target.FollowTransform.position;
-                Undo.RecordObject(Target, "Set Camera Position");
+                var FollowPosition = target.FollowTransform == null ? target.FollowVector3 : target.FollowTransform.position;
+                Undo.RecordObject(target, "Set Camera Position");
 
-                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position = Target.transform.position - FollowPosition;
-                Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation = Target.transform.rotation.eulerAngles;
+                target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].Position = target.transform.position - FollowPosition;
+                target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation = target.transform.rotation.eulerAngles;
             }
             if (GUILayout.Button("Get Position From Camera Position Offset"))
             {
-                var FollowPosition = Target.FollowTransform == null ? Target.FollowVector3 : Target.FollowTransform.position;
-                Undo.RecordObject(Target.transform, "Get Camera Position");
+                var FollowPosition = target.FollowTransform == null ? target.FollowVector3 : target.FollowTransform.position;
+                Undo.RecordObject(target.transform, "Get Camera Position");
 
-                Target.transform.position = Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].Position + FollowPosition;
-                Target.transform.rotation = Quaternion.Euler(Target.CameraOffsetTargets[Target.CurrentCameraOffsetIndex].EulerRotation);
+                target.transform.position = target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].Position + FollowPosition;
+                target.transform.rotation = Quaternion.Euler(target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation);
             }
             EditorGUILayout.EndVertical();
         }

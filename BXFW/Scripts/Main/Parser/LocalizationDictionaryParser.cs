@@ -8,7 +8,6 @@ using System.Collections;
 
 namespace BXFW.Data
 {
-    // haha comments go brrrrrrrr
     /// <summary>
     /// Data for the localized text.
     /// <br/>

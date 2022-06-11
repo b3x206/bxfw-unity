@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace BXFW.UI
     /// <br>Useful for stuff such as "Resizing Text backgrounds" and others.</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-    public class TMPTextUIResizer : UIBehaviour, ILayoutSelfController, ILayoutController
+    public class TMPTextUIResizer : UIBehaviour
     {
         [Header(":: Settings")]
         public float paddingX = 0f;
@@ -44,35 +45,30 @@ namespace BXFW.UI
             }
         }
 
+        protected override void Awake()
+        {
+            base.Awake();
+
+            StartCoroutine(UpdateCoroutine());
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            StopAllCoroutines();
+        }
+
+#if UNITY_EDITOR
+        // -- Editor Update
         private void Update()
         {
-            // -- Editor Update
-#if UNITY_EDITOR
             if (!Application.isPlaying)
             {
                 UpdateRectTransform();
             }
+        }
 #endif
-
-            // Disable object if the text is disabled too.
-            if (!target.gameObject.activeInHierarchy)
-            {
-                gameObject.SetActive(false);
-            }
-            else
-            {
-                gameObject.SetActive(true);
-            }
-        }
-
-        protected override void OnEnable()
-        {
-            if (target != null)
-                // Enable the text if this object is also enabled
-                target.gameObject.SetActive(true);
-
-            base.OnEnable();
-        }
 
         protected bool ShouldUpdate()
         {
@@ -91,16 +87,43 @@ namespace BXFW.UI
 
             return true;
         }
-        protected void UpdateRectTransform(bool xAxisUpdate = true, bool yAxisUpdate = true)
+        private IEnumerator UpdateCoroutine()
+        {
+            for (; ; )
+            {
+                yield return new WaitForEndOfFrame();
+
+                if (target != null)
+                {
+                    // Disable object if the text is disabled too.
+                    if (!target.gameObject.activeInHierarchy)
+                    {
+                        gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        gameObject.SetActive(true);
+                    }
+                }
+
+                UpdateRectTransform();
+            }
+        }
+
+        /// <summary>
+        /// Manually update rect transform to text.
+        /// </summary>
+        /// <param name="xAxisUpdate">Update horizontal axis.</param>
+        /// <param name="yAxisUpdate">Update vertical axis.</param>
+        public void UpdateRectTransform(bool xAxisUpdate = true, bool yAxisUpdate = true)
         {
             if (!ShouldUpdate())
                 return;
 
-            // No need to update canvases if we are calling this from events
+            // No need to update canvases if we are calling this from a waiting coroutine
+            // (events only invoke once globally for this behaviour, like an static method)
             // This way we get rid of bad code & make use of events & get proper rect size
-            // (Basically this method is called when the canvas is updated)
-
-            // Canvas.ForceUpdateCanvases(); // Call this || yield return new WaitForEndOfFrame()
+            // (Basically this method is called when the canvas is updated so no need to call Canvas.ForceUpdateCanvases)
 
             var rectWidth = RectTransform.rect.width;
             var rectHeight = RectTransform.rect.height;
@@ -139,6 +162,8 @@ namespace BXFW.UI
                         }
                         break;
                 }
+
+                prevPrefValues.x = CurrentPrefValues.x;
             }
 
             if (applyY && yAxisUpdate)
@@ -174,20 +199,11 @@ namespace BXFW.UI
                             transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y + offsetSize);
                         }
                         break;
+
                 }
+
+                prevPrefValues.y = CurrentPrefValues.y;
             }
-
-            prevPrefValues = CurrentPrefValues;
-        }
-
-        public void SetLayoutHorizontal()
-        {
-            UpdateRectTransform(true, false);
-        }
-
-        public void SetLayoutVertical()
-        {
-            UpdateRectTransform(false, true);
         }
     }
 }
