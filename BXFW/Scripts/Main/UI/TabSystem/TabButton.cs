@@ -203,6 +203,9 @@ namespace BXFW.UI
         // -- Invoke the actual click here.
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (!Interactable)
+                return;
+
             ParentTabSystem.OnTabButtonsClicked?.Invoke(transform.GetSiblingIndex());
 
             ParentTabSystem.CurrentSelectedTab = this;

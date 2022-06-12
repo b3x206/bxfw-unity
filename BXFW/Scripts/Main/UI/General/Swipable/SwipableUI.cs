@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -11,7 +11,7 @@ namespace BXFW.UI
     /// Swipable UI canvas with menus.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public class SwipableUI : MonoBehaviour, IDragHandler, IEndDragHandler
+    public class SwipableUI : UIBehaviour, IDragHandler, IEndDragHandler
     {
         #region Event Class
         [System.Serializable]
@@ -80,7 +80,7 @@ namespace BXFW.UI
         #endregion
 
         #region Init
-        private void Awake()
+        protected override void Awake()
         {
             if (ItemContainer == null)
             {
@@ -91,12 +91,84 @@ namespace BXFW.UI
             }
 
             ContainerInitialPosition = ItemContainer.localPosition;
+            
+            base.Awake();
+        }
+        #endregion
+
+        #region Interact
+        [Tooltip("Can the TabButton be interacted with?")]
+        [SerializeField] private bool interactable = true;
+        public bool Interactable
+        {
+            get { return IsInteractable(); }
+            set { interactable = value; }
+        }
+        /// <summary>
+        /// Runtime variable for whether if the object is allowed to be interacted with.
+        /// </summary>
+        private bool groupsAllowInteraction = true;
+        /// <summary>
+        /// Whether if the UI element is allowed to be interactable.
+        /// </summary>
+        internal virtual bool IsInteractable()
+        {
+            if (groupsAllowInteraction)
+            {
+                return interactable;
+            }
+            return false;
+        }
+        private readonly List<CanvasGroup> canvasGroupCache = new List<CanvasGroup>();
+        protected override void OnCanvasGroupChanged()
+        {
+            // This event is part of UIBehaviour.
+            // Search for 'CanvasGroup' behaviours & apply preferences to this object.
+            // 1: Search for transforms that contain 'CanvasGroup'
+            // 2: Keep them in cache
+            // 3: Update the interaction state accordingly
+            bool groupAllowInteraction = true;
+            Transform t = transform;
+
+            while (t != null)
+            {
+                t.GetComponents(canvasGroupCache);
+                bool shouldBreak = false;
+
+                for (int i = 0; i < canvasGroupCache.Count; i++)
+                {
+                    if (!canvasGroupCache[i].interactable)
+                    {
+                        groupAllowInteraction = false;
+                        shouldBreak = true;
+                    }
+                    if (canvasGroupCache[i].ignoreParentGroups)
+                    {
+                        shouldBreak = true;
+                    }
+                }
+                if (shouldBreak)
+                {
+                    break;
+                }
+
+                t = t.parent;
+            }
+            if (groupAllowInteraction != groupsAllowInteraction)
+            {
+                groupsAllowInteraction = groupAllowInteraction;
+                
+                // UpdateAppearance();
+            }
         }
         #endregion
 
         #region Menu Drag
         public void OnDrag(PointerEventData data)
         {
+            if (!Interactable)
+                return;
+
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
             // (maybe) TODO : Add smooth slowdown until swipe limit.
             // Only apply swipe clamping if the ClampItemMenu is in valid range for clamping.
@@ -122,6 +194,9 @@ namespace BXFW.UI
         }
         public void OnEndDrag(PointerEventData data)
         {
+            if (!Interactable)
+                return;
+
             float percentage = (data.pressPosition.x - data.position.x) / ItemContainer.rect.width;
 
             void ResetDragDefault()
