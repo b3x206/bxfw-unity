@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace BXFW
 {
@@ -81,6 +83,51 @@ namespace BXFW
         public static implicit operator CustomInputEvent(KeyCode[] KeyCodes)
         {
             return new CustomInputEvent(KeyCodes);
+        }
+
+        public static bool operator ==(CustomInputEvent lhs, CustomInputEvent rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+        public static bool operator !=(CustomInputEvent lhs, CustomInputEvent rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is CustomInputEvent e)
+            {
+                // Check if arrays are equal
+                return Enumerable.SequenceEqual(KeyCodeReq, e.KeyCodeReq);
+            }
+
+            return base.Equals(obj);
+        }
+        public override string ToString()
+        {
+            // Inefficient, but this method should only be used for debug.
+            string retString = string.Empty;
+            for (int i = 0; i < KeyCodeReq.Length; i++)
+            {
+                var strAdd = $"{KeyCodeReq[i]}";
+
+                if (i != KeyCodeReq.Length - 1)
+                {
+                    strAdd += ", ";
+                }
+
+                retString += strAdd;
+            }
+
+            return retString;
+        }
+        public override int GetHashCode()
+        {
+            int hashCode = 1734127663;
+            hashCode = hashCode * -1521134295 + EqualityComparer<KeyCode[]>.Default.GetHashCode(KeyCodeReq);
+            hashCode = hashCode * -1521134295 + SetIsInvokable.GetHashCode();
+            return hashCode;
         }
     }
 }
