@@ -89,7 +89,7 @@ namespace BXFW.UI
         }
         private IEnumerator UpdateCoroutine()
         {
-            for (; ; )
+            for (;;)
             {
                 yield return new WaitForEndOfFrame();
 
@@ -199,7 +199,6 @@ namespace BXFW.UI
                             transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y + offsetSize);
                         }
                         break;
-
                 }
 
                 prevPrefValues.y = CurrentPrefValues.y;

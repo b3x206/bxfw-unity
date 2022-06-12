@@ -472,6 +472,123 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         #endregion
 
         #region To Methods
+        public IEnumerator To(BXTweenCTX<int> ctx)
+        {
+        // Notes (Do not copy to other methods) :
+        // Note that do your enchantments in the 'float' To Method,
+        // than port it over to more complicated types.
+        // Note that this is boilerplate code as everything here is kinda type independent except for the method
+
+        // FIXME : goto used here, this can be turned into a 'while' loop.
+        _Start:
+            // -- Check Context
+            if (!ctx.ContextIsValid)
+            {
+                Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
+                yield break;
+            }
+
+            // -- Start Tween Coroutine -- //
+            yield return new WaitForEndOfFrame();
+            if (ctx.StartDelay > 0f)
+            {
+                if (!CurrentSettings.ignoreTimeScale)
+                    yield return new WaitForSeconds(ctx.StartDelay);
+                else
+                    yield return new WaitForSecondsRealtime(ctx.StartDelay);
+            }
+
+            // Start Interpolator
+            float Elapsed = 0f;
+            bool UseCustom = ctx.CustomTimeCurve != null;
+            while (Elapsed <= 1f)
+            {
+                // We added option to ignore the timescale, so this is standard procedure.
+                if (!CurrentSettings.ignoreTimeScale)
+                {
+                    // Check if the timescale is tampered with
+                    // if it's below zero, just skip the frame
+                    if (Time.timeScale <= 0f)
+                    { yield return null; }
+                }
+
+                // Set lerp
+                // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
+                var SetValue = (int)Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+
+                try
+                {
+                    ctx.SetterFunction(SetValue);
+                }
+                catch (Exception e)
+                {
+                    // Exception occured, ignore (unless it's diagnostic mode)
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                    }
+
+                    ctx.StopTween();
+                    yield break;
+                }
+                Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
+                yield return null;
+            }
+            try
+            {
+                ctx.SetterFunction(ctx.EndValue);
+            }
+            catch (Exception e)
+            {
+                // Exception occured, ignore (unless it's diagnostic mode)
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                }
+
+                ctx.StopTween();
+                yield break;
+            }
+            // End Interpolator
+
+            // Repeating
+            if (ctx.RepeatAmount != 0)
+            {
+                // Invoke ending method on repeat.
+                if (ctx.InvokeEventOnRepeat)
+                {
+                    if (ctx.OnEndAction != null)
+                    {
+                        ctx.OnEndAction();
+                    }
+                    if (ctx.OnEndAction_UnityEvent != null)
+                    {
+                        ctx.OnEndAction_UnityEvent.Invoke(ctx);
+                    }
+                }
+
+                // Repeat Amount Rules : If repeat amount is bigger than 0, subtract until 0
+                // If repeat amount is not 0 (negative number), repeat indefinetly until StopTween() was called.
+                if (ctx.RepeatAmount > 0)
+                {
+                    ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
+                }
+
+                // Do a swap between values.
+                if (ctx.RepeatType == RepeatType.PingPong)
+                {
+                    ctx.SwitchStartEndValues();
+                }
+
+                goto _Start;
+            }
+            // End Repeating
+
+            // NOTE : Call this before actions to stop annoying stuff from happening.
+            // Call this to avoid IEnumerator errors.
+            // As this is technically a (OnTweenEnd) call.
+            ctx.StopTween();
+        }
         // TODO : Make error checking less boilerplate
         // (maybe) TODO : Make a generic lerp 'To' method, setting using a dictionary of generic delegates for lerping.
         public IEnumerator To(BXTweenCTX<float> ctx)
@@ -1141,7 +1258,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 #if UNITY_EDITOR
         // NOTE : This method is still wip
         // This is 'NOT FUNCTIONAL' and not called by ANY methods.
-        private IEnumerator To(BXTweenCTX<int> aCtx, float frameSec = .040f)
+        private IEnumerator ToAnim(BXTweenCTX<int> aCtx, float frameSec = .040f)
         {
             if (!aCtx.ContextIsValid)
             {
@@ -1317,6 +1434,49 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         #region Context Creation (To Methods)
 
         #region Static To
+        /// <summary>
+        /// Create a tween manually using this method.
+        /// </summary>
+        /// <param name="StartValue">The start value.</param>
+        /// <param name="TargetValue">The end value.</param>
+        /// <param name="Setter">The setter. Pass your function.</param>
+        /// <param name="Duration">Length of tween.</param>
+        /// <param name="TargetObject">Control the null conditions and setters. This is the object that the tween runs on.</param>
+        /// <param name="StartTween">Should the tween start immediately after creation?</param>
+        public static BXTweenCTX<int> To(int StartValue, int TargetValue, float Duration, BXTweenSetMethod<int> Setter,
+            UnityEngine.Object TargetObject = null, bool StartTween = true)
+        {
+            // -- Check Core --     //
+            if (!CheckStatus())
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTwToCtxFail);
+                return null;
+            }
+
+            // -- Check Method Parameters -- //
+            if (Setter == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_SetterFnNull);
+                return null;
+            }
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+
+                return null;
+            }
+
+            // -- Make Context -- //
+            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
+            var Context = new BXTweenCTX<int>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<int> ctx) => { return Current.To(ctx); });
+
+            if (StartTween)
+                Context.StartTween();
+
+            // Return Context
+            return Context;
+        }
         /// <summary>
         /// Create a tween manually using this method.
         /// </summary>
@@ -2552,6 +2712,11 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
             UpdateProperty();
         }
+        /// <summary>
+        /// Sets up the <see cref="BXTweenProperty{T}"/>.
+        /// <br>Calling this after the property is set is equalivent to setting the setter.</br>
+        /// </summary>
+        /// <param name="Setter"></param>
         public void SetupProperty(BXTweenSetMethod<T> Setter)
         {
             SetupProperty(default, default, Setter);
