@@ -124,10 +124,7 @@ namespace BXFW
         }
         public override int GetHashCode()
         {
-            int hashCode = 1734127663;
-            hashCode = hashCode * -1521134295 + EqualityComparer<KeyCode[]>.Default.GetHashCode(KeyCodeReq);
-            hashCode = hashCode * -1521134295 + SetIsInvokable.GetHashCode();
-            return hashCode;
+            return System.HashCode.Combine(KeyCodeReq, SetIsInvokable);
         }
     }
 }

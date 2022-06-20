@@ -4,8 +4,10 @@ using UnityEngine;
 
 namespace BXFW
 {
+    /// Note that this cheats collision detection by using an modified (no mass + no gravity etc) dynamic rigidbody.
+    /// TODO : Please use an actual kinematic collision thing.
     /// <summary>
-    /// Character controller base for anything that wants to move in 2 dimensions.
+    /// Character controller base for anything that wants to move in 2D.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
     public class CharacterControl2DBase : MonoBehaviour
@@ -13,6 +15,10 @@ namespace BXFW
         [Header("Movement Base Settings")]
         public float moveSpeed = 5f;
         public float jumpSpeed = 5f;
+        /// <summary>
+        /// The amount of seconds to float if the jump button is held. 
+        /// </summary>
+        public float jumpAirTime = .2f; 
 
         [SerializeField] private bool canJump = false;
         /// <summary>
@@ -35,7 +41,14 @@ namespace BXFW
 
         [Header("Kinematic Physics Settings")]
         public Vector2 gravity = new Vector2(0f, -9.81f);
-        public bool UseGravity => useGravity;
+        public bool UseGravity
+        {
+            get
+            {
+                return useGravity && moveAxis != TransformAxis2D.XYAxis;
+            }
+        }
+
         public void SetUseGravity(bool value, bool resetGravity = false)
         {
             useGravity = value;
@@ -64,6 +77,7 @@ namespace BXFW
 
         // Runtime variables
         public bool IsJumping { get; private set; }
+        public bool IsJumpAirTime { get; private set; }
         public bool IsGrounded
         {
             get { return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer); }
@@ -148,7 +162,7 @@ namespace BXFW
             // If current ground layer is still the default layer.
             if (groundLayer == DEFAULT_LAYER_MASK)
             {
-                Debug.LogWarning("[CharacterControl2DBase::Awake] Warning : The '{groundLayer variable}' is set to the default layer. Please make a ground layer.");
+                Debug.LogWarning("[CharacterControl2DBase::Awake] Warning : The 'groundLayer' variable is set to the default layer. Please make a ground layer.");
             }
         }
 
@@ -166,7 +180,7 @@ namespace BXFW
         }
 
         private float jumpTimer = 0f;
-        private float jumpDelay = .2f;
+        private const float gravityDelayAfterJump = .16f;
         /// <summary>
         /// Updates the timer-based events.
         /// </summary>
@@ -177,16 +191,39 @@ namespace BXFW
             {
                 jumpTimer += Time.fixedDeltaTime;
             
-                if (jumpTimer >= jumpDelay)
+                if (jumpTimer >= gravityDelayAfterJump)
                 {
                     jumpTimer = 0f;
                     // Start applying gravity if we are not jumping currently.
                     IsJumping = false;
                 }
             }
-            else
+            
+            // -- Float playert if the player is holding the button while we are about to fall (by gravity)
+            // This doesn't invoke with the top
+            if (GravityVelocity.y <= 0f &&
+                    IsJumpAirTime && MoveJumpInput)
             {
-                jumpTimer = 0f;
+                jumpTimer += Time.deltaTime;
+
+                switch (jumpAxis)
+                {
+                    default:
+                        break;
+
+                    case TransformAxis2D.XAxis:
+                        GravityVelocity = new Vector2(0f, GravityVelocity.y);
+                        break;
+                    case TransformAxis2D.YAxis:
+                        GravityVelocity = new Vector2(GravityVelocity.x, 0f);
+                        break;
+                }
+
+                if (jumpTimer >= jumpAirTime)
+                {
+                    jumpTimer = 0f;
+                    IsJumpAirTime = false;
+                }
             }
 
             // -- Other
@@ -198,9 +235,9 @@ namespace BXFW
         protected void ApplyGravityVelocity()
         {
             if (!useGravity) return;
+            // Jumping has higher priority. (applying gravity w jump is, uh, not practical)
+            if (IsJumping) return;
 
-            // Jumping has higher priority.
-            if (IsJumping) return; 
             // Do not apply gravity if we are grounded.
             if (IsGrounded)
             {
@@ -242,6 +279,7 @@ namespace BXFW
 
             // Zero out the gravity velocity and add the jump force.
             IsJumping = true;
+            IsJumpAirTime = true;
             GravityVelocity = jumpAxis.GetVectorUsingTransformAxis(new Vector2(jumpSpeed, jumpSpeed));
         }
 
@@ -260,6 +298,10 @@ namespace BXFW
         {
             // Debug.Log($"[CharacterControl2D] Primarily colliding with : {collision.gameObject.name}");
 
+            // Do not get extra velocity for the gravity.
+            if (!UseGravity)
+                return;
+
             collision.GetContacts(groundContacts);
 
             foreach (var contact in groundContacts)
@@ -272,6 +314,9 @@ namespace BXFW
                         // If the normal is slope relative to the gravity, get the angle of the slope, then apply a support force. 
                         // (Multiplied lerped value from Lerp(nSlopeAngle / maxSlopeLimit, 0, 1))
 
+                        // Multiply the collision normal with the movement axis
+                        // Unless we are moving TransformAxis.xy
+                        MoveVelocity += moveAxis.GetVectorUsingTransformAxis(contact.normal);
                         // Debug.Log($"Collision normal : {contact.normal}");
                     }
                 }
