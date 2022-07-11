@@ -2377,7 +2377,8 @@ namespace BXFW.ScriptEditor
             if (target.Key == null)
                 target = property.GetTarget();
 
-            var targetAttribute = (InspectorBigSpriteFieldAttribute)target.Key.GetCustomAttribute(typeof(InspectorBigSpriteFieldAttribute), true);
+            var targetAttribute = attribute as InspectorBigSpriteFieldAttribute;
+            //var targetAttribute = (InspectorBigSpriteFieldAttribute)target.Key.GetCustomAttribute(typeof(InspectorBigSpriteFieldAttribute), true);
 
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))

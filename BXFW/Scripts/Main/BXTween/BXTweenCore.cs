@@ -232,6 +232,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     LogRich(string.Format("Coroutine stopped with exception : \"{0}\". Please make sure you are stopping tween / attaching tweens to a valid object. StackTrace:\"{1}\"", e.Message, e.StackTrace))
                 );
         }
+        public static string DLog_BXTwWarnExceptOnStop(Exception e)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::StopTween]->", true),
+                    LogRich(string.Format("Context failed to call stop action with exception : \"{0}\". StackTrace:\"{1}\"", e.Message, e.StackTrace))
+                );
+        }
         public static readonly string DLog_BXTwCTXTimeCurveAlreadyNull =
             string.Format("{0} {1}",
                 LogDiagRich("[BXTweenCTX::SetCustomCurve]", true),
@@ -3407,12 +3417,24 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // So yeah, i need to find a more elegant solution to that.
             if (InvokeEventOnStop)
             {
-                if (OnEndAction != null)
-                    OnEndAction.Invoke();
-                if (PersistentOnEndAction != null)
-                    PersistentOnEndAction.Invoke();
-                if (OnEndAction_UnityEvent != null)
-                    OnEndAction_UnityEvent.Invoke(this);
+                try
+                {
+                    // Apparently an exception can occur if the 'OnEndAction' accesses objects after destruction by external forces
+                    // Try mitigating that
+                    if (OnEndAction != null)
+                        OnEndAction.Invoke();
+                    if (PersistentOnEndAction != null)
+                        PersistentOnEndAction.Invoke();
+                    if (OnEndAction_UnityEvent != null)
+                        OnEndAction_UnityEvent.Invoke(this);
+                }
+                catch (Exception e)
+                {
+                    if (CurrentSettings.diagnosticMode)
+                    {
+                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnStop(e));
+                    }
+                }
             }
 
             if (CurrentSettings.diagnosticMode)

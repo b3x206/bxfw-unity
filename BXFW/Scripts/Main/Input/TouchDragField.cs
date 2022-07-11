@@ -16,16 +16,24 @@ namespace BXFW
 
         protected int PointerId;
         private Vector2 PointerOld;
+        private Touch? currentTouch;
 
         // Update Movement
         private void Update()
         {
             if (Pressed)
             {
+                // Cache the touch if pressed
+                // The pointerID is not expected to change
+                if (!currentTouch.HasValue)
+                {
+                    currentTouch = Input.touches[PointerId];
+                }
+
                 if (PointerId >= 0 && PointerId < Input.touches.Length)
                 {
-                    DragDelta = Input.touches[PointerId].position - PointerOld;
-                    PointerOld = Input.touches[PointerId].position;
+                    DragDelta = currentTouch.Value.position - PointerOld;
+                    PointerOld = currentTouch.Value.position;
                 }
                 else
                 {
@@ -35,6 +43,7 @@ namespace BXFW
             }
             else
             {
+                currentTouch = null;
                 DragDelta = Vector2.zero;
             }
         }
