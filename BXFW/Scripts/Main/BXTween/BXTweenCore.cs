@@ -123,8 +123,9 @@ namespace BXFW.Tweening
         /// <summary>
         /// <c>EDITOR ONLY</c> | List all registered fields in <see cref="BXTweenStrings"/>.
         /// <br>Outputs log to Debug.Log.</br>
+        /// <br>This is only used for previewing all (well, most) strings nicely in a console.</br>
         /// </summary>
-        public static void ListStrings()
+        internal static void ListStrings()
         {
             Debug.Log("<b>[ListStrings] Listing all fields in 'BXTweenStrings'.</b>");
 
@@ -134,7 +135,7 @@ namespace BXFW.Tweening
                 Debug.Log(string.Format("Field | Name : {0} | ToString : {1}", field.Name, field.GetValue(null)));
             }
 
-            Debug.Log("<b>[ListStrings] Note that dynamic strings are not outputtable.</b>");
+            Debug.Log("<b>[ListStrings] Note that dynamic strings are not outputtable. (because of those methods requiring parameters)</b>");
         }
 #endif
         // -- Strings
@@ -306,6 +307,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 LogRich("Please make sure you initilaze BXTween for editor playback. (by calling Editor_InitilazeBXTw())"));
 #endif
         // Dynamic
+        public static string GetWarn_TargetConfInvalid(string whatIsWrong, [CallerMemberName] string methodName = "Unknown")
+        {
+            return string.Format("{0} {1}",
+                WarnRich(string.Format("[BXTween::{0}]->", methodName), true),
+                LogRich(string.Format("Tween target (on tween extension) is configured incorrectly. Here's what's wrong : {0}", whatIsWrong)));
+        }
 
         #endregion
 
@@ -1372,7 +1379,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             // (we have to use localPosition because of the canvas, we are only getting the canvas world rect)
             return new Rect(transform.localPosition.x, transform.localPosition.y, r.width, r.height);
         }
-
         /// <summary>
         /// <br>NOTE : These methods <b>SHOULD NOT BE DIRECTLY USED WITH <see cref="RectTransform.rect"/>.</b>
         /// Use the <see cref="GetCanvasRect(RectTransform)"/> method.</br>
@@ -1383,7 +1389,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         {
             LerpRectTransformUnclamped(start, end, Mathf.Clamp01(time), target);
         }
-
         /// <summary>
         /// <br>NOTE : These methods <b>SHOULD NOT BE DIRECTLY USED WITH <see cref="RectTransform.rect"/>.</b>
         /// Use the <see cref="GetCanvasRect(RectTransform)"/> method.</br>
@@ -2018,6 +2023,13 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             {
                 Debug.LogError(BXTweenStrings.Err_TargetNull);
                 return null;
+            }
+
+            // Since this is a canvas item, the lossyScale will return incorrectly
+            // Just check it's local scale as in canvas everything runs in a local space configuration
+            if (target.localScale != Vector3.one)
+            {
+                Debug.LogWarning(BXTweenStrings.GetWarn_TargetConfInvalid("Target RectTransform is scaled incorrectly. (expected localScale to be Vector3.one) Tween may act incorrectly."));
             }
 
             var rectStart = target.GetCanvasRect();
