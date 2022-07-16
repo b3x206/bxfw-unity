@@ -66,7 +66,7 @@ using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening
 {
-    /// Solution for stylized print strings.
+    /// Solution for stylized print strings. (for+++hh9jhfjh??j);,
     /// <summary>
     /// Constant strings for <see cref="BXTween"/> messages.
     /// <br>Doesn't apply styling on builds of the game.</br>
@@ -1356,6 +1356,28 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             }
 
             return ret;
+        }
+
+        // The issue with this is that the rect of the 'RectTransform' returns the center position in it's absolute local position
+        // Meaning that it's not an actual position.
+
+        /// <summary>
+        /// Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.
+        /// <br>(parameter <paramref name="time"/> is clamped between 0-1)</br>
+        /// </summary>
+        public static void LerpRectTransform(Rect start, Rect end, float time, RectTransform target)
+        {
+            LerpRectTransformUnclamped(start, end, Mathf.Clamp01(time), target);
+        }
+
+        /// <summary>
+        /// Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.
+        /// </summary>
+        public static void LerpRectTransformUnclamped(Rect start, Rect end, float time, RectTransform target)
+        {
+            target.localPosition = Vector2.Lerp(start.position, end.position, time);
+            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Lerp(start.width, end.width, time));
+            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Lerp(start.height, end.height, time));
         }
     }
 
