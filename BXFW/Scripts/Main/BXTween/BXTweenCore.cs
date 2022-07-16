@@ -1,4 +1,4 @@
-﻿/// BXTween Version : 0.5
+﻿/// BXTween Version : 0.5.1
 ///                  (state, major, minor) : 
 ///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
 ///                  major => Major revision introducing features & api change (this is going to be very messy in alpha)
@@ -13,12 +13,12 @@
 ///     objectOrPropertyThatHasTypeThatSupportsBXTweenExtensions.BXTw{ExtensionContext}({EndValue}, {Duration});
 ///     // or you can start a manual one
 ///     BXTween.To((supportedType t) => 
-///     { 
+///     {
 ///         // Setter function goes here, example one looks like :
 ///         variableThatNeedTween.somethingThatIsTweenable = t; 
 ///     }, {StartValue}, {EndValue}, {Duration});
 ///     
-///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version}
+///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version if you want it to appear in the inspector}
 ///     // .. This example code interpolates the alpha of a canvas group.
 ///     ... declared in the monobehaviour/scriptableobject/anything unity can serialize, serializable variable scope 'public or private with serialize field', 
 ///     BXTweenPropertyFloat interpolateThing = new BXTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
@@ -1358,11 +1358,25 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             return ret;
         }
 
-        // The issue with this is that the rect of the 'RectTransform' returns the center position in it's absolute local position
-        // Meaning that it's not an actual position.
+        // ISSUE : 
+        // The issue with this is that the rect of the 'RectTransform' returns the center position in it's own local position
+        // (this means that we assume the top left corner is the transform's center and the center is relative to that. we don't want that)
+        // Meaning that it's not an actual (canvas) position.
+        // Because of this, use this method that returns the actual rect of the RectTransform
+        /// <summary>
+        /// Returns the canvas-appopriate positioned version of <see cref="RectTransform.rect"/>.
+        /// </summary>
+        public static Rect GetCanvasRect(this RectTransform transform)
+        {
+            Rect r = transform.rect;
+            // (we have to use localPosition because of the canvas, we are only getting the canvas world rect)
+            return new Rect(transform.localPosition.x, transform.localPosition.y, r.width, r.height);
+        }
 
         /// <summary>
-        /// Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.
+        /// <br>NOTE : These methods <b>SHOULD NOT BE DIRECTLY USED WITH <see cref="RectTransform.rect"/>.</b>
+        /// Use the <see cref="GetCanvasRect(RectTransform)"/> method.</br>
+        /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// <br>(parameter <paramref name="time"/> is clamped between 0-1)</br>
         /// </summary>
         public static void LerpRectTransform(Rect start, Rect end, float time, RectTransform target)
@@ -1371,7 +1385,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         }
 
         /// <summary>
-        /// Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.
+        /// <br>NOTE : These methods <b>SHOULD NOT BE DIRECTLY USED WITH <see cref="RectTransform.rect"/>.</b>
+        /// Use the <see cref="GetCanvasRect(RectTransform)"/> method.</br>
+        /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// </summary>
         public static void LerpRectTransformUnclamped(Rect start, Rect end, float time, RectTransform target)
         {
@@ -1984,6 +2000,46 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 (float f) => { target.anchoredPosition = new Vector2(target.anchoredPosition.x, f); }, target);
 
             return Context;
+        }
+
+        // TODO : Maybe add an 'Rect' context?
+        // Or use an special BXTweenCTX class, saying it changes multiple values?
+        // (which only use float as parameter, with name like MultiBXTweenCTX?)
+
+        /// <summary>
+        /// NOTE : If you want accurate tweening in this method with rect transforms, please read.
+        /// <br>1 : Get the RectTransform's rect using <see cref="BXTweenCustomLerp.GetCanvasRect(RectTransform)"/>.</br>
+        /// <br/>
+        /// <br>And that's it. For other rect purposes, use as you wish.</br>
+        /// </summary>
+        public static BXTweenCTX<float> BXTwChangeRect(this RectTransform target, Rect LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var rectStart = target.GetCanvasRect();
+            var rectEnd = LastValue;
+
+            var Context = To(0f, 1f, Duration, (float f) =>
+            {
+                BXTweenCustomLerp.LerpRectTransformUnclamped(rectStart, rectEnd, f, target);
+            }, target);
+
+            return Context;
+        }
+
+        /// <summary>
+        /// NOTE : This shortcut is more limited than others.
+        /// <br/>
+        /// <br>You cannot change the parameters without creating new tween.</br>
+        /// <br>The 'time' parameter always goes between 0 to 1. (curves can be unclamped)</br>
+        /// </summary>
+        public static BXTweenCTX<float> BXTwChangeRect(this RectTransform target, RectTransform other, float Duration)
+        {
+            return BXTwChangeRect(target, other.GetCanvasRect(), Duration);
         }
         #endregion
 
