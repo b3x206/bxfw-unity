@@ -150,7 +150,7 @@ namespace BXFW.UI
         private readonly List<CanvasGroup> canvasGroupCache = new List<CanvasGroup>();
         protected override void OnCanvasGroupChanged()
         {
-            // This event is part of UIBehaviour.
+            // This event is part of Selectable (but i adapted it to this script).
             // Search for 'CanvasGroup' behaviours & apply preferences to this object.
             // 1: Search for transforms that contain 'CanvasGroup'
             // 2: Keep them in cache

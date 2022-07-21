@@ -258,7 +258,7 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            StartCoroutine(TweenColorFade(ParentTabSystem.FadeColorTargetDefault, ParentTabSystem.FadeSpeed));
+                            TweenColorFade(ParentTabSystem.FadeColorTargetDefault, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
                             if (PrevSprite != null) { ButtonBackgroundImage.sprite = ParentTabSystem.DefaultSpriteToSwap; }
@@ -273,7 +273,7 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            StartCoroutine(TweenColorFade(ParentTabSystem.FadeColorTargetHover, ParentTabSystem.FadeSpeed));
+                            TweenColorFade(ParentTabSystem.FadeColorTargetHover, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
                             ButtonBackgroundImage.sprite = ParentTabSystem.HoverSpriteToSwap;
@@ -287,7 +287,7 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            StartCoroutine(TweenColorFade(ParentTabSystem.FadeColorTargetClick, ParentTabSystem.FadeSpeed));
+                            TweenColorFade(ParentTabSystem.FadeColorTargetClick, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
                             ButtonBackgroundImage.sprite = ParentTabSystem.TargetSpriteToSwap;
@@ -301,7 +301,7 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            StartCoroutine(TweenColorFade(DisableColor, ParentTabSystem.FadeSpeed));
+                            TweenColorFade(DisableColor, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
                             if (PrevSprite != null) { ButtonBackgroundImage.sprite = ParentTabSystem.DisabledSpriteToSwap; }
@@ -322,8 +322,14 @@ namespace BXFW.UI
         #endregion
 
         #region Color Fading
+        private void TweenColorFade(Color Target, float Duration)
+        {
+            if (!gameObject.activeInHierarchy) return; // Do not start coroutines if the object isn't active.
+
+            StartCoroutine(CoroutineTweenColorFade(Target, Duration));
+        }
         // We can use BXTween, but this tab button thing is older (and i really don't care)
-        private IEnumerator TweenColorFade(Color Target, float Duration)
+        private IEnumerator CoroutineTweenColorFade(Color Target, float Duration)
         {
             // Color manipulation
             Color CurrentPrevColor = ButtonBackgroundImage.color;
