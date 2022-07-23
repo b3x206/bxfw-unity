@@ -65,6 +65,8 @@ namespace BXFW.Tweening.Editor
                 {
                     // We are still null, create instance at given const resources directory.
                     // Maybe we can add a EditorPref for creation directory?
+
+                    Debug.Log($"[BXTweenSettingsEditor::(get)CurrentSettings] Current settings in directory {System.IO.Path.Combine(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)} is null. Creating new");
                     currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
                 }
 
@@ -76,7 +78,6 @@ namespace BXFW.Tweening.Editor
         {
             // Draw custom GUI for 'CurrentSettings'
             EditorGUI.BeginChangeCheck();
-
 
             EditorGUILayout.LabelField(new GUIContent(":: General"), EditorStyles.boldLabel);
             var enableTw = EditorGUILayout.Toggle(new GUIContent("Enable BXTween", "Enables BXTween. If this option is false, BXTween won't run on start."), CurrentSettings.enableBXTween);
