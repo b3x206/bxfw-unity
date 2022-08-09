@@ -289,6 +289,15 @@ namespace BXFW
 
             return target.x;
         }
+        public static float GetBiggestAxis(this Vector2 target)
+        {
+            if (target.x > target.y)
+                return target.x;
+            if (target.y > target.x)
+                return target.y;
+
+            return target.x;
+        }
         /// <summary>Returns the keyboard height ratio.</summary>
         public static float GetKeyboardHeightRatio(bool includeInput)
         {
@@ -1270,6 +1279,157 @@ namespace BXFW
         #endregion
     }
 
+    /// <summary>
+    /// GUI additionals.
+    /// Provides GUI related utils.
+    /// </summary>
+    public static class GUIAdditionals
+    {
+        /// <summary>
+        /// Tempoary texture.
+        /// <br>Mostly used for color</br>
+        /// </summary>
+        private static Texture2D tempTexture;
+        /// <summary>
+        /// Set <see cref="tempTexture"/> to be a small texture with <paramref name="c"/> color.
+        /// </summary>
+        /// <returns>The created texture.</returns>
+        private static Texture2D GetColorTexture(Color c)
+        {
+            if (tempTexture == null)
+            {
+                tempTexture = new Texture2D(1, 1)
+                {
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                };
+            }
+
+            if (tempTexture.GetPixel(0, 0) != c)
+            {
+                tempTexture.SetPixel(0, 0, c);
+            }
+
+            return tempTexture;
+        }
+
+        public static bool DraggableBox(bool isDragged, Rect rect, GUIContent content, Action<Vector2> onDrag)
+        {
+            return DraggableBox(isDragged, rect, content, GUI.skin.box, onDrag);
+        }
+
+        /// <summary>
+        /// <br>Usage: Create a global rect for your draggable box. Pass the global variables here.</br>
+        /// Puts a draggable box.
+        /// <br>The <paramref name="onDrag"/> is invoked when the box is being dragged.</br>
+        /// </summary>
+        public static bool DraggableBox(bool isDragged, Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
+        {
+            if (rect.Contains(Event.current.mousePosition))
+            {
+                if (Event.current.type == EventType.MouseDown)
+                {
+                    isDragged = true;
+                }
+            }
+            if (isDragged)
+            {
+                if (Event.current.type == EventType.MouseDrag)
+                {
+                    //rect.x += Event.current.delta.x;
+                    //rect.y += Event.current.delta.y;
+
+                    onDrag(Event.current.delta);
+                }
+                else if (Event.current.type == EventType.MouseUp)
+                {
+                    isDragged = false;
+                }
+            }
+
+            GUI.Button(rect, content, style);
+            return isDragged;
+        }
+
+        /// <summary>
+        /// Draws a grid in <paramref name="rect"/>
+        /// </summary>
+        public static void DrawGrid(Rect rect, Vector2Int gridCellSize, int width, Color color)
+        {
+            // TODO : wtf unity
+
+            // Draw primary grid (according to rect size)
+            // int widthOffset = Mathf.CeilToInt(width / 2);
+            var gc = GUI.color;
+            GUI.color = color;
+
+            // Draw X rows
+            for (int x = 0; x < Mathf.CeilToInt(rect.width / gridCellSize.x); x++)
+            {
+                GUI.Box(new Rect(rect.x + (x * gridCellSize.x)/* + widthOffset*/, rect.y, width, rect.height), GetColorTexture(Color.white));
+            }
+            // Draw Y columns
+            for (int y = 0; y < Mathf.CeilToInt(rect.height / gridCellSize.y); y++)
+            {
+                GUI.Box(new Rect(rect.x, rect.y + (y * gridCellSize.y)/* + widthOffset*/, rect.width, width), GetColorTexture(Color.white));
+            }
+
+            GUI.color = gc;
+        }
+
+        /// <summary>
+        /// Draws a grid in <paramref name="rect"/>
+        /// <br>This function also can draw sub-grids.</br>
+        /// </summary>
+        public static void DrawGrid(Rect rect, Vector2Int gridPriCellSize, int gridPrimaryWidth, Color gridPrimaryColor, 
+            Vector2Int gridSecCellSize, int gridSecondaryWidth, Color gridSecondaryColor)
+        {
+            DrawGrid(rect, gridPriCellSize, gridPrimaryWidth, gridPrimaryColor);
+            DrawGrid(rect, gridSecCellSize, gridSecondaryWidth, gridSecondaryColor);
+        }
+
+        /// <summary>
+        /// Draws line.
+        /// <br>Color defaults to <see cref="Color.white"/>.</br>
+        /// </summary>
+        public static void DrawLine(Vector2 start, Vector2 end, int width)
+        {
+            DrawLine(start, end, width, Color.white);
+        }
+
+        /// <summary>
+        /// Draws line with color.
+        /// </summary>
+        public static void DrawLine(Vector2 start, Vector2 end, int width, Color col)
+        {
+            DrawLine(start, end, width, GetColorTexture(col));
+        }
+
+        /// <summary>
+        /// Draws line with texture.
+        /// <br>The texture is not used for texture stuff, only for color if your line is not thick enough.</br>
+        /// </summary>
+        public static void DrawLine(Vector2 start, Vector2 end, int width, Texture2D tex)
+        {
+            var mat = GUI.matrix;
+
+            if (start == end) return;
+            if (width <= 0) return;
+
+            Vector2 d = end - start;
+            float a = Mathf.Rad2Deg * Mathf.Atan(d.y / d.x);
+            if (d.x < 0)
+                a += 180;
+
+            int width2 = (int)Mathf.Ceil(width / 2);
+
+            GUIUtility.RotateAroundPivot(a, start);
+            GUI.DrawTexture(new Rect(start.x, start.y - width2, d.magnitude, width), tex);
+
+            GUI.matrix = mat;
+        }
+    }
+
     #region Helper Enums
     /// <summary>
     /// Transform Axis.
@@ -1433,49 +1593,6 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
             }
         }
     }
-    /// <summary>
-    /// Obfuscated integer. Stores values with offsets.
-    /// </summary>
-    [Serializable]
-    public struct ObfuscatedInt
-    {
-        private int Value;
-        private int RandShiftValue;
-
-        public ObfuscatedInt(int value)
-        {
-            RandShiftValue = UnityEngine.Random.Range(0, int.MaxValue);
-
-            Value = value << RandShiftValue;
-        }
-
-        public static implicit operator ObfuscatedInt(int i)
-        {
-            return new ObfuscatedInt(i);
-        }
-        public static implicit operator int(ObfuscatedInt i)
-        {
-            return (i.Value >> i.RandShiftValue) & 0x7FFFFFFF;
-        }
-
-        public static int operator +(ObfuscatedInt lhs, ObfuscatedInt rhs)
-        {
-            return (int)lhs + (int)rhs;
-        }
-        public static int operator -(ObfuscatedInt lhs, ObfuscatedInt rhs)
-        {
-            return (int)lhs - (int)rhs;
-        }
-        public static int operator /(ObfuscatedInt lhs, ObfuscatedInt rhs)
-        {
-            return (int)lhs / (int)rhs;
-        }
-        public static int operator *(ObfuscatedInt lhs, ObfuscatedInt rhs)
-        {
-            return (int)lhs * (int)rhs;
-        }
-    }
-
     #endregion
 }
 
@@ -1873,11 +1990,11 @@ namespace BXFW.Tools.Editor
             GUI.color = restoreColor;
             Handles.EndGUI();
         }
-        private static Vector3 TransformByPixel(Vector3 position, float x, float y)
+        internal static Vector3 TransformByPixel(Vector3 position, float x, float y)
         {
             return TransformByPixel(position, new Vector3(x, y));
         }
-        private static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
+        internal static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
         {
             Camera cam = SceneView.currentDrawingSceneView.camera;
 
@@ -2330,32 +2447,6 @@ namespace BXFW
 #if UNITY_EDITOR
 namespace BXFW.ScriptEditor
 {
-    [CustomPropertyDrawer(typeof(ObfuscatedInt))]
-    public class ObfuscatedIntPropertyDrawer : PropertyDrawer
-    {
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            return EditorGUIUtility.singleLineHeight + 4;
-        }
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            // This property is drawn like an integer.
-            var targetPropField = property.GetTarget().Key;
-            var targetProp = (ObfuscatedInt)property.GetTarget().Value;
-
-            EditorGUI.BeginChangeCheck();
-            var iField = EditorGUI.IntField(position, new GUIContent(label.text, "Edit obfuscated integer. NOTE : Won't display correctly on 'Debug' inspector"), targetProp);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                targetPropField.SetValue(property.serializedObject, iField);
-            }
-
-            EditorGUI.HelpBox(new Rect(position.x, position.y + EditorGUIUtility.singleLineHeight + 4, position.width, position.height), "Not complete", MessageType.Warning);
-        }
-    }
-
     #region Inspector Attributes Drawers
     // (maybe) TODO : Carry these 'Inspector Attribute Drawers' over to a seperate file.
     // TODO : Use a class named => DecoratorDrawer
