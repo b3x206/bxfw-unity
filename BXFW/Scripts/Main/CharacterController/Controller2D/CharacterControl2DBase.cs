@@ -6,6 +6,7 @@ namespace BXFW
 {
     /// Note that this cheats collision detection by using an modified (no mass + no gravity etc) dynamic rigidbody.
     /// TODO : Please use an actual kinematic collision thing.
+    /// TODO : Make use of an module system (like the powerup things)
     /// <summary>
     /// Character controller base for anything that wants to move in 2D.
     /// </summary>
@@ -39,7 +40,7 @@ namespace BXFW
         /// </summary>
         public TransformAxis2D jumpAxis = TransformAxis2D.YAxis;
 
-        [Header("Kinematic Physics Settings")]
+        [Header(":: Kinematic Physics Settings")]
         public Vector2 gravity = new Vector2(0f, -9.81f);
         public bool UseGravity
         {
@@ -63,7 +64,7 @@ namespace BXFW
         public LayerMask groundLayer = DEFAULT_LAYER_MASK;
         public float groundCheckRadius = .4f;
 
-        [Header("Movement Base Input Map")]
+        [Header(":: Movement Base Input Map")]
         // Editor script TODO : Hide / Show depending on the move/jump axis.
         // Both Move{Direction} CustomInputEvent is visible if moveAxis is X and Y
         // Hidden if moveAxis is only Y
@@ -316,7 +317,8 @@ namespace BXFW
 
                         // Multiply the collision normal with the movement axis
                         // Unless we are moving TransformAxis.xy
-                        MoveVelocity += moveAxis.GetVectorUsingTransformAxis(contact.normal);
+                        // Rotate normal by 90 degree (so it's an actual support)
+                        MoveVelocity += moveAxis.GetVectorUsingTransformAxis(Quaternion.AngleAxis(90, Vector3.forward) * contact.normal);
                         // Debug.Log($"Collision normal : {contact.normal}");
                     }
                 }

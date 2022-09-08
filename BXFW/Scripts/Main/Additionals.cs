@@ -1,5 +1,6 @@
 ﻿// Standard
 using UnityEngine;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
@@ -19,6 +20,9 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
 using BXFW.Tools.Editor;
+using TMPro;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 
 namespace BXFW
 {
@@ -120,6 +124,14 @@ namespace BXFW
             }
         }
         #endregion
+
+        /// <summary>
+        /// Get the path of the gameobject.
+        /// </summary>
+        public static string GetPath(this Component target)
+        {
+            return target.transform.GetPath();
+        }
 
         /// <summary>
         /// Get the path of the gameobject.
@@ -763,6 +775,23 @@ namespace BXFW
         {
             return new Vector4(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z), Mathf.Abs(v.w));
         }
+        /// <summary>
+        /// Mapped lerp.
+        /// </summary>
+        /// <param name="from">Returned value start.</param>
+        /// <param name="to">Returned value end.</param>
+        /// <param name="from2">Range value start.</param>
+        /// <param name="to2">Range value end.</param>
+        /// <param name="value">Value mapped.</param>
+        public static float Map(float from, float to, float from2, float to2, float value)
+        {
+            if (value <= from2)
+                return from;
+            else if (value >= to2)
+                return to;
+
+            return (to - from) * ((value - from2) / (to2 - from2)) + from;
+        }
         /// <summary>Get types that has the <paramref name="AttributeType"/> attribute from <see cref="Assembly"/> <paramref name="AttributeAssem"/>.</summary>
         /// <returns>The types with the attribute <paramref name="AttributeType"/>.</returns>
         public static IEnumerable<Type> GetTypesWithAttribute(Type AttributeType, Assembly AttributeAssem = null)
@@ -1286,36 +1315,39 @@ namespace BXFW
     public static class GUIAdditionals
     {
         /// <summary>
-        /// Tempoary texture.
-        /// <br>Mostly used for color</br>
+        /// Hashes contained in the <see cref="GUI"/> class, 
+        /// for use with <see cref="GUIUtility.GetControlID(int, FocusType, Rect)"/>.
         /// </summary>
-        private static Texture2D tempTexture;
-        /// <summary>
-        /// Set <see cref="tempTexture"/> to be a small texture with <paramref name="c"/> color.
-        /// </summary>
-        /// <returns>The created texture.</returns>
-        private static Texture2D GetColorTexture(Color c)
+        public static class HashList
         {
-            if (tempTexture == null)
-            {
-                tempTexture = new Texture2D(1, 1)
-                {
-                    wrapMode = TextureWrapMode.Repeat,
-                    filterMode = FilterMode.Bilinear,
-                };
-            }
-
-            if (tempTexture.GetPixel(0, 0) != c)
-            {
-                tempTexture.SetPixel(0, 0, c);
-            }
-
-            return tempTexture;
+            public static readonly int BoxHash = "Box".GetHashCode();
+            public static readonly int ButtonHash = "Button".GetHashCode();
+            public static readonly int RepeatButtonHash = "repeatButton".GetHashCode();
+            public static readonly int ToggleHash = "Toggle".GetHashCode();
+            public static readonly int ButtonGridHash = "ButtonGrid".GetHashCode();
+            public static readonly int SliderHash = "Slider".GetHashCode();
+            public static readonly int BeginGroupHash = "BeginGroup".GetHashCode();
+            public static readonly int ScrollviewHash = "scrollView".GetHashCode();
         }
 
-        public static bool DraggableBox(bool isDragged, Rect rect, GUIContent content, Action<Vector2> onDrag)
+        private static bool isBeingDragged = false; // Since we only have one mouse cursor lol
+        private static int hotControlID = -1; // Gotta keep the id otherwise we can't differentiate what we are dragging
+                                              // We could also use GUIUtility.hotControl or some field like that
+        public static int HotControlID => hotControlID;
+        private static int lastInteractedControlID = -1; // Keep the last interacted one too
+        public static int LastHotControlID => lastInteractedControlID;
+
+        public static int DraggableBox(Rect rect, GUIContent content, Action<Vector2> onDrag)
         {
-            return DraggableBox(isDragged, rect, content, GUI.skin.box, onDrag);
+            return DraggableBox(rect, content, GUI.skin.box, onDrag);
+        }
+
+        public static int DraggableBox(Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
+        {
+            return DraggableBox(rect, (bool _) =>
+            {
+                GUI.Box(rect, content, style);
+            }, onDrag);
         }
 
         /// <summary>
@@ -1323,69 +1355,40 @@ namespace BXFW
         /// Puts a draggable box.
         /// <br>The <paramref name="onDrag"/> is invoked when the box is being dragged.</br>
         /// </summary>
-        public static bool DraggableBox(bool isDragged, Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
+        /// <returns>The control id of this gui.</returns>
+        public static int DraggableBox(Rect rect, Action<bool> onDrawButton, Action<Vector2> onDrag)
         {
+            int controlID = GUIUtility.GetControlID(HashList.RepeatButtonHash, FocusType.Passive, rect);
+            
             if (rect.Contains(Event.current.mousePosition))
             {
                 if (Event.current.type == EventType.MouseDown)
                 {
-                    isDragged = true;
+                    isBeingDragged = true;
+                    hotControlID = controlID;
+                    lastInteractedControlID = controlID;
                 }
             }
-            if (isDragged)
+            if (isBeingDragged && hotControlID == controlID)
             {
                 if (Event.current.type == EventType.MouseDrag)
-                {
-                    //rect.x += Event.current.delta.x;
-                    //rect.y += Event.current.delta.y;
-
+                { 
                     onDrag(Event.current.delta);
                 }
                 else if (Event.current.type == EventType.MouseUp)
                 {
-                    isDragged = false;
+                    isBeingDragged = false;
+                    hotControlID = -1;
                 }
             }
 
-            GUI.Button(rect, content, style);
-            return isDragged;
-        }
-
-        /// <summary>
-        /// Draws a grid in <paramref name="rect"/>
-        /// </summary>
-        public static void DrawGrid(Rect rect, Vector2Int gridCellSize, int width, Color color)
-        {
-            // TODO : wtf unity
-
-            // Draw primary grid (according to rect size)
-            // int widthOffset = Mathf.CeilToInt(width / 2);
-            var gc = GUI.color;
-            GUI.color = color;
-
-            // Draw X rows
-            for (int x = 0; x < Mathf.CeilToInt(rect.width / gridCellSize.x); x++)
-            {
-                GUI.Box(new Rect(rect.x + (x * gridCellSize.x)/* + widthOffset*/, rect.y, width, rect.height), GetColorTexture(Color.white));
-            }
-            // Draw Y columns
-            for (int y = 0; y < Mathf.CeilToInt(rect.height / gridCellSize.y); y++)
-            {
-                GUI.Box(new Rect(rect.x, rect.y + (y * gridCellSize.y)/* + widthOffset*/, rect.width, width), GetColorTexture(Color.white));
-            }
-
-            GUI.color = gc;
-        }
-
-        /// <summary>
-        /// Draws a grid in <paramref name="rect"/>
-        /// <br>This function also can draw sub-grids.</br>
-        /// </summary>
-        public static void DrawGrid(Rect rect, Vector2Int gridPriCellSize, int gridPrimaryWidth, Color gridPrimaryColor, 
-            Vector2Int gridSecCellSize, int gridSecondaryWidth, Color gridSecondaryColor)
-        {
-            DrawGrid(rect, gridPriCellSize, gridPrimaryWidth, gridPrimaryColor);
-            DrawGrid(rect, gridSecCellSize, gridSecondaryWidth, gridSecondaryColor);
+            // Or use an <see cref="GUI.RepeatButton"/> for 'isBeingDragged' lol
+            // This is required for event to be drag.
+            // This may allow more styles, but we are already using 'onDrawButton' delegate anyways
+            GUI.Button(rect, GUIContent.none, GUIStyle.none);
+            onDrawButton(isBeingDragged && hotControlID == controlID);
+            
+            return controlID;
         }
 
         /// <summary>
@@ -1402,7 +1405,10 @@ namespace BXFW
         /// </summary>
         public static void DrawLine(Vector2 start, Vector2 end, int width, Color col)
         {
-            DrawLine(start, end, width, GetColorTexture(col));
+            var gc = GUI.color;
+            GUI.color = col;
+            DrawLine(start, end, width, Texture2D.whiteTexture);
+            GUI.color = gc;
         }
 
         /// <summary>
@@ -1411,7 +1417,7 @@ namespace BXFW
         /// </summary>
         public static void DrawLine(Vector2 start, Vector2 end, int width, Texture2D tex)
         {
-            var mat = GUI.matrix;
+            var guiMat = GUI.matrix;
 
             if (start == end) return;
             if (width <= 0) return;
@@ -1426,8 +1432,588 @@ namespace BXFW
             GUIUtility.RotateAroundPivot(a, start);
             GUI.DrawTexture(new Rect(start.x, start.y - width2, d.magnitude, width), tex);
 
-            GUI.matrix = mat;
+            GUI.matrix = guiMat;
         }
+
+        /// <summary>
+        /// Draws a ui line and returns the padded position rect.
+        /// <br>For angled / rotated lines, use the  method.</br>
+        /// </summary>
+        /// <param name="parentRect">Parent rect to draw relative to.</param>
+        /// <param name="color">Color of the line.</param>
+        /// <param name="thickness">Thiccness of the line.</param>
+        /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
+        /// <returns>The new position target rect, offseted.</returns>
+        public static Rect DrawUILine(Rect parentRect, Color color, int thickness = 2, int padding = 3)
+        {
+            // Rect that is passed as an parameter.
+            Rect drawRect = new Rect(parentRect.position, new Vector2(parentRect.width, thickness));
+
+            drawRect.y += padding / 2;
+            drawRect.x -= 2;
+            drawRect.width += 6;
+
+            // Rect with proper height.
+            Rect returnRect = new Rect(new Vector2(parentRect.position.x, drawRect.position.y + (thickness + padding)), parentRect.size);
+            if (Event.current.type == EventType.Repaint)
+            {
+                var gColor = GUI.color;
+                GUI.color *= color;
+                GUI.DrawTexture(drawRect, Texture2D.whiteTexture);
+                GUI.color = gColor;
+            }
+
+            return returnRect;
+        }
+
+        /// <summary>
+        /// Draws a straight line in the gui system. (<see cref="GUILayout"/> method)
+        /// <br>For angled / rotated lines, use the <see cref="DrawLine"/> method.</br>
+        /// </summary>
+        /// <param name="color">Color of the line.</param>
+        /// <param name="thickness">Thiccness of the line.</param>
+        /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
+        public static void DrawUILineLayout(Color color, int thickness = 2, int padding = 10)
+        {
+            Rect r = GUILayoutUtility.GetRect(1f, float.MaxValue, padding + thickness, padding + thickness);
+
+            r.height = thickness;
+            r.y += padding / 2;
+            r.x -= 2;
+            r.width += 6;
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                var gColor = GUI.color;
+                GUI.color *= color;
+                GUI.DrawTexture(r, Texture2D.whiteTexture);
+                GUI.color = gColor;
+            }
+        }
+
+        #region RenderTexture Based
+        private static readonly RenderTexture tempRT = new RenderTexture(1, 1, 1, RenderTextureFormat.ARGB32);
+        /// <summary>
+        /// An unlit material with color.
+        /// </summary>
+        private static readonly Material tempUnlitMat = new Material(Shader.Find("Custom/Unlit/UnlitTransparentColorShader"));
+        private static readonly Material tempCircleMat = new Material(Shader.Find("Custom/Vector/Circle"));
+
+        /// <summary>
+        /// Get a texture of a circle.
+        /// </summary>
+        /// <param name="size"></param>
+        /// <param name="circleColor"></param>
+        /// <param name="strokeColor"></param>
+        /// <param name="strokeThickness"></param>
+        /// <returns></returns>
+        public static Texture GetCircleTexture(Vector2 size, Color circleColor, Color strokeColor = default, float strokeThickness = 0f)
+        {
+            tempCircleMat.color = circleColor;
+            tempCircleMat.SetColor("_StrokeColor", strokeColor);
+            tempCircleMat.SetFloat("_StrokeThickness", strokeThickness);
+
+            return BlitQuad(size, tempCircleMat);
+        }
+
+        /// <summary>
+        /// Get a texture of a rendered mesh.
+        /// </summary>
+        public static Texture GetMeshTexture(Vector2 size, Mesh meshTarget, Material meshMat,
+            Vector3 meshPos, Quaternion meshRot, Vector3 meshScale,
+            Vector3 camPos = default, Quaternion camRot = default, Matrix4x4 camProj = default)
+        {
+            // No need for a 'BlitMesh' method for this, as it's already complicated
+
+            tempRT.Release();
+            tempRT.width = Mathf.CeilToInt(size.x);
+            tempRT.height = Mathf.CeilToInt(size.y);
+            Matrix4x4 matrixMesh = Matrix4x4.TRS(meshPos, meshRot, meshScale);
+
+            // This is indeed redundant code, BUT: we also apply transform data to camera also so this is required
+            if (camProj == Matrix4x4.identity)
+                camProj = Matrix4x4.Ortho(-1, 1, -1, 1, 0.01f, 1024f);
+
+            Matrix4x4 matrixCamPos = Matrix4x4.TRS(camPos, camRot, new Vector3(1, 1, -1));
+            Matrix4x4 matrixCam = (camProj * matrixCamPos.inverse);
+
+            // Draw mesh manually
+            tempRT.BlitMesh(matrixMesh, matrixCam, meshTarget, meshMat);
+            return tempRT;
+        }
+
+        /// <summary>
+        /// Get a texture of a quad, rendered using that material.
+        /// <br>It is not recommended to use this method as shaders could be moving.
+        /// Use the <see cref="DrawMaterialTexture(Rect, Texture2D, Material)"/> instead.</br>
+        /// </summary>
+        public static Texture GetMaterialTexture(Vector2 size, Texture2D texTarget, Material matTarget)
+        {
+            matTarget.mainTexture = texTarget;
+
+            return BlitQuad(size, matTarget);
+        }
+
+        /// <summary>
+        /// Utility method to bilt a quad (to variable <see cref="tempRT"/>)
+        /// </summary>
+        internal static RenderTexture BlitQuad(Vector2 size, Material matTarget)
+        {
+            tempRT.Release();
+            tempRT.width = Mathf.CeilToInt(size.x);
+            tempRT.height = Mathf.CeilToInt(size.y);
+
+            // Stretch quad (to fit into texture)
+            Vector3 scale = new Vector3(1f, 1f * tempRT.Aspect(), 1f);
+            // the quad that we get using GetQuad is offsetted.
+            Matrix4x4 matrixMesh = Matrix4x4.TRS(new Vector3(0.5f, -0.5f, -1f), Quaternion.AngleAxis(-180, Vector3.up), scale);
+            //Matrix4x4 matrixCam = Matrix4x4.Ortho(-1, 1, -1, 1, .01f, 1024f);
+            Matrix4x4 matrixCam = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+
+            // Draw mesh manually
+            tempRT.BlitMesh(matrixMesh, matrixCam, RenderTextureUtils.GetQuad(), matTarget);
+
+            return tempRT;
+        }
+
+        /// <summary>
+        /// Internal utility method to draw quads (with materials).
+        /// </summary>
+        internal static void DrawQuad(Rect guiRect, Material matTarget)
+        {
+            GUI.DrawTexture(guiRect, BlitQuad(guiRect.size, matTarget));
+        }
+
+        /// <summary>
+        /// Draws a circle at given rect.
+        /// </summary>
+        public static void DrawCircle(Rect guiRect, Color circleColor, Color strokeColor = default, float strokeThickness = 0f)
+        {
+            tempCircleMat.color = circleColor;
+            tempCircleMat.SetColor("_StrokeColor", strokeColor);
+            tempCircleMat.SetFloat("_StrokeThickness", strokeThickness);
+
+            DrawQuad(guiRect, tempCircleMat);
+        }
+
+        /// <summary>
+        /// Draws a texture with material.
+        /// </summary>
+        /// <param name="guiRect"></param>
+        /// <param name="texTarget"></param>
+        /// <param name="matTarget"></param>
+        public static void DrawMaterialTexture(Rect guiRect, Texture2D texTarget, Material matTarget)
+        {
+            matTarget.mainTexture = texTarget;
+
+            DrawQuad(guiRect, matTarget);
+        }
+
+        /// <summary>
+        /// Draws a textured white mesh.
+        /// </summary>
+        public static void DrawMesh(Rect guiRect, Mesh meshTarget, Texture2D meshTexture,
+            Vector3 meshPos, Quaternion meshRot, Vector3 meshScale,
+            Vector3 camPos = default, Quaternion camRot = default, Matrix4x4 camProj = default)
+        {
+            DrawMesh(guiRect, meshTarget, meshTexture, Color.white, meshPos, meshRot, meshScale, camPos, camRot, camProj);
+        }
+
+        /// <summary>
+        /// Draws a mesh on the given rect.
+        /// <br>Uses a default unlit material for the material field.</br>
+        /// </summary>
+        public static void DrawMesh(Rect guiRect, Mesh meshTarget, Color meshColor,
+            Vector3 meshPos, Quaternion meshRot, Vector3 meshScale,
+            Vector3 camPos = default, Quaternion camRot = default, Matrix4x4 camProj = default)
+        {
+            DrawMesh(guiRect, meshTarget, null, meshColor, meshPos, meshRot, meshScale, camPos, camRot, camProj);
+        }
+
+        /// <summary>
+        /// Draws a textured mesh with a color of your choice.
+        /// </summary>
+        public static void DrawMesh(Rect guiRect, Mesh meshTarget, Texture2D meshTexture, Color meshColor,
+            Vector3 meshPos, Quaternion meshRot, Vector3 meshScale,
+            Vector3 camPos = default, Quaternion camRot = default, Matrix4x4 camProj = default)
+        {
+            var mcPrev = tempUnlitMat.color;
+            tempUnlitMat.mainTexture = meshTexture;
+            tempUnlitMat.color = meshColor;
+
+            DrawMesh(guiRect, meshTarget, tempUnlitMat, meshPos, meshRot, meshScale, camPos, camRot, camProj);
+
+            tempUnlitMat.color = mcPrev;
+        }
+
+        /// <summary>
+        /// Draws a mesh on the given rect.
+        /// <br>The mesh is centered to camera, however the position, rotation and the scale of the mesh can be changed.</br>
+        /// <br>The target resolution is the size of the <paramref name="guiRect"/>.</br>
+        /// </summary>
+        public static void DrawMesh(Rect guiRect, Mesh meshTarget, Material meshMat,
+            Vector3 meshPos, Quaternion meshRot, Vector3 meshScale,
+            Vector3 camPos = default, Quaternion camRot = default, Matrix4x4 camProj = default)
+        {
+            tempRT.Release();
+            tempRT.width = Mathf.CeilToInt(guiRect.size.x);
+            tempRT.height = Mathf.CeilToInt(guiRect.size.y);
+            Matrix4x4 matrixMesh = Matrix4x4.TRS(meshPos, meshRot, meshScale);
+
+            // This is indeed redundant code, BUT: we also apply transform data to camera also so this is required
+            if (camProj == Matrix4x4.identity)
+                camProj = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+
+            Matrix4x4 matrixCamPos = Matrix4x4.TRS(camPos, camRot, new Vector3(1, 1, -1));
+            Matrix4x4 matrixCam = (camProj * matrixCamPos.inverse);
+
+            // Draw mesh manually
+            tempRT.BlitMesh(matrixMesh, matrixCam, meshTarget, meshMat);
+
+            GUI.DrawTexture(guiRect, tempRT);
+        }
+        #endregion
+    }
+
+    /// Changes Done :
+    ///   * Fixed formatting and added discards for unused RenderTexture's.
+    ///   * Renamed class from RTUtils -> RenderTextureUtils
+    ///   * removed some pointless methods (such as DrawTextureGUI without rect input)
+    ///   * (some) Methods can now take camera matrixes
+    /// 
+    /// Notes :
+    ///   * I have no idea what the 'Draw' methods do (the blit methods atleast do something)
+    ///   
+    /// RTUtils by Nothke
+    /// 
+    /// RenderTexture utilities for direct drawing meshes, texts and sprites and converting to Texture2D.
+    /// Requires BlitQuad shader (or also known as a default sprite shader).
+    /// 
+    /// ============================================================================
+    ///
+    /// MIT License
+    ///
+    /// Copyright(c) 2021 Ivan Notaroš
+    /// 
+    /// Permission is hereby granted, free of charge, to any person obtaining a copy
+    /// of this software and associated documentation files (the "Software"), to deal
+    /// in the Software without restriction, including without limitation the rights
+    /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    /// copies of the Software, and to permit persons to whom the Software is
+    /// furnished to do so, subject to the following conditions:
+    /// 
+    /// The above copyright notice and this permission notice shall be included in all
+    /// copies or substantial portions of the Software.
+    /// 
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    /// SOFTWARE.
+    /// 
+    /// ============================================================================
+    public static class RenderTextureUtils
+    {
+        #region Quad creation
+        static Mesh quad;
+        public static Mesh GetQuad()
+        {
+            if (quad)
+                return quad;
+
+            Mesh mesh = new Mesh();
+
+            float width = 1;
+            float height = 1;
+
+            Vector3[] vertices = new Vector3[4]
+            {
+                new Vector3(0, 0, 0),
+                new Vector3(width, 0, 0),
+                new Vector3(0, height, 0),
+                new Vector3(width, height, 0)
+            };
+            mesh.vertices = vertices;
+
+            int[] tris = new int[6]
+            {
+                // lower left triangle
+                0, 2, 1,
+                // upper right triangle
+                2, 3, 1
+            };
+            mesh.triangles = tris;
+
+            Vector3[] normals = new Vector3[4]
+            {
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward
+            };
+            mesh.normals = normals;
+
+            Vector2[] uv = new Vector2[4]
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(0, 1),
+                new Vector2(1, 1)
+            };
+            mesh.uv = uv;
+
+            quad = mesh;
+            return quad;
+        }
+
+        static Shader blitShader;
+        public static Shader GetBlitShader()
+        {
+            if (blitShader)
+                return blitShader;
+
+            const string SHADER_NAME = "Sprites/Default";
+            var shader = Shader.Find(SHADER_NAME);
+
+            if (!shader)
+                Debug.LogError(string.Format("Shader with name '{0}' is not found, did you forget to include it in the project settings?", SHADER_NAME));
+
+            blitShader = shader;
+            return blitShader;
+        }
+
+        static Material blitMaterial;
+        public static Material GetBlitMaterial()
+        {
+            if (!blitMaterial)
+                blitMaterial = new Material(GetBlitShader());
+
+            return blitMaterial;
+        }
+        #endregion
+
+        static RenderTexture prevRT;
+
+        public static void BeginOrthoRendering(this RenderTexture rt, float zBegin = -100, float zEnd = 100)
+        {
+            // Create an orthographic matrix (for 2D rendering)
+            Matrix4x4 projectionMatrix = Matrix4x4.Ortho(0, 1, 0, 1, zBegin, zEnd);
+
+            rt.BeginRendering(projectionMatrix);
+        }
+
+        public static void BeginPixelRendering(this RenderTexture rt, float zBegin = -100, float zEnd = 100)
+        {
+            Matrix4x4 projectionMatrix = Matrix4x4.Ortho(0, rt.width, 0, rt.height, zBegin, zEnd);
+
+            rt.BeginRendering(projectionMatrix);
+        }
+
+        public static void BeginPerspectiveRendering(
+            this RenderTexture rt, float fov, in Vector3 position, in Quaternion rotation,
+            float zNear = 0.01f, float zFar = 1000f)
+        {
+            float aspect = (float)rt.width / rt.height;
+            Matrix4x4 projectionMatrix = Matrix4x4.Perspective(fov, aspect, zNear, zFar);
+            Matrix4x4 viewMatrix = Matrix4x4.TRS(position, rotation, new Vector3(1, 1, -1));
+
+            Matrix4x4 cameraMatrix = (projectionMatrix * viewMatrix.inverse);
+
+            rt.BeginRendering(cameraMatrix);
+        }
+
+        public static void BeginRendering(this RenderTexture rt, Matrix4x4 projectionMatrix)
+        {
+            // This fixes flickering (by @guycalledfrank)
+            // (because there's some switching back and forth between cameras, I don't fully understand)
+            if (Camera.current != null)
+                projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+
+            // Remember the current texture and make our own active
+            prevRT = RenderTexture.active;
+            RenderTexture.active = rt;
+
+            // Push the projection matrix
+            GL.PushMatrix();
+            GL.LoadProjectionMatrix(projectionMatrix);
+        }
+
+        public static void EndRendering(this RenderTexture _)
+        {
+            // Pop the projection matrix to set it back to the previous one
+            GL.PopMatrix();
+
+            // Revert culling
+            GL.invertCulling = false;
+
+            // Re-set the RenderTexture to the last used one
+            RenderTexture.active = prevRT;
+        }
+
+        public static void DrawMesh(this RenderTexture _, Mesh mesh, Material material, in Matrix4x4 matrix, int pass = 0)
+        {
+            if (mesh == null)
+                throw new NullReferenceException("[RenderTextureExtensions::DrawMesh] Argument 'mesh' cannot be null.");
+
+            bool canRender = material.SetPass(pass);
+
+            if (canRender)
+                Graphics.DrawMeshNow(mesh, matrix);
+        }
+
+        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Vector2 position, float size)
+        {
+            float aspect = (float)rt.width / rt.height;
+            Vector3 scale = new Vector3(size, size * aspect, 1);
+
+            Matrix4x4 matrix = Matrix4x4.TRS(position, Quaternion.identity, scale);
+
+            rt.DrawTMPText(text, matrix);
+        }
+
+        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Matrix4x4 matrix)
+        {
+            Material material = Application.isPlaying ? text.fontMaterial : text.fontSharedMaterial;
+            rt.DrawMesh(text.mesh, material, matrix);
+        }
+
+        #region Blit Once Functions
+        /// <summary>
+        /// Draws a mesh to render texture.
+        /// Position is defined in camera view 0-1 space where 0,0 is in bottom left corner.
+        /// <para>
+        /// For non-square textures, aspect ratio will be calculated so that the 0-1 space fits in the width.
+        /// Meaning that, for example, wider than square texture will have larger font size per texture area.
+        /// </para>
+        /// </summary>
+        public static void BlitTMPText(this RenderTexture rt, TMP_Text text, in Vector2 pos, float size,
+            bool clear = true, Color clearColor = default)
+        {
+            float aspect = (float)rt.width / rt.height;
+            Vector3 scale = new Vector3(size, size * aspect, 1f);
+
+            Matrix4x4 matrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+            BlitTMPText(rt, text, matrix, clear, clearColor);
+        }
+
+        public static void BlitTMPText(this RenderTexture rt, TMP_Text text, Matrix4x4 objectMatrix,
+            bool clear = true, Color clearColor = default)
+        {
+            Material mat = text.fontSharedMaterial;
+            BlitMesh(rt, objectMatrix, Matrix4x4.identity, text.mesh, mat, clear, true, clearColor);
+        }
+
+        public static void BlitMesh2D(this RenderTexture rt, Mesh mesh, in Vector2 pos, float size, Material material,
+            bool invertCulling = true, bool clear = true, Color clearColor = default)
+        {
+            float aspect = (float)rt.width / rt.height;
+            Vector3 scale = new Vector3(size, size * aspect, 1f);
+
+            Matrix4x4 matrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+            BlitMesh(rt, matrix, Matrix4x4.identity, mesh, material, invertCulling, clear, clearColor);
+        }
+
+        public static void BlitMesh(this RenderTexture rt, Mesh mesh, in Vector3 pos, Quaternion rot, in Vector3 scale, Material material,
+            bool invertCulling = true, bool clear = true, Color clearColor = default)
+        {
+            Matrix4x4 matrix = Matrix4x4.TRS(pos, rot, scale);
+            BlitMesh(rt, matrix, Matrix4x4.identity, mesh, material, invertCulling, clear, clearColor);
+        }
+
+        /// <summary>
+        /// Draws a mesh to render texture. The camera space is defined in normalized 0-1 coordinates, near and far planes are -100 and 100.
+        /// </summary>
+        /// <param name="objectMatrix">The model-matrix of the object</param>
+        /// <param name="invertCulling">In case the mesh renders inside-out, toggle this</param>
+        /// <param name="clear">Clears a texture to clearColor before drawing</param>
+        public static void BlitMesh(this RenderTexture rt, Matrix4x4 objectMatrix, Matrix4x4 projectionMatrix, Mesh mesh, Material material,
+            bool invertCulling = true, bool clear = true, Color clearColor = default)
+        {
+            // Create an orthographic matrix (for 2D rendering)
+            // You can otherwise use Matrix4x4.Perspective()
+            if (projectionMatrix == Matrix4x4.identity)
+                projectionMatrix = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+
+            // This fixes flickering (by @guycalledfrank)
+            // (because there's some switching back and forth between cameras, I don't fully understand)
+            if (Camera.current != null)
+                projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+
+            // Remember the current texture and set our own as "active".
+            RenderTexture prevRT = RenderTexture.active;
+            RenderTexture.active = rt;
+
+            // Set material as "active". Without this, Unity editor will freeze.
+            bool canRender = material.SetPass(0);
+
+            // Push the projection matrix
+            GL.PushMatrix();
+            GL.LoadProjectionMatrix(projectionMatrix);
+
+            // It seems that the faces are in a wrong order, so we need to flip them
+            GL.invertCulling = invertCulling;
+
+            // Clear the texture
+            if (clear)
+                GL.Clear(true, true, clearColor);
+
+            // Draw the mesh!
+            if (canRender)
+                Graphics.DrawMeshNow(mesh, objectMatrix);
+            else
+                Debug.LogWarning($"[RenderTextureUtils::BlitMesh] Material with shader {material.shader.name} couldn't be rendered!");
+
+            // Pop the projection matrix to set it back to the previous one
+            GL.PopMatrix();
+
+            // Revert culling
+            GL.invertCulling = false;
+
+            // Re-set the RenderTexture to the last used one
+            RenderTexture.active = prevRT;
+        }
+        #endregion
+
+        public static void DrawQuad(this RenderTexture rt, Material material, in Rect rect)
+        {
+            Matrix4x4 objectMatrix = Matrix4x4.TRS(
+                rect.position, Quaternion.identity, rect.size);
+
+            rt.DrawMesh(GetQuad(), material, objectMatrix);
+        }
+
+        public static void DrawSprite(this RenderTexture rt, Texture texture, in Rect rect)
+        {
+            Material material = GetBlitMaterial();
+            material.mainTexture = texture;
+
+            DrawQuad(rt, material, rect);
+        }
+
+        #region Utils
+        public static float Aspect(this Texture rt) => (float)rt.width / rt.height;
+
+        public static Texture2D ConvertToTexture2D(this RenderTexture rt,
+            TextureFormat format = TextureFormat.RGB24,
+            FilterMode filterMode = FilterMode.Bilinear)
+        {
+            Texture2D tex = new Texture2D(rt.width, rt.height, format, false)
+            {
+                filterMode = filterMode
+            };
+
+            RenderTexture prevActive = RenderTexture.active;
+            RenderTexture.active = rt;
+
+            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            tex.Apply();
+
+            RenderTexture.active = prevActive;
+            return tex;
+        }
+        #endregion
     }
 
     #region Helper Enums
@@ -1487,7 +2073,7 @@ namespace BXFW
     /// <summary>
     /// Transform axis, used in 2D space.
     /// <br>NOTE : This is an axis value for position.
-    /// For rotation, please use the <see cref="TransformAxis"/>.</br>
+    /// For rotation, please use the <see cref="TransformAxis"/> (or <see cref="QuatAxis"/>).</br>
     /// </summary>
     public enum TransformAxis2D
     {
@@ -1501,22 +2087,6 @@ namespace BXFW
     #endregion
 
     #region Helper Class / Struct
-    /// <summary>
-    /// Class that contains a reference.
-    /// </summary>
-    public class Ref<T>
-    {
-        private T backing;
-        public T Value
-        {
-            get { return backing; }
-            set { if (value != null) backing = value; }
-        }
-        public Ref(T reference)
-        {
-            backing = reference;
-        }
-    }
     /// <summary>
     /// Serializable dictionary.
     /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>
@@ -1630,7 +2200,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Coroutines to execute. Managed by the EditModeCoroutineExec.
         /// </summary>
-        private static List<IEnumerator> CoroutineInProgress = new List<IEnumerator>();
+        private static readonly List<IEnumerator> CoroutineInProgress = new List<IEnumerator>();
 
         /// <summary>
         /// Default static constructor assigning execution to update.
@@ -1784,7 +2354,6 @@ namespace BXFW.Tools.Editor
                 Debug.LogWarning($"[ShopItemPreviewEditor::CopyPrefabInstanceAndRename] Path received for creating prefab '{path}' is not a path.");
             }
         }
-
         // TODO : Add method to also copy from already existing instance id (overwrite method?)
         #endregion
 
@@ -1797,16 +2366,57 @@ namespace BXFW.Tools.Editor
         /// In these cases use the <returns>return </returns></br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="Exception"/>
+        /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
         public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
         {
-            object target = prop.serializedObject.targetObject;
-            FieldInfo targetInfo = null;
+            if (prop == null)
+                throw new NullReferenceException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
 
-            string[] propertyNames = prop.propertyPath.Split('.');
+            return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
+        }
+        /// <summary>
+        /// Returns the c# object's fieldInfo and the PARENT object it comes with. (this is useful with <see langword="struct"/>)
+        /// <br>Important NOTE : The instance object that gets returned with this method may be null (or not).
+        /// In these cases use the <returns>return </returns></br>
+        /// </summary>
+        /// <param name="prop">Property to get the c# object from.</param>
+        /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
+        public static KeyValuePair<FieldInfo, object> GetParentOfTargetField(this SerializedProperty prop, int parentDepth = 1)
+        {
+            int lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.');
+            for (int i = 1; i < parentDepth; i++)
+                lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.', lastIndexOfPeriod - 1);
+
+            if (lastIndexOfPeriod == -1)
+            {
+                // No depth, instead return the field info from this scriptable object (use the parent scriptable object ofc)
+                var fInfo = GetField(prop.serializedObject.targetObject, prop.name);
+
+                return new KeyValuePair<FieldInfo, object>(fInfo, prop.serializedObject.targetObject);
+            }
+
+            string lastPropertyName = prop.propertyPath.Substring(lastIndexOfPeriod + 1, prop.propertyPath.Length - (lastIndexOfPeriod + 1));
+            string propertyNamesExceptLast = prop.propertyPath.Substring(lastIndexOfPeriod);
+
+            var pair = GetTarget(prop.serializedObject.targetObject, propertyNamesExceptLast);
+
+            return new KeyValuePair<FieldInfo, object>(pair.Key.FieldType.GetField(lastPropertyName), pair.Value);
+        }
+
+        /// <summary>
+        /// Internal method to get parent from these given parameters.
+        /// <br>Traverses <paramref name="targetObjSprop"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
+        /// </summary>
+        /// <exception cref="Exception"/>
+        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object targetObjSprop, string propertyPath)
+        {
+            object target = targetObjSprop; // This is kinda required
+            FieldInfo targetInfo = null;
+            string[] propertyNames = propertyPath.Split('.');
+
             bool isNextPropertyArrayIndex = false;
 
-            for (int i = 0; i < propertyNames.Length && target != null; ++i)
+            for (int i = 0; i < propertyNames.Length && target != null; i++)
             {
                 // Alias the string name. (but we need for for the 'i' variable)
                 string propName = propertyNames[i];
@@ -1825,9 +2435,8 @@ namespace BXFW.Tools.Editor
                     if (m.Success)
                     {
                         var arrayIndex = int.Parse(m.Groups[1].Value);
-                        var targetAsArray = target as IEnumerable;
 
-                        if (targetAsArray == null)
+                        if (!(target is IEnumerable targetAsArray))
                             throw new Exception(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
 
@@ -1848,11 +2457,25 @@ namespace BXFW.Tools.Editor
                         }
 
                         if (!isSuccess)
-                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", prop.propertyPath, targetAsArray));
+                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", propertyPath, targetAsArray));
                     }
-                    else
+                    else // Array parse failure, should only happen on the ends of the array (i.e size field)
                     {
-                        throw new Exception(string.Format("[EditorAdditionals::GetTarget] Invalid array index parsing on string : \"{0}\"", propName));
+                        // Instead of throwing an exception, get the object
+                        // (as this may be called for the 'int size field' on the editor, for some reason)
+                        try
+                        {
+                            targetInfo = GetField(target, propName);
+                            target = targetInfo.GetValue(target);
+                        }
+                        catch
+                        {
+                            // It can also have an non-existent field for some reason
+                            // Because unity, so we give up (with the last information we have)
+                            // Maybe we should print a warning, but it's not too much of a thing (just a fallback)
+
+                            return new KeyValuePair<FieldInfo, object>(targetInfo, target);
+                        }
                     }
                 }
                 else
@@ -2005,37 +2628,36 @@ namespace BXFW.Tools.Editor
         #region Inspector-Editor Draw
         /// <summary>
         /// Make gui area drag and droppable.
-        /// <br>This applies to global gui layout.</br>
         /// </summary>
         public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
+        {
+            var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
+            if (!shouldAcceptDrag) return;
+
+            MakeDroppableAreaGUI(onDragAcceptAction, customRect);
+        }
+        /// <summary>
+        /// Make gui area drag and drop.
+        /// <br>This always accepts drops.</br>
+        /// <br>Usage : <see cref="DragAndDrop.objectReferences"/> is all you need.</br>
+        /// </summary>
+        public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Rect? customRect = null)
         {
             Event evt = Event.current;
             switch (evt.type)
             {
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
-                    Rect dropArea = customRect ?? GUILayoutUtility.GetRect(0.0f, 0.0f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-                    /* Drawing graphics on drop area is not necessary, optional.
-                    GUIStyle Boxstyle = GUI.skin.box;
-                    Boxstyle.fontSize = 24;
-                    Boxstyle.fontStyle = FontStyle.Bold;
-                    Boxstyle.alignment = TextAnchor.MiddleCenter;
-                    GUI.Box(drop_area, "Drop sprites here...", Boxstyle);
-                    */
+                    Rect dropArea = customRect ??
+                        GUILayoutUtility.GetRect(0.0f, 0.0f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+
                     if (!dropArea.Contains(evt.mousePosition))
                         return;
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                    var shouldAcceptDrag = shouldAcceptDragCheck?.Invoke();
 
                     if (evt.type == EventType.DragPerform)
                     {
-                        // dumb, but not doing this 'this' way causes null exception.
-                        if (shouldAcceptDrag.HasValue)
-                        {
-                            if (!shouldAcceptDrag.Value) return;
-                        }
-
                         DragAndDrop.AcceptDrag();
                         onDragAcceptAction?.Invoke();
                     }
@@ -2189,6 +2811,34 @@ namespace BXFW.Tools.Editor
             }
         }
 
+        /// <summary>
+        /// Gets visible children of `SerializedProperty` at 1 level depth.
+        /// </summary>
+        /// <param name="serializedProperty">Parent `SerializedProperty`.</param>
+        /// <returns>Collection of `SerializedProperty` children.</returns>
+        public static IEnumerable<SerializedProperty> GetVisibleChildren(this SerializedProperty serializedProperty)
+        {
+            SerializedProperty currentProperty = serializedProperty.Copy();
+            SerializedProperty nextSiblingProperty = serializedProperty.Copy();
+            {
+                nextSiblingProperty.NextVisible(false);
+            }
+
+            if (currentProperty.NextVisible(true))
+            {
+                do
+                {
+                    if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
+                        break;
+
+                    // Use '.Copy' for making 'Linq ToArray' work
+                    using var ret = currentProperty.Copy();
+                    yield return ret;
+                }
+                while (currentProperty.NextVisible(false));
+            }
+        }
+
         [Flags]
         public enum EditorListOption
         {
@@ -2292,7 +2942,7 @@ namespace BXFW.Tools.Editor
             EditorGUI.indentLevel = prev_indent + 2;
             // Create the size & dropdown field
             GUILayout.BeginHorizontal();
-            //toggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, new GUIContent(EditorGUIUtility.IconContent(UInternal_PopupTex)));
+
             var currToggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
             EditorGUILayout.LabelField(string.Format("{0} List", typeof(T).Name), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
@@ -2339,45 +2989,6 @@ namespace BXFW.Tools.Editor
             // Keep previous indent
             EditorGUI.indentLevel = prev_indent;
             return currToggleDropdwnState;
-        }
-
-        /// <summary>
-        /// Draws a straight line in editor.
-        /// </summary>
-        /// <param name="color">Color of the line.</param>
-        /// <param name="thickness">Thiccness of the line.</param>
-        /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
-        public static void DrawUILine(Color color, int thickness = 2, int padding = 10)
-        {
-            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
-            r.height = thickness;
-            r.y += padding / 2;
-            r.x -= 2;
-            r.width += 6;
-            EditorGUI.DrawRect(r, color);
-        }
-        /// <summary>
-        /// Draws a ui line and returns the padded position rect.
-        /// </summary>
-        /// <param name="parentRect">Parent rect to draw relative to.</param>
-        /// <param name="color">Color of the line.</param>
-        /// <param name="thickness">Thiccness of the line.</param>
-        /// <param name="padding">Padding of the line. (Space left for the line, between properties)</param>
-        /// <returns>The new position target rect, offseted.</returns>
-        public static Rect DrawUILine(Rect parentRect, Color color, int thickness = 2, int padding = 3)
-        {
-            // Rect that is passed as an parameter.
-            Rect drawRect = new Rect(parentRect.position, new Vector2(parentRect.width, thickness));
-
-            drawRect.y += padding / 2;
-            drawRect.x -= 2;
-            drawRect.width += 6;
-
-            // Rect with proper height.
-            Rect returnRect = new Rect(new Vector2(parentRect.position.x, drawRect.position.y + (thickness + padding)), parentRect.size);
-            EditorGUI.DrawRect(drawRect, color);
-
-            return returnRect;
         }
         #endregion
     }
@@ -2475,7 +3086,7 @@ namespace BXFW.ScriptEditor
             if (target.Key.FieldType != typeof(Sprite))
             {
                 // Same story, calling 'GetPropertyHeight' before drawing gui or not allowing to dynamically change height while drawing is dumb
-                addHeight += warnHelpBoxRectHeight; 
+                addHeight += warnHelpBoxRectHeight;
             }
             else
             {
@@ -2493,8 +3104,8 @@ namespace BXFW.ScriptEditor
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))
             {
-                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, position.height), 
-                    string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name), 
+                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, position.height),
+                    string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
                     MessageType.Warning);
                 return;
             }
@@ -2531,7 +3142,7 @@ namespace BXFW.ScriptEditor
         {
             targetAttribute = (InspectorLineAttribute)property.GetTarget().Key.GetCustomAttribute(typeof(InspectorLineAttribute));
 
-            var posRect = EditorAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
+            var posRect = GUIAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
             EditorGUI.PropertyField(posRect, property, label, true);
         }
     }

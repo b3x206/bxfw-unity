@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -7,12 +9,18 @@ namespace BXFW
     /// <summary>
     /// Touch field with movement delta.
     /// </summary>
-    public class TouchDragField : Selectable
+    public class TouchDragField : Selectable, IDragHandler
     {
         /// <summary> Movement delta for the TouchField. </summary>
         public Vector2 DragDelta { get; private set; }
         /// <summary> Whether if the drag field is being dragged. </summary>
         public bool Pressed { get; private set; }
+
+        public bool UseDragHandler = false;
+
+        [Serializable]
+        public sealed class DragEvent : UnityEvent<Vector2> { }
+        public DragEvent OnDragField;
 
         protected int PointerId;
         private Vector2 PointerOld;
@@ -21,6 +29,9 @@ namespace BXFW
         // Update Movement
         private void Update()
         {
+            if (UseDragHandler)
+                return;
+
             if (Pressed)
             {
                 // Cache the touch if pressed
@@ -40,6 +51,9 @@ namespace BXFW
                     DragDelta = new Vector2(Input.mousePosition.x, Input.mousePosition.y) - PointerOld;
                     PointerOld = Input.mousePosition;
                 }
+
+                if (DragDelta != Vector2.zero)
+                    OnDragField?.Invoke(DragDelta);
             }
             else
             {
@@ -62,6 +76,16 @@ namespace BXFW
             if (!IsInteractable()) return;
 
             Pressed = false;
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (!UseDragHandler) return;
+            if (!IsInteractable()) return;
+ 
+            DragDelta = eventData.delta;
+            if (eventData.delta != Vector2.zero)
+                OnDragField?.Invoke(eventData.delta);
         }
     }
 }

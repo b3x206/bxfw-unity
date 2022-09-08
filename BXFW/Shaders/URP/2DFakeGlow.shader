@@ -7,12 +7,11 @@ Shader "Custom/Sprite/2DFakeGlow"
 {
     Properties
     {
-        _Color ("Color", Color) = (1,1,1,1)
+        [MainTexture]_MainTex("Texture", 2D) = "white" {}
+        [MainColor] _Color("Color", Color) = (1,1,1,1)
         [HDR] _OutlineColor("Emission Color", Color) = (1,1,1,1)
-        //_GlowOutlineSize("Glow Outline (Added)", Range(0.0, 1.0)) = 0.2 
         _GlowThickness("Glow Thickness", Range(0.0, 2.0)) = .5
         _GlowMaxAlphaThreshold("Glow Alpha Threshold (Edge Glow)", Range(0.01, 1)) = .88
-        _MainTex ("Texture", 2D) = "white" {}
     }
     SubShader
     {
@@ -95,7 +94,6 @@ Shader "Custom/Sprite/2DFakeGlow"
             
             // Basically this only renders the edge in an additive context.
             CGPROGRAM
-            // Standard lib for : TRANSFORM_TEX and such
             #include "UnityCG.cginc"
 
             #pragma vertex vert
@@ -105,8 +103,8 @@ Shader "Custom/Sprite/2DFakeGlow"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             // Other
-            fixed4 _Color;
-            float4 _OutlineColor; // float4 because hdr
+            float4 _Color;
+            float4 _OutlineColor;
             float _GlowThickness;
             float _GlowMaxAlphaThreshold;
 

@@ -17,48 +17,6 @@ namespace BXFW.UI
         [Serializable]
         public class TabButtonUnityEvent : UnityEvent<Image, TabButton> { }
 
-        /// <summary>
-        /// Tab button content.
-        /// <br>Contents set null will be hidden while contents set non-null will be shown.</br>
-        /// </summary>
-        [Serializable]
-        public class Content
-        {
-            [Tooltip("Text content that this button stores.")] [TextArea] public string text;
-            // [Tooltip("Tooltip content that this button stores.")] public string tooltip; (TODO : Unity UI tooltips system.)
-            [InspectorBigSpriteField, Tooltip("Sprite content.")] public Sprite image;
-            [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
-            public bool receiveContentFromComponents = false;
-
-            public Content()
-            { }
-
-            /// <summary>
-            /// Creates a tab button content with an image.
-            /// </summary>
-            public Content(Sprite image)
-            {
-                this.image = image;
-            }
-
-            /// <summary>
-            /// Creates a tab button content with a text.
-            /// </summary>
-            public Content(string text)
-            {
-                this.text = text;
-            }
-
-            /// <summary>
-            /// Creates a tab button content with a text & image.
-            /// </summary>
-            public Content(string text, Sprite image)
-            {
-                this.text = text;
-                this.image = image;
-            }
-        }
-
         // primary type
         public FadeType FadeType { get { return ParentTabSystem.ButtonFadeType; } }
 
@@ -95,7 +53,16 @@ namespace BXFW.UI
             }
         }
 
-        public bool Interactable { get { return ParentTabSystem.Interactable; } }
+        [SerializeField] private bool mInteractable = true;
+        /// <summary>
+        /// Whether if this button is interactable.
+        /// <br>Note : The parent tab system's interactability overrides this buttons.</br>
+        /// </summary>
+        public bool Interactable
+        {
+            get { return ParentTabSystem.Interactable && mInteractable; }
+            set { mInteractable = value; }
+        }
 
         [Header(":: Tab Button Reference")]
         [SerializeField] private TMP_Text buttonText;
@@ -167,8 +134,9 @@ namespace BXFW.UI
                     ButtonText.gameObject.SetActive(false);
                 }
             }
-            else if (Application.isPlaying && !onValidateCall)
+            else if (Application.isPlaying && !onValidateCall && !string.IsNullOrWhiteSpace(ButtonContent.text))
             {
+                // Print only if tried to set content
                 Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonText field in button \"{transform.GetPath()}\" is null.");
             }
 
@@ -189,7 +157,7 @@ namespace BXFW.UI
                     ButtonImage.gameObject.SetActive(false);
                 }
             }
-            else if (Application.isPlaying && !onValidateCall)
+            else if (Application.isPlaying && !onValidateCall && ButtonContent.image != null)
             {
                 Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonImage field in button \"{transform.GetPath()}\" is null.");
             }
@@ -338,7 +306,7 @@ namespace BXFW.UI
             if (ParentTabSystem.FadeSubtractFromCurrentColor)
                 Target = TargetIsPrevColor ? Target : CurrentPrevColor - Target;
             // else, leave it unchanged
-            
+
             if (!Application.isPlaying)
             {
                 // Set the color instantly as the 'UnityEditor' doesn't support tween.

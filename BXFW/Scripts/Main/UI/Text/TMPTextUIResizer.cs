@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BXFW.UI
 {
@@ -7,7 +8,7 @@ namespace BXFW.UI
     /// Size constraint, containing the entire 'TextMeshPro' text inside as a rect transform.
     /// <br>Useful for stuff such as "Resizing Text backgrounds" and others.</br>
     /// </summary>
-    [ExecuteAlways, RequireComponent(typeof(RectTransform))]
+    [ExecuteAlways, RequireComponent(typeof(RectTransform)), DisallowMultipleComponent]
     public class TMPTextUIResizer : UICustomResizer
     {
         [Header(":: References")]
@@ -17,12 +18,18 @@ namespace BXFW.UI
         {
             get
             {
+                // If you don't return null if target is null it throw error
                 if (target == null)
-                    return null; // This is a bad coding pattern moment, we have to do it like this to make it a RectTransform
-                                 // Otherwise we get a null exception (basically null is error handling for the base class)
+                    return null; 
 
                 return target.rectTransform;
             }
+        }
+        
+        protected override void OnCoroutineUpdate()
+        {
+            if (TryGetComponent(out Graphic g) && target != null)
+                g.enabled = !string.IsNullOrWhiteSpace(target.text);
         }
 
         protected override Vector2 GetTargetSize()

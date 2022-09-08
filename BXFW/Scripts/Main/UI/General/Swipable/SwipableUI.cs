@@ -11,7 +11,7 @@ namespace BXFW.UI
     /// Swipable UI canvas with menus.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public class SwipableUI : UIBehaviour, IDragHandler, IEndDragHandler
+    public class SwipableUI : UIBehaviour, IDragHandler, IEndDragHandler, IScrollHandler
     {
         #region Event Class
         [System.Serializable]
@@ -29,6 +29,14 @@ namespace BXFW.UI
         public float ClampContentDragOnMenuEnd = 200f;
         /// <summary>The swipe threshold. This controls the amount of swipe required to go to the next menu.</summary>
         [Range(0.01f, 2f)] public float PercentSwipeToOtherMenuThreshold = .25f;
+        /// <summary>
+        /// Controls the scroll sensitivity (of the scroll handler).
+        /// </summary>
+        public float ScrollSwipeSensitivity = 1f;
+        /// <summary>
+        /// Time to wait before applying scroll. (OnEndDrag call)
+        /// </summary>
+        public float ScrollDeltaWaitTime = .3f;
         /// <summary>
         /// The swipe animation duration. 
         /// This controls the length of animation of the swipe after <see cref="IEndDragHandler.OnEndDrag(PointerEventData)"/> is called.
@@ -75,6 +83,10 @@ namespace BXFW.UI
         }
 
         // -- Private
+        private PointerEventData _ScrollBeginData;
+        private Vector2 _ScrollPos;
+        private float _CurrentScrollDeltaWait = 0f;
+
         private Vector2 ContainerInitialPosition;
         private Coroutine CurrentSwipeToOtherCoroutine;
         #endregion
@@ -164,6 +176,35 @@ namespace BXFW.UI
         #endregion
 
         #region Menu Drag
+        private void Update()
+        {
+            if (_ScrollBeginData == null) return;
+
+            if (_CurrentScrollDeltaWait <= ScrollDeltaWaitTime)
+            {
+                OnEndDrag(_ScrollBeginData);
+                _ScrollBeginData = null;
+            }
+
+            _CurrentScrollDeltaWait += Time.deltaTime;
+        }
+        public void OnScroll(PointerEventData data)
+        {
+            // Disable scroll if no sensitivity
+            if (ScrollSwipeSensitivity <= 0f) return;
+
+            if (_ScrollBeginData == null)
+            {
+                _ScrollBeginData = data;
+                _ScrollPos = data.position;
+            }
+
+            _CurrentScrollDeltaWait = 0f;
+            _ScrollPos += data.scrollDelta * (ScrollSwipeSensitivity * 100f);
+            _ScrollBeginData.position = _ScrollPos;
+
+            OnDrag(_ScrollBeginData);
+        }
         public void OnDrag(PointerEventData data)
         {
             if (!Interactable)

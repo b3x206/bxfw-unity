@@ -11,7 +11,7 @@
 ///     <example>
 ///     // basically dotween but crappier
 ///     objectOrPropertyThatHasTypeThatSupportsBXTweenExtensions.BXTw{ExtensionContext}({EndValue}, {Duration});
-///     // or you can start a manual one
+///     // or you can start a manual one (this doc is not up to date, you have to put parameters that isnt a delegate on start)
 ///     BXTween.To((supportedType t) => 
 ///     {
 ///         // Setter function goes here, example one looks like :
@@ -37,13 +37,20 @@
 ///     3 : Very coding pattern (what)
 /// 
 /// But why did you spend effort on this? there are better alternatives :
-///     I don't know, but yeah
+///     I don't know
+/// 
+/// Okay, but i am still not convinced yet.
+///     cool, i will convince
+///     It has, uh, properties. yeah and it also has lackluster support of shortcut methods
+///     In fact half of the source code lines are shortcut methods (this (type name) variableName).
+/// 
 /// </remarks>
 
 /** -------------------------------------------------- 
 /// General TODO:
 /// 1: Make BXTweenCore mostly static (BXTweenCore will become only a coroutine runner) 
 ///    & make the coroutine runner generic (use a dictionary of delegates for lerp? idk)
+/// 2: Lower boilerplate (Flags.VeryHard | Flags.GoneWrong)
 * -------------------------------------------------- **/
 
 using System;
@@ -66,7 +73,9 @@ using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening
 {
-    /// Solution for stylized print strings. (for+++hh9jhfjh??j);,
+    /// Solution for stylized print strings. 
+    /// note : (for+++hh9jhfjh??j); please put this code
+    /// (thank you sister for valuable feedback, i will fix this)
     /// <summary>
     /// Constant strings for <see cref="BXTween"/> messages.
     /// <br>Doesn't apply styling on builds of the game.</br>
@@ -279,7 +288,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public static readonly string Warn_BXTwPropertyTwNull =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenContext]", true),
-                LogRich("The tween property is null. Make sure you assign all properties in your inspector. If you did that, it's probably an internal error."));
+                LogRich("The tween property is null. Make sure you assign all fields in your inspector / code. If you did that, it's probably an internal error."));
         public static readonly string Warn_BXTwCTXTimeCurveNull =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCTX::SetCustomCurve]", true),
@@ -414,7 +423,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     /// Core of the BXTweenCore.
     /// <br>Dispatches the coroutines.</br>
     /// </summary>
-    [ExecuteAlways()]
+    [ExecuteAlways]
     public class BXTweenCore : MonoBehaviour
     {
         #region BXTweenCore Functions
@@ -532,6 +541,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp
                 // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
                 var SetValue = (int)Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -651,6 +661,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 // Set lerp
                 // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
                 var SetValue = Mathf.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -761,6 +772,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Set lerp
                 var SetValue = Color.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -870,6 +882,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Set lerp
                 var SetValue = Vector2.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -979,6 +992,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Set lerp (Conditional for unclamped)
                 var SetValue = Vector3.LerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -1088,6 +1102,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Set lerp (Conditional for unclamped)
                 var SetValue = Quaternion.SlerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -1197,6 +1212,7 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
 
                 // Set lerp (Conditional for unclamped)
                 var SetValue = BXTweenCustomLerp.MatrixLerpUnclamped(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                ctx.CurrentElapsed = Elapsed;
 
                 try
                 {
@@ -1308,6 +1324,8 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     { yield return null; }
                 }
 
+                aCtx.CurrentElapsed += frameSec;
+
                 try
                 {
                     aCtx.SetterFunction(i);
@@ -1370,8 +1388,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         // (this means that we assume the top left corner is the transform's center and the center is relative to that. we don't want that)
         // Meaning that it's not an actual (canvas) position.
         // Because of this, use this method that returns the actual rect of the RectTransform
+        // (basically centered size, the unity UGUI is not compatible with the 'GUI' class)
         /// <summary>
-        /// Returns the canvas-appopriate positioned version of <see cref="RectTransform.rect"/>.
+        /// Returns the canvas-appopriate, centered by localPosition version of <see cref="RectTransform.rect"/>.
         /// </summary>
         public static Rect GetCanvasRect(this RectTransform transform)
         {
@@ -2750,7 +2769,10 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                 return _TwContext;
             }
         }
-        public bool IsValidContext => IsTweenableType(typeof(T)).Key;
+        /// <summary>
+        /// Returns whether if the given type of this property is valid.
+        /// </summary>
+        public bool IsValidContextType => IsTweenableType(typeof(T)).Key;
 
         // ---- Private ---- //
         private BXTweenSetMethod<T> _Setter;
@@ -3071,6 +3093,12 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         /// The current value of the coroutine.
         /// </summary>
         public T CurrentValue { get; private set; }
+        /// <summary>
+        /// Current state of the tween.
+        /// <br>A value that goes from 0 to 1.</br>
+        /// <br>NOTE : This value only moves linearly. To add ease use the <see cref="BXTweenEase"/> methods.</br>
+        /// </summary>
+        public float CurrentElapsed { get; internal set; }
         /// <summary>
         /// The coroutine elapsed value.
         /// <br>This value is bigger than -1 when the coroutine starts.</br>

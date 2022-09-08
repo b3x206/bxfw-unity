@@ -2,10 +2,10 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered From Texture"
 {
     Properties 
     {
-        _Color ("Color", Color) = (1,1,1,1)
-        _MainTex ("Main Texture", 2D) = "white" {}
-        _DitherScale ("Dither Scale", Float) = 10
-        [NoScaleOffset] _DitherTex ("Dither Texture", 2D) = "white" {}
+        [MainColor] _Color("Color", Color) = (1,1,1,1)
+        [MainTexture] _MainTex("Main Texture", 2D) = "white" {}
+        _DitherScale("Dither Scale", Float) = 10
+        [NoScaleOffset] _DitherTex("Dither Texture", 2D) = "white" {}
         [MaterialToggle] _ShadowDisappear("Allow Shadow Disappear", float) = 1
     }
 

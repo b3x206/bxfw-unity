@@ -47,7 +47,8 @@ namespace BXFW.UI
                 int prevValue = _TabButtonAmount;
                 // The weird value is because that the 'TabButtonAmount' will kill your pc if not clampped.
                 _TabButtonAmount = Mathf.Clamp(value, 0, ushort.MaxValue);
-                GenerateTabs(prevValue);
+                if (prevValue != value) // Generate if value is changed
+                    GenerateTabs(prevValue);
             }
         }
         [SerializeField] private int _TabButtonAmount = 1;
@@ -217,7 +218,14 @@ namespace BXFW.UI
                         }
                         if (Application.isPlaying)
                         {
-                            Destroy(TabButtons[i].gameObject);
+                            if (TabButtons[i] != null)
+                                Destroy(TabButtons[i].gameObject);
+                            else
+                            {
+                                // Tab button is null, call CleanTabButtonsList
+                                CleanTabButtonsList();
+                                continue;
+                            }
                         }
                     }
 
@@ -263,7 +271,14 @@ namespace BXFW.UI
                 }
                 if (Application.isPlaying)
                 {
-                    Destroy(TabButtons[TabButtons.Count - 1].gameObject);
+                    if (TabButtons[TabButtons.Count - 1] != null)
+                        Destroy(TabButtons[TabButtons.Count - 1].gameObject);
+                    else
+                    {
+                        // Tab button is null, call CleanTabButtonsList
+                        CleanTabButtonsList();
+                        continue;
+                    }
                 }
 
                 CleanTabButtonsList();

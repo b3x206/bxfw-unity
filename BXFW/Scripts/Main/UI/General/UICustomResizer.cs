@@ -21,6 +21,10 @@ namespace BXFW.UI
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;
 
         /// <summary>
+        /// Should this gameobject hide itself?
+        /// </summary>
+        protected virtual bool ShouldDisable { get; }
+        /// <summary>
         /// Return the target object here.
         /// </summary>
         protected abstract RectTransform ObjectTarget { get; }
@@ -66,6 +70,10 @@ namespace BXFW.UI
 
             StopAllCoroutines();
         }
+        /// <summary>
+        /// An update method that guarantees the parameters.
+        /// </summary>
+        protected virtual void OnCoroutineUpdate() { }
 
         // Update
 #if UNITY_EDITOR
@@ -117,6 +125,8 @@ namespace BXFW.UI
                 }
 
                 UpdateRectTransform();
+
+                OnCoroutineUpdate();
             }
         }
         /// <summary>

@@ -3,8 +3,8 @@ Shader "Custom/Unlit/UnlitColorShader"
 {
     Properties
     {
-        _Color("Main Color", Color) = (1,1,1,1)
-        _MainTex("Base (RGB)", 2D) = "white" {}
+        [MainColor] _Color("Main Color", Color) = (1,1,1,1)
+        [MainTexture] _MainTex("Base (RGB)", 2D) = "white" {}
     }
     
     Category

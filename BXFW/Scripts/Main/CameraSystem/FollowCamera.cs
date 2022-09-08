@@ -28,6 +28,9 @@ namespace BXFW
         [Range(.05f, 50f)] public float Rotation_Damp = 2f;
         [Range(.05f, 50f)] public float Move_Damp = 2f;
 
+        /// <summary>
+        /// An offset for the camera following.
+        /// </summary>
         [System.Serializable]
         public struct CameraOffset
         {
@@ -51,7 +54,7 @@ namespace BXFW
             get { return _CurrentCameraOffsetIndex; }
             set { _CurrentCameraOffsetIndex = Mathf.Clamp(value, 0, CameraOffsetTargets.Length - 1); }
         }
-        /// <summary>The <see cref="UnityEngine.Events.UnityEvent{T0}"/> based setter.</summary>
+        /// <summary>The <see cref="UnityEngine.Events.UnityEvent{T0}"/> setter.</summary>
         public void SetCurrentCameraOffsetIndex(int Offset)
         { CurrentCameraOffsetIndex = Offset; }
 

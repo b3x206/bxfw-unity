@@ -1,6 +1,10 @@
 # Ignore this directory intentionally.
 [Pp]layer[Cc]ontroller3[Dd]/
 
+# Ignore files (these are not complete, and i am actually not planning on adding these)
+RangeFloat.cs
+RFAttribute.cs
+
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
@@ -15,7 +19,7 @@
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 # !/[Aa]ssets/**/*.meta (just in case)
-# Ignore all meta.
+# Ignore all meta. (this asset is script only)
 *.meta
 
 # Uncomment this line if you wish to ignore the asset store tools plugin

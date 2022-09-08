@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -31,11 +33,13 @@ namespace BXFW
         {
             _list.Add(item);
 
+            OnArrayAdded(_list.Count - 1, item);
             OnArrayUpdated();
         }
 
         public void Clear()
         {
+            OnArrayRemovedRange(0, _list);
             _list.Clear();
 
             OnArrayUpdated();
@@ -53,10 +57,10 @@ namespace BXFW
 
         public bool Remove(T item)
         {
+            OnArrayRemoved(_list.FindIndex(i => EqualityComparer<T>.Default.Equals(i, item)), item);
             bool output = _list.Remove(item);
 
             OnArrayUpdated();
-
             return output;
         }
 
@@ -72,25 +76,28 @@ namespace BXFW
         {
             _list.Insert(index, item);
 
+            OnArrayAdded(index, item);
             OnArrayUpdated();
         }
 
         public void RemoveAt(int index)
         {
-            _list.RemoveAt(index);
-
             OnArrayUpdated();
+
+            _list.RemoveAt(index);
         }
 
         public void AddRange(IEnumerable<T> collection)
         {
             _list.AddRange(collection);
 
+            OnArrayAddedRange(_list.Count - (collection.Count() + 1), collection);
             OnArrayUpdated();
         }
 
         public void RemoveAll(Predicate<T> predicate)
         {
+            OnArrayRemovedRange(0, _list.FindAll(predicate));
             _list.RemoveAll(predicate);
 
             OnArrayUpdated();
@@ -100,18 +107,24 @@ namespace BXFW
         {
             _list.InsertRange(index, collection);
 
+            OnArrayAddedRange(index, collection);
             OnArrayUpdated();
         }
 
         public void RemoveRange(int index, int count)
         {
-            _list.RemoveRange(index, count);
+            OnArrayRemovedRange(index, _list.GetRange(index, count));
 
+            _list.RemoveRange(index, count);
             OnArrayUpdated();
         }
 
-        public abstract void OnArrayUpdated();
-        public abstract void OnArrayChanged(int index, T oldValue, T newValue);
+        protected abstract void OnArrayUpdated([CallerMemberName] string a = "metho");
+        protected abstract void OnArrayChanged(int index, T oldValue, T newValue);
+        protected abstract void OnArrayAdded(int index, T added);
+        protected abstract void OnArrayAddedRange(int index, IEnumerable<T> added);
+        protected abstract void OnArrayRemoved(int index, T removed);
+        protected abstract void OnArrayRemovedRange(int index, IEnumerable<T> removed);
 
         public T this[int index]
         {
@@ -142,12 +155,32 @@ namespace BXFW
     public class ObservedList<T> : ObservedListBase<T>
     {
         public delegate void ChangedDelegate(int index, T oldValue, T newValue);
+        public delegate void AddRemoveDelegate(int index, T updatedElement);
+        public delegate void AddRemoveRangeDelegate(int index, IEnumerable<T> updatedElement);
 
         /// <summary>
         /// Called when the list content is changed.
         /// <br>This is (usually) invoked by <see cref="this[int]"/>'s setter.</br>
         /// </summary>
         public event ChangedDelegate Changed;
+        /// <summary>
+        /// Called when the singular <see cref="ObservedListBase{T}.Add(T)"/> is called.
+        /// <br>For multiple adds, use <see cref="OnAddRange"/> instead.</br>
+        /// </summary>
+        public event AddRemoveDelegate OnAdd;
+        /// <summary>
+        /// Called when multiple objects are added to this array.
+        /// </summary>
+        public event AddRemoveRangeDelegate OnAddRange;
+        /// <summary>
+        /// Called when multiple objects are removed from this array.
+        /// </summary>
+        public event AddRemoveRangeDelegate OnRemoveRange;
+        /// <summary>
+        /// Called when the singular <see cref="ObservedListBase{T}.Remove(T)"/> is called.
+        /// <br>For multiple removals, use <see cref="OnRemoveRange"/> instead.</br>
+        /// </summary>
+        public event AddRemoveDelegate OnRemove;
         /// <summary>
         /// Called when anything happens to a list.
         /// <br>This includes adding and removing, unlike the <see cref="Changed"/> event.</br>
@@ -164,23 +197,43 @@ namespace BXFW
             _list = new List<T>(list);
         }
 
-        public override void OnArrayUpdated()
+        protected override void OnArrayUpdated([CallerMemberName] string mems = "Method")
         {
+            Debug.Log($"OnArrayUpdated from {mems}");
             Updated?.Invoke();
         }
-        public override void OnArrayChanged(int index, T oldValue, T newValue)
+        protected override void OnArrayChanged(int index, T oldValue, T newValue)
         {
             Changed?.Invoke(index, oldValue, newValue);
+        }
+        protected override void OnArrayAdded(int index, T added)
+        {
+            OnAdd?.Invoke(index, added);
+        }
+        protected override void OnArrayAddedRange(int index, IEnumerable<T> added)
+        {
+            OnAddRange?.Invoke(index, added);
+        }
+        protected override void OnArrayRemoved(int index, T removed)
+        {
+            OnRemove?.Invoke(index, removed);
+        }
+        protected override void OnArrayRemovedRange(int index, IEnumerable<T> removed)
+        {
+            OnRemoveRange?.Invoke(index, removed);
         }
     }
 
     /// <summary>
     /// List that also has a <see cref="UnityEvent"/> for editing the events in the inspector.
+    /// <br>For other delegates of the <see cref="ObservedList{T}"/>, register to them from code. (Using the <see cref="unityUpdated"/>)</br>
     /// </summary>
     [Serializable]
     public class ObservedUnityEventList<T> : ObservedList<T>
     {
         public class ChangedDelegateUnityEvent : UnityEvent<int, T, T> { }
+
+        public class UpdatedUnityEvent : UnityEvent<ObservedUnityEventList<T>> { }
 
         /// <summary>
         /// Called when the list content is changed.
@@ -188,8 +241,9 @@ namespace BXFW
         public ChangedDelegateUnityEvent unityChanged;
         /// <summary>
         /// Called when anything happens to a list.
+        /// <br>Passes the class itself as an parameter.</br>
         /// </summary>
-        public UnityEvent unityUpdated;
+        public UpdatedUnityEvent unityUpdated;
 
         public ObservedUnityEventList() { }
         public ObservedUnityEventList(List<T> list)
@@ -201,12 +255,12 @@ namespace BXFW
             _list = new List<T>(list);
         }
 
-        public override void OnArrayUpdated()
+        protected override void OnArrayUpdated([CallerMemberName] string mems = "Method")
         {
             base.OnArrayUpdated();
-            unityUpdated?.Invoke();
+            unityUpdated?.Invoke(this);
         }
-        public override void OnArrayChanged(int index, T oldValue, T newValue)
+        protected override void OnArrayChanged(int index, T oldValue, T newValue)
         {
             base.OnArrayChanged(index, oldValue, newValue);
             unityChanged?.Invoke(index, oldValue, newValue);

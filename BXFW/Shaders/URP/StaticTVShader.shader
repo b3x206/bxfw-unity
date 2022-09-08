@@ -11,11 +11,11 @@ Shader "Custom/TVStatic"
      
     Properties
     {
-        _ColorA ("Color A", Color) = (1,1,1,1)
-        _ColorB ("Color B", Color) = (0,0,0,0)
+        _ColorA("Color A", Color) = (1,1,1,1)
+        _ColorB("Color B", Color) = (0,0,0,0)
            
-        _ResX ("X Resolution", Float) = 100
-        _ResY ("Y Resolution", Float) = 200
+        _ResX("X Resolution", Float) = 100
+        _ResY("Y Resolution", Float) = 200
            
         _ScaleWithZoom("Scale With Cam Distance", Range(0,1)) = 1.0
            

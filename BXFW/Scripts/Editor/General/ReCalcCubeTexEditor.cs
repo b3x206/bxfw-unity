@@ -98,7 +98,7 @@ namespace BXFW.ScriptEditor
             base.OnInspectorGUI();
 
             // Draw line
-            EditorAdditionals.DrawUILine(new Color(.5f, .5f, .5f));
+            GUIAdditionals.DrawUILineLayout(new Color(.5f, .5f, .5f));
 
             // Button to recalculate
             if (GUILayout.Button("Re-Calculate Cube texture."))

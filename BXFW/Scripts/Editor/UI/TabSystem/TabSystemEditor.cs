@@ -69,10 +69,12 @@ namespace BXFW.ScriptEditor
             GUILayout.EndHorizontal();
             // Show warning if TabButtonAmount is 0 or lower.
             if (TBtnAmount <= 0)
-                EditorGUILayout.HelpBox("Warning : TabSystem is disabled. To enable it again set TabButtonAmount to 1 or more.", MessageType.Warning);
+                EditorGUILayout.HelpBox("TabSystem is disabled. To enable it again set TabButtonAmount to 1 or more.", MessageType.Warning);
 
             EditorGUILayout.PropertyField(tabSO.FindProperty(nameof(Target.ButtonFadeType)));
             var CRefTB = EditorGUILayout.IntField(nameof(Target.CurrentReferenceTabButton), Target.CurrentReferenceTabButton);
+
+            var TInteractable = EditorGUILayout.Toggle("Interactable", Target.Interactable);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fade Settings", EditorStyles.boldLabel);
@@ -122,6 +124,10 @@ namespace BXFW.ScriptEditor
                 if (Target.TabButtonAmount != TBtnAmount)
                 {
                     Target.TabButtonAmount = TBtnAmount;
+                }
+                if (Target.Interactable != TInteractable)
+                {
+                    Target.Interactable = TInteractable;
                 }
 
                 Target.CurrentReferenceTabButton = CRefTB;

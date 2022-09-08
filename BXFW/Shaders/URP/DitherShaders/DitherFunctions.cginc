@@ -24,8 +24,8 @@ float isDithered(float2 pos, float alpha, float dtResScale)
         16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0
     };
 
-    // ogl2 requires us to use 'fmod()' modulus function.
-    // (because in ogl2 we don't really know if a variable is a float or an int type)
+    // shader model 2 requires us to use 'fmod()' modulus function.
+    // (because in model 2 we don't really know if a variable is a float or an int type)
     uint index = fmod(uint(pos.x), 4U) * 4U + fmod(uint(pos.y), 4U);
     return alpha - DITHER_THRESHOLDS[index];
 }

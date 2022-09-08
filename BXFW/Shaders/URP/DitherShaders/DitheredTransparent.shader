@@ -3,8 +3,8 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
 {
     Properties 
     {
-        _Color ("Color", Color) = (1,1,1,1)
-        _MainTex ("Main Texture", 2D) = "white" {}
+        [MainColor] _Color("Color", Color) = (1, 1, 1, 1)
+        [MainTexture] _MainTex("Main Texture", 2D) = "white" {}
         [Enum(Full,1, Half,2, OneThird,3, Quarter,4, OneEighth,8)] _DitherResolution("Dither Resolution", float) = 1.0 // Use 'Enum' keyword for custom values.
         [MaterialToggle] _ShadowDisappear("Allow Shadow Disappear", int) = 1
     }
