@@ -1,9 +1,11 @@
 ﻿// Standard
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
+using BXFW.Tools.Editor;
 #endif
 
 using System;
@@ -19,10 +21,6 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
-using BXFW.Tools.Editor;
-using TMPro;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
-using Unity.Plastic.Newtonsoft.Json.Linq;
 
 namespace BXFW
 {
