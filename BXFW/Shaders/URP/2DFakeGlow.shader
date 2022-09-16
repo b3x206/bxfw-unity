@@ -73,15 +73,7 @@ Shader "Custom/Sprite/2DFakeGlow"
                 // Add standard color
                 col *= _Color;
                 col *= i.color;
-                //// Draw outline
-                //// Thicc offseted uv
-                //fixed4 tOutlineUVLeft = tex2D(_MainTex, float2(i.uv.x - _GlowOutlineSize, i.uv.y));
-                //fixed4 tOutlineUVRight = tex2D(_MainTex, float2(i.uv.x + _GlowOutlineSize, i.uv.y));
-                //fixed4 tOutlineUVUp = tex2D(_MainTex, float2(i.uv.x, i.uv.y + _GlowOutlineSize));
-                //fixed4 tOutlineUVDown = tex2D(_MainTex, float2(i.uv.x, i.uv.y - _GlowOutlineSize));
-                //// Do the same for up & down and add both outline diffs
-                //float outlineDiff = col.a - clamp(tOutlineUVLeft.a + tOutlineUVRight.a + tOutlineUVUp.a + tOutlineUVDown.a, 0, 1);
-                //col += outlineDiff;
+
                 return col;
             }
             ENDCG
@@ -146,7 +138,9 @@ Shader "Custom/Sprite/2DFakeGlow"
                 float stepAlphaTexture = step(texColor.a, 0.0); // Gets the edge of alpha (note : this edge is rough)
                 float stepAlphaTextureOffset = 0.0;
                 if (texColor.a < _GlowMaxAlphaThreshold)
+                {
                     stepAlphaTextureOffset = lerp(0, texColor.a, _GlowThickness); // Gets the edge of the alpha with offset
+                }
                 else // Fade out smoothly (Max difference : 1.0 - _GlowMaxAlphaThreshold)
                 {
                     float sFadeOut = Unity_Remap_float(texColor.a - _GlowMaxAlphaThreshold, float2(0, 1.0 - _GlowMaxAlphaThreshold), float2(0, 1));
@@ -157,7 +151,6 @@ Shader "Custom/Sprite/2DFakeGlow"
                 float stepOutline = clamp(stepAlphaTextureOffset - stepAlphaTexture, 0, 1); // Gets the difference
 
                 fixed4 stepColoredOutline = (stepOutline * _OutlineColor) * i.color.a;
-                
                 return stepColoredOutline;
             }
             ENDCG

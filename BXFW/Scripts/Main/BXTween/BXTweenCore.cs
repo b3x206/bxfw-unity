@@ -1429,29 +1429,29 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     {
         public static BXTweenCore Current;
         public static List<ITweenCTX> CurrentRunningTweens = new List<ITweenCTX>();
-        private static BXTweenSettings _CurrentSettings;
+        private static BXTweenSettings currentSettings;
         public static BXTweenSettings CurrentSettings
         {
             get
             {
-                if (_CurrentSettings == null)
-                    _CurrentSettings = BXTweenSettings.Instance;
+                if (currentSettings == null)
+                    currentSettings = BXTweenSettings.Instance;
 
-                if (_CurrentSettings == null)
+                if (currentSettings == null)
                 {
 #if UNITY_EDITOR
                     // We are still null, create instance at given const resources directory.
                     // Maybe we can add a EditorPref for creation directory?
-                    _CurrentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
 #else
                     // maybe throw exception? making it more obvious that something has went wrong on compilation-generation process?
                     Debug.LogError(BXTweenStrings.Err_BXTwSettingsNoResource);
                     // Create a tempoary resource using default settings.
-                    _CurrentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
+                    currentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
 #endif
                 }
 
-                return _CurrentSettings;
+                return currentSettings;
             }
         }
 
@@ -2955,9 +2955,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public sealed class BXTweenPropertyFloat : BXTweenProperty<float>
     {
-        public BXTweenPropertyFloat(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyFloat(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
-            _Duration = dur;
+            _Duration = duration;
             _Delay = delay;
             _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
@@ -2969,9 +2969,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public sealed class BXTweenPropertyVector2 : BXTweenProperty<Vector2>
     {
-        public BXTweenPropertyVector2(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyVector2(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
-            _Duration = dur;
+            _Duration = duration;
             _Delay = delay;
             _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
@@ -2983,9 +2983,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public sealed class BXTweenPropertyVector3 : BXTweenProperty<Vector3>
     {
-        public BXTweenPropertyVector3(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyVector3(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
-            _Duration = dur;
+            _Duration = duration;
             _Delay = delay;
             _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)
@@ -2997,9 +2997,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
     [Serializable]
     public sealed class BXTweenPropertyColor : BXTweenProperty<Color>
     {
-        public BXTweenPropertyColor(float dur, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        public BXTweenPropertyColor(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
         {
-            _Duration = dur;
+            _Duration = duration;
             _Delay = delay;
             _AllowInterpolationEaseOvershoot = exPol;
             if (c != null)

@@ -97,19 +97,21 @@ namespace BXFW.UI
                         var pMenuIndexPersistent = prevMenuIndex;
                         ChildImageColorFadeTween.StartTween(0f, 1f, (float f) =>
                         {
+                            SetAllChildExceptIndex(DisabledColor, 
+                                Color.Lerp(childProgressImages[menuIndex].color, ActiveColor, f), menuIndex);
+                            // Change the previous image seperately
                             childProgressImages[pMenuIndexPersistent].color = Color.Lerp(childProgressImages[pMenuIndexPersistent].color, DisabledColor, f);
-                            childProgressImages[menuIndex].color = Color.Lerp(childProgressImages[menuIndex].color, ActiveColor, f);
+                            //childProgressImages[menuIndex].color = Color.Lerp(childProgressImages[menuIndex].color, ActiveColor, f);
                         });
                     }
                     else
                     {
-                        childProgressImages[prevMenuIndex].color = DisabledColor;
-                        childProgressImages[menuIndex].color = ActiveColor;
+                        SetAllChildExceptIndex(DisabledColor, ActiveColor, menuIndex);
                     }
                     break;
                 case FadeType.SpriteSwap:
-                    childProgressImages[prevMenuIndex].sprite = DisabledSprite;
-                    childProgressImages[menuIndex].sprite = ActiveSprite;
+                    SetAllChildExceptIndex(DisabledSprite, ActiveSprite, menuIndex);
+                    //childProgressImages[menuIndex].sprite = ActiveSprite;
                     break;
             }
 
@@ -130,6 +132,17 @@ namespace BXFW.UI
                 if (!baseChildProgressImage.gameObject.activeInHierarchy)
                     baseChildProgressImage.gameObject.SetActive(true);
 
+                // Destroy all except base
+                // Disable primary gameobject & destroy until 0
+                for (int i = 1; i < childProgressImages.Count; i++)
+                {
+                    if (!Application.isPlaying)
+                        DestroyImmediate(childProgressImages[i].gameObject);
+                    else
+                        Destroy(childProgressImages[i].gameObject);
+                }
+
+                CleanChildImageList();
                 return;
             }
 
@@ -186,6 +199,37 @@ namespace BXFW.UI
                     Destroy(childProgressImages[childProgressImages.Count - 1].gameObject);
 
                 CleanChildImageList();
+            }
+        }
+
+        public void SetAllChildExceptIndex(Color disabled, Color enabled, int enabledIndex)
+        {
+            for (int i = 0; i < childProgressImages.Count; i++)
+            {
+                var img = childProgressImages[i];
+                if (img == null)
+                {
+                    Debug.LogWarning($"[SwipableUIProgressDisplay] One of the images are null on object '{name}'.");
+                    CleanChildImageList();
+                    continue;
+                }
+                
+                img.color = i == enabledIndex ? enabled : disabled;
+            }
+        }
+        public void SetAllChildExceptIndex(Sprite disabled, Sprite enabled, int enabledIndex)
+        {
+            for (int i = 0; i < childProgressImages.Count; i++)
+            {
+                var img = childProgressImages[i];
+                if (img == null)
+                {
+                    Debug.LogWarning($"[SwipableUIProgressDisplay] One of the images are null on object '{name}'.");
+                    CleanChildImageList();
+                    continue;
+                }
+
+                img.sprite = i == enabledIndex ? enabled : disabled;
             }
         }
 

@@ -76,6 +76,7 @@ namespace BXFW
             if (!IsInteractable()) return;
 
             Pressed = false;
+            DragDelta = Vector2.zero;
         }
 
         public void OnDrag(PointerEventData eventData)

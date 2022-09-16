@@ -87,8 +87,8 @@
                     fixed downRightAlpha = sampleTex(IN.texcoord - fixed2(-_OutlineThickness, _OutlineThickness)).a;
                     fixed downLeftAlpha = sampleTex(IN.texcoord - fixed2(-_OutlineThickness, -_OutlineThickness)).a;
 
-
-                    if (upAlpha != 0.0 || downAlpha != 0.0 || rightAlpha != 0.0 || leftAlpha != 0.0 || upRightAlpha != 0.0 || upLeftAlpha != 0.0 || downLeftAlpha != 0.0 || downRightAlpha != 0.0)
+                    if (upAlpha != 0.0 || downAlpha != 0.0 || rightAlpha != 0.0 || leftAlpha != 0.0 || 
+                        upRightAlpha != 0.0 || upLeftAlpha != 0.0 || downLeftAlpha != 0.0 || downRightAlpha != 0.0)
                         return outlineC;
                 }
 
