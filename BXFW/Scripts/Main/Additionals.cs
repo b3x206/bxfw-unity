@@ -1873,33 +1873,6 @@ namespace BXFW
             RenderTexture.active = prevRT;
         }
 
-        public static void DrawMesh(this RenderTexture _, Mesh mesh, Material material, in Matrix4x4 matrix, int pass = 0)
-        {
-            if (mesh == null)
-                throw new NullReferenceException("[RenderTextureExtensions::DrawMesh] Argument 'mesh' cannot be null.");
-
-            bool canRender = material.SetPass(pass);
-
-            if (canRender)
-                Graphics.DrawMeshNow(mesh, matrix);
-        }
-
-        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Vector2 position, float size)
-        {
-            float aspect = (float)rt.width / rt.height;
-            Vector3 scale = new Vector3(size, size * aspect, 1);
-
-            Matrix4x4 matrix = Matrix4x4.TRS(position, Quaternion.identity, scale);
-
-            rt.DrawTMPText(text, matrix);
-        }
-
-        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Matrix4x4 matrix)
-        {
-            Material material = Application.isPlaying ? text.fontMaterial : text.fontSharedMaterial;
-            rt.DrawMesh(text.mesh, material, matrix);
-        }
-
         #region Blit Once Functions
         /// <summary>
         /// Draws a mesh to render texture.
@@ -1979,7 +1952,7 @@ namespace BXFW
             // Clear the texture
             if (clear)
                 GL.Clear(true, true, clearColor);
-
+            
             // Draw the mesh!
             if (canRender)
                 Graphics.DrawMeshNow(mesh, objectMatrix);
@@ -1997,6 +1970,34 @@ namespace BXFW
         }
         #endregion
 
+        #region Draw Functions
+        public static void DrawMesh(this RenderTexture _, Mesh mesh, Material material, in Matrix4x4 matrix, int pass = 0)
+        {
+            if (mesh == null)
+                throw new NullReferenceException("[RenderTextureExtensions::DrawMesh] Argument 'mesh' cannot be null.");
+
+            bool canRender = material.SetPass(pass);
+
+            if (canRender)
+                Graphics.DrawMeshNow(mesh, matrix);
+        }
+
+        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Vector2 position, float size)
+        {
+            float aspect = (float)rt.width / rt.height;
+            Vector3 scale = new Vector3(size, size * aspect, 1);
+
+            Matrix4x4 matrix = Matrix4x4.TRS(position, Quaternion.identity, scale);
+
+            rt.DrawTMPText(text, matrix);
+        }
+
+        public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Matrix4x4 matrix)
+        {
+            Material material = Application.isPlaying ? text.fontMaterial : text.fontSharedMaterial;
+            rt.DrawMesh(text.mesh, material, matrix);
+        }
+
         public static void DrawQuad(this RenderTexture rt, Material material, in Rect rect)
         {
             Matrix4x4 objectMatrix = Matrix4x4.TRS(
@@ -2012,6 +2013,7 @@ namespace BXFW
 
             DrawQuad(rt, material, rect);
         }
+        #endregion
 
         #region Utils
         public static float Aspect(this Texture rt) => (float)rt.width / rt.height;
@@ -2379,6 +2381,10 @@ namespace BXFW.Tools.Editor
         #endregion
 
         #region Property Field Helpers
+        // This allows for getting the property field target
+        
+        // we could use c# string method abuse or SerializedObject.GetArrayIndexSomething(index) method.
+        // No, not really that is for getting the array object? idk this works good so no touchy unless it breaks
         private static readonly Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
         /// <summary>
@@ -2398,7 +2404,10 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Returns the c# object's fieldInfo and the PARENT object it comes with. (this is useful with <see langword="struct"/>)
         /// <br>Important NOTE : The instance object that gets returned with this method may be null (or not).
-        /// In these cases use the <returns>return </returns></br>
+        /// In these cases use the return (the FieldInfo)</br>
+        /// <br/>
+        /// <br>If you are using this for <see cref="CustomPropertyDrawer"/>, this class has an <see cref="FieldInfo"/> property named <c>fieldInfo</c>, 
+        /// you can use that instead of the bundled field info.</br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
         /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
@@ -2417,7 +2426,7 @@ namespace BXFW.Tools.Editor
             }
 
             string lastPropertyName = prop.propertyPath.Substring(lastIndexOfPeriod + 1, prop.propertyPath.Length - (lastIndexOfPeriod + 1));
-            string propertyNamesExceptLast = prop.propertyPath.Substring(lastIndexOfPeriod);
+            string propertyNamesExceptLast = prop.propertyPath.Substring(0, lastIndexOfPeriod);
 
             var pair = GetTarget(prop.serializedObject.targetObject, propertyNamesExceptLast);
 
@@ -2426,12 +2435,14 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Internal method to get parent from these given parameters.
-        /// <br>Traverses <paramref name="targetObjSprop"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
+        /// <br>Traverses <paramref name="targetObjOfSrprop"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
         /// </summary>
+        /// <param name="targetObjOfSrprop">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
+        /// <param name="propertyPath">Path of the property. Pass <see cref="SerializedProperty.propertyPath"/>.</param>
         /// <exception cref="Exception"/>
-        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object targetObjSprop, string propertyPath)
+        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object targetObjOfSrprop, string propertyPath)
         {
-            object target = targetObjSprop; // This is kinda required
+            object target = targetObjOfSrprop; // This is kinda required
             FieldInfo targetInfo = null;
             string[] propertyNames = propertyPath.Split('.');
 
@@ -2522,6 +2533,9 @@ namespace BXFW.Tools.Editor
         /// </summary>
         private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
+
             if (targetType == null)
             {
                 targetType = target.GetType();
@@ -2541,7 +2555,7 @@ namespace BXFW.Tools.Editor
                 return GetField(target, name, targetType.BaseType);
             }
 
-            throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find {0} on {1} and it's children.", name, target));
+            throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
         }
         #endregion
 
@@ -2833,10 +2847,10 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
-        /// Gets visible children of `SerializedProperty` at 1 level depth.
+        /// Gets visible children of '<see cref="SerializedProperty"/>' at 1 level depth.
         /// </summary>
-        /// <param name="serializedProperty">Parent `SerializedProperty`.</param>
-        /// <returns>Collection of `SerializedProperty` children.</returns>
+        /// <param name="serializedProperty">Parent '<see cref="SerializedProperty"/>'.</param>
+        /// <returns>Collection of '<see cref="SerializedProperty"/>' children.</returns>
         public static IEnumerable<SerializedProperty> GetVisibleChildren(this SerializedProperty serializedProperty)
         {
             SerializedProperty currentProperty = serializedProperty.Copy();
@@ -2900,11 +2914,11 @@ namespace BXFW.Tools.Editor
         /// This is a more primitive array drawer, but it works.
         /// </summary>
         /// <param name="obj">Serialized object of target.</param>
-        /// <param name="arr_name">Array field name.</param>
-        public static void UnityArrayGUI(this SerializedObject obj, string arr_name, Action<int> OnArrayFieldDrawn = null)
+        /// <param name="arrayName">Array field name.</param>
+        public static void UnityArrayGUI(this SerializedObject obj, string arrayName, Action<int> OnArrayFieldDrawn = null)
         {
             int prev_indent = EditorGUI.indentLevel;
-            var propertyTarget = obj.FindProperty(string.Format("{0}.Array.size", arr_name));
+            var propertyTarget = obj.FindProperty(string.Format("{0}.Array.size", arrayName));
 
             // Get size of array
             int arrSize = propertyTarget.intValue;
@@ -2925,7 +2939,7 @@ namespace BXFW.Tools.Editor
             for (int i = 0; i < arrSize; i++)
             {
                 // Create property field.
-                var prop = obj.FindProperty(string.Format("{0}.Array.data[{1}]", arr_name, i));
+                var prop = obj.FindProperty(string.Format("{0}.Array.data[{1}]", arrayName, i));
 
                 // If our property is null, ignore.
                 if (prop == null)
@@ -3092,6 +3106,15 @@ namespace BXFW.ScriptEditor
     internal class InspectorBigSpriteFieldDrawer : PropertyDrawer
     {
         private const float warnHelpBoxRectHeight = 22f;
+        private float targetBoxRectHeight
+        {
+            get
+            {
+                var targetAttribute = attribute as InspectorBigSpriteFieldAttribute;
+
+                return targetAttribute.spriteBoxRectHeight;
+            }
+        }
         private KeyValuePair<FieldInfo, object> target;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -3099,9 +3122,6 @@ namespace BXFW.ScriptEditor
             float addHeight = 0f;
             if (target.Key == null)
                 target = property.GetTarget();
-
-            var targetAttribute = attribute as InspectorBigSpriteFieldAttribute;
-            //var targetAttribute = (InspectorBigSpriteFieldAttribute)target.Key.GetCustomAttribute(typeof(InspectorBigSpriteFieldAttribute), true);
 
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))
@@ -3111,7 +3131,7 @@ namespace BXFW.ScriptEditor
             }
             else
             {
-                addHeight += targetAttribute.spriteBoxRectHeight; // Hardcode the size as unity doesn't change it.
+                addHeight += targetBoxRectHeight; // Hardcode the size as unity doesn't change it.
             }
 
             return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
@@ -3125,14 +3145,18 @@ namespace BXFW.ScriptEditor
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))
             {
-                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, position.height),
+                EditorGUI.HelpBox(position,
                     string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
                     MessageType.Warning);
                 return;
             }
 
             EditorGUI.BeginChangeCheck();
-            Sprite setValue = (Sprite)EditorGUI.ObjectField(position, label, property.objectReferenceValue, typeof(Sprite), false);
+
+            // fixes position.height being incorrect on some cases
+            position.height = EditorGUI.GetPropertyHeight(property, label, true) + targetBoxRectHeight;
+            Sprite setValue = (Sprite)EditorGUI.ObjectField(position, new GUIContent(property.displayName, property.tooltip), property.objectReferenceValue, typeof(Sprite), false);
+            
             if (EditorGUI.EndChangeCheck())
             {
                 if (property.objectReferenceValue != null)
