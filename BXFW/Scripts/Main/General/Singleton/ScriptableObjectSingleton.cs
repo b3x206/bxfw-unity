@@ -38,7 +38,6 @@ namespace BXFW
             }
         }
 
-#if UNITY_EDITOR
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory.
@@ -48,6 +47,7 @@ namespace BXFW
         /// <param name="fileName">Name of the file to create.</param>
         public static T CreateEditorInstance(string relativeDir, string fileName)
         {
+#if UNITY_EDITOR
             if (Instance != null)
             {
                 Debug.LogWarning(string.Format("[ScriptableObjectSingleton::CreateEditorInstance] Create instance called for type '{0}' even though an instance exists.", typeof(T).Name));
@@ -75,7 +75,9 @@ namespace BXFW
 
             instance = Instance;
             return instance;
-        }
+#else
+            throw new System.Exception("[ScriptableObjectSingleton] Called editor method in runtime!");
 #endif
+        }
     }
 }

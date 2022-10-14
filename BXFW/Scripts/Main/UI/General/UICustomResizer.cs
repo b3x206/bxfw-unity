@@ -6,8 +6,8 @@ using UnityEngine.EventSystems;
 namespace BXFW.UI
 {
     /// <summary>
-    /// Resizes itself according to rect transform constraint.
-    /// <br>The inheriting class can hide the 'RectTransform' field to anything else (?)</br>
+    /// Resizes itself according to rect transform constraint. (Acts like an <see cref="UnityEngine.UI.ContentSizeFitter"/>)
+    /// <br>The inheriting class can use the '<see cref="ObjectTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public abstract class UICustomResizer : UIBehaviour
@@ -64,6 +64,12 @@ namespace BXFW.UI
 
             StartCoroutine(UpdateCoroutine());
         }
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            UpdateRectTransform();
+        }
         protected override void OnDestroy()
         {
             base.OnDestroy();
@@ -109,7 +115,7 @@ namespace BXFW.UI
             for (;;)
             {
                 yield return new WaitForEndOfFrame();
-
+                
                 if (ObjectTarget != null)
                 {
                     // Disable object if the target is disabled too.

@@ -61,9 +61,16 @@ namespace BXFW.ScriptEditor
             }
 
             EditorApplication.playModeStateChanged += SetRectTransformTrackerState;
-            tracker.Add(target, target.RectTransform, DrivenTransformProperties.SizeDeltaX | DrivenTransformProperties.SizeDeltaY);
+
+            DrivenTransformProperties flags = DrivenTransformProperties.None;
+            if (target.applyX)
+                flags |= DrivenTransformProperties.SizeDeltaX;
+            if (target.applyY)
+                flags |= DrivenTransformProperties.SizeDeltaY;
+
+            tracker.Add(target, target.RectTransform, flags);
         }
-        // Disable rect transform tracker (rect transform tracker is buggy)
+        // Disable rect transform tracker (rect transform tracker is buggy, and likes to resize the rect transform)
         private void OnDisable()
         {
             tracker.Clear();
@@ -78,11 +85,18 @@ namespace BXFW.ScriptEditor
             {
                 case PlayModeStateChange.ExitingPlayMode:
                     tracker.Clear();
-                    tracker.Add(target, target.RectTransform, DrivenTransformProperties.SizeDeltaX | DrivenTransformProperties.SizeDeltaY);
+                    DrivenTransformProperties flags = DrivenTransformProperties.None;
+                    if (target.applyX)
+                        flags |= DrivenTransformProperties.SizeDeltaX;
+                    if (target.applyY)
+                        flags |= DrivenTransformProperties.SizeDeltaY;
+
+                    tracker.Add(target, target.RectTransform, flags);
                     break;
                 case PlayModeStateChange.ExitingEditMode:
                     tracker.Clear();
                     break;
+
                 default:
                     break;
             }
