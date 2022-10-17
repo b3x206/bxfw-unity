@@ -92,8 +92,20 @@ namespace BXFW.Data
         }
 
         // -- Operator / Class
+        /// <summary>
+        /// Creates an completely empty data.
+        /// </summary>
         public LocalizedTextData()
         { }
+        /// <summary>
+        /// Creates an new <see cref="LocalizedTextData"/> object. (without an id, use for inline localization)
+        /// </summary>
+        /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
+        public LocalizedTextData(Dictionary<string, string> values)
+        {
+            TextID = string.Empty;
+            LocalizedValues = values;
+        }
         /// <summary>
         /// Creates an new <see cref="LocalizedTextData"/> object.
         /// </summary>
