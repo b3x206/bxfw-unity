@@ -170,7 +170,7 @@ namespace BXFW
             {
                 transform.SetPositionAndRotation(
                     // Position
-                    Vector3.MoveTowards(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
+                    Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
                     // Rotation
                     Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
                 );
