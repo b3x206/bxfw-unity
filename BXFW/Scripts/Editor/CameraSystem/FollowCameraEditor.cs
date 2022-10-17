@@ -11,7 +11,7 @@ namespace BXFW.ScriptEditor
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            // This line is pain? idk
+            // This line is pain?
             // Unity editor GUI is pain.
             bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
 
@@ -55,15 +55,6 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(FollowCamera), true)]
     internal class FollowCameraEditor : Editor
     {
-        [MenuItem("GameObject/Player Camera")]
-        public static void CreatePlayerCamera()
-        {
-            var objCamera = new GameObject("PlayerCamera").AddComponent<FollowCamera>();
-            objCamera.tag = "MainCamera";
-            objCamera.FollowTransform = Selection.activeTransform;
-            objCamera.SetCurrentCameraOffsetIndex(0);
-        }
-
         public override void OnInspectorGUI()
         {
             // Variable

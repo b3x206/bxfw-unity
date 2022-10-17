@@ -227,12 +227,12 @@ namespace BXFW.GUIForge
         public override int GetHashCode()
         {
             int hashCode = 525882332;
-            hashCode = hashCode * -1521134295 + isRelative.GetHashCode();
-            hashCode = hashCode * -1521134295 + relativeRect.GetHashCode();
-            hashCode = hashCode * -1521134295 + mXMin.GetHashCode();
-            hashCode = hashCode * -1521134295 + mYMin.GetHashCode();
-            hashCode = hashCode * -1521134295 + mWidth.GetHashCode();
-            hashCode = hashCode * -1521134295 + mHeight.GetHashCode();
+            hashCode = (hashCode * -1521134295) + isRelative.GetHashCode();
+            hashCode = (hashCode * -1521134295) + relativeRect.GetHashCode();
+            hashCode = (hashCode * -1521134295) + mXMin.GetHashCode();
+            hashCode = (hashCode * -1521134295) + mYMin.GetHashCode();
+            hashCode = (hashCode * -1521134295) + mWidth.GetHashCode();
+            hashCode = (hashCode * -1521134295) + mHeight.GetHashCode();
 
             return hashCode;
         }

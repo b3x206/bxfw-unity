@@ -167,8 +167,8 @@ namespace BXFW.Tweening
                 }
                 yield return new WaitForEndOfFrame();
 
-                // Delay
-                if (ctx.StartDelay > 0f)
+                // Delay (don't do delay if the context was paused)
+                if (ctx.StartDelay > 0f && ctx.CurrentElapsed != 0 /* equal to : !ctx.WasPaused*/)
                 {
                     if (!CurrentSettings.ignoreTimeScale)
                         yield return new WaitForSeconds(ctx.StartDelay);
@@ -177,7 +177,7 @@ namespace BXFW.Tweening
                 }
 
                 // Main loop
-                float Elapsed = 0f;
+                float Elapsed = ctx.CurrentElapsed;
                 bool UseCustom = ctx.CustomTimeCurve != null;
                 while (Elapsed <= 1f)
                 {
@@ -211,6 +211,7 @@ namespace BXFW.Tweening
                         ctx.StopTween();
                         yield break;
                     }
+
                     Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
                     yield return null;
                 }

@@ -154,6 +154,16 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
                     LogRich(string.Format("Called 'StartTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
                 );
         }
+        public static string GetDLog_BXTwCTXOnPause<T>(BXTweenCTX<T> gContext)
+        {
+            return string.Format
+                (   // Main String
+                    "{0} {1}",
+                    // Format List
+                    LogDiagRich("[BXTweenCTX::PauseTween]->", true),
+                    LogRich(string.Format("Called 'PauseTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
+                );
+        }
         public static string GetDLog_BXTwCTXOnStop<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
@@ -224,6 +234,9 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
         public static readonly string DLog_BXTwSetupPropertyTwCTXAlreadyExist = string.Format("{0} {1}",
                 LogDiagRich("[BXTweenProperty[T]::SetupProperty]", true),
                 LogRich("Called 'SetupProperty()' even though the tween context already isn't null."));
+        public static readonly string DLog_BXTwCTXPauseInvalidCall = string.Format("{0} {1}",
+                LogDiagRich("[BXTweenCTX[T]::PauseTween]", true),
+                LogRich("Called 'PauseTween()' even though the tween wasn't running."));
         public static readonly string DLog_BXTwCTXStopInvalidCall = string.Format("{0} {1}",
                 LogDiagRich("[BXTweenCTX[T]::StopTween]", true),
                 LogRich("Called 'StopTween()' even though the tween wasn't running."));

@@ -58,6 +58,10 @@ namespace BXFW.Tweening
         public bool InvokeEventOnRepeat { get; private set; } = true;
         // -- Status
         public bool IsRunning { get; private set; } = false;
+        public bool IsPaused
+        {
+            get { return CurrentElapsed != 0 && !IsRunning; }
+        }
         /// <summary>
         /// Helper variable for <see cref="IsValuesSwitched"/>.
         /// </summary>
@@ -101,7 +105,7 @@ namespace BXFW.Tweening
         /// </summary>
         public T CurrentValue { get; private set; }
         /// <summary>
-        /// Current 'elapsed' local variable of the tween.
+        /// Current 'elapsed' local variable of the tween. Used for pause function.
         /// <br>A value that goes from 0 to 1. (Doesn't reset when the tween is stopped)</br>
         /// <br>NOTE : This value only moves linearly. To add ease use the <see cref="BXTweenEase"/> methods.</br>
         /// </summary>
@@ -435,7 +439,9 @@ namespace BXFW.Tweening
         }
 
         #region Start-Stop
-        // Starts the tween.
+        /// <summary>
+        /// Starts the tween.
+        /// </summary>
         public void StartTween()
         {
 #if UNITY_EDITOR
@@ -458,7 +464,8 @@ namespace BXFW.Tweening
             }
 
             // Checks
-            // Try updating context.
+            if (IsRunning)
+                StopTween();
             if (!UpdateContextCoroutine())
             {
                 // Iterator coroutine failed.
@@ -472,32 +479,26 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
             }
 
-            // Usual
-            if (IsRunning)
-            {
-                StopTween();
-            }
-
+            // Value
             _CurrentIteratorCoroutine = IteratorCoroutine;
-            Current.StartCoroutine(_CurrentIteratorCoroutine);
+            // CurrentElapsed is always reset as 'StopTween' has to be called to end a tween, even automatically.
             IsRunning = true;
+
+            // Dispatch routine
+            Current.StartCoroutine(_CurrentIteratorCoroutine);
+            CurrentRunningTweens.Add(this);
 
             if (CurrentSettings.diagnosticMode)
             {
                 Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStart(this));
             }
-
-            CurrentRunningTweens.Add(this);
         }
-        // Pauses the tween, keeping the value.
+        /// <summary>
+        /// Pauses the tween, keeping the value.
+        /// <br>This is untested, use at your own risk.</br>
+        /// </summary>
         public void PauseTween()
         {
-
-        }
-        // Stops the tween.
-        public void StopTween()
-        {
-            // For now
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
@@ -505,43 +506,93 @@ namespace BXFW.Tweening
 
                 return;
             }
+#if UNITY_EDITOR
+            // Unity Editor Stop
+            if (!Application.isPlaying && Application.isEditor)
+            {
+                EditModeCoroutineExec.StopCoroutine(IteratorCoroutine);
+            }
+            else if (_CurrentIteratorCoroutine != null)
+#else
+            // Player Stop
+            // Not unity editor, can check if we are running normally.
+            if (_CurrentIteratorCoroutine != null)
+#endif
+            {
+                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To it needs to stop 'manually'.
+                Current.StopCoroutine(_CurrentIteratorCoroutine);
+                _CurrentIteratorCoroutine = null;
+            }
+            else if (CurrentSettings.diagnosticMode) // Log errors
+            {
+                // _CurrentIteratorCoroutine is null.
+                Debug.LogWarning(BXTweenStrings.Warn_BXTwCurrentIteratorNull);
+            }
 
+            // Value reset (only some values, others are kept)
+            // The generic coroutine takes the 'CurrentElapsed' value, Don't unswitch values if repeating.
+            CurrentRunningTweens.Remove(this);
+            IsRunning = false;
+
+            // Log
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnPause(this));
+            }
+
+            // Update
+            if (!UpdateContextCoroutine())
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
+            }
+        }
+        /// <summary>
+        /// Stops the tween.
+        /// </summary>
+        public void StopTween()
+        {
+            if (!IsRunning)
+            {
+                if (CurrentSettings.diagnosticMode)
+                    Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+
+                return;
+            }
+#if UNITY_EDITOR
+            // Unity Editor Stop
+            if (!Application.isPlaying && Application.isEditor)
+            {
+                EditModeCoroutineExec.StopCoroutine(IteratorCoroutine);
+            }
+            else if (_CurrentIteratorCoroutine != null)
+#else
+            // Player Stop
+            // Not unity editor, can check if we are running normally.
+            if (_CurrentIteratorCoroutine != null)
+#endif
+            {
+                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To it needs to stop 'manually'.
+                Current.StopCoroutine(_CurrentIteratorCoroutine);
+                _CurrentIteratorCoroutine = null;
+            }
+            else if (CurrentSettings.diagnosticMode) // Log errors
+            {
+                // _CurrentIteratorCoroutine is null.
+                Debug.LogWarning(BXTweenStrings.Warn_BXTwCurrentIteratorNull);
+            }
+
+            // Value reset
+            CurrentRunningTweens.Remove(this);
+            IsRunning = false;
+            CurrentElapsed = 0f;
             if (IsValuesSwitched)
             {
                 // No longer switched.
                 SwitchStartEndValues();
             }
 
-#if UNITY_EDITOR
-            // Unity Editor Stop
-            if (!Application.isPlaying && Application.isEditor)
-            {
-                EditModeCoroutineExec.StopCoroutine(IteratorCoroutine);
-                return;
-            }
-#endif
-            // Standard
-            CurrentRunningTweens.Remove(this);
-            if (_CurrentIteratorCoroutine != null)
-            {
-                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To it needs to stop 'manually'.
-                Current.StopCoroutine(_CurrentIteratorCoroutine);
-                _CurrentIteratorCoroutine = null;
-            }
-            else
-            {
-                // _CurrentIteratorCoroutine is null.
-                if (CurrentSettings.diagnosticMode)
-                {
-                    Debug.LogWarning(BXTweenStrings.Warn_BXTwCurrentIteratorNull);
-                }
-            }
-
-            IsRunning = false;
-
             // If we call these on the ending of the BXTweenCore's To method, the ending method after delay doesn't work.
             // The reason is that in BXTweenProperty we call 'StopTween' when we call 'StartTween'
-            // So yeah, i need to find a more elegant solution to that.
             if (InvokeEventOnStop)
             {
                 try
@@ -563,15 +614,16 @@ namespace BXFW.Tweening
                     }
                 }
             }
-
-            if (CurrentSettings.diagnosticMode)
-            {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
-            }
-
+            // Update
             if (!UpdateContextCoroutine())
             {
                 Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
+            }
+
+            // Log
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
             }
         }
         #endregion
@@ -616,24 +668,6 @@ namespace BXFW.Tweening
             // And this means that the code has no idea, enable debugger pls.
             return "(Context)Unknown or no reason.";
         }
-#if UNITY_EDITOR
-        /// <summary>
-        /// <b>EDITOR ONLY :</b> Prints all variables (properties) using <see cref="Debug.Log(object)"/>.
-        /// </summary>
-        public void PrintAllVariables()
-        {
-            Debug.Log(BXTweenStrings.LogRich(string.Format("[BXTweenCTX({0})] Printing all variables (using reflection). P = Property, F = Field.", typeof(T).Name)));
-
-            foreach (var v in GetType().GetProperties())
-            {
-                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("[P]<b>{0}</b>:::{1} = {2}", v.Name, v.PropertyType, v.GetValue(this))));
-            }
-            foreach (var v in GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("[F]<b>{0}</b>:::{1} = {2}", v.Name, v.FieldType, v.GetValue(this))));
-            }
-        }
-#endif
         #endregion
     }
 }

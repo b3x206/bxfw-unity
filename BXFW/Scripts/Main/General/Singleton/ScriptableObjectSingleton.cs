@@ -38,6 +38,11 @@ namespace BXFW
             }
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Directory of the 'Resources' file.
+        /// </summary>
+        private static readonly string LoadableResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory.
@@ -45,6 +50,7 @@ namespace BXFW
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
+#endif
         public static T CreateEditorInstance(string relativeDir, string fileName)
         {
 #if UNITY_EDITOR
@@ -56,9 +62,9 @@ namespace BXFW
 
             // Create & serialize instance of the resource.
             // Find the directory
-            var checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(Tools.Editor.EditorAdditionals.ResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
+            var checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(LoadableResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
             var relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
-            var absoluteParentDir = Path.Combine(Tools.Editor.EditorAdditionals.ResourcesDirectory, checkedRelativeDir);
+            var absoluteParentDir = Path.Combine(LoadableResourcesDirectory, checkedRelativeDir);
 
             // If the relative directory isn't created, the creation will fail.
             // For that, i will actually get the combined path.
@@ -76,7 +82,7 @@ namespace BXFW
             instance = Instance;
             return instance;
 #else
-            throw new System.Exception("[ScriptableObjectSingleton] Called editor method in runtime!");
+            throw new System.InvalidOperationException("[ScriptableObjectSingleton::CreateEditorInstance] Called editor method in runtime!");
 #endif
         }
     }

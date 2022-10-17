@@ -12,3 +12,12 @@ Contains certain utilites for problems and makes development 'easier' (for me, t
 
 ## Problem / Bug? :
 * idk create issue i guess
+
+## Other Stuff : 
+* This project uses the 'RTUtils' script from this github repository, see https://github.com/nothke/unity-utils
+
+<sup><sub>The project mentioned in the up use MIT License, see the repository for more information.</sub><sup>
+
+* I always do 'small update' commits
+
+<sup><sub>they are not small.</sub></sup>

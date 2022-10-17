@@ -271,7 +271,7 @@ namespace BXFW
             for (int i = 0; i < m_Snappable_VertPoints.Count; i++)
             {
                 // Draw with offset for duplicate vert.
-                EditorAdditionals.DrawText($"V:{i}", m_Snappable_VertPoints[i], Color.green, true);
+                GizmoUtility.DrawText($"V:{i}", m_Snappable_VertPoints[i], Color.green, true);
                 Gizmos.color = new Color(1f, 0f, 0f, .4f);
                 // Gizmos
                 Gizmos.DrawSphere(m_Snappable_VertPoints[i], .05f);

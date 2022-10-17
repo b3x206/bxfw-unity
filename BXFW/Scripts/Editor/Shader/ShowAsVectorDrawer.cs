@@ -30,15 +30,17 @@ namespace BXFW.ScriptEditor
             EditorGUI.BeginChangeCheck();
             EditorGUI.showMixedValue = prop.hasMixedValue;
 
-            // act as this is begin horizontal (because unity is acting dumb)
             // Get the current given area and subtract from it
             float labelWidth = position.width * .40f; // 40% of the given area, unity does it like this
+            // Reserved rect for the label
             Rect labelRect = new Rect(position.x, position.y, labelWidth, position.height);
+            // Reserved rect for the vector2 field
             Rect vec2fieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
 
+            // Draw
             EditorGUI.LabelField(labelRect, label);
             Vector2 matValue = EditorGUI.Vector2Field(vec2fieldRect, GUIContent.none, value);
-
+            // Apply
             if (EditorGUI.EndChangeCheck())
             {
                 prop.vectorValue = matValue;
