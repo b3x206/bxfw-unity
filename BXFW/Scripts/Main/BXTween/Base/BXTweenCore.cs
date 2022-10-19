@@ -168,7 +168,7 @@ namespace BXFW.Tweening
                 yield return new WaitForEndOfFrame();
 
                 // Delay (don't do delay if the context was paused)
-                if (ctx.StartDelay > 0f && ctx.CurrentElapsed != 0 /* equal to : !ctx.WasPaused*/)
+                if (ctx.StartDelay > 0f && ctx.CurrentElapsed <= float.Epsilon /* equal to : !ctx.WasPaused*/)
                 {
                     if (!CurrentSettings.ignoreTimeScale)
                         yield return new WaitForSeconds(ctx.StartDelay);
@@ -231,24 +231,18 @@ namespace BXFW.Tweening
                     yield break;
                 }
 
-                // Repeat
-                // Invoke ending method on repeat.
-                if (ctx.InvokeEventOnRepeat)
-                {
-                    if (ctx.OnEndAction != null)
-                    {
-                        ctx.OnEndAction();
-                    }
-                    if (ctx.OnEndActionUnityEvent != null)
-                    {
-                        ctx.OnEndActionUnityEvent.Invoke(ctx);
-                    }
-                }
                 // Repeat Amount Rules : If repeat amount is bigger than 0, subtract until 0
                 // If repeat amount is not 0 (negative number), repeat indefinetly until StopTween() was called.
                 if (ctx.RepeatAmount > 0)
                 {
                     ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
+
+                    // Repeat
+                    // Invoke ending method on repeat.
+                    if (ctx.InvokeEventOnRepeat)
+                    {
+                        ctx.InvokeEndingEventsOnStop();
+                    }
                 }
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)

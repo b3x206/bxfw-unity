@@ -60,7 +60,7 @@ namespace BXFW.Tweening
         public bool IsRunning { get; private set; } = false;
         public bool IsPaused
         {
-            get { return CurrentElapsed != 0 && !IsRunning; }
+            get { return CurrentElapsed > float.Epsilon && !IsRunning; }
         }
         /// <summary>
         /// Helper variable for <see cref="IsValuesSwitched"/>.
@@ -551,12 +551,17 @@ namespace BXFW.Tweening
         /// </summary>
         public void StopTween()
         {
+            // Log
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
                     Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
 
                 return;
+            }
+            if (CurrentSettings.diagnosticMode)
+            {
+                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
             }
 #if UNITY_EDITOR
             // Unity Editor Stop
@@ -595,36 +600,43 @@ namespace BXFW.Tweening
             // The reason is that in BXTweenProperty we call 'StopTween' when we call 'StartTween'
             if (InvokeEventOnStop)
             {
-                try
-                {
-                    // Apparently an exception can occur if the 'OnEndAction' accesses objects after destruction by external forces
-                    // Try mitigating that
-                    if (OnEndAction != null)
-                        OnEndAction.Invoke();
-                    if (PersistentOnEndAction != null)
-                        PersistentOnEndAction.Invoke();
-                    if (OnEndActionUnityEvent != null)
-                        OnEndActionUnityEvent.Invoke(this);
-                }
-                catch (Exception e)
-                {
-                    if (CurrentSettings.diagnosticMode)
-                    {
-                        Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnStop(e));
-                    }
-                }
+                // Apparently an exception can occur if the 'OnEndAction' accesses objects after destruction by external forces
+                // Try mitigating that
+                InvokeEndingEventsOnStop();
             }
+
             // Update
             if (!UpdateContextCoroutine())
             {
                 Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
             }
-
-            // Log
-            if (CurrentSettings.diagnosticMode)
+        }
+        /// <summary>
+        /// Invokes the ending events.
+        /// </summary>
+        /// <returns>Whether the invoke was successful (no exceptions returns true).</returns>
+        internal bool InvokeEndingEventsOnStop()
+        {
+            try
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
+                if (OnEndAction != null)
+                    OnEndAction.Invoke();
+                if (PersistentOnEndAction != null)
+                    PersistentOnEndAction.Invoke();
+                if (OnEndActionUnityEvent != null)
+                    OnEndActionUnityEvent.Invoke(this);
             }
+            catch (Exception e)
+            {
+                if (CurrentSettings.diagnosticMode)
+                {
+                    Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnStop(e));
+                }
+
+                return false;
+            }
+
+            return true;
         }
         #endregion
 

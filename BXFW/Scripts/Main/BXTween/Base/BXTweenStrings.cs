@@ -131,8 +131,16 @@ namespace BXFW.Tweening
         internal static string Log_BXTwCTXGetDebugFormatInfo<T>(BXTweenCTX<T> gContext)
         {
             return string.Format(@"Tween Info => '{0}' with target '{1}'
-Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeActionsOnManualStop={6}.",
-                    gContext.ToString(), gContext.TargetObject, gContext.Duration, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
+Tween Details : Duration={2} Delay={3} StartVal={4} EndVal={5} HasEndActions={6} InvokeActionsOnManualStop={6}.",
+                    gContext.ToString(), gContext.TargetObject, gContext.Duration, gContext.StartDelay, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
+        }
+        public static string DLog_BXTwCallGenericTo<T>(T StartValue, T TargetValue, float Duration, UnityEngine.Object TargetObject)
+        {
+            return string.Format("{0} {1}",
+                LogDiagRich("[BXTween::GenericTo]", true),
+                LogRich(string.Format(@"Generic To with type '{0}' is called.
+Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject: {4}", typeof(T).Name,
+                    StartValue, TargetValue, Duration, TargetObject)));
         }
         public static string GetDLog_BXTwCTXOnCtor<T>(BXTweenCTX<T> gContext)
         {
@@ -228,9 +236,6 @@ Tween Details : Duration={2} StartVal={3} EndVal={4} HasEndActions={5} InvokeAct
             string.Format("{0} {1}",
                 LogDiagRich("[BXTween]", true),
                 LogRich("BXTween is currently disabled. Calling any method will cause exceptions."));
-        public static readonly string DLog_BXTwCallGenericTo = string.Format("{0} {1}",
-                LogDiagRich("[BXTween::GenericTo]", true),
-                LogRich("Generic To is called."));
         public static readonly string DLog_BXTwSetupPropertyTwCTXAlreadyExist = string.Format("{0} {1}",
                 LogDiagRich("[BXTweenProperty[T]::SetupProperty]", true),
                 LogRich("Called 'SetupProperty()' even though the tween context already isn't null."));

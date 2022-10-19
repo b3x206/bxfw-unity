@@ -147,7 +147,7 @@ namespace BXFW.Tweening
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.DLog_BXTwCallGenericTo);
+                Debug.Log(BXTweenStrings.DLog_BXTwCallGenericTo<T>(StartValue, TargetValue, Duration, TargetObject));
             }
 
             // Check Tweenable

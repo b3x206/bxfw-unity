@@ -1136,7 +1136,7 @@ namespace BXFW
         public static void SetEnum<T>(string SaveKey, T value)
         {
             if (!typeof(T).IsEnum)
-                throw new Exception(string.Format("[Additionals::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+                throw new InvalidOperationException(string.Format("[Additionals::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 
             if (string.IsNullOrEmpty(SaveKey))
             {
@@ -1149,7 +1149,7 @@ namespace BXFW
         public static T GetEnum<T>(string SaveKey)
         {
             if (!typeof(T).IsEnum)
-                throw new Exception(string.Format("[Additionals::SetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+                throw new InvalidOperationException(string.Format("[Additionals::GetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 
             if (string.IsNullOrEmpty(SaveKey))
             {
@@ -1159,9 +1159,13 @@ namespace BXFW
 
             return (T)(object)PlayerPrefs.GetInt(string.Format("{0}_ENUM:{1}", SaveKey, typeof(T).Name));
         }
+        /// <summary>
+        /// Use this method to control whether your save key was serialized as type <typeparamref name="T"/>.
+        /// </summary>
         public static bool HasPlayerPrefsKey<T>(string SaveKey)
         {
-            if (string.IsNullOrEmpty(SaveKey)) return false;
+            if (string.IsNullOrEmpty(SaveKey))
+                return false;
 
             var tType = typeof(T);
             if (tType == typeof(Vector2))
