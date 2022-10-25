@@ -174,6 +174,9 @@ namespace BXFW
         {
             foreach (var comp in DisableComponentOnEnable)
             {
+                if (comp == null)
+                    continue;
+
                 comp.enabled = true;
             }
         }

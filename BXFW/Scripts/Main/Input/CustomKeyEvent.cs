@@ -128,8 +128,8 @@ namespace BXFW
             // Ignore it saying use System.HashCode.Combine
             // It doesn't exist in all versions of unity
             int hashCode = 1734127663;
-            hashCode = hashCode * -1521134295 + EqualityComparer<KeyCode[]>.Default.GetHashCode(KeyCodeReq);
-            hashCode = hashCode * -1521134295 + SetIsInvokable.GetHashCode();
+            hashCode = (hashCode * -1521134295) + EqualityComparer<KeyCode[]>.Default.GetHashCode(KeyCodeReq);
+            hashCode = (hashCode * -1521134295) + SetIsInvokable.GetHashCode();
             return hashCode;
         }
     }

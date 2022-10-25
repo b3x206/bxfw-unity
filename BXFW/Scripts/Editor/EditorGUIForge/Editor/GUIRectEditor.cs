@@ -43,7 +43,6 @@ namespace BXFW.GUIForge.ScriptEditor
                 y = position.y + EditorGUIUtility.singleLineHeight + hPadding
             }, "Size", target.size);
 
-
             if (EditorGUI.EndChangeCheck())
             {
                 if (property.exposedReferenceValue != null)

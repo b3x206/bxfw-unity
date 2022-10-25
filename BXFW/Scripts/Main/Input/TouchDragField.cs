@@ -16,7 +16,7 @@ namespace BXFW
         /// <summary> Whether if the drag field is being dragged. </summary>
         public bool Pressed { get; private set; }
 
-        public bool UseDragHandler = false;
+        public bool UseDragHandler = true;
 
         [Serializable]
         public sealed class DragEvent : UnityEvent<Vector2> { }

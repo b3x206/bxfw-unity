@@ -169,11 +169,11 @@ namespace BXFW
             for (int i = 0; i < len; i++)
             {
                 var sX = pos + (radius * v[(0 * len) + i]);
-                var eX = pos + (radius * v[(0 * len) + (i + 1) % len]);
+                var eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
                 var sY = pos + (radius * v[(1 * len) + i]);
-                var eY = pos + (radius * v[(1 * len) + (i + 1) % len]);
+                var eY = pos + (radius * v[(1 * len) + ((i + 1) % len)]);
                 var sZ = pos + (radius * v[(2 * len) + i]);
-                var eZ = pos + (radius * v[(2 * len) + (i + 1) % len]);
+                var eZ = pos + (radius * v[(2 * len) + ((i + 1) % len)]);
 
                 Debug.DrawLine(sX, eX, color);
                 Debug.DrawLine(sY, eY, color);

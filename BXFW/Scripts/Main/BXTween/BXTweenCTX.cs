@@ -100,7 +100,7 @@ namespace BXFW.Tweening
         public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
         // -- Pausing
         /// <summary>
-        /// The current set value of the coroutine.
+        /// The current set value of the coroutine. (contains the actual value)
         /// <br>Generally set in the <see cref="SetterFunction"/>.</br>
         /// </summary>
         public T CurrentValue { get; private set; }

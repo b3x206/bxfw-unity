@@ -92,6 +92,7 @@ namespace BXFW.Tweening
         {
             return IsTweenableType(typeof(T));
         }
+
         /// <summary>
         /// Check the status of <see cref="BXTweenCore"/> <see cref="Current"/> variable.
         /// <br>NOTE : This method tries to re-launch the tween core if it fails. 
@@ -163,7 +164,7 @@ namespace BXFW.Tweening
             }
         }
 
-        // These 'To' methods probably doesn't need boilerplate lowering as they are short,
+        // These 'To' methods '''probably''' doesn't need boilerplate lowering as they are short,
         // and using a generic method to get the context is slower than usual (calls reflection + linq)
         /// <summary>
         /// Create a tween manually using this method.
@@ -457,7 +458,6 @@ namespace BXFW.Tweening
             }
 
             // -- Make Context -- //
-            // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<Matrix4x4>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
 
             if (StartTween)

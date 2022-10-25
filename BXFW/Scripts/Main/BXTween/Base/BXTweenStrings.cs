@@ -387,5 +387,4 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
         }
         #endregion
     }
-
 }

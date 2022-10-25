@@ -20,9 +20,13 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
             #include "DitherFunctions.cginc"
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             uniform fixed4 _LightColor0;
-            float4 _Color;
+            UNITY_INSTANCING_BUFFER_START(Props)
+                UNITY_DEFINE_INSTANCED_PROP(fixed4, _Color)
+            UNITY_INSTANCING_BUFFER_END(Props)
+
             float4 _MainTex_ST;         // For the Main Tex UV transform
             sampler2D _MainTex;         // Texture used for the line
             float _DitherResolution;
@@ -38,6 +42,9 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
             v2f vert(appdata_base v)
             {
                 v2f o;
+                UNITY_SETUP_INSTANCE_ID(v);
+                //UNITY_TRANSFER_INSTANCE_ID(v, o);
+                
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
 
@@ -55,7 +62,9 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
 
             float4 frag(v2f i) : COLOR
             {
-                float4 col = _Color * tex2D(_MainTex, i.uv);
+                //UNITY_SETUP_INSTANCE_ID(i);
+
+                float4 col = UNITY_ACCESS_INSTANCED_PROP(Props, _Color) * tex2D(_MainTex, i.uv);
                 ditherClip(i.spos.xy / i.spos.w, col.a, _DitherResolution);
 
                 return col * i.col;

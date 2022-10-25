@@ -344,6 +344,58 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        public static BXTweenCTX<Vector3> BXTwScale(this Transform target, Vector3 LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.localScale, LastValue, Duration,
+                (Vector3 f) => { target.localScale = f; }, target);
+
+            return Context;
+        }
+        public static BXTweenCTX<float> BXTwScaleX(this Transform target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.localScale.x, LastValue, Duration,
+                (float f) => { target.localScale = new Vector3(f, target.localScale.y, target.localScale.z); }, target);
+
+            return Context;
+        }
+        public static BXTweenCTX<float> BXTwScaleY(this Transform target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.localScale.y, LastValue, Duration,
+                (float f) => { target.localScale = new Vector3(target.localScale.x, f, target.localScale.z); }, target);
+
+            return Context;
+        }
+        public static BXTweenCTX<float> BXTwScaleZ(this Transform target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.localScale.z, LastValue, Duration,
+                (float f) => { target.localScale = new Vector3(target.localScale.x, target.localScale.y, f); }, target);
+
+            return Context;
+        }
 
         /// <see cref="Material">
         public static BXTweenCTX<Color> BXTwChangeColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
