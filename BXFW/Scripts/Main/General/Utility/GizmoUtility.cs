@@ -108,9 +108,13 @@ namespace BXFW
         }
         internal static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
         {
+#if UNITY_EDITOR
             Camera cam = SceneView.currentDrawingSceneView.camera;
 
             return cam != null ? cam.ScreenToWorldPoint(cam.WorldToScreenPoint(position) + translateBy) : position;
+#else
+            return Vector3.zero;
+#endif
         }
     }
 }

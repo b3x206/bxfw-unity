@@ -4,7 +4,9 @@ using System.Collections;
 
 using UnityEngine;
 using BXFW.Tweening.Events;
+#if UNITY_EDITOR
 using BXFW.Tweening.Editor;
+#endif
 using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening

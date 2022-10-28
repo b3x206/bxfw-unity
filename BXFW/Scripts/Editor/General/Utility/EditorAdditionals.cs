@@ -149,8 +149,8 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Returns the c# object's fieldInfo and the instance object it comes with.
-        /// <br>Important NOTE : The instance object that gets returned with this method may be null.
-        /// In these cases use the <returns>return </returns></br>
+        /// <br>Important NOTE : The instance object that gets returned with this method may be null.</br>
+        /// <br>In these cases use the <see langword="return"/></br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
         /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
@@ -195,14 +195,14 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Internal method to get parent from these given parameters.
-        /// <br>Traverses <paramref name="targetObjOfSrprop"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
+        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
         /// </summary>
-        /// <param name="targetObjOfSrprop">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
+        /// <param name="propertyRootParent">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
         /// <param name="propertyPath">Path of the property. Pass <see cref="SerializedProperty.propertyPath"/>.</param>
         /// <exception cref="Exception"/>
-        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object targetObjOfSrprop, string propertyPath)
+        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object propertyRootParent, string propertyPath)
         {
-            object target = targetObjOfSrprop; // This is kinda required
+            object target = propertyRootParent; // This is kinda required
             FieldInfo targetInfo = null;
             string[] propertyNames = propertyPath.Split('.');
 
@@ -215,12 +215,13 @@ namespace BXFW.Tools.Editor
 
                 if (propName == "Array" && target is IEnumerable)
                 {
+                    // Arrays in property path's are seperated like -> Array.data[index]
                     isNextPropertyArrayIndex = true;
                 }
                 else if (isNextPropertyArrayIndex)
                 {
+                    // Gather -> data[index] -> the value on the 'index'
                     isNextPropertyArrayIndex = false;
-
                     Match m = ArrayIndexCapturePattern.Match(propName);
 
                     // Object is actually an array that unity serializes

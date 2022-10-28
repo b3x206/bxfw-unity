@@ -233,9 +233,11 @@ namespace BXFW.Tweening
 
                 // Repeat Amount Rules : If repeat amount is bigger than 0, subtract until 0
                 // If repeat amount is not 0 (negative number), repeat indefinetly until StopTween() was called.
-                if (ctx.RepeatAmount > 0)
+                if (ctx.RepeatAmount != 0)
                 {
-                    ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
+                    // Infinitely loop if the 'RepeatAmount' is less than 0.
+                    if (ctx.RepeatAmount > 0)
+                        ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
 
                     // Repeat
                     // Invoke ending method on repeat.
@@ -243,7 +245,11 @@ namespace BXFW.Tweening
                     {
                         ctx.InvokeEndingEventsOnStop();
                     }
+
+                    // Set current elapsed to 0 if we are repeating.
+                    ctx.CurrentElapsed = 0f;
                 }
+
                 // Do a swap between values.
                 if (ctx.RepeatType == RepeatType.PingPong)
                 {
