@@ -65,6 +65,12 @@ namespace BXFW
             mesh = filter.mesh;
 #endif
 
+            if (mesh == null)
+            {
+                Debug.LogError($"[MBVertSnappableTransform::VerticesToWorldPos] Mesh on MeshFilter '{filter.GetPath()}' is null!");
+                return null;
+            }
+
             Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
             Vector3[] vertPos = new Vector3[mesh.vertices.Length];
 
@@ -81,6 +87,12 @@ namespace BXFW
         public void UpdateSnapPoints()
         {
             var verts = VerticesToWorldPos(CurrentMeshFilter);
+
+            if (verts == null)
+            {
+                Debug.LogError("[MBVertSnappableTransform::UpdateSnapPoints] Given verts from local method 'VerticesToWorldPos' is null. Make sure the mesh filter's mesh isn't null.");
+                return;
+            }
 
             if (m_Snappable_VertPoints == null)
             {
