@@ -48,7 +48,7 @@ namespace BXFW
                 Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (Assembly assembly in assemblies)
                 {
-                    foreach (var type in assembly.GetTypes())
+                    foreach (Type type in assembly.GetTypes())
                     {
                         if (type.IsClass)
                         {

@@ -150,7 +150,7 @@ namespace BXFW.Tweening
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
 
         #region Variable Setter
-        public BXTweenCTX<T> ClearEndingAction()
+        public BXTweenCTX<T> ClearEndingEvents()
         {
             OnEndAction = null;
 
@@ -450,7 +450,7 @@ namespace BXFW.Tweening
             // Unity Editor
             if (!Application.isPlaying && Application.isEditor)
             {
-                EditModeCoroutineExec.StartCoroutine(IteratorCoroutine);
+                Tools.Editor.EditModeCoroutineRunner.StartCoroutine(IteratorCoroutine);
                 return;
             }
 #endif
@@ -512,7 +512,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                EditModeCoroutineExec.StopCoroutine(IteratorCoroutine);
+                Tools.Editor.EditModeCoroutineRunner.StopCoroutine(IteratorCoroutine);
             }
             else if (_CurrentIteratorCoroutine != null)
 #else
@@ -569,7 +569,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                EditModeCoroutineExec.StopCoroutine(IteratorCoroutine);
+                Tools.Editor.EditModeCoroutineRunner.StopCoroutine(IteratorCoroutine);
             }
             else if (_CurrentIteratorCoroutine != null)
 #else

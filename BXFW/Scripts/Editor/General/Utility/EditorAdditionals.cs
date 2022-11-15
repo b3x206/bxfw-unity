@@ -376,7 +376,6 @@ namespace BXFW.Tools.Editor
         /// Draw default inspector with commands inbetween. (Allowing to put custom gui between).
         /// <br>This works as same as <see cref="UnityEditor.Editor.OnInspectorGUI"/>'s <see langword="base"/> call.</br>
         /// </summary>
-        /// <param name="target">Method target.</param>
         /// <param name="onStringMatchEvent">
         /// The event <see cref="MatchGUIActionOrder"/> match. 
         /// If passed <see langword="null"/> this method will act like <see cref="UnityEditor.Editor.DrawDefaultInspector"/>.
@@ -489,6 +488,7 @@ namespace BXFW.Tools.Editor
             }
 
             property.NextVisible(true);
+
             while (true)
             {
                 if (SerializedProperty.EqualContents(property, nextElement))

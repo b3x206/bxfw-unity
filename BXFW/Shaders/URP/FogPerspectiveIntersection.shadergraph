@@ -648,8 +648,8 @@
     ],
     "m_VertexContext": {
         "m_Position": {
-            "x": 3066.0,
-            "y": -522.0
+            "x": 3098.0,
+            "y": -573.0
         },
         "m_Blocks": [
             {
@@ -665,8 +665,8 @@
     },
     "m_FragmentContext": {
         "m_Position": {
-            "x": 3031.000244140625,
-            "y": -299.0000305175781
+            "x": 3085.0,
+            "y": -299.0
         },
         "m_Blocks": [
             {
@@ -941,8 +941,8 @@
     "m_Theme": 0,
     "m_Position": {
         "serializedVersion": "2",
-        "x": 1171.0,
-        "y": -618.0,
+        "x": 1163.0,
+        "y": -769.0,
         "width": 80.0,
         "height": 100.0
     },
@@ -976,8 +976,8 @@
     "m_Theme": 0,
     "m_Position": {
         "serializedVersion": "2",
-        "x": 444.0,
-        "y": -884.0,
+        "x": 436.0,
+        "y": -1035.0,
         "width": 1129.0,
         "height": 160.0
     },
@@ -1241,8 +1241,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -324.9999084472656,
-            "y": -601.9999389648438,
+            "x": -499.0,
+            "y": -728.0,
             "width": 104.00000762939453,
             "height": 149.0
         }
@@ -1496,8 +1496,8 @@
     "m_ObjectId": "300cde98ca14479a81bd089038d2db40",
     "m_Title": "Subtraction Shader",
     "m_Position": {
-        "x": 420.0000305175781,
-        "y": -942.9998779296875
+        "x": 410.9545593261719,
+        "y": -1093.8516845703125
     }
 }
 
@@ -1660,10 +1660,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -88.99992370605469,
-            "y": -630.9999389648438,
-            "width": 145.0,
-            "height": 113.00000762939453
+            "x": -263.0,
+            "y": -757.0,
+            "width": 145.00001525878907,
+            "height": 113.0
         }
     },
     "m_Slots": [
@@ -1675,7 +1675,7 @@
         }
     ],
     "synonyms": [],
-    "m_Precision": 0,
+    "m_Precision": 1,
     "m_PreviewExpanded": true,
     "m_PreviewMode": 0,
     "m_CustomColors": {
@@ -2663,8 +2663,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -565.0,
-            "y": -633.0,
+            "x": -739.0,
+            "y": -759.0,
             "width": 208.00001525878907,
             "height": 314.0
         }
@@ -3063,8 +3063,8 @@
     "m_ObjectId": "a51b01acc3ea4e6da7737ff7524bc3f3",
     "m_Title": "Object Depth",
     "m_Position": {
-        "x": -590.0,
-        "y": -691.9998779296875
+        "x": -764.0,
+        "y": -818.0
     }
 }
 
@@ -3470,8 +3470,8 @@
     "m_Theme": 0,
     "m_Position": {
         "serializedVersion": "2",
-        "x": 728.0,
-        "y": -646.0,
+        "x": 660.0,
+        "y": -800.0,
         "width": 80.0,
         "height": 100.0
     },
@@ -3540,9 +3540,9 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 1386.0,
-            "y": -679.9999389648438,
-            "width": 208.0,
+            "x": 1377.999755859375,
+            "y": -830.9999389648438,
+            "width": 207.99998474121095,
             "height": 326.0
         }
     },
@@ -3676,10 +3676,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 722.0000610351563,
-            "y": -495.0000305175781,
-            "width": 110.00000762939453,
-            "height": 117.99999237060547
+            "x": 661.0,
+            "y": -656.0,
+            "width": 208.0,
+            "height": 302.0
         }
     },
     "m_Slots": [
@@ -3695,7 +3695,7 @@
     ],
     "synonyms": [],
     "m_Precision": 0,
-    "m_PreviewExpanded": false,
+    "m_PreviewExpanded": true,
     "m_PreviewMode": 0,
     "m_CustomColors": {
         "m_SerializableColors": []
@@ -3856,8 +3856,8 @@
     "m_ObjectId": "d1850353ec2044169055e010050b9d62",
     "m_Title": "Scene Depth",
     "m_Position": {
-        "x": -114.00004577636719,
-        "y": -689.9999389648438
+        "x": -288.0,
+        "y": -816.0
     }
 }
 
@@ -3988,8 +3988,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 480.0,
-            "y": -426.0000305175781,
+            "x": 445.0,
+            "y": -574.0,
             "width": 172.0,
             "height": 34.0
         }
@@ -4195,8 +4195,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 1674.0,
-            "y": -697.0,
+            "x": 1917.0,
+            "y": -713.9999389648438,
             "width": 168.0,
             "height": 34.0
         }
@@ -4340,10 +4340,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 926.0,
-            "y": -584.0,
-            "width": 110.0,
-            "height": 118.0
+            "x": 917.9999389648438,
+            "y": -734.9999389648438,
+            "width": 109.99999237060547,
+            "height": 117.99999237060547
         }
     },
     "m_Slots": [

@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 
 using UnityEngine;
 using static BXFW.Tweening.BXTween;
+using System.Runtime.Serialization;
 
 namespace BXFW.Tweening
 {
@@ -384,6 +385,11 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                         "An exception occured while constructing class.\n--Exception Details--\nMsg:{0}\nStackTrace:{1}",
                         e.Message, e.StackTrace))
                 );
+        }
+
+        internal static string UtilityExcept_NullArgument([CallerMemberName] string method = "None")
+        {
+            return $"[BXTween(general utility)::{method}] Passed argument was null.";
         }
         #endregion
     }

@@ -52,6 +52,20 @@ namespace BXFW.Tweening
 
         #region Utility
         /// <summary>
+        /// Checks if any tweens are running on given object <paramref name="cObject"/>.
+        /// <br>This method only works if a target object was assigned to <see cref="BXTweenCTX{T}"/></br>
+        /// <br>Most <see cref="BXTweenProperty{T}"/>'ies doesn't have target object, so get access to the property instead.</br>
+        /// <para>Throws <see cref="ArgumentNullException"/> if <paramref name="cObject"/> is null.</para>
+        /// </summary>
+        public static bool HasTweenRunningOnObject(UnityEngine.Object cObject)
+        {
+            if (cObject == null)
+                throw new ArgumentNullException(nameof(cObject), BXTweenStrings.UtilityExcept_NullArgument());
+
+            return CurrentRunningTweens.Any((ITweenCTX ctx) => ctx.TargetObject == cObject);
+        }
+
+        /// <summary>
         /// Returns a <see cref="BXTween"/>.To() method from type if it exists.
         /// <br>The gathered methods <see cref="BXTweenMethods"/> are cached.</br>
         /// </summary>
@@ -150,18 +164,15 @@ namespace BXFW.Tweening
             {
                 Debug.Log(BXTweenStrings.DLog_BXTwCallGenericTo<T>(StartValue, TargetValue, Duration, TargetObject));
             }
-
             // Check Tweenable
-            if (tweenMethod != null)
-            {
-                /// We get method <see cref="BXTween.To"/> returned from this class.
-                return (BXTweenCTX<T>)tweenMethod.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, TargetObject, StartTween });
-            }
-            else
+            if (tweenMethod == null)
             {
                 Debug.LogError(BXTweenStrings.GetErr_NonTweenableType(typeof(T).ToString()));
                 return null;
             }
+
+            /// We get method <see cref="BXTween.To"/> returned from this class.
+            return (BXTweenCTX<T>)tweenMethod.Invoke(null, new object[] { StartValue, TargetValue, Duration, Setter, TargetObject, StartTween });
         }
 
         // These 'To' methods '''probably''' doesn't need boilerplate lowering as they are short,

@@ -16,10 +16,12 @@ namespace BXFW.Tweening
         [SerializeField] protected float _Delay = 0f;
         [SerializeField] protected int _RepeatAmount = 0;
         [SerializeField] protected RepeatType _TweenRepeatType = RepeatType.PingPong;
+        [SerializeField, Tooltip("Target object of the tween. Should be left blank / modified in script if the tween object is unspecified (can change)")]
+        protected UnityEngine.Object _TargetObject;
 
         [SerializeField] protected bool _UseTweenCurve = false;
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
-        [SerializeField] protected AnimationCurve _TweenCurve;
+        [SerializeField] protected AnimationCurve _TweenCurve = DEFAULT_TWCURVE_VALUE;
         [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
         /// <summary>
         /// When this option is <see langword="true"/>, the <see cref="BXTweenCTX{T}.OnEndAction"/> is invoked when 
@@ -58,6 +60,17 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        public UnityEngine.Object TargetObject
+        {
+            get
+            {
+                return _TargetObject;
+            }
+            set
+            {
+                _TargetObject = value;
+            }
+        }
         public RepeatType TweenRepeatType
         {
             get { return _TweenRepeatType; }
@@ -68,8 +81,9 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+
         /// <summary>Default tween curve value. Will be set if <see cref="UseTweenCurve"/> is true and <see cref="TweenCurve"/> is null.</summary>
-        protected readonly AnimationCurve DEFAULT_TWCURVE_VALUE = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        protected readonly static AnimationCurve DEFAULT_TWCURVE_VALUE = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         public AnimationCurve TweenCurve
         {
             get
