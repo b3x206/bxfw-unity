@@ -1,12 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace BXFW
 {
     /// Note that this cheats collision detection by using an modified (no mass + no gravity etc) dynamic rigidbody.
-    /// TODO : Please use an actual kinematic collision thing.
-    /// TODO : Make use of an module system (like the powerup things)
+    /// TODO 1 : Please use an actual kinematic collision thing.
+    /// TODO 2 : Make use of an module system (BXFW.Modules)
     /// <summary>
     /// Character controller base for anything that wants to move in 2D.
     /// </summary>
