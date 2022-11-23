@@ -9,15 +9,16 @@ namespace BXFW
     [Flags]
     public enum CameraRotationAxes
     {
-        None = 0,
-        MouseX = 1 << 0,
-        MouseY = 1 << 1,
+        None = 0,         // 0
+        MouseX = 1 << 0,  // 1
+        MouseY = 1 << 1,  // 2
+        // MouseX | MouseY : 3
     }
 
     /// <summary>
     /// <see cref="CharacterController"/> based player movement component.
     /// </summary>
-    /// TODO 1 : Make BXFW.Modules a thing (abstract scriptable object based module system)
+    /// TODO 1 : Make BXFW.Modules a thing (abstract scriptable object based module system, allowing custom variables + behaviour)
     /// TODO 2 : Extend from UnityEngine.CharacterController
     [RequireComponent(typeof(CharacterController))]
     public sealed class PlayerMovement : MonoBehaviour
@@ -27,65 +28,70 @@ namespace BXFW
 
         [Header("Player Settings")]
         [SerializeField] private LayerMask Player_GroundMask;
-        public float Player_Speed = 400f;
-        public float Player_SpeedRun = 800f;
-        public float Player_JumpSpeed = 3f;
-        public float Player_RigidbodyPushPower = 1f;
-        public float Player_Weight = 1f;
-        public bool Player_CanMove = true;
-        [Range(0f, .999f)] public float Player_TPSTurnDamp = .1f;
+        public float speed = 400f;
+        public float runSpeed = 800f;
+        public float jumpSpeed = 3f;
+        public float rigidBodyPushPower = 1f;
+        public float rbWeight = 1f;
+        public bool canMove = true;
+        [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
         // Input
-        public CustomInputEvent PlayerMoveForward = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
-        public CustomInputEvent PlayerMoveBackward = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
-        public CustomInputEvent PlayerMoveLeft = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
-        public CustomInputEvent PlayerMoveRight = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
-        public CustomInputEvent PlayerMoveRun = new KeyCode[] { KeyCode.LeftShift };
+        public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
+        public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
+        public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
+        public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
+        /// <summary>
+        /// Returns whether if the any of the 'move' input events is being done.
+        /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
+        /// </summary>
         public bool ShouldMove
         {
             get
             {
-                return PlayerMoveForward || PlayerMoveBackward || PlayerMoveLeft || PlayerMoveRight;
+                return moveForwardInput || moveBackwardInput || moveLeftInput || moveRightInput;
             }
         }
-        public CustomInputEvent PlayerMoveJump = new KeyCode[] { KeyCode.Space };
-        public CustomInputEvent PlayerMoveCrouch = new KeyCode[] { KeyCode.LeftControl };
+        public CustomInputEvent moveJumpInput   = new KeyCode[] { KeyCode.Space };
+        public CustomInputEvent moveCrouchInput = new KeyCode[] { KeyCode.LeftControl };
 
         [Header("Player Kinematic Physics")]
-        [SerializeField] private bool m_Player_UseGravity = true;
-        public bool Player_CanMoveKinematic = true;
-        public bool Player_UseGravity
+        [SerializeField] private bool m_UseGravity = true;
+        [Tooltip("Controls whether if the player can move kinematically. (User input)")]
+        public bool canMoveKinematic = true;
+        public bool UseGravity
         {
             get
-            { return m_Player_UseGravity; }
+            { return m_UseGravity; }
             set
             {
                 // m_Player_GravityVelocity = value ? m_Player_GravityVelocity : Vector3.zero;
-                m_Player_UseGravity = value;
+                m_UseGravity = value;
             }
         }
         /// <summary>Current gravity for the player controller.</summary>
-        public Vector3 Player_Gravity = Physics.gravity;
+        public Vector3 gravity = Physics.gravity;
         /// <summary>Control whether the player is in ground.</summary>
-        public bool PlayerIsGrounded { get; private set; } = false;
+        public bool IsGrounded { get; private set; } = false;
 
         // -- Player Reference
-        public enum PlayerPersonView { FPS = 0, TPS = 1 }
+        public enum PlayerViewType { FPS, TPS }
         [Header("Player Reference")]
-        public PlayerPersonView Player_CurrentCameraView = PlayerPersonView.FPS;
+        public PlayerViewType currentCameraView = PlayerViewType.FPS;
         [Tooltip("Players camera.")]
-        public Camera Player_Camera;
+        public Camera targetCamera;
         [Tooltip("Transform for ground checking. This should be on the position of the legs.")]
-        public Transform Player_GroundCheck;
-        public float Player_GroundCheckDistance = .4f;
+        public Transform groundCheckTs;
+        public float groundCheckDistance = .4f;
 
         /// <summary>
         /// Current variable player velocity.
-        /// <br>Get : <see cref="m_Player_InternalVelocity"/> | Set : <see cref="m_Player_ExternVelocity"/></br>
+        /// <br>Get : <see cref="m_internalVelocity"/> | Set : <see cref="m_externVelocity"/></br>
         /// </summary>
-        public Vector3 PlayerVelocity
+        public Vector3 Velocity
         {
-            get { return m_Player_InternalVelocity; }
-            set { m_Player_ExternVelocity = value; }
+            get { return m_internalVelocity; }
+            set { m_externVelocity = value; }
         }
 
         /////////// ------------
@@ -97,25 +103,17 @@ namespace BXFW
         ///         m_             ]--> Used for private variables.
         ///         Player_        ]--> Implies that this is a variable on a player
         ///         [VelocityName] ]--> Name of the velocity.
-        /// 2 : Apply the velocity to <see cref="m_Player_InternalVelocity"/>. (Always apply the velocity consistently).
+        /// 2 : Apply the velocity to <see cref="m_internalVelocity"/>. (Always apply the velocity consistently).
 
         /// <summary>
         /// <c>[ **Special** Internal Velocity]</c> Current Player veloicty.
-        /// <br><c>Note :</c> Always add <see cref="m_Player_ExternVelocity"/> to this velocity!</br>
+        /// <br><c>Note :</c> Always add <see cref="m_externVelocity"/> to this velocity!</br>
         /// </summary>
-        private Vector3 m_Player_InternalVelocity;
+        private Vector3 m_internalVelocity;
         /// <summary><c>[External Velocity]</c> Total velocity changed by other scripts.</summary>
-        private Vector3 m_Player_ExternVelocity;
+        private Vector3 m_externVelocity;
         /// <summary><c>[Internal Velocity]</c> Gravity velocity.</summary>
-        private Vector3 m_Player_GravityVelocity;
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// Hides cursor
-        /// TODO : Put this to another script.
-        /// </summary>
-        [SerializeField] private bool Player_EditorHideCursor = true;
-#endif
+        private Vector3 m_gravityVelocity;
 
         ///////////////// Function
         private void Awake()
@@ -124,39 +122,31 @@ namespace BXFW
             Controller = GetComponent<CharacterController>();
 
             //// Variable Control  ////
-            if (Player_GroundCheck == null)
+            if (groundCheckTs == null)
                 Debug.LogError("[PlayerMovement] Player ground check is null. Please assign one.");
-            if (Player_Camera == null && Player_CurrentCameraView == PlayerPersonView.TPS)
-                Debug.LogWarning("[PlayerMovement] Player cam is null. (Move style is relative to camera!)");
-
-#if UNITY_EDITOR
-            // Hide mouse. (TODO) Put this to other script.
-            if (Player_EditorHideCursor)
-            {
-                Cursor.visible = !Player_EditorHideCursor;
-                Cursor.lockState = Player_EditorHideCursor ? CursorLockMode.Locked : CursorLockMode.None;
-            }
-#endif
+            if (targetCamera == null && currentCameraView == PlayerViewType.TPS)
+                Debug.LogWarning($"[PlayerMovement] Player cam is null. (Move style [{currentCameraView}] is relative to camera!)");
         }
 
         /////  Persistent Function Variables /////
         /// <summary>
-        /// Player's current <see cref="PlayerPersonView.TPS"/> turn speed.
+        /// Player's current <see cref="PlayerViewType.TPS"/> turn speed / velocity?
         /// Changes with <see cref="Mathf.SmoothDampAngle(float, float, ref float, float)"/>.
         /// </summary>
-        private float m_Player_TurnSmoothVel;
+        private float m_TPSRotateV;
 
-        private bool JumpKeyInputQueue = false;
+        // TODO 3 : Create a player input method, that polls all the inputs in Update
+        private bool jumpKeyInputQueue = false;
         private void Update()
         {
-            if (PlayerMoveJump.IsKeyDown())
-                JumpKeyInputQueue = true;
+            if (moveJumpInput.IsKeyDown())
+                jumpKeyInputQueue = true;
         }
         private void FixedUpdate()
         {
             //// Is Player Grounded? 
-            PlayerIsGrounded = Physics.CheckSphere(Player_GroundCheck.position, Player_GroundCheckDistance, Player_GroundMask);
-            if (!Player_CanMoveKinematic) return; // Can player move?
+            IsGrounded = Physics.CheckSphere(groundCheckTs.position, groundCheckDistance, Player_GroundMask);
+            if (!canMoveKinematic) return; // Can player move?
 
             //// Main Movement    ///
             Vector3 move_actualDir = PlayerMove() * Time.fixedDeltaTime;
@@ -165,17 +155,17 @@ namespace BXFW
             PlayerGravity();
 
             //// Set velocity.   ////
-            m_Player_InternalVelocity = move_actualDir + m_Player_GravityVelocity + m_Player_ExternVelocity;
+            m_internalVelocity = move_actualDir + m_gravityVelocity + m_externVelocity;
 
             //// Jumping         ////
-            if (JumpKeyInputQueue)
+            if (jumpKeyInputQueue)
             {
                 PlayerJump();
-                JumpKeyInputQueue = false;
+                jumpKeyInputQueue = false;
             }
 
             //// Apply Movement  ////
-            Controller.Move(PlayerVelocity * Time.deltaTime);
+            Controller.Move(Velocity * Time.deltaTime);
         }
 
         /// <summary>
@@ -184,33 +174,34 @@ namespace BXFW
         /// <returns>Player movement vector. (NOT multiplied with <see cref="Time.deltaTime"/>)</returns>
         private Vector3 PlayerMove()
         {
-            if (!Player_CanMove)
+            if (!canMove)
             { return Vector3.zero; }
 
             Vector3 move_actualDir; // Dir on return;
-            float move_currentSpeed = PlayerMoveRun ? Player_SpeedRun : Player_Speed;
+            float move_currentSpeed = moveRunInput ? runSpeed : speed;
 
-            float move_h = Convert.ToInt32(PlayerMoveRight) - Convert.ToInt32(PlayerMoveLeft);       // H
-            float move_v = Convert.ToInt32(PlayerMoveForward) - Convert.ToInt32(PlayerMoveBackward); // V
+            float move_h = Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput);       // H
+            float move_v = Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput); // V
 
             Vector3 move_inputDir = new Vector3(move_h, 0f, move_v).normalized; // Input (normalized)
 
             /// If player wants to move
-            if (move_inputDir.magnitude >= 0.1f)
+            if (move_inputDir.sqrMagnitude >= 0.1f)
             {
-                switch (Player_CurrentCameraView)
+                switch (currentCameraView)
                 {
-                    case PlayerPersonView.FPS:
-                        //// Just move to the forward, the camera script should rotate the player. ////
+                    case PlayerViewType.FPS:
+                        //// Just move to the forward, assume the camera script rotating the player. ////
                         move_actualDir = ((transform.right * move_inputDir.x) + (transform.forward * move_inputDir.z)) * move_currentSpeed;
                         break;
-                    case PlayerPersonView.TPS:
+                    case PlayerViewType.TPS:
                         //// Rotation relative to camera ////
-                        // Apply some maths that i don't even know what it means (i do know it but partially)
-                        float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + Player_Camera.transform.eulerAngles.y;
-                        // move_angle allows smooth movement
-                        float move_angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, move_targetAngle, ref m_Player_TurnSmoothVel, Player_TPSTurnDamp);
+                        // Get target angle, according to the camera's direction and the player movement INPUT direction
+                        float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + targetCamera.transform.eulerAngles.y;
+                        // Interpolate the current angle
+                        float move_angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, move_targetAngle, ref m_TPSRotateV, TPS_tsRotateDamp);
                         // Apply damped rotation.
+                        // TODO 4 : Preserve previous rotation + rotate in transform.up direction
                         transform.rotation = Quaternion.Euler(0f, move_angle, 0f);
 
                         //// Movement (Relative to character pos and rot) ////
@@ -218,7 +209,7 @@ namespace BXFW
                         move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
                         break;
 
-                    // No move dir?
+                    // No direction,
                     default:
                         move_actualDir = Vector3.zero;
                         break;
@@ -236,29 +227,29 @@ namespace BXFW
         private const float DEFAULT_GROUNDED_GRAVITY = -2f;
         /// <summary>
         /// Player gravity.
-        /// Applies the velocity to <see cref="m_Player_GravityVelocity"/>.
+        /// Applies the velocity to <see cref="m_gravityVelocity"/>.
         /// </summary>
         private void PlayerGravity()
         {
             // -- No gravity
-            if (!m_Player_UseGravity)
+            if (!m_UseGravity)
             {
-                m_Player_GravityVelocity = Vector3.zero;
+                m_gravityVelocity = Vector3.zero;
                 return;
             }
 
             // -- Has gravity
             // Apply gravity (Player isn't grounded)
-            if (!PlayerIsGrounded)
+            if (!IsGrounded)
             {
-                m_Player_GravityVelocity += Player_Gravity * Time.deltaTime;
+                m_gravityVelocity += gravity * Time.deltaTime;
             }
             // Quick workaround for player clipping.
             // If player is grounded but the player still has falling velocity.
             // TODO : Make this independent of gravity axis (not important but nice to have)
-            if (PlayerIsGrounded && m_Player_GravityVelocity.y <= 0f && m_Player_InternalVelocity.y <= 0f)
+            if (IsGrounded && m_gravityVelocity.y <= 0f && m_internalVelocity.y <= 0f)
             {
-                m_Player_GravityVelocity.y = DEFAULT_GROUNDED_GRAVITY;
+                m_gravityVelocity.y = DEFAULT_GROUNDED_GRAVITY;
             }
         }
 
@@ -268,15 +259,15 @@ namespace BXFW
         private void PlayerJump()
         {
             // Don't jump if not in ground.
-            if (!PlayerIsGrounded) return;
+            if (!IsGrounded) return;
 
             /// The '2f' added to this is required as <see cref="PlayerGravity()"/> function sets player gravity to -2f always.
-            //m_Player_GravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
-            m_Player_GravityVelocity.y += Player_JumpSpeed + -DEFAULT_GROUNDED_GRAVITY;
+            //m_gravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
+            m_gravityVelocity.y += jumpSpeed + -DEFAULT_GROUNDED_GRAVITY;
         }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (Player_RigidbodyPushPower <= 0f)
+            if (rigidBodyPushPower <= 0f)
                 return;
 
             // Push rigidbodies 
@@ -289,12 +280,12 @@ namespace BXFW
             if (hit.moveDirection.y < -0.3f)
             {
                 // Gravity push
-                force = Vector3.Scale(new Vector3(0.5f, 0.5f, 0.5f), m_Player_GravityVelocity) * Player_Weight;
+                force = Vector3.Scale(new Vector3(0.5f, 0.5f, 0.5f), m_gravityVelocity) * rbWeight;
             }
             else
             {
                 // Normal push
-                force = hit.controller.velocity * Player_RigidbodyPushPower;
+                force = hit.controller.velocity * rigidBodyPushPower;
             }
 
             rb.AddForceAtPosition(force, hit.point);
@@ -304,10 +295,10 @@ namespace BXFW
         // Shows interaction bounding box. (incorrectly at least)
         private void OnDrawGizmos()
         {
-            if (Player_GroundCheck == null) return;
+            if (groundCheckTs == null) return;
 
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(Player_GroundCheck.position, Player_GroundCheckDistance);
+            Gizmos.DrawWireSphere(groundCheckTs.position, groundCheckDistance);
             Gizmos.color = Color.white;
         }
 #endif
