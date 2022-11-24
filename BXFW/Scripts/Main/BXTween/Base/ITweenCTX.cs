@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using System;
 
 namespace BXFW.Tweening
 {
@@ -13,7 +13,9 @@ namespace BXFW.Tweening
         /// Target object of the tween.
         /// <br>It is <c>recommended</c> for this to be assigned to a valid object.</br>
         /// </summary>
-        Object TargetObject { get; }
+        UnityEngine.Object TargetObject { get; }
+
+        Type TweenedType { get; }
 
         /// <summary>
         /// Start the tween that is under this context.

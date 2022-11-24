@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections;
 
 using UnityEngine;
 using BXFW.Tweening.Events;
-#if UNITY_EDITOR
-using BXFW.Tweening.Editor;
-#endif
 using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening
@@ -98,6 +94,7 @@ namespace BXFW.Tweening
         // -- Target (Identifier and Null checks)
         private readonly UnityEngine.Object _TargetObj;
         public UnityEngine.Object TargetObject { get { return _TargetObj; } }
+        public Type TweenedType { get { return typeof(T); } }
         public bool TargetObjectIsOptional { get { return _TargetObj == null; } }
         public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
         // -- Pausing
@@ -112,17 +109,13 @@ namespace BXFW.Tweening
         /// <br>NOTE : This value only moves linearly. To add ease use the <see cref="BXTweenEase"/> methods.</br>
         /// </summary>
         public float CurrentElapsed { get; internal set; }
-        /// <summary>
-        /// The coroutine elapsed value.
-        /// <br>This value is bigger than -1 when the coroutine starts.</br>
-        /// </summary>
-        public float CoroutineElapsed = -1f;
+
         // -- Interpolation
         /// <summary>
         /// Ease type of the tween.
         /// <br>Can be set using <see cref="SetEase(EaseType, bool)"/>.</br>
         /// </summary>
-        public EaseType TweenEaseType { get; private set; } = CurrentSettings.DefaultEaseType;
+        public EaseType Easing { get; private set; } = CurrentSettings.DefaultEaseType;
         /// <summary>
         /// Custom easing curve.
         /// <br>Can be set using <see cref="SetCustomCurve(AnimationCurve, bool)"/>.</br>
@@ -267,7 +260,7 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
         {
             // Setup curve 
-            TweenEaseType = ease;
+            Easing = ease;
 
             if (UseCustomTwTimeCurve)
             {
@@ -279,7 +272,7 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            var EaseMethod = BXTweenEase.EaseMethods[TweenEaseType];
+            var EaseMethod = BXTweenEase.EaseMethods[Easing];
             TimeSetLerp = (float progress, bool _) => { return EaseMethod.Invoke(progress, Clamp01); };
 
             return this;
@@ -306,7 +299,7 @@ namespace BXFW.Tweening
                 // User wants to disable CustomCurve.
                 CustomTimeCurve = null;
                 // Reset curve delegate
-                SetEase(TweenEaseType);
+                SetEase(Easing);
                 return this;
             }
 
@@ -336,6 +329,7 @@ namespace BXFW.Tweening
             if (setter == null)
             {
                 Debug.LogError(BXTweenStrings.Err_BXTwCTXSetterNull);
+                // maybe throw exception / fail assertion?
                 return this;
             }
 
@@ -426,7 +420,7 @@ namespace BXFW.Tweening
                 _GetTweenIteratorFn = GetTweenIterFn;
 
                 // Functions to update (like ease)
-                SetEase(TweenEaseType);
+                SetEase(Easing);
             }
             catch (Exception e)
             {
@@ -437,6 +431,58 @@ namespace BXFW.Tweening
             if (CurrentSettings.diagnosticMode)
             {
                 Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnCtor(this));
+            }
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        public BXTweenCTX(BXTweenCTX<T> copyFrom)
+        {
+            // we want to make clone, so deep copy
+            // shallow copy makes most variables pointer to parent, which is not good (for general tween copying purposes)
+
+            // Structs can be copied like this.
+            StartValue = copyFrom.StartValue;
+            EndValue = copyFrom.EndValue;
+            InvokeEventOnStop = copyFrom.InvokeEventOnStop;
+            Duration = copyFrom.Duration;
+            StartDelay = copyFrom.StartDelay;
+            RepeatAmount = copyFrom.RepeatAmount;
+            RepeatType = copyFrom.RepeatType;
+            InvokeEventOnRepeat = copyFrom.InvokeEventOnRepeat;
+            IsRunning = copyFrom.IsRunning;
+            CurrentValue = copyFrom.CurrentValue;
+            CurrentElapsed = copyFrom.CurrentElapsed;
+            Easing = copyFrom.Easing;
+
+            PersistentOnEndAction = copyFrom.PersistentOnEndAction;
+
+            // Classes that need to be copied in other ways require other methods.
+            if (copyFrom.CustomTimeCurve != null)
+                SetCustomCurve(new AnimationCurve(copyFrom.CustomTimeCurve.keys));
+            if (copyFrom.OnEndAction != null)
+                SetEndingEvent(copyFrom.OnEndAction);
+            if (copyFrom.OnEndActionUnityEvent != null)
+                SetEndingEvent(copyFrom.OnEndActionUnityEvent);
+
+            // !! setter, musn't be null
+            SetSetter(copyFrom.SetterFunction);
+
+            // private
+            _IsValuesSwitched = copyFrom._IsValuesSwitched;
+            _TargetObj = copyFrom._TargetObj; // This can be a common reference anyways
+
+            // Coroutine
+            _GetTweenIteratorFn = copyFrom._GetTweenIteratorFn;
+            // Don't copy these two, they could be running and we can stop the same coroutine, causing issues.
+            //_IteratorCoroutine = copyFrom._IteratorCoroutine;
+            //_CurrentIteratorCoroutine = copyFrom._CurrentIteratorCoroutine;
+
+            // Update (so we get the _IteratorCoroutine too)
+            if (!UpdateContextCoroutine())
+            {
+                Debug.LogError(BXTweenStrings.Err_BXTwCTXFailUpdateCoroutine);
             }
         }
 
@@ -667,7 +713,8 @@ namespace BXFW.Tweening
             // These might happen due to user error.
             if (SetterFunction == null)
             {
-                return "(Context)The given setter function is null. If you called 'BXTween.To()' manually please make sure you set a setter function, otherwise it's a developer error.";
+                return @"(Context)The given setter function is null. If you called 'BXTween.To()' manually please make sure you set a setter function, or make sure your BXTweenProperty has a setter.
+If both conditions are satisfied it's most likely an internal error.";
             }
             // And these are edge cases where there's something wrong internally.
             if (IteratorCoroutine == null)

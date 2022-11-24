@@ -262,6 +262,25 @@ namespace BXFW.Tweening
         {
             return property.IsSetup;
         }
+        /// <summary>
+        /// Copies data of this generated context into the given context parameter.
+        /// <br>NOTE : <paramref name="ctx"/> will be overwritten, if it's not <see langword="null"/> this will probably cause data loss.
+        /// The <paramref name="ctx"/> will also be stopped if it's running.</br>
+        /// </summary>
+        /// <param name="ctx">Ref context passed.</param>
+        public void CopyIntoCTX(ref BXTweenCTX<T> ctx)
+        {
+            UpdateProperty(); // Update property first
+
+            if (ctx != null)
+            {
+                // ctx will be stopped.
+                ctx.StopTween();
+            }
+
+            // Do deep copy
+            ctx = new BXTweenCTX<T>(TwContext);
+        }
         #endregion
 
         #region Methods

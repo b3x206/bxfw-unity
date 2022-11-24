@@ -267,8 +267,9 @@ namespace BXFW.Tweening
         public IEnumerator To(BXTweenCTX<int> ctx)
         {
             // Floats can't convert to integer unless there's an explicit cast
-            // Unity should have added int lerp but idc.
+            // (you could also define this method on BXTweenCustomLerp)
             static int lerpUnclampedDelegate(int from, int to, float time) { return (int)Mathf.LerpUnclamped(from, to, time); }
+
             yield return GenericTo(ctx, lerpUnclampedDelegate);
         }
         public IEnumerator To(BXTweenCTX<float> ctx)
