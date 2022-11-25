@@ -16,8 +16,7 @@ namespace BXFW.Tweening
         [SerializeField] protected float _Delay = 0f;
         [SerializeField] protected int _RepeatAmount = 0;
         [SerializeField] protected RepeatType _TweenRepeatType = RepeatType.PingPong;
-        [SerializeField, Tooltip("Target object of the tween. Should be left blank / modified in script if the tween object is unspecified (can change)")]
-        protected UnityEngine.Object _TargetObject;
+        [SerializeField] protected UnityEngine.Object _TargetObject;
 
         [SerializeField] protected bool _UseTweenCurve = false;
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
@@ -30,6 +29,9 @@ namespace BXFW.Tweening
         public bool InvokeEventOnManualStop = false;
         public BXTweenUnityEvent OnEndAction;
 
+        /// <summary>
+        /// Duration of the tween.
+        /// </summary>
         public float Duration
         {
             get { return _Duration; }
@@ -40,6 +42,9 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        /// <summary>
+        /// Delay of the tween. (Time to wait in seconds before actually starting the main loop)
+        /// </summary>
         public float Delay
         {
             get { return _Delay; }
@@ -50,6 +55,10 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        /// <summary>
+        /// Repeat amount.
+        /// <br>0 means no repeat, -1 (and lower) means infinite</br>
+        /// </summary>
         public int RepeatAmount
         {
             get { return _RepeatAmount; }
@@ -60,6 +69,12 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        /// <summary>
+        /// The target object of the tween.
+        /// <br>If this is destroyed, the tween will stop. To get a log when it stops,
+        /// switch <see cref="BXTweenSettings.diagnosticMode"/> to be true in <see cref="CurrentSettings"/>.</br>
+        /// <br>This also prevents the setter throwing an exception. Basically this object, if not null when the tween was started, is a stop condition.</br>
+        /// </summary>
         public UnityEngine.Object TargetObject
         {
             get
@@ -69,8 +84,13 @@ namespace BXFW.Tweening
             set
             {
                 _TargetObject = value;
+
+                UpdateProperty();
             }
         }
+        /// <summary>
+        /// Repeat type of the tween.
+        /// </summary>
         public RepeatType TweenRepeatType
         {
             get { return _TweenRepeatType; }
@@ -84,6 +104,11 @@ namespace BXFW.Tweening
 
         /// <summary>Default tween curve value. Will be set if <see cref="UseTweenCurve"/> is true and <see cref="TweenCurve"/> is null.</summary>
         protected readonly static AnimationCurve DEFAULT_TWCURVE_VALUE = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        /// <summary>
+        /// Curve of the tween. This shouldn't return null, as it assigns itself to a default.
+        /// <br>Setting this to a non-null/null value won't disable/enable the <see cref="TweenEase"/> (unlike <see cref="BXTweenCTX{T}"/>), 
+        /// you need to also enable <see cref="UseTweenCurve"/>.</br>
+        /// </summary>
         public AnimationCurve TweenCurve
         {
             get
@@ -106,6 +131,9 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        /// <summary>
+        /// Easing of the tween, using the built-in hardcoded <see cref="BXTweenEase"/> methods.
+        /// </summary>
         public EaseType TweenEase
         {
             get { return _TweenEase; }
@@ -116,6 +144,9 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        /// <summary>
+        /// Allows usage of the assigned <see cref="TweenCurve"/>.
+        /// </summary>
         public bool UseTweenCurve
         {
             get { return _TweenCurve != null && _UseTweenCurve; }
@@ -303,7 +334,7 @@ namespace BXFW.Tweening
             // This class is essentially a settings wrapper.
             TwContext.SetDelay(_Delay).SetDuration(_Duration).
                 SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).SetEase(_TweenEase).
-                SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType);
+                SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType).SetTargetObject(TargetObject);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
             if (OnEndAction != null)

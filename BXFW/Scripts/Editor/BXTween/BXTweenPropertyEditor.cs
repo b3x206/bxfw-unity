@@ -21,6 +21,7 @@ namespace BXFW.ScriptEditor
         private SerializedProperty propDelay;
         private SerializedProperty propRepeatAmount;
         private SerializedProperty propRepeatType;
+        private SerializedProperty propTargetObject;
         //private SerializedProperty propUseTweenCurve;
         private SerializedProperty propAllowCustomCurveOvershoot;
         private SerializedProperty propTweenCurve;
@@ -45,6 +46,7 @@ namespace BXFW.ScriptEditor
             propDelay = property.FindPropertyRelative("_Delay");
             propRepeatAmount = property.FindPropertyRelative("_RepeatAmount");
             propRepeatType = property.FindPropertyRelative("_TweenRepeatType");
+            propTargetObject = property.FindPropertyRelative("_TargetObject");
             // This is drawn using EditorGUI.Toggle to activate the property getter-setter.
             //propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve"); 
             propAllowCustomCurveOvershoot = property.FindPropertyRelative("_AllowInterpolationEaseOvershoot");
@@ -87,6 +89,7 @@ namespace BXFW.ScriptEditor
                 // Show repeat type if we are using repeats
                 if (propRepeatAmount.intValue > 0)
                     EditorGUI.PropertyField(GetPropertyRect(position), propRepeatType, new GUIContent("Repeat Type", "Repeat type of the tween. PingPong: Switch values for 1 repeat, Reset:"));
+                EditorGUI.PropertyField(GetPropertyRect(position), propTargetObject, new GUIContent("Target Object", "Tween target object. Set this to a value to keep the tween stop when the object is invalid/null."));
                 EditorGUI.PropertyField(GetPropertyRect(position), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
 
                 // This is an 'EditorGUI.Toggle' for proper checking of the inspector.
@@ -104,8 +107,8 @@ namespace BXFW.ScriptEditor
 
                 if (EditorGUI.EndChangeCheck())
                 {
+                    // PropertyField should set the scene object dirty, so yes : it was unnecessary.
                     targetValue.UpdateProperty();
-                    EditorUtility.SetDirty(property.serializedObject.targetObject); // FIXME : this may be not required
                 }
             }
 
@@ -114,6 +117,10 @@ namespace BXFW.ScriptEditor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            // FIXME : Calculate height properly
+            // (yes, the proper way of doing this [unfortunately] is iterating all properties and getting their heights)
+            // This will work fine for single drawn properties, but for stuff like arrays, this is a problem if there's more than 2 expanded properties.
+
             var totalLinesDrawn = 1; // Always include one for the 'BeginProperty' call
 
             if (property.isExpanded)

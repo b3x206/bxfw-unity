@@ -22,7 +22,7 @@ namespace BXFW
             public static readonly int ButtonGridHash = "ButtonGrid".GetHashCode();
             public static readonly int SliderHash = "Slider".GetHashCode();
             public static readonly int BeginGroupHash = "BeginGroup".GetHashCode();
-            public static readonly int ScrollviewHash = "scrollView".GetHashCode();
+            public static readonly int ScrollViewHash = "scrollView".GetHashCode();
         }
 
         private static bool isBeingDragged = false; // Since we only have one mouse cursor lol

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+using System.Linq;
 using BXFW.Tweening;
 
 namespace BXFW.ScriptEditor
@@ -22,7 +23,7 @@ namespace BXFW.ScriptEditor
         }
 
         /// <summary>
-        /// Interface filtering filter.
+        /// Tween interface <see cref="ITweenCTX"/> filtering filter.
         /// </summary>
         private struct TweenFilter
         {
@@ -31,7 +32,7 @@ namespace BXFW.ScriptEditor
 
             public bool ShouldFilter(ITweenCTX tw)
             {
-                return (IgnoreNullTargetObject && tw.TargetObject == null) || tw.TargetObject != TargetObject;
+                return (IgnoreNullTargetObject && tw.TargetObject == null) || (TargetObject != null && tw.TargetObject != TargetObject);
             }
         }
 
@@ -39,6 +40,7 @@ namespace BXFW.ScriptEditor
 
         private GUIStyle boxStyle;
         private GUIStyle headerTextStyle;
+        private GUIStyle miniTextStyle;
         private GUIStyle buttonStyle;
 
         private Vector2 runningTwScroll;
@@ -49,14 +51,21 @@ namespace BXFW.ScriptEditor
             boxStyle ??= new GUIStyle(GUI.skin.box)
             {
                 alignment = TextAnchor.MiddleLeft,
-                stretchWidth = true
+                stretchWidth = false,
+                fixedWidth = 300f,
             };
+            buttonStyle ??= new GUIStyle(GUI.skin.button);
             headerTextStyle ??= new GUIStyle(EditorStyles.boldLabel)
             {
+                alignment = TextAnchor.MiddleLeft,
                 fontSize = 18,
                 fontStyle = FontStyle.Bold
             };
-            buttonStyle ??= new GUIStyle(GUI.skin.button);
+            miniTextStyle ??= new GUIStyle(EditorStyles.miniBoldLabel)
+            {
+                alignment = TextAnchor.UpperLeft,
+                fontStyle = FontStyle.BoldAndItalic
+            };
 
             // Draw a field for 'm_Script'
             var gEnabled = GUI.enabled;
@@ -71,23 +80,23 @@ namespace BXFW.ScriptEditor
                 return;
             }
 
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField("-- [BXTween] --", headerTextStyle, GUILayout.Height(40f));
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-            // Draw stats from the CTween class
-            EditorGUILayout.LabelField(string.Format("Tween Amount (running) = {0}", BXTween.CurrentRunningTweens.Count));
-            // more of a placeholder here.
-            EditorGUILayout.LabelField(string.Format("Core Status = {0}", BXTween.CheckStatus() ? "OK" : "Error (null?)"));
+            EditorGUILayout.LabelField("::[BXTweenCore]", headerTextStyle, GUILayout.Height(32f));
 
+            // Draw stats from the BXTween class
+            EditorGUILayout.LabelField(string.Format("Tween Amount (running) = {0}", BXTween.CurrentRunningTweens.Count));
+            EditorGUILayout.LabelField(string.Format("Core Status = {0}", BXTween.CheckStatus() ? "OK" : "Error (null?)"));
             // Re enable (or disable, we don't know) the GUI.
             GUI.enabled = gEnabled;
 
+            // Draw the list of running tweens
             const float scrollAreaHeight = 250;
+            GUIAdditionals.DrawUILineLayout(Color.gray);
 
-            // Draw filter button
+            // Draw filter button/toggle + info text
+            GUILayout.BeginHorizontal();
             expandFilterDebugTweens = GUILayout.Toggle(expandFilterDebugTweens, "Filter", buttonStyle, GUILayout.Width(70));
+            GUILayout.Label("  -- Click on any box to view details about the tween --  ", miniTextStyle);
+            GUILayout.EndHorizontal();
             if (expandFilterDebugTweens)
             {
                 EditorGUI.indentLevel += 2;
@@ -100,7 +109,6 @@ namespace BXFW.ScriptEditor
             }
 
             runningTwScroll = GUILayout.BeginScrollView(runningTwScroll, GUILayout.Height(scrollAreaHeight));
-            EditorGUI.indentLevel += 2;
             // Draw the list of current running tweens (with name)
             for (int i = 0; i < BXTween.CurrentRunningTweens.Count; i++)
             {
@@ -112,7 +120,9 @@ namespace BXFW.ScriptEditor
                 if (currentFilter.ShouldFilter(tw))
                     continue;
 
-                expandedTweens[i] = GUILayout.Toggle(expandedTweens[i], $"Tween {i,2} | Type={tw.TweenedType}, Target={tw.TargetObject}", boxStyle);
+                // Get target type using reflection instead, no need to pollute the interface,
+                // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.
+                expandedTweens[i] = GUILayout.Toggle(expandedTweens[i], $"Tween {i} | Type={tw.GetType().GenericTypeArguments.SingleOrDefault()}, Target={tw.TargetObject}", boxStyle);
 
                 if (expandedTweens[i])
                 {
@@ -121,15 +131,22 @@ namespace BXFW.ScriptEditor
                     // Interfaces always return concrete type : So GetType is used.
                     foreach (var v in tw.GetType().GetProperties())
                     {
-                        EditorGUILayout.LabelField(string.Format("[Property] {0}:::{1} = {2}", v.Name, v.PropertyType, v.GetValue(tw)));
+                        GUILayout.Label(string.Format("    [Property] {0}:::{1} = {2}", v.Name, v.PropertyType, v.GetValue(tw)));
                     }
                     foreach (var v in tw.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                     {
-                        EditorGUILayout.LabelField(string.Format("[Field] {0}:::{1} = {2}", v.Name, v.FieldType, v.GetValue(tw)));
+                        // Don't draw properties twice
+                        if (v.Name.Contains("k__BackingField"))
+                            continue;
+
+                        GUILayout.Label(string.Format("    [Field] {0}:::{1} = {2}", v.Name, v.FieldType, v.GetValue(tw)));
                     }
                 }
             }
-            EditorGUI.indentLevel -= 2;
+            if (BXTween.CurrentRunningTweens.Count <= 0)
+            {
+                EditorGUILayout.HelpBox("There's no currently running tween.", MessageType.Info);
+            }
             GUILayout.EndScrollView();
         }
     }

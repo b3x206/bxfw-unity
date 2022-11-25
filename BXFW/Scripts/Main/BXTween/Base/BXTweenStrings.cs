@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 
 using UnityEngine;
 using static BXFW.Tweening.BXTween;
-using System.Runtime.Serialization;
 
 namespace BXFW.Tweening
 {
@@ -133,7 +132,10 @@ namespace BXFW.Tweening
         {
             return string.Format(@"Tween Info => '{0}' with target '{1}'
 Tween Details : Duration={2} Delay={3} StartVal={4} EndVal={5} HasEndActions={6} InvokeActionsOnManualStop={6}.",
-                    gContext.ToString(), gContext.TargetObject, gContext.Duration, gContext.StartDelay, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
+                    // why a ternary that returns "Null" if target object is null? 
+                    // because accessing the 'TargetObject' causes a MissingReferenceException if it was destroyed
+                    // yeah.
+                    gContext.ToString(), gContext.TargetObject == null ? "Null" : gContext.TargetObject.ToString(), gContext.Duration, gContext.StartDelay, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
         }
         public static string DLog_BXTwCallGenericTo<T>(T StartValue, T TargetValue, float Duration, UnityEngine.Object TargetObject)
         {
@@ -227,6 +229,10 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
             string.Format("{0} {1}",
                 LogDiagRich("[BXTweenCTX::SetCustomCurve]", true),
                 LogRich("The tween time curve (related stuff) is already null. You are setting it null again"));
+        public static readonly string DLog_BXTwTargetObjectInvalid =
+            string.Format("{0} {1}",
+                LogDiagRich("[BXTweenCore::To]", true),
+                LogRich("TargetObject is null, but TargetObjectIsOptional is false on current tween. Stopping tween."));
         internal static readonly string DLog_BXTwComputerOnFire =
             string.Format("{0} {1}",
                 LogDiagRich("[BXTween]", true),

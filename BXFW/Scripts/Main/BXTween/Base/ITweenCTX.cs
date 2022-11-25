@@ -15,8 +15,6 @@ namespace BXFW.Tweening
         /// </summary>
         UnityEngine.Object TargetObject { get; }
 
-        Type TweenedType { get; }
-
         /// <summary>
         /// Start the tween that is under this context.
         /// </summary>

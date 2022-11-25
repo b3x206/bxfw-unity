@@ -21,8 +21,8 @@ namespace BXFW.Tweening
     }
     /// <summary>
     /// The repeat types of the tweens.
-    /// <br><see cref="PingPong"/> goes back to the end smoothly and counts a repeat.</br>
-    /// <br><see cref="Reset"/> goes back instantly and goes back to the target value.</br>
+    /// <br><see cref="PingPong"/> switches start and end values every time the tween is repeated.</br>
+    /// <br><see cref="Reset"/> doesn't switch the start and end target values.</br>
     /// </summary>
     public enum RepeatType
     {
@@ -92,9 +92,8 @@ namespace BXFW.Tweening
             }
         }
         // -- Target (Identifier and Null checks)
-        private readonly UnityEngine.Object _TargetObj;
+        private UnityEngine.Object _TargetObj;
         public UnityEngine.Object TargetObject { get { return _TargetObj; } }
-        public Type TweenedType { get { return typeof(T); } }
         public bool TargetObjectIsOptional { get { return _TargetObj == null; } }
         public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
         // -- Pausing
@@ -272,7 +271,7 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            var EaseMethod = BXTweenEase.EaseMethods[Easing];
+            BXTweenEaseSetMethod EaseMethod = BXTweenEase.EaseMethods[Easing];
             TimeSetLerp = (float progress, bool _) => { return EaseMethod.Invoke(progress, Clamp01); };
 
             return this;
@@ -336,6 +335,21 @@ namespace BXFW.Tweening
             // -- Set Setter
             SetterFunction = setter; // Subtract this as we are going to reuse the pause setter delegate.
             SetterFunction += (T sValue) => { CurrentValue = sValue; };
+            return this;
+        }
+        /// <summary>
+        /// Sets a target object.
+        /// <br>Setting this null makes <see cref="TargetObjectIsOptional"/> true, meaning the tween could probably go rogue if something happens.</br>
+        /// <br><i>it happened to me i am not lying please help</i></br>
+        /// </summary>
+        /// <param name="obj">Object to set. Ignored if null and <paramref name="overrideNull"/> isn't true</param>
+        public BXTweenCTX<T> SetTargetObject(UnityEngine.Object obj, bool overrideNull = false)
+        {
+            if (obj == null && !overrideNull)
+                return this;
+
+            _TargetObj = obj;
+
             return this;
         }
         /// <summary>
@@ -648,8 +662,8 @@ namespace BXFW.Tweening
             // The reason is that in BXTweenProperty we call 'StopTween' when we call 'StartTween'
             if (InvokeEventOnStop)
             {
-                // Apparently an exception can occur if the 'OnEndAction' accesses objects after destruction by external forces
-                // Try mitigating that
+                // Apparently an exception can slip through if the 'OnEndAction' accesses objects after destruction by external scripts
+                // Try mitigating that (damn those external forces!)
                 InvokeEndingEventsOnStop();
             }
 
@@ -723,7 +737,7 @@ If both conditions are satisfied it's most likely an internal error.";
             }
             if (TargetObject == null)
             {
-                return "(Context)The target object is null. Make sure you do not destroy it.";
+                return "(Context)The target object is null. Make sure you do not destroy it. (This is a starting check)";
             }
 
             // And this means that the code has no idea, enable debugger pls.

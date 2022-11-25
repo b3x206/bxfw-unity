@@ -18,8 +18,8 @@ namespace BXFW.Tools.Editor
             public WeakReference owner;    // Weak reference : reference that isn't counted as a reference.
                                            // With the weak reference, we can check if object was gc collected
 
-            // I mean, unity already nulls any destroyed object, and editor coroutines are called (just like any monobehaviour) with an alive Unity object.
-            // But this is what the unity editor coroutine package do (not exactly) so
+            // I mean, unity already nulls any destroyed object, and coroutines are called with an alive c# object.
+            // But this is what the unity editor coroutine package do (not exactly, but probably same; just uses different class??) so
 
             public IEnumerator GetEnumerator()
             {

@@ -171,6 +171,7 @@ namespace BXFW.Tweening
                 // Main loop
                 float Elapsed = ctx.CurrentElapsed;
                 bool UseCustom = ctx.CustomTimeCurve != null;
+                bool TargetObjectOptional = ctx.TargetObjectIsOptional; // Don't constantly get this as it can be true when the TargetObject is null.
                 while (Elapsed <= 1f)
                 {
                     // We added option to ignore the timescale, so this is standard procedure.
@@ -180,6 +181,18 @@ namespace BXFW.Tweening
                         // if it's below zero, just skip the frame
                         if (Time.timeScale <= 0f)
                         { yield return null; }
+                    }
+
+                    // Target object
+                    if (!TargetObjectOptional && ctx.TargetObject == null)
+                    {
+                        if (CurrentSettings.diagnosticMode)
+                        {
+                            Debug.Log(BXTweenStrings.DLog_BXTwTargetObjectInvalid);
+                        }
+
+                        ctx.StopTween();
+                        yield break;
                     }
 
                     // Set lerp
