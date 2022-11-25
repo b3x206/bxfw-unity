@@ -454,7 +454,6 @@ namespace BXFW.Tweening
             IsRunning = copyFrom.IsRunning;
             CurrentValue = copyFrom.CurrentValue;
             CurrentElapsed = copyFrom.CurrentElapsed;
-            Easing = copyFrom.Easing;
 
             PersistentOnEndAction = copyFrom.PersistentOnEndAction;
 
@@ -466,7 +465,8 @@ namespace BXFW.Tweening
             if (copyFrom.OnEndActionUnityEvent != null)
                 SetEndingEvent(copyFrom.OnEndActionUnityEvent);
 
-            // !! setter, musn't be null
+            // !! setter(s), musn't be null
+            SetEase(copyFrom.Easing);
             SetSetter(copyFrom.SetterFunction);
 
             // private

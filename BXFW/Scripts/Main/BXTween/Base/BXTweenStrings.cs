@@ -315,8 +315,8 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                 LogRich("The 'IteratorCoroutine' given variable is null even after update."));
         public static readonly string Err_BXTwSettingsNoResource =
             string.Format("{0} {1}",
-                "[BXTweenSettings::GetBXTweenSettings]->",
-                "No resource was generated in editor. Returning default 'ScriptableObject'.");
+                ErrRich("[BXTweenSettings::GetBXTweenSettings]->"),
+                LogRich("No resource was generated in editor. Returning default 'ScriptableObject'."));
 
         public static readonly string Err_SetterFnNull =
             string.Format("{0} {1}",

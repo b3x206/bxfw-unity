@@ -1,4 +1,4 @@
-﻿/// BXTween Version : 0.6
+﻿/// BXTween Version : 0.6.2
 ///                  (state, major, minor) : 
 ///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
 ///                  major => Major revision introducing features & api change (this is going to be very messy in alpha)
@@ -42,7 +42,7 @@
 /// Okay, but i am still not convinced yet.
 ///     cool, i will convince
 ///     It has, uh, properties. yeah and it also has lackluster support of shortcut methods
-///     In fact half of the source code lines are shortcut methods (this (type name) variableName).
+///     In fact half of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
 /// 
 /// </remarks>
 
@@ -53,18 +53,10 @@
 * -------------------------------------------------- **/
 
 using System;
-using System.Linq;
 using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
-#if UNITY_EDITOR
-using BXFW.Tweening.Editor;
-#endif
 using BXFW.Tweening.Events;
 using static BXFW.Tweening.BXTween;
 
@@ -131,7 +123,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Dispose the object.
         /// </summary>
-        public static void EditorDisposeBXTwObject()
+        internal static void EditorDisposeBXTwObject()
         {
             if (Current == null)
             {
@@ -202,8 +194,8 @@ namespace BXFW.Tweening
                     }
                     catch (Exception e)
                     {
-                        // Exception occured, ignore (unless it's diagnostic mode)
-                        if (CurrentSettings.diagnosticMode)
+                        // Exception occured, ignore (unless it's diagnostic mode or we are in editor, don't ignore if in editor.)
+                        if (CurrentSettings.diagnosticMode || Application.isEditor)
                         {
                             Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
                         }

@@ -11,15 +11,8 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(BXTweenCore))]
     public class BXTweenCoreInspector : Editor
     {
-        private GUIStyle headerTextStyle;
-
         private void OnEnable()
         {
-            headerTextStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 22
-            };
-
             // Put repaint of this inspector to update to get realtime data viewed on inspector.
             EditorApplication.update += Repaint;
         }
@@ -45,6 +38,7 @@ namespace BXFW.ScriptEditor
         private TweenFilter currentFilter;
 
         private GUIStyle boxStyle;
+        private GUIStyle headerTextStyle;
         private GUIStyle buttonStyle;
 
         private Vector2 runningTwScroll;
@@ -56,6 +50,11 @@ namespace BXFW.ScriptEditor
             {
                 alignment = TextAnchor.MiddleLeft,
                 stretchWidth = true
+            };
+            headerTextStyle ??= new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold
             };
             buttonStyle ??= new GUIStyle(GUI.skin.button);
 
