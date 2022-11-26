@@ -69,7 +69,7 @@ namespace BXFW
             if (target == null)
             {
                 if (logErrors)
-                    Debug.LogError($"[LocalizedText::Awake] Text on {this.GetPath()} doesn't have target.");
+                    Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} doesn't have target.", this.GetPath()));
 
                 return;
             }
@@ -81,23 +81,23 @@ namespace BXFW
                 else
                 {
                     if (logErrors)
-                        Debug.LogWarning($"[LocalizedText::Awake] Text on {this.GetPath()} doesn't have a 'localeData' field with text on it assigned.");
+                        Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field with text on it assigned.", this.GetPath()));
                     return;
                 }
             }
             else
             {
                 if (logErrors)
-                    Debug.LogWarning($"[LocalizedText::Awake] Text on {this.GetPath()} doesn't have a 'localeData' field assigned.");
+                    Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
                 return;
             }
 
-            var data = localeTextData.SingleOrDefault(d => d.TextID == textID);
+            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID == textID);
 
             if (data == null)
             {
                 if (logErrors)
-                    Debug.LogError($"[LocalizedText::Awake] Text on {this.GetPath()} has invalid id '{textID}'.");
+                    Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
                 return;
             }
 
@@ -121,7 +121,7 @@ namespace BXFW
         {
             if (target == null)
             {
-                Debug.LogError($"[LocalizedText::Awake] Text on {this.GetPath()} doesn't have target.");
+                Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} doesn't have target.", this.GetPath()));
                 return;
             }
 
@@ -129,15 +129,15 @@ namespace BXFW
                 localeTextData ??= LocalizedAssetParser.Parse(localeData.text);
             else
             {
-                Debug.LogWarning($"[LocalizedText::Awake] Text on {this.GetPath()} doesn't have a 'localeData' field assigned.");
+                Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
                 return;
             }
 
-            var data = localeTextData.SingleOrDefault(d => d.TextID == textID);
+            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID == textID);
 
             if (data == null)
             {
-                Debug.LogError($"[LocalizedText::Awake] Text on {this.GetPath()} has invalid id '{textID}'.");
+                Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
                 return;
             }
 

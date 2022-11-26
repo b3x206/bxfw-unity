@@ -79,7 +79,7 @@ namespace BXFW.UI
                 {
                     // Only print out the error while we are playing.
                     // This error occurs due to Initilaze being called without setting up in the runtime.
-                    Debug.LogWarning($"[UIProgressBar::Initilaze] There is no progress bar image assigned on object \"{name}.\"");
+                    Debug.LogWarning(string.Format("[UIProgressBar::Initilaze] There is no progress bar image assigned on object \"{0}.\"", name));
                 }
 
                 return;
@@ -88,6 +88,7 @@ namespace BXFW.UI
             if (m_ProgressBarImg.sprite == null)
             {
                 // bad solution, but the designer should provide their own image.
+                // because to be an image to be filled, we need an explicitly existing sprite, not the placeholder that the unity puts out.
                 m_ProgressBarImg.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), Vector2.zero);
                 m_ProgressBarImg.sprite.name = "GenSprite";
                 m_ProgressBarImg.type = Image.Type.Filled;

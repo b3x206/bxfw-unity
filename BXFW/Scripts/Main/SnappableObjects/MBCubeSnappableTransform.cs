@@ -89,7 +89,7 @@ namespace BXFW
             // (Like calling 'Destroy()' at the same time on this method or having a 'new Transform transform' variable)
             if (transform == null)
             {
-                Debug.LogError($"[SnappableCubeTransform::SetupTransform] Transform is null. Please setup the script properly on class \"{GetType().FullName}\".");
+                Debug.LogError(string.Format("[SnappableCubeTransform::SetupTransform] Transform is null. Please setup the script properly on class \"{0}\".", GetType().FullName));
                 return;
             }
 

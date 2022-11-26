@@ -74,12 +74,14 @@ namespace BXFW.ScriptEditor
 
                 if (MeshAssign != null)
                 {
+                    MeshAssign = CreateUVCubeToAssets();
+                    AssetDatabase.SaveAssets();
                     return MeshAssign;
                 }
                 else
                 {
                     // This error theoretically shouldn't happen.
-                    Debug.LogError($"[ReCalcCubeTexture] The loaded mesh was null. There's no such asset named as {Target.CubeMeshName}?");
+                    Debug.LogError(string.Format("[ReCalcCubeTexture] The loaded mesh was null. There's no such asset named as {0}??", Target.CubeMeshName));
                     return null;
                 }
             }

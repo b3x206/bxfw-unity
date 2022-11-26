@@ -35,7 +35,7 @@ namespace BXFW.Tweening
                     currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
                     // Current editor is diagnostic by default, for the creation
                     // This will be here for debug (we can't check current settings whether if it's diagnostic mode because we just created it)
-                    Debug.Log(BXTweenStrings.DLog_BXTwSettingsCreatedNew($"Assets/Resources/{BXTweenStrings.SettingsResourceCreatePath} | File : {BXTweenStrings.SettingsResourceCreateName}"));
+                    Debug.Log(BXTweenStrings.DLog_BXTwSettingsCreatedNew(string.Format("Assets/Resources/{0} | File : {1}", BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)));
 #else
                     // maybe throw exception? making it more obvious that something has went wrong on compilation-generation process?
                     Debug.LogError(BXTweenStrings.Err_BXTwSettingsNoResource);
@@ -73,9 +73,7 @@ namespace BXFW.Tweening
         /// (or the non-existent documentation) for more info on tweenable types.</param>
         public static MethodInfo GetTweenMethodFromType(Type t)
         {
-            var info = BXTweenMethods.SingleOrDefault(x => x.Name == nameof(To) && x.GetParameters()[0].ParameterType == t);
-
-            return info;
+            return BXTweenMethods.SingleOrDefault(x => x.Name == nameof(To) && x.GetParameters()[0].ParameterType == t);
         }
         /// <summary>
         /// Returns a <see cref="BXTween"/>.To() method from type if it exists.
@@ -158,7 +156,7 @@ namespace BXFW.Tweening
             UnityEngine.Object TargetObject = null, bool StartTween = true)
         {
             // Call helper method
-            var tweenMethod = GetTweenMethodFromType<T>();
+            MethodInfo tweenMethod = GetTweenMethodFromType<T>();
 
             if (CurrentSettings.diagnosticMode)
             {

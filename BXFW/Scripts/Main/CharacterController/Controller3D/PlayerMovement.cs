@@ -125,7 +125,7 @@ namespace BXFW
             if (groundCheckTs == null)
                 Debug.LogError("[PlayerMovement] Player ground check is null. Please assign one.");
             if (targetCamera == null && currentCameraView == PlayerViewType.TPS)
-                Debug.LogWarning($"[PlayerMovement] Player cam is null. (Move style [{currentCameraView}] is relative to camera!)");
+                Debug.LogWarning(string.Format("[PlayerMovement] Player cam is null. (Move style [{0}] is relative to camera!)", currentCameraView));
         }
 
         /////  Persistent Function Variables /////

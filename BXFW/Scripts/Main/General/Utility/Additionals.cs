@@ -153,11 +153,11 @@ namespace BXFW
         public static void DrawSphereDebug(Vector4 pos, float radius, Color color)
         {
             // Make unit sphere.
-            var lenSphere = 16;
-            var v = new Vector4[lenSphere * 3]; // Sphere vector
+            int lenSphere = 16;
+            Vector4[] v = new Vector4[lenSphere * 3]; // Sphere vector
             for (int i = 0; i < lenSphere; i++)
             {
-                var f = i / (float)lenSphere;
+                float f = i / (float)lenSphere;
                 float c = Mathf.Cos(f * (float)(Math.PI * 2.0));
                 float s = Mathf.Sin(f * (float)(Math.PI * 2.0));
                 v[(0 * lenSphere) + i] = new Vector4(c, s, 0, 1);
@@ -168,12 +168,12 @@ namespace BXFW
             int len = v.Length / 3;
             for (int i = 0; i < len; i++)
             {
-                var sX = pos + (radius * v[(0 * len) + i]);
-                var eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
-                var sY = pos + (radius * v[(1 * len) + i]);
-                var eY = pos + (radius * v[(1 * len) + ((i + 1) % len)]);
-                var sZ = pos + (radius * v[(2 * len) + i]);
-                var eZ = pos + (radius * v[(2 * len) + ((i + 1) % len)]);
+                Vector4 sX = pos + (radius * v[(0 * len) + i]);
+                Vector4 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
+                Vector4 sY = pos + (radius * v[(1 * len) + i]);
+                Vector4 eY = pos + (radius * v[(1 * len) + ((i + 1) % len)]);
+                Vector4 sZ = pos + (radius * v[(2 * len) + i]);
+                Vector4 eZ = pos + (radius * v[(2 * len) + ((i + 1) % len)]);
 
                 Debug.DrawLine(sX, eX, color);
                 Debug.DrawLine(sY, eY, color);
@@ -215,7 +215,7 @@ namespace BXFW
         /// </summary>
         public static void ClampVelocity(this Rigidbody rb, float MaxSpeed)
         {
-            if (rb is null)
+            if (rb == null)
             {
                 Debug.LogError("[Additionals::ClampVelocity] The referenced rigidbody is null.");
                 return;
@@ -232,8 +232,8 @@ namespace BXFW
         /// </summary>
         public static void AddExplosionForce(this Rigidbody2D rb, float explosionForce, Vector2 explosionPosition, float explosionRadius, float upwardsModifier = 0.0F, ForceMode2D mode = ForceMode2D.Force)
         {
-            var explosionDir = rb.position - explosionPosition;
-            var explosionDistance = (explosionDir.magnitude / explosionRadius);
+            Vector2 explosionDir = rb.position - explosionPosition;
+            float explosionDistance = (explosionDir.magnitude / explosionRadius);
 
             // Normalize without computing magnitude again
             if (upwardsModifier == 0)
@@ -264,7 +264,7 @@ namespace BXFW
                 return new Vector3[0];
             }
 
-            var vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
+            Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
             if (vertsMesh == null)
             {
                 Debug.LogWarning("[Additionals::VerticesToWorldSpace] The mesh filter mesh is null.");
@@ -293,12 +293,12 @@ namespace BXFW
                 return new Vector3[0];
             }
 
-            var vertices = new Vector3[8];
-            var thisMatrix = coll.transform.localToWorldMatrix;
-            var storedRotation = coll.transform.rotation;
+            Vector3[]  vertices = new Vector3[8];
+            Matrix4x4  thisMatrix = coll.transform.localToWorldMatrix;
+            Quaternion storedRotation = coll.transform.rotation;
             coll.transform.rotation = Quaternion.identity;
 
-            var extents = coll.bounds.extents;
+            Vector3 extents = coll.bounds.extents;
             vertices[0] = thisMatrix.MultiplyPoint3x4(extents);
             vertices[1] = thisMatrix.MultiplyPoint3x4(new Vector3(-extents.x, extents.y, extents.z));
             vertices[2] = thisMatrix.MultiplyPoint3x4(new Vector3(extents.x, extents.y, -extents.z));
@@ -323,7 +323,7 @@ namespace BXFW
                 return new Vector3[0];
             }
 
-            var vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
+            Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
             if (vertsMesh == null)
             {
                 Debug.LogWarning("[Additionals::WorldVertsToLocalSpace] The mesh filter mesh is null.");
@@ -353,8 +353,8 @@ namespace BXFW
         public static Vector3 CircleCenter(Vector3 cPoint0, Vector3 cPoint1, Vector3 cPoint2, out Vector3 cPointNormal)
         {
             // two circle chords
-            var v1 = cPoint1 - cPoint0;
-            var v2 = cPoint2 - cPoint0;
+            Vector3 v1 = cPoint1 - cPoint0;
+            Vector3 v2 = cPoint2 - cPoint0;
 
             // Normal related stuff
             cPointNormal = Vector3.Cross(v1, v2);
@@ -363,16 +363,16 @@ namespace BXFW
             cPointNormal.Normalize();
 
             // Perpendicular of both chords
-            var pd1 = Vector3.Cross(v1, cPointNormal).normalized;
-            var pd2 = Vector3.Cross(v2, cPointNormal).normalized;
+            Vector3 pd1 = Vector3.Cross(v1, cPointNormal).normalized;
+            Vector3 pd2 = Vector3.Cross(v2, cPointNormal).normalized;
             // Distance between the chord midpoints
-            var r = (v1 - v2) * 0.5f;
+            Vector3 r = (v1 - v2) * 0.5f;
             // Center angle between the two perpendiculars
-            var c = Vector3.Angle(pd1, pd2);
+            float c = Vector3.Angle(pd1, pd2);
             // Angle between first perpendicular and chord midpoint vector
-            var a = Vector3.Angle(r, pd1);
+            float a = Vector3.Angle(r, pd1);
             // Law of sine to calculate length of p2
-            var d = r.magnitude * Mathf.Sin(a * Mathf.Deg2Rad) / Mathf.Sin(c * Mathf.Deg2Rad);
+            float d = r.magnitude * Mathf.Sin(a * Mathf.Deg2Rad) / Mathf.Sin(c * Mathf.Deg2Rad);
 
             if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0f)
                 return cPoint0 + (v2 * 0.5f) - (pd2 * d);
@@ -416,7 +416,7 @@ namespace BXFW
         /// </summary>
         public static Vector3 SetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
         {
-            var v = current;
+            Vector3 v = current;
             switch (axisConstraint)
             {
                 case TransformAxis.None:
@@ -456,7 +456,7 @@ namespace BXFW
         /// </summary>
         public static Vector3 GetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current)
         {
-            var v = current;
+            Vector3 v = current;
             switch (axisConstraint)
             {
                 case TransformAxis.None:
@@ -496,7 +496,7 @@ namespace BXFW
         /// </summary>
         public static Vector2 SetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
         {
-            var v = current;
+            Vector3 v = current;
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
@@ -522,7 +522,7 @@ namespace BXFW
         /// </summary>
         public static Vector2 GetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current)
         {
-            var v = current;
+            Vector3 v = current;
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
@@ -584,11 +584,11 @@ namespace BXFW
 
             sr.transform.localScale = new Vector3(1, 1, 1);
 
-            var width = sr.sprite.bounds.size.x;
-            var height = sr.sprite.bounds.size.y;
+            float width = sr.sprite.bounds.size.x;
+            float height = sr.sprite.bounds.size.y;
 
-            var worldScreenHeight = relativeCam.orthographicSize * 2.0f;
-            var worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
+            float worldScreenHeight = relativeCam.orthographicSize * 2.0f;
+            float worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
 
             Vector3 scale;
             switch (axis)
@@ -633,11 +633,11 @@ namespace BXFW
 
             sr.transform.localScale = new Vector3(1, 1, 1);
 
-            var width = sr.mesh.bounds.size.x;
-            var height = sr.mesh.bounds.size.y;
+            float width = sr.mesh.bounds.size.x;
+            float height = sr.mesh.bounds.size.y;
 
-            var worldScreenHeight = relativeCam.orthographicSize * 2.0f;
-            var worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
+            float worldScreenHeight = relativeCam.orthographicSize * 2.0f;
+            float worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
 
             switch (axis)
             {
@@ -691,33 +691,33 @@ namespace BXFW
 #if UNITY_ANDROID && !UNITY_EDITOR
             // In android you have to do dumb stuff in order to get keyboard height
             // This 'may not be necessary' in more updated versions of unity, but here we are.
-            using (var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (AndroidJavaClass unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             {
-                var unityPlayer = unityClass.GetStatic<AndroidJavaObject>("currentActivity").Get<AndroidJavaObject>("mUnityPlayer");
-                var view = unityPlayer.Call<AndroidJavaObject>("getView");
-                var dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
+                AndroidJavaObject unityPlayer = unityClass.GetStatic<AndroidJavaObject>("currentActivity").Get<AndroidJavaObject>("mUnityPlayer");
+                AndroidJavaObject view = unityPlayer.Call<AndroidJavaObject>("getView");
+                AndroidJavaObject dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
 
                 if (view == null || dialog == null)
                     return 0;
 
-                var decorHeight = 0;
+                int decorHeight = 0;
 
                 if (includeInput)
                 {
-                    var decorView = dialog.Call<AndroidJavaObject>("getWindow").Call<AndroidJavaObject>("getDecorView");
+                    AndroidJavaObject decorView = dialog.Call<AndroidJavaObject>("getWindow").Call<AndroidJavaObject>("getDecorView");
 
                     if (decorView != null)
                         decorHeight = decorView.Call<int>("getHeight");
                 }
 
-                using (var rect = new AndroidJavaObject("android.graphics.Rect"))
+                using (AndroidJavaObject rect = new AndroidJavaObject("android.graphics.Rect"))
                 {
                     view.Call("getWindowVisibleDisplayFrame", rect);
                     return Display.main.systemHeight - rect.Call<int>("height") + decorHeight;
                 }
             }
 #else
-            var height = Mathf.RoundToInt(TouchScreenKeyboard.area.height);
+            int height = Mathf.RoundToInt(TouchScreenKeyboard.area.height);
             return height >= Display.main.systemHeight ? 0 : height;
 #endif
         }
@@ -790,11 +790,11 @@ namespace BXFW
                 return null;
 
             // Get array dimensions
-            var height = src.GetLength(0);
-            var width = src.GetLength(1);
+            int height = src.GetLength(0);
+            int width = src.GetLength(1);
 
             // Create the new array
-            var tgt = new TDest[height][];
+            TDest[][] tgt = new TDest[height][];
 
             // Cast the array to the arrays of array.
             for (int i = 0; i < height; i++)
@@ -826,12 +826,12 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(converter));
 
             // Get array dimensions
-            var iLen = src.GetLength(0);
-            var jLen = src.GetLength(1);
-            var kLen = src.GetLength(2);
+            int iLen = src.GetLength(0);
+            int jLen = src.GetLength(1);
+            int kLen = src.GetLength(2);
 
             // Create the new array
-            var tgt = new TDest[iLen][][];
+            TDest[][][] tgt = new TDest[iLen][][];
             for (int i = 0; i < iLen; i++)
             {
                 tgt[i] = new TDest[jLen][];
@@ -887,7 +887,7 @@ namespace BXFW
 
             for (int i = 0; i < values.Length; i++)
             {
-                var value = (T)values.GetValue(i);
+                T value = (T)values.GetValue(i);
 
                 // Ignore duplicate values.
                 // This isn't very important, but makes the removing cleaner.
@@ -955,7 +955,8 @@ namespace BXFW
         {
             for (int i = 0; i < builder.Length; ++i)
             {
-                var currentCharacter = builder[i];
+                char currentCharacter = builder[i];
+
                 // Check if there's a match with the chars to replace.
                 if (toReplace.All((char c) => { return currentCharacter == c; }))
                 {
@@ -966,7 +967,6 @@ namespace BXFW
 
         // -- Array Utils
 #if CSHARP_7_3_OR_NEWER
-        // Tuple definition like (a, b) was added in c# 7
         /// <summary>
         /// Similar to the python's <c>'enumerate()'</c> keyword for it's <see langword="for"/> loops.
         /// </summary>
@@ -977,7 +977,7 @@ namespace BXFW
         {
             int i = -1;
 
-            foreach (var obj in enumerable)
+            foreach (T obj in enumerable)
             {
                 i++;
                 yield return (i, obj);
@@ -1167,7 +1167,7 @@ namespace BXFW
             if (string.IsNullOrEmpty(SaveKey))
                 return false;
 
-            var tType = typeof(T);
+            Type tType = typeof(T);
             if (tType == typeof(Vector2))
             {
                 return PlayerPrefs.HasKey(string.Format("{0}_X", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_Y", SaveKey));

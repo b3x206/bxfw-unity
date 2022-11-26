@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using System.IO;
 using System.Reflection;
 
 /// Editor utils go on this namespace.
@@ -62,7 +63,7 @@ namespace BXFW.Tweening.Editor
                     // We are still null, create instance at given const resources directory.
                     // Maybe we can add a EditorPref for creation directory?
 
-                    Debug.Log($"[BXTweenSettingsEditor::(get)CurrentSettings] Current settings in directory {System.IO.Path.Combine(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)} is null. Creating new");
+                    Debug.Log(string.Format("[BXTweenSettingsEditor::(get)CurrentSettings] Current settings in directory {0} is null. Creating new.", Path.Combine(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)));
                     currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
                 }
 

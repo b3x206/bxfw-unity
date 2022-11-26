@@ -79,12 +79,12 @@ namespace BXFW.UI
         {
             if (ParentTabSystem == null)
             {
-                Debug.LogWarning($"[TabButton (name -> '{transform.GetPath()}')] The parent tab system is null. Will try to get it.");
+                Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Will try to get it.", this.GetPath()));
                 var parentTab = GetComponentInParent<TabSystem>();
 
                 if (parentTab == null)
                 {
-                    Debug.LogWarning($"[TabButton (name -> '{transform.GetPath()}')] The parent tab system is null. Failed to get component.");
+                    Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Failed to get component.", this.GetPath()));
                     return;
                 }
 
@@ -137,7 +137,7 @@ namespace BXFW.UI
             else if (Application.isPlaying && !onValidateCall && !string.IsNullOrWhiteSpace(ButtonContent.text))
             {
                 // Print only if tried to set content
-                Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonText field in button \"{transform.GetPath()}\" is null.");
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonText field in button \"{0}\" is null.", this.GetPath()));
             }
 
             if (ButtonImage != null)
@@ -159,7 +159,7 @@ namespace BXFW.UI
             }
             else if (Application.isPlaying && !onValidateCall && ButtonContent.image != null)
             {
-                Debug.LogWarning($"[TabButton::GenerateButtonContent] ButtonImage field in button \"{transform.GetPath()}\" is null.");
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonImage field in button \"{0}\" is null.", this.GetPath()));
             }
         }
         private void OnValidate()
@@ -283,7 +283,7 @@ namespace BXFW.UI
 
                 default:
                     // Reset if no state was assigned.
-                    Debug.LogWarning($"[TabButton::SetButtonAppearance] No behaviour defined for state : \"{state}\". Reseting instead.");
+                    Debug.LogWarning(string.Format("[TabButton::SetButtonAppearance] No behaviour defined for state : \"{0}\". Reseting instead.", state));
                     goto case ButtonState.Reset;
             }
         }

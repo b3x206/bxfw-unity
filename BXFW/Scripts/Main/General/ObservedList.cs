@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
+
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -119,7 +119,7 @@ namespace BXFW
             OnArrayUpdated();
         }
 
-        protected abstract void OnArrayUpdated([CallerMemberName] string a = "metho");
+        protected abstract void OnArrayUpdated();
         protected abstract void OnArrayChanged(int index, T oldValue, T newValue);
         protected abstract void OnArrayAdded(int index, T added);
         protected abstract void OnArrayAddedRange(int index, IEnumerable<T> added);
@@ -131,7 +131,7 @@ namespace BXFW
             get { return _list[index]; }
             set
             {
-                var oldValue = _list[index];
+                T oldValue = _list[index];
                 _list[index] = value;
 
                 OnArrayChanged(index, oldValue, value);
@@ -197,9 +197,8 @@ namespace BXFW
             _list = new List<T>(list);
         }
 
-        protected override void OnArrayUpdated([CallerMemberName] string mems = "Method")
+        protected override void OnArrayUpdated()
         {
-            Debug.Log($"OnArrayUpdated from {mems}");
             Updated?.Invoke();
         }
         protected override void OnArrayChanged(int index, T oldValue, T newValue)
@@ -255,7 +254,7 @@ namespace BXFW
             _list = new List<T>(list);
         }
 
-        protected override void OnArrayUpdated([CallerMemberName] string mems = "Method")
+        protected override void OnArrayUpdated()
         {
             base.OnArrayUpdated();
             unityUpdated?.Invoke(this);

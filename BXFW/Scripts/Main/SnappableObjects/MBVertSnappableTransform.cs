@@ -67,7 +67,7 @@ namespace BXFW
 
             if (mesh == null)
             {
-                Debug.LogError($"[MBVertSnappableTransform::VerticesToWorldPos] Mesh on MeshFilter '{filter.GetPath()}' is null!");
+                Debug.LogError(string.Format("[MBVertSnappableTransform::VerticesToWorldPos] Mesh on MeshFilter '{0}' is null!", filter.GetPath()));
                 return null;
             }
 
@@ -136,7 +136,7 @@ namespace BXFW
             if (transformTarget.transform.localScale.x == 0f || transformTarget.transform.localScale.y == 0f || transformTarget.transform.localScale.z == 0f ||
                 transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
-                Debug.LogError($"[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{name}->{transformTarget.name}\"");
+                Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));
                 return false;
             }
 
@@ -190,7 +190,7 @@ namespace BXFW
 
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
-                Debug.LogError($"[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{name}->{transformTarget.name}\"");
+                Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));
                 return false;
             }
 
@@ -241,7 +241,7 @@ namespace BXFW
             if (transformTarget == null) return false;
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
-                Debug.LogError($"[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{name}->{transformTarget.name}\"");
+                Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));
                 return false;
             }
 

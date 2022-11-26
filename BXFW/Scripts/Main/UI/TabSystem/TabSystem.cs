@@ -491,7 +491,7 @@ namespace BXFW.UI
             }
             else
             {
-                Debug.LogError($"[TabSystem] The tab button to select is null. The index was {IndexSelect}.");
+                Debug.LogError(string.Format("[TabSystem] The tab button to select is null. The index was '{0}'.", IndexSelect));
             }
         }
         /// <summary>

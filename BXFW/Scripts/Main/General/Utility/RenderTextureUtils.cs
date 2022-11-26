@@ -104,7 +104,7 @@ namespace BXFW
                 return blitShader;
 
             const string SHADER_NAME = "Sprites/Default";
-            var shader = Shader.Find(SHADER_NAME);
+            Shader shader = Shader.Find(SHADER_NAME);
 
             if (!shader)
                 Debug.LogError(string.Format("Shader with name '{0}' is not found, did you forget to include it in the project settings?", SHADER_NAME));
@@ -265,7 +265,7 @@ namespace BXFW
             if (canRender)
                 Graphics.DrawMeshNow(mesh, objectMatrix);
             else
-                Debug.LogWarning($"[RenderTextureUtils::BlitMesh] Material with shader {material.shader.name} couldn't be rendered!");
+                Debug.LogWarning(string.Format("[RenderTextureUtils::BlitMesh] Material with shader {0} couldn't be rendered!", material.shader.name));
 
             // Pop the projection matrix to set it back to the previous one
             GL.PopMatrix();
