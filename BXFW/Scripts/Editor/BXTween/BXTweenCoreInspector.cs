@@ -27,8 +27,11 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private struct TweenFilter
         {
+            public bool ReverseIterateListObjects;
             public bool IgnoreNullTargetObject;
             public Object TargetObject;
+            [Tooltip("Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower.")]
+            public int BreakAtTweenCount;
 
             public bool ShouldFilter(ITweenCTX tw)
             {
@@ -102,27 +105,39 @@ namespace BXFW.ScriptEditor
                 EditorGUI.indentLevel += 2;
 
                 // Draw filter tweens area
+                currentFilter.BreakAtTweenCount = EditorGUILayout.IntField("Tween Amount To Pause (Break)", currentFilter.BreakAtTweenCount);
+                currentFilter.ReverseIterateListObjects = EditorGUILayout.Toggle("Reverse Tweens View", currentFilter.ReverseIterateListObjects);
                 currentFilter.IgnoreNullTargetObject = EditorGUILayout.Toggle("Ignore Null Target Object", currentFilter.IgnoreNullTargetObject);
                 currentFilter.TargetObject = EditorGUILayout.ObjectField("Target Object", currentFilter.TargetObject, typeof(Object), true);
                 
                 EditorGUI.indentLevel -= 2;
             }
 
+            // Pause editor if the tween amount exceeded
+            if (currentFilter.BreakAtTweenCount > 0 && BXTween.CurrentRunningTweens.Count >= currentFilter.BreakAtTweenCount)
+                EditorApplication.isPaused = true;
+
             runningTwScroll = GUILayout.BeginScrollView(runningTwScroll, GUILayout.Height(scrollAreaHeight));
             // Draw the list of current running tweens (with name)
             for (int i = 0; i < BXTween.CurrentRunningTweens.Count; i++)
             {
-                ITweenCTX tw = BXTween.CurrentRunningTweens[i];
+                int j = currentFilter.ReverseIterateListObjects ? BXTween.CurrentRunningTweens.Count - (i + 1) : i;
 
+                ITweenCTX tw = BXTween.CurrentRunningTweens[j];
+
+                // Allocate toggles (use 'i' parameter, as it's the only one that goes sequentially)
+                // We just want to reverse the 'CurrentRunningTweens'
+                // Otherwise it's very easy to get ArgumentOutOfRangeException
                 if (i > expandedTweens.Count - 1)
                     expandedTweens.Add(false);
 
+                // Filtering
                 if (currentFilter.ShouldFilter(tw))
                     continue;
 
                 // Get target type using reflection instead, no need to pollute the interface,
                 // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.
-                expandedTweens[i] = GUILayout.Toggle(expandedTweens[i], $"Tween {i} | Type={tw.GetType().GenericTypeArguments.SingleOrDefault()}, Target={tw.TargetObject}", boxStyle);
+                expandedTweens[i] = GUILayout.Toggle(expandedTweens[i], $"Tween {j} | Type={tw.GetType().GenericTypeArguments.SingleOrDefault()}, Target={tw.TargetObject}", boxStyle);
 
                 if (expandedTweens[i])
                 {

@@ -322,6 +322,31 @@ namespace BXFW.Tools.Editor
 
         #region Inspector-Editor Draw
         /// <summary>
+        /// Repaints inspector(s) with target <see cref="SerializedObject"/> <paramref name="obj"/>.
+        /// <br>NOTE: Only works for custom editors stored inside the <c>Inspector</c> window, for all other windows use <see cref="RepaintAll"/>.</br>
+        /// </summary>
+        public static void RepaintInspector(SerializedObject obj)
+        {
+            foreach (var i in ActiveEditorTracker.sharedTracker.activeEditors)
+            {
+                if (i.serializedObject != obj)
+                    continue;
+
+                i.Repaint();
+            }
+        }
+        /// <summary>
+        /// Repaints all editor windows that's currently open.
+        /// <br>NOTE: This method is a performance hog. Please use it on events and such.</br>
+        /// </summary>
+        public static void RepaintAll()
+        {
+            foreach (var w in Resources.FindObjectsOfTypeAll<EditorWindow>())
+            {
+                w.Repaint();
+            }
+        }
+        /// <summary>
         /// Make gui area drag and droppable.
         /// </summary>
         public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
