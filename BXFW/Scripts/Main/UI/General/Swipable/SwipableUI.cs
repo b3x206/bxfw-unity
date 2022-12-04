@@ -33,11 +33,11 @@ namespace BXFW.UI
         /// <summary>
         /// Controls the scroll sensitivity (of the scroll handler).
         /// </summary>
-        public float ScrollSwipeSensitivity = 1f;
+        public float ScrollSwipeSensitivity = 0f;
         /// <summary>
-        /// Time to wait before applying scroll. (OnEndDrag call)
+        /// Time to wait after applying scroll. (OnEndDrag call from OnScroll)
         /// </summary>
-        public float ScrollDeltaWaitTime = .3f;
+        public float ScrollWaitTime = .16f;
         /// <summary>
         /// The swipe animation duration. 
         /// This controls the length of animation of the swipe after <see cref="IEndDragHandler.OnEndDrag(PointerEventData)"/> is called.
@@ -84,8 +84,7 @@ namespace BXFW.UI
         }
 
         // -- Private
-        private PointerEventData _ScrollBeginData;
-        private Vector2 _ScrollPos;
+        private PointerEventData _ScrollEventData;
         private float _CurrentScrollDeltaWait = 0f;
 
         private Vector2 ContainerInitialPosition;
@@ -171,20 +170,23 @@ namespace BXFW.UI
             {
                 groupsAllowInteraction = groupAllowInteraction;
                 
+                // SwipableUI doesn't have appearance
                 // UpdateAppearance();
             }
         }
         #endregion
 
         #region Menu Drag
+        private Vector2 _CurrentScroll;
         private void Update()
         {
-            if (_ScrollBeginData == null) return;
+            if (_ScrollEventData == null) return;
 
-            if (_CurrentScrollDeltaWait <= ScrollDeltaWaitTime)
+            if (_CurrentScrollDeltaWait >= ScrollWaitTime)
             {
-                OnEndDrag(_ScrollBeginData);
-                _ScrollBeginData = null;
+                _ScrollEventData.position = _CurrentScroll;
+                OnEndDrag(_ScrollEventData);
+                _ScrollEventData = null;
             }
 
             _CurrentScrollDeltaWait += Time.deltaTime;
@@ -194,18 +196,20 @@ namespace BXFW.UI
             // Disable scroll if no sensitivity
             if (ScrollSwipeSensitivity <= 0f) return;
 
-            if (_ScrollBeginData == null)
+            if (_ScrollEventData == null)
             {
-                _ScrollBeginData = data;
-                _ScrollPos = data.position;
+                _ScrollEventData = data;
+                _CurrentScroll = data.position;
+                _ScrollEventData.pressPosition = data.position;
             }
 
             _CurrentScrollDeltaWait = 0f;
-            _ScrollPos += data.scrollDelta * (ScrollSwipeSensitivity * 100f);
-            _ScrollBeginData.position = _ScrollPos;
+            _CurrentScroll += data.scrollDelta * (ScrollSwipeSensitivity * 50f);
+            _ScrollEventData.position = _CurrentScroll;
 
-            OnDrag(_ScrollBeginData);
+            OnDrag(_ScrollEventData);
         }
+
         public void OnDrag(PointerEventData data)
         {
             if (!Interactable)
@@ -223,10 +227,16 @@ namespace BXFW.UI
                         // We are swiping RTL and we should clamp.
                         swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd), ClampContentDragOnMenuEnd);
                     }
-                    if (_CurrentMenu <= 0)
+                    else if (_CurrentMenu <= 0)
                     {
                         // We are swiping LTR and we should clamp.
                         swipeDelta = Mathf.Clamp(swipeDelta, -ClampContentDragOnMenuEnd, (ItemContainer.rect.width * ClampItemMenu) + ClampContentDragOnMenuEnd);
+                    }
+                    else
+                    {
+                        // Clamp swipe completely using width bounds
+                        // tested : works fine on even numbers of menus, don't care about scrolling this much anyways, it's disabled ootb
+                        swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * (ClampItemMenu - _CurrentMenu)) + ClampContentDragOnMenuEnd), (ItemContainer.rect.width * (ClampItemMenu - _CurrentMenu)) + ClampContentDragOnMenuEnd);
                     }
                 }
             }

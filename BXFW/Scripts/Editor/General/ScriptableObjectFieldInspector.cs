@@ -118,6 +118,8 @@ namespace BXFW
 
                 if (AssetDatabase.IsValidFolder(baseAssetFolder))
                 {
+                    EditorUtility.SetDirty(obj);
+
                     AssetDatabase.CreateAsset(obj, relPath);
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
@@ -336,6 +338,8 @@ namespace BXFW
                         // this repaints the propertydrawer
                         property.serializedObject.Update();
                         property.serializedObject.ApplyModifiedProperties();
+                        // notify the unity that we set a variable and scene is modified
+                        EditorUtility.SetDirty(property.serializedObject.targetObject);
                     }
                 }, position);
 
@@ -400,6 +404,8 @@ namespace BXFW
 
                 // Remove reference (no matter what, so that the reference is cleared and setting values to the previous one doesn't change 2 objects)
                 fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
+
                 EditorGUI.EndProperty();
                 return;
             }
