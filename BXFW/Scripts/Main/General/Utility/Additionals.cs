@@ -964,6 +964,21 @@ namespace BXFW
                 }
             }
         }
+        /// <summary>
+        /// <see cref="Enumerable.Cast{TResult}(System.Collections.IEnumerable)"/> with a converter predicate.
+        /// </summary>
+        /// <typeparam name="TResult">Target type to cast into.</typeparam>
+        /// <typeparam name="TParam">Gathered parameter type.</typeparam>
+        /// <param name="enumerable">Enumerable itself. (usually an array)</param>
+        /// <param name="predicate">Converter predicate. (throws <see cref="NullReferenceException"/> if null)</param>
+        public static IEnumerable<TResult> Cast<TResult, TParam>(this IEnumerable<TParam> enumerable, Func<TParam, TResult> predicate)
+        {
+            if (predicate == null)
+                throw new NullReferenceException("[Additionals::Cast] Given 'predicate' parameter is null.");
+
+            foreach (TParam t in enumerable)
+                yield return predicate(t);
+        }
 
         // -- Array Utils
 #if CSHARP_7_3_OR_NEWER

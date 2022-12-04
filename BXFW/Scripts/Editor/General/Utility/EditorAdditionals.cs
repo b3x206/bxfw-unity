@@ -284,7 +284,7 @@ namespace BXFW.Tools.Editor
         /// Returns the type of the property's target.
         /// </summary>
         /// <param name="property">Property to get type from.</param>
-        public static Type GetFieldType(this SerializedProperty property)
+        public static Type GetPropertyType(this SerializedProperty property)
         {
             return property.GetTarget().Key.FieldType;
         }

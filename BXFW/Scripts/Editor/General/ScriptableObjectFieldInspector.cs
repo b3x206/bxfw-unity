@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
+using System.IO;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BXFW
 {
@@ -14,7 +16,6 @@ namespace BXFW
     /// Creates a ScriptableObject inspector.
     /// <br>Derive from this class and use the <see cref="CustomPropertyDrawer"/> attribute with same type as <typeparamref name="T"/>.</br>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class ScriptableObjectFieldInspector<T> : PropertyDrawer
         where T : ScriptableObject
     {
@@ -64,22 +65,70 @@ namespace BXFW
             return s.Substring(0, s.IndexOf(KEY_PREFIX) + KEY_PREFIX.Length);
         }
         /// <summary>
-        /// Flag to enable to instantiate the already existing Value on <see cref="drawnScriptableObjects"/>.
+        /// Flag to enable to copy the already existing Value on <see cref="drawnScriptableObjects"/>.
         /// <br>1 : Object has to have the same parent object. (Using <see cref="UnityEngine.Object.GetInstanceID"/> here.)</br>
         /// <br>2 : Object has to have the same reference. (2 objects pointing to same <see cref="ScriptableObject"/>)</br>
         /// <br/>
-        /// <br>Disabling this will disable the instancing of the objects.</br>
+        /// <br>Disabling this will disable the copying of the objects.</br>
         /// </summary>
-        protected bool MakeDrawnScriptableObjectsUnique => true;
+        protected virtual bool MakeDrawnScriptableObjectsUnique => true;
         /// <summary>
         /// Enabling this will output diagnostic messages to the inspector.
         /// </summary>
-        protected bool DebugMode => false;
+        protected virtual bool DebugMode => false;
 
         // TODO (low priority) :
         // AdvancedDropdown implementation on UnityEditor.IMGUI.Controls
 
         private float SingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
+
+        /// <summary>
+        /// Sets value of target.
+        /// <br/>
+        /// <br>NOTE : Always pass newly created (<see cref="ScriptableObject.CreateInstance(Type)"/>) variables here.</br>
+        /// <br>Because if the setting fails (this only applies if the target property is contained inside a prefab)
+        /// it calls <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> to it.</br>
+        /// </summary>
+        private void SetValueOfTarget(SerializedProperty property, T obj)
+        {
+            if (property == null)
+                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
+            if (obj == null)
+                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed object parameter 'obj' is null.");
+
+            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+
+            if (targetIsPrefab)
+            {
+                // Pull the creation window thing
+                string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), "", "asset", ""); // contains absolute path to file
+                if (string.IsNullOrWhiteSpace(absPath))
+                {
+                    // Destroy temp object + cancel
+                    UnityEngine.Object.DestroyImmediate(obj);
+                    return;
+                }
+                
+                string relPath = absPath.Substring(absPath.IndexOf(Directory.GetCurrentDirectory()) + 1); // relPath => contains path to file (relative)
+                int indOfSlashRelPath = relPath.LastIndexOf('/');
+                indOfSlashRelPath = indOfSlashRelPath != -1 ? indOfSlashRelPath : relPath.IndexOf('\\');
+
+                // Base asset folder (if it exists)
+                string baseAssetFolder = relPath.Substring(0, indOfSlashRelPath);
+
+                if (AssetDatabase.IsValidFolder(baseAssetFolder))
+                {
+                    AssetDatabase.CreateAsset(obj, relPath);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+
+                    ProjectWindowUtil.ShowCreatedAsset(obj);
+                }
+            }
+
+            // Set value
+            fieldInfo.SetValue(property.GetParentOfTargetField().Value, obj);
+        }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -103,7 +152,7 @@ namespace BXFW
 
                                 typeMenus.AddItem(new GUIContent(string.Format("New {0}", type.Name)), false, () =>
                                 {
-                                    fieldInfo.SetValue(property.GetParentOfTargetField().Value, ScriptableObject.CreateInstance(type));
+                                    SetValueOfTarget(property, (T)ScriptableObject.CreateInstance(type));
                                 });
                             }
                         }
@@ -166,7 +215,6 @@ namespace BXFW
             return position;
         }
 
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             // The 'property' is for the object field that is only for assigning.
@@ -178,8 +226,15 @@ namespace BXFW
             // Otherwise use BXFW's EditorAdditionals.GetTarget(SerializedProperty)
             UnityEngine.Object propTarget = property.objectReferenceValue;
             var target = propTarget as T;
+            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+            // Dynamic 'ShowOnProject' button + make unique is disabled if the prefab actually exists in project
+            string currentAssetPath = AssetDatabase.GetAssetPath(target);
+            bool hasAssetPath = !string.IsNullOrWhiteSpace(currentAssetPath);
 
-            if (MakeDrawnScriptableObjectsUnique)
+            // Do not make unique if the target is prefab or we have asset path
+            // Because : prefabs can't store local scriptable objects (only scenes)
+            // :: If the object exists in project view, no need to clone; it's very easy to clone anyways + we can use 'Delete' to lose reference on the current object.
+            if (MakeDrawnScriptableObjectsUnique && !targetIsPrefab && !hasAssetPath)
             {
                 // Get whether if the same item was drawn twice on the same array / SerializedProperty
                 // If so, clone the second (current) item, as it's a reference to the previous item
@@ -188,7 +243,7 @@ namespace BXFW
                 // Contains the object_name+key_name (prefixed)
                 // Allowing for the same named variable object (on different objects) to be not cloned every time.
                 // ---
-                // Unity targetObject names could be different or null, so use GetInstanceID as this PropertyDrawer only runs tempoarily
+                // Unity targetObject names could be different or string.Empty, so use GetInstanceID as this PropertyDrawer only runs tempoarily
                 // So instance ID's are feasible
                 string key = string.Format("{0}{1}{2}", property.serializedObject.targetObject.GetInstanceID().ToString(), KEY_PREFIX, property.propertyPath);
                 if (!drawnScriptableObjects.ContainsKey(key))
@@ -247,7 +302,7 @@ namespace BXFW
                                 // because this script now hunts for the same existing references with the same parent.
                                 EditorUtility.SetDirty(target);
                                 // Make name prettier
-                                instObject.name = instObject.name.Replace("(Clone)", string.Empty);
+                                instObject.name = instObject.name.Replace("(Clone)", "_c");
 
                                 // Set the current dictionary key to be the 'instObject' (so that the object isn't cloned twice, or more)
                                 drawnScriptableObjects[key] = target;
@@ -259,6 +314,7 @@ namespace BXFW
 
             // GUI related
             var previousWidth = position.width;
+            var gEnabled = GUI.enabled;
 
             if (target == null)
             {
@@ -288,11 +344,15 @@ namespace BXFW
                 position.x += previousWidth * .4f;
 
                 position.width = previousWidth * .45f;
-                if (GUI.Button(position, "Assign Powerup (from child classes)", EditorStyles.popup))
+                if (GUI.Button(position, new GUIContent(
+                    targetIsPrefab ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
+                    targetIsPrefab ? "Prefab scenes can't serialize local scriptable objects in prefabs." : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
                     typeMenus.ShowAsContext();
                 }
                 position.x += previousWidth * .46f;
+
+                GUI.enabled = !targetIsPrefab;
 
                 position.width = previousWidth * .14f; // 1 - (.46f + .4f)
                 if (GUI.Button(position, "Refresh"))
@@ -300,14 +360,13 @@ namespace BXFW
                     typeMenus = null;
                 }
 
+                GUI.enabled = gEnabled;
+                EditorGUI.EndProperty();
                 return;
             }
 
             // Property label
             Rect propFoldoutLabel = GetPropertyRect(position, SingleLineHeight); // width is equal to 'previousWidth'
-            // Dynamic 'ShowOnProject' button
-            string currentAssetPath = AssetDatabase.GetAssetPath(target);
-            bool hasAssetPath = !string.IsNullOrWhiteSpace(currentAssetPath);
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
             float foldoutLabelWidth = hasAssetPath ? 1f - (BTN_DELETE_WIDTH + BTN_SHOWPRJ_WIDTH) : 1f - BTN_DELETE_WIDTH;
@@ -333,16 +392,14 @@ namespace BXFW
             propFoldoutLabel.width = previousWidth * BTN_DELETE_WIDTH;
             if (GUI.Button(propFoldoutLabel, "Delete"))
             {
-                // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead remove the reference
-                if (hasAssetPath)
+                // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead just remove the reference
+                if (!hasAssetPath)
                 {
-                    fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
-                }
-                else
-                { 
                     Undo.DestroyObjectImmediate(target);
                 }
 
+                // Remove reference (no matter what, so that the reference is cleared and setting values to the previous one doesn't change 2 objects)
+                fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
                 EditorGUI.EndProperty();
                 return;
             }
@@ -371,6 +428,8 @@ namespace BXFW
             }
 
             EditorGUI.EndProperty();
+
+            GUI.enabled = gEnabled;
         }
     }
 }
