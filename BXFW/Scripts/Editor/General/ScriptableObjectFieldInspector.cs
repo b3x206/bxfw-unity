@@ -126,6 +126,12 @@ namespace BXFW
 
                     ProjectWindowUtil.ShowCreatedAsset(obj);
                 }
+                else
+                {
+                    Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector::SetValueOfTarget] Asset path '{0}' isn't valid. Couldn't create file.", baseAssetFolder));
+                    UnityEngine.Object.DestroyImmediate(obj);
+                    return;
+                }
             }
 
             // Set value

@@ -8,7 +8,8 @@ namespace BXFW
 {
     /// <summary>
     /// Serializable dictionary.
-    /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable (by unity). Wrap them with container class.</br>
+    /// <br>NOTE : Array types such as <c>TKey[]</c> or <c>TValue[]</c> are NOT serializable 
+    /// in <typeparamref name="TKey"/> or <typeparamref name="TValue"/> (by unity). Wrap them with array container class.</br>
     /// </summary>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
