@@ -6,9 +6,10 @@ using System.Collections.Generic;
 
 using UnityEditor;
 using UnityEngine;
-using System.Linq;
+
 using System.IO;
-using static UnityEngine.GraphicsBuffer;
+using System.Linq;
+using System.Collections;
 
 namespace BXFW
 {
@@ -93,12 +94,10 @@ namespace BXFW
         {
             if (property == null)
                 throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
-            if (obj == null)
-                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed object parameter 'obj' is null.");
 
             bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
 
-            if (targetIsPrefab)
+            if (targetIsPrefab && obj != null)
             {
                 // Pull the creation window thing
                 string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), "", "asset", ""); // contains absolute path to file
@@ -106,9 +105,10 @@ namespace BXFW
                 {
                     // Destroy temp object + cancel
                     UnityEngine.Object.DestroyImmediate(obj);
+
                     return;
                 }
-                
+
                 string relPath = absPath.Substring(absPath.IndexOf(Directory.GetCurrentDirectory()) + 1); // relPath => contains path to file (relative)
                 int indOfSlashRelPath = relPath.LastIndexOf('/');
                 indOfSlashRelPath = indOfSlashRelPath != -1 ? indOfSlashRelPath : relPath.IndexOf('\\');
@@ -135,7 +135,59 @@ namespace BXFW
             }
 
             // Set value
-            fieldInfo.SetValue(property.GetParentOfTargetField().Value, obj);
+            // If the parent is an array, set the target index into the 'obj'
+            var parentTargetPair = property.GetParentOfTargetField();
+            object parent = parentTargetPair.Value;
+
+            // why
+            if (fieldInfo.FieldType.GetInterfaces().Contains(typeof(IEnumerable)))
+            {
+                // Set the index directly
+                // the returned field info cannot be a direct reference / pointer to an array element (because c# arrays are weird)
+                // (heck, even the fieldInfo internal variable that unity returns points to that element's array parent)
+                // so we have to copy the entire 'IEnumerable' thing and paste into that array.
+
+                int index = property.GetPropertyArrayIndex();
+
+                // We also have to ensure the array is a 'settable' type
+                // Object we cast to is reference, but singular objects may still need FieldInfo set.
+                if (parent is IList<T> refList)
+                {
+                    refList[index] = obj;
+                }
+                else if (parent is Array refArray)
+                {
+                    refArray.SetValue(obj, index);
+                }
+                else
+                {
+                    // List is not settable, fallback to previous method
+                    // This most likely shouldn't happen (unless using a custom field parent with IEnumerable)
+                    // as unity doesn't serialize read-only Lists or weird c# lists.
+                    if (DebugMode)
+                        Debug.LogWarning("[ScriptableObjectFieldInspector::SetValueOfTarget] Target is in field parent with interface 'IEnumerable' but falling back to default FieldInfo set method.");
+
+                    try
+                    {
+                        fieldInfo.SetValue(parent, obj);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(string.Format("[ScriptableObjectFieldInspector::SetValueOfTarget] Tried to set target that has field parent with 'IEnumerable' but failed with exception : {0}\nStackTrace:{1}", e.Message, e.StackTrace));
+                    }
+                }
+            }
+            else
+            {
+                // Set value directly, as it's not contained in an array and
+                // the fieldInfo directly points to the object's actual field
+                fieldInfo.SetValue(parent, obj);
+            }
+
+            // TODO : Test if this is redundant? maybe it's not
+            // Or test if this works with normal prefab asset creations?
+            if (targetIsPrefab)
+                EditorUtility.SetDirty(obj);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -385,7 +437,7 @@ namespace BXFW
             property.isExpanded = EditorGUI.Foldout(propFoldoutLabel, property.isExpanded, label);
 
             propFoldoutLabel.x += previousWidth * foldoutLabelWidth;   // Start pos
-            
+
             propFoldoutLabel.width = previousWidth * BTN_SHOWPRJ_WIDTH;
             if (hasAssetPath)
             {
@@ -409,7 +461,8 @@ namespace BXFW
                 }
 
                 // Remove reference (no matter what, so that the reference is cleared and setting values to the previous one doesn't change 2 objects)
-                fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
+                SetValueOfTarget(property, null);
+                //fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
 
                 EditorGUI.EndProperty();
