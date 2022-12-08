@@ -84,56 +84,10 @@ namespace BXFW
         private float SingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
 
         /// <summary>
-        /// Sets value of target.
-        /// <br/>
-        /// <br>NOTE : Always pass newly created (<see cref="ScriptableObject.CreateInstance(Type)"/>) variables here.</br>
-        /// <br>Because if the setting fails (this only applies if the target property is contained inside a prefab)
-        /// it calls <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> to it.</br>
+        /// Sets value of target safely.
         /// </summary>
         private void SetValueOfTarget(SerializedProperty property, T obj)
         {
-            if (property == null)
-                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
-
-            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
-
-            if (targetIsPrefab && obj != null)
-            {
-                // Pull the creation window thing
-                string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), "", "asset", ""); // contains absolute path to file
-                if (string.IsNullOrWhiteSpace(absPath))
-                {
-                    // Destroy temp object + cancel
-                    UnityEngine.Object.DestroyImmediate(obj);
-
-                    return;
-                }
-
-                string relPath = absPath.Substring(absPath.IndexOf(Directory.GetCurrentDirectory()) + 1); // relPath => contains path to file (relative)
-                int indOfSlashRelPath = relPath.LastIndexOf('/');
-                indOfSlashRelPath = indOfSlashRelPath != -1 ? indOfSlashRelPath : relPath.IndexOf('\\');
-
-                // Base asset folder (if it exists)
-                string baseAssetFolder = relPath.Substring(0, indOfSlashRelPath);
-
-                if (AssetDatabase.IsValidFolder(baseAssetFolder))
-                {
-                    EditorUtility.SetDirty(obj);
-
-                    AssetDatabase.CreateAsset(obj, relPath);
-                    AssetDatabase.SaveAssets();
-                    AssetDatabase.Refresh();
-
-                    ProjectWindowUtil.ShowCreatedAsset(obj);
-                }
-                else
-                {
-                    Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector::SetValueOfTarget] Asset path '{0}' isn't valid. Couldn't create file.", baseAssetFolder));
-                    UnityEngine.Object.DestroyImmediate(obj);
-                    return;
-                }
-            }
-
             // Set value
             // If the parent is an array, set the target index into the 'obj'
             var parentTargetPair = property.GetParentOfTargetField();
@@ -183,6 +137,60 @@ namespace BXFW
                 // the fieldInfo directly points to the object's actual field
                 fieldInfo.SetValue(parent, obj);
             }
+        }
+        /// <summary>
+        /// Sets value of target.
+        /// <br>Summons a scriptable object creation window if the inline create was called.</br>
+        /// <br/>
+        /// <br>NOTE : Always pass newly created (<see cref="ScriptableObject.CreateInstance(Type)"/>) variables here.</br>
+        /// <br>Because if the setting fails (this only applies if the target property is contained inside a prefab)
+        /// it calls <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> to it.</br>
+        /// </summary>
+        private void SetValueOfTargetDelegate(SerializedProperty property, T obj)
+        {
+            if (property == null)
+                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
+
+            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+
+            if (targetIsPrefab && obj != null)
+            {
+                // Pull the creation window thing
+                string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), "", "asset", ""); // contains absolute path to file
+                if (string.IsNullOrWhiteSpace(absPath))
+                {
+                    // Destroy temp object + cancel
+                    UnityEngine.Object.DestroyImmediate(obj);
+
+                    return;
+                }
+
+                string relPath = absPath.Substring(absPath.IndexOf(Directory.GetCurrentDirectory()) + 1); // relPath => contains path to file (relative)
+                int indOfSlashRelPath = relPath.LastIndexOf('/');
+                indOfSlashRelPath = indOfSlashRelPath != -1 ? indOfSlashRelPath : relPath.IndexOf('\\');
+
+                // Base asset folder (if it exists)
+                string baseAssetFolder = relPath.Substring(0, indOfSlashRelPath);
+
+                if (AssetDatabase.IsValidFolder(baseAssetFolder))
+                {
+                    EditorUtility.SetDirty(obj);
+
+                    AssetDatabase.CreateAsset(obj, relPath);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+
+                    ProjectWindowUtil.ShowCreatedAsset(obj);
+                }
+                else
+                {
+                    Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector::SetValueOfTarget] Asset path '{0}' isn't valid. Couldn't create file.", baseAssetFolder));
+                    UnityEngine.Object.DestroyImmediate(obj);
+                    return;
+                }
+            }
+
+            SetValueOfTarget(property, obj);
 
             // TODO : Test if this is redundant? maybe it's not
             // Or test if this works with normal prefab asset creations?
@@ -212,7 +220,7 @@ namespace BXFW
 
                                 typeMenus.AddItem(new GUIContent(string.Format("New {0}", type.Name)), false, () =>
                                 {
-                                    SetValueOfTarget(property, (T)ScriptableObject.CreateInstance(type));
+                                    SetValueOfTargetDelegate(property, (T)ScriptableObject.CreateInstance(type));
                                 });
                             }
                         }
@@ -354,8 +362,8 @@ namespace BXFW
                                 T instObject = UnityEngine.Object.Instantiate(propPair.Value);
 
                                 // Assign the clone (ASSIGN LIKE THIS, JUST SETTING THE 'property.objectReferenceValue' DOES NOT WORK)
-                                fieldInfo.SetValue(property.GetParentOfTargetField().Value, instObject);
-                                target = instObject;                           // Set tempoary variables too
+                                SetValueOfTarget(property, instObject);
+                                target = instObject;                    // Set tempoary variables too
 
                                 // Set the target dirty
                                 // With this way, cloning of the 'ReorderableList' no longer causes issues,
@@ -387,7 +395,7 @@ namespace BXFW
                         DragAndDrop.objectReferences[0].GetType().BaseType == typeof(T)
                     )
                     {
-                        fieldInfo.SetValue(property.GetParentOfTargetField().Value, DragAndDrop.objectReferences[0]);
+                        SetValueOfTarget(property, DragAndDrop.objectReferences[0] as T);
                         target = DragAndDrop.objectReferences[0] as T;
 
                         if (DebugMode)
