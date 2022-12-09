@@ -481,9 +481,11 @@ namespace BXFW
             if (property.isExpanded)
             {
                 SObject ??= new SerializedObject(target);
+                SObject.UpdateIfRequiredOrScript();
 
                 // Draw fields
                 EditorGUI.indentLevel += 1;
+
                 SerializedProperty prop = SObject.GetIterator();
                 bool expanded = true;
                 while (prop.NextVisible(expanded))
@@ -500,9 +502,8 @@ namespace BXFW
                 SObject.ApplyModifiedProperties();
             }
 
-            EditorGUI.EndProperty();
-
             GUI.enabled = gEnabled;
+            EditorGUI.EndProperty();
         }
     }
 }

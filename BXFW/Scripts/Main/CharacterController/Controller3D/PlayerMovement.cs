@@ -20,20 +20,21 @@ namespace BXFW
     /// </summary>
     /// TODO 1 : Make BXFW.Modules a thing (abstract scriptable object based module system, allowing custom variables + behaviour)
     /// TODO 2 : Extend from UnityEngine.CharacterController
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CharacterController)), DisallowMultipleComponent]
     public sealed class PlayerMovement : MonoBehaviour
     {
         /// <summary>Character controller on this class.</summary>
         public CharacterController Controller { get; private set; }
 
         [Header("Player Settings")]
-        [SerializeField] private LayerMask Player_GroundMask;
+        public LayerMask Player_GroundMask;
         public float speed = 400f;
         public float runSpeed = 800f;
         public float jumpSpeed = 3f;
         public float rigidBodyPushPower = 1f;
         public float rbWeight = 1f;
         public bool canMove = true;
+        public bool canInputMove = true;
         [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
         // Input
         public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
@@ -120,7 +121,9 @@ namespace BXFW
         {
             //// Player Controller  ////
             Controller = GetComponent<CharacterController>();
-
+        }
+        private void Start()
+        {
             //// Variable Control  ////
             if (groundCheckTransform == null)
                 Debug.LogError("[PlayerMovement] Player ground check is null. Please assign one.");
@@ -150,7 +153,10 @@ namespace BXFW
             if (!canMoveKinematic) return; // Can player move?
 
             //// Main Movement    ///
-            Vector3 move_actualDir = PlayerMove() * Time.fixedDeltaTime;
+            Vector3 move_actualDir = canInputMove ? PlayerMove(new Vector2(
+                Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
+                Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
+                )) * Time.fixedDeltaTime : Vector3.zero;
 
             //// Gravity         ////
             PlayerGravity();
@@ -173,7 +179,7 @@ namespace BXFW
         /// Player movement. (similar to godot's move_and_slide())
         /// </summary>
         /// <returns>Player movement vector. (NOT multiplied with <see cref="Time.deltaTime"/>)</returns>
-        private Vector3 PlayerMove()
+        public Vector3 PlayerMove(Vector2 input)
         {
             if (!canMove)
             { return Vector3.zero; }
@@ -181,8 +187,8 @@ namespace BXFW
             Vector3 move_actualDir; // Dir on return;
             float move_currentSpeed = moveRunInput ? runSpeed : speed;
 
-            float move_h = Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput);       // H
-            float move_v = Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput); // V
+            float move_h = input.x;
+            float move_v = input.y;
 
             Vector3 move_inputDir = new Vector3(move_h, 0f, move_v).normalized; // Input (normalized)
 
@@ -222,7 +228,7 @@ namespace BXFW
 
                     default:
                     case PlayerViewType.Free:
-                        move_actualDir = Vector3.zero;
+                        move_actualDir = move_inputDir;
                         break;
                 }
             }
