@@ -75,13 +75,13 @@ namespace BXFW
         public bool IsGrounded { get; private set; } = false;
 
         // -- Player Reference
-        public enum PlayerViewType { FPS, TPS }
+        public enum PlayerViewType { FPS, TPS, Free, FreeRelativeCam }
         [Header("Player Reference")]
         public PlayerViewType currentCameraView = PlayerViewType.FPS;
         [Tooltip("Players camera.")]
         public Camera targetCamera;
         [Tooltip("Transform for ground checking. This should be on the position of the legs.")]
-        public Transform groundCheckTs;
+        public Transform groundCheckTransform;
         public float groundCheckDistance = .4f;
 
         /// <summary>
@@ -109,11 +109,11 @@ namespace BXFW
         /// <c>[ **Special** Internal Velocity]</c> Current Player veloicty.
         /// <br><c>Note :</c> Always add <see cref="m_externVelocity"/> to this velocity!</br>
         /// </summary>
-        private Vector3 m_internalVelocity;
+        [SerializeField, InspectorReadOnlyView] private Vector3 m_internalVelocity;
         /// <summary><c>[External Velocity]</c> Total velocity changed by other scripts.</summary>
-        private Vector3 m_externVelocity;
+        [SerializeField, InspectorReadOnlyView] private Vector3 m_externVelocity;
         /// <summary><c>[Internal Velocity]</c> Gravity velocity.</summary>
-        private Vector3 m_gravityVelocity;
+        [SerializeField, InspectorReadOnlyView] private Vector3 m_gravityVelocity;
 
         ///////////////// Function
         private void Awake()
@@ -122,7 +122,7 @@ namespace BXFW
             Controller = GetComponent<CharacterController>();
 
             //// Variable Control  ////
-            if (groundCheckTs == null)
+            if (groundCheckTransform == null)
                 Debug.LogError("[PlayerMovement] Player ground check is null. Please assign one.");
             if (targetCamera == null && currentCameraView == PlayerViewType.TPS)
                 Debug.LogWarning(string.Format("[PlayerMovement] Player cam is null. (Move style [{0}] is relative to camera!)", currentCameraView));
@@ -145,7 +145,8 @@ namespace BXFW
         private void FixedUpdate()
         {
             //// Is Player Grounded? 
-            IsGrounded = Physics.CheckSphere(groundCheckTs.position, groundCheckDistance, Player_GroundMask);
+            IsGrounded = Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, Player_GroundMask);
+            
             if (!canMoveKinematic) return; // Can player move?
 
             //// Main Movement    ///
@@ -195,22 +196,32 @@ namespace BXFW
                         move_actualDir = ((transform.right * move_inputDir.x) + (transform.forward * move_inputDir.z)) * move_currentSpeed;
                         break;
                     case PlayerViewType.TPS:
-                        //// Rotation relative to camera ////
-                        // Get target angle, according to the camera's direction and the player movement INPUT direction
-                        float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + targetCamera.transform.eulerAngles.y;
-                        // Interpolate the current angle
-                        float move_angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, move_targetAngle, ref m_TPSRotateV, TPS_tsRotateDamp);
-                        // Apply damped rotation.
-                        // TODO 4 : Preserve previous rotation + rotate in transform.up direction
-                        transform.rotation = Quaternion.Euler(0f, move_angle, 0f);
+                        {
+                            //// Rotation relative to camera ////
+                            // Get target angle, according to the camera's direction and the player movement INPUT direction
+                            float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + targetCamera.transform.eulerAngles.y;
+                            // Interpolate the current angle
+                            float move_angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, move_targetAngle, ref m_TPSRotateV, TPS_tsRotateDamp);
+                            // Apply damped rotation.
+                            // TODO 4 : Preserve previous rotation + rotate in transform.up direction
+                            transform.rotation = Quaternion.Euler(0f, move_angle, 0f);
 
-                        //// Movement (Relative to character pos and rot) ////
-                        // Add camera affected movement vector to the movement vec.
-                        move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
+                            //// Movement (Relative to character pos and rot) ////
+                            // Add camera affected movement vector to the movement vec.
+                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
+                        }
                         break;
 
-                    // No direction,
+                    case PlayerViewType.FreeRelativeCam:
+                        {
+                            // Do TPS movement without rotating the player.
+                            float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + targetCamera.transform.eulerAngles.y;
+                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
+                        }
+                        break;
+
                     default:
+                    case PlayerViewType.Free:
                         move_actualDir = Vector3.zero;
                         break;
                 }
@@ -246,10 +257,9 @@ namespace BXFW
             }
             // Quick workaround for player clipping.
             // If player is grounded but the player still has falling velocity.
-            // TODO : Make this independent of gravity axis (not important but nice to have)
-            if (IsGrounded && m_gravityVelocity.y <= 0f && m_internalVelocity.y <= 0f)
+            if (IsGrounded && m_gravityVelocity.GetBiggestAxis() <= 0f && m_internalVelocity.GetBiggestAxis() <= 0f)
             {
-                m_gravityVelocity.y = DEFAULT_GROUNDED_GRAVITY;
+                m_gravityVelocity = -gravity.normalized * DEFAULT_GROUNDED_GRAVITY;
             }
         }
 
@@ -263,7 +273,7 @@ namespace BXFW
 
             /// The '2f' added to this is required as <see cref="PlayerGravity()"/> function sets player gravity to -2f always.
             //m_gravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
-            m_gravityVelocity.y += jumpSpeed + -DEFAULT_GROUNDED_GRAVITY;
+            m_gravityVelocity += -gravity.normalized * (jumpSpeed + DEFAULT_GROUNDED_GRAVITY);
         }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
@@ -295,10 +305,10 @@ namespace BXFW
         // Shows interaction bounding box. (incorrectly at least)
         private void OnDrawGizmos()
         {
-            if (groundCheckTs == null) return;
+            if (groundCheckTransform == null) return;
 
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(groundCheckTs.position, groundCheckDistance);
+            Gizmos.DrawWireSphere(groundCheckTransform.position, groundCheckDistance);
             Gizmos.color = Color.white;
         }
 #endif
