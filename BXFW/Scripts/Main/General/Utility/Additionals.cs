@@ -385,17 +385,11 @@ namespace BXFW
         public static float GetBiggestAxis(this Vector3 target)
         {
             if (target.x > target.y && target.x > target.z)
-            {
                 return target.x;
-            }
             if (target.y > target.x && target.y > target.z)
-            {
                 return target.y;
-            }
             if (target.z > target.y && target.z > target.x)
-            {
                 return target.z;
-            }
 
             return target.x;
         }
@@ -407,6 +401,32 @@ namespace BXFW
             if (target.x > target.y)
                 return target.x;
             if (target.y > target.x)
+                return target.y;
+
+            return target.x;
+        }
+        /// <summary>
+        /// Returns the smallest axis in the <paramref name="target"/>.
+        /// </summary>
+        public static float GetSmallestAxis(this Vector3 target)
+        {
+            if (target.x < target.y && target.x < target.z)
+                return target.x;
+            if (target.y < target.x && target.y < target.z)
+                return target.y;
+            if (target.z < target.y && target.z < target.x)
+                return target.z;
+
+            return target.x;
+        }
+        /// <summary>
+        /// Returns the smallest axis in the <paramref name="target"/>.
+        /// </summary>
+        public static float GetSmallestAxis(this Vector2 target)
+        {
+            if (target.x < target.y)
+                return target.x;
+            if (target.y < target.x)
                 return target.y;
 
             return target.x;

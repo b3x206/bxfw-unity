@@ -94,6 +94,11 @@ namespace BXFW
             get { return m_internalVelocity; }
             set { m_externVelocity = value; }
         }
+        private Vector3 mWishDir;
+        public Vector3 WishDir
+        {
+            get { return mWishDir; }
+        }
 
         /////////// ------------
         /////////// Private Vars
@@ -153,7 +158,7 @@ namespace BXFW
             if (!canMoveKinematic) return; // Can player move?
 
             //// Main Movement    ///
-            Vector3 move_actualDir = canInputMove ? PlayerMove(new Vector2(
+            mWishDir = canInputMove ? PlayerMove(new Vector2(
                 Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
                 Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
                 )) * Time.fixedDeltaTime : Vector3.zero;
@@ -162,7 +167,7 @@ namespace BXFW
             PlayerGravity();
 
             //// Set velocity.   ////
-            m_internalVelocity = move_actualDir + m_gravityVelocity + m_externVelocity;
+            m_internalVelocity = mWishDir + m_gravityVelocity + m_externVelocity;
 
             //// Jumping         ////
             if (jumpKeyInputQueue)
