@@ -46,11 +46,21 @@ namespace BXFW
         /// Returns whether if the any of the 'move' input events is being done.
         /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
         /// </summary>
-        public bool ShouldMove
+        public bool MoveInputIsPressed
         {
             get
             {
                 return moveForwardInput || moveBackwardInput || moveLeftInput || moveRightInput;
+            }
+        }
+        /// <summary>
+        /// Returns =&gt; <c><see cref="canMove"/> &amp;&amp; <see cref="MoveInputIsPressed"/></c>
+        /// </summary>
+        public bool ShouldMove
+        {
+            get
+            {
+                return canMove && MoveInputIsPressed;
             }
         }
         public CustomInputEvent moveJumpInput   = new KeyCode[] { KeyCode.Space };
