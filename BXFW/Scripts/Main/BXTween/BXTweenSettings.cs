@@ -18,6 +18,7 @@ namespace BXFW.Tweening
         // :: General
         public bool enableBXTween = true;
         public bool ignoreTimeScale = false;
+        public int maxTweens = 50;
 
         // :: Default
         public EaseType DefaultEaseType = EaseType.QuadInOut;
@@ -39,6 +40,7 @@ namespace BXFW.Tweening
         {
             enableBXTween = from.enableBXTween;
             ignoreTimeScale = from.ignoreTimeScale;
+            maxTweens = from.maxTweens;
 
             DefaultEaseType = from.DefaultEaseType;
             DefaultRepeatType = from.DefaultRepeatType;

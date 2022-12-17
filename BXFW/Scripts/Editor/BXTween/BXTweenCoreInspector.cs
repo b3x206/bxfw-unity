@@ -9,6 +9,9 @@ using BXFW.Tweening;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// A debug viewer for BXTween.
+    /// </summary>
     [CustomEditor(typeof(BXTweenCore))]
     public class BXTweenCoreInspector : Editor
     {

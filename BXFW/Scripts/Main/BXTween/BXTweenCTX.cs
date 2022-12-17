@@ -403,7 +403,7 @@ namespace BXFW.Tweening
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnUpdateContextCoroutine(this));
+                Debug.Log(BXTweenStrings.DLog_BXTwCTXOnUpdateContextCoroutine(this));
             }
 
             return _IteratorCoroutine != null;
@@ -444,7 +444,7 @@ namespace BXFW.Tweening
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnCtor(this));
+                Debug.Log(BXTweenStrings.DLog_BXTwCTXOnCtor(this));
             }
         }
 
@@ -552,7 +552,7 @@ namespace BXFW.Tweening
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStart(this));
+                Debug.Log(BXTweenStrings.DLog_BXTwCTXOnStart(this));
             }
         }
         /// <summary>
@@ -599,7 +599,7 @@ namespace BXFW.Tweening
             // Log
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnPause(this));
+                Debug.Log(BXTweenStrings.DLog_BXTwCTXOnPause(this));
             }
 
             // Update
@@ -623,7 +623,7 @@ namespace BXFW.Tweening
             }
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.GetDLog_BXTwCTXOnStop(this));
+                Debug.Log(BXTweenStrings.DLog_BXTwCTXOnStop(this));
             }
 #if UNITY_EDITOR
             // Unity Editor Stop

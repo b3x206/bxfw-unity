@@ -187,12 +187,11 @@ namespace BXFW.Tools.Editor
                 // No depth, instead return the field info from this scriptable object (use the parent scriptable object ofc)
                 var fInfo = GetField(prop.serializedObject.targetObject, prop.name);
 
-                return new KeyValuePair<FieldInfo, object>(fInfo, fInfo.GetValue(prop.serializedObject.targetObject));
+                // Return the 'serializedObject.targetObject' as target, because it isn't a field (is literally an pointer) 
+                return new KeyValuePair<FieldInfo, object>(fInfo, prop.serializedObject.targetObject);
             }
 
             // lastPropertyName is buggy, it usually most likely assumes the invalid depth?
-            // !! REVERT THIS IF SHOP MENU THING BREAKS !! //
-            // string lastPropertyName = prop.propertyPath.Substring(lastIndexOfPeriod + 1, prop.propertyPath.Length - (lastIndexOfPeriod + 1));
             string propertyNamesExceptLast = prop.propertyPath.Substring(0, lastIndexOfPeriod);
 
             var pair = GetTarget(prop.serializedObject.targetObject, propertyNamesExceptLast);
