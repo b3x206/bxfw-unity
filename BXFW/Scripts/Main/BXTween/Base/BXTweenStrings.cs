@@ -115,17 +115,6 @@ namespace BXFW.Tweening
                     LogRich(string.Format("Cannot set ease to predefined {0} mode because there is a Custom Ease Curve set.\nPlease set custom curve to null (Use ::SetCustomCurve()) if you want to set predefined eases.", TypeAttemptSet.ToString()))
                 );
         }
-        public static string GetLog_BXTwSettingsOnCreate(string createDir)
-        {
-            // Do not format this string if you don't want free stackoverflows
-            return string.Format
-                (   // Main String
-                    "{0} {1}",
-                    // Format List
-                    "[BXTweenSettings::GetBXTweenSettings]->",
-                    string.Format("Created BXTweenSettings on directory: '{0}'", createDir)
-                );
-        }
 
         #region Diagnostic Mode Strings
         internal static string Log_BXTwCTXGetDebugFormatInfo<T>(BXTweenCTX<T> gContext)
@@ -145,7 +134,7 @@ Tween Details : Duration={2} Delay={3} StartVal={4} EndVal={5} HasEndActions={6}
 Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject: {4}", typeof(T).Name,
                     StartValue, TargetValue, Duration, TargetObject)));
         }
-        public static string GetDLog_BXTwCTXOnCtor<T>(BXTweenCTX<T> gContext)
+        public static string DLog_BXTwCTXOnCtor<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
                 (   // Main String
@@ -155,7 +144,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                     LogRich(string.Format("Constructed tween : \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
                 );
         }
-        public static string GetDLog_BXTwCTXOnStart<T>(BXTweenCTX<T> gContext)
+        public static string DLog_BXTwCTXOnStart<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
                 (   // Main String
@@ -165,7 +154,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                     LogRich(string.Format("Called 'StartTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
                 );
         }
-        public static string GetDLog_BXTwCTXOnPause<T>(BXTweenCTX<T> gContext)
+        public static string DLog_BXTwCTXOnPause<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
                 (   // Main String
@@ -175,7 +164,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                     LogRich(string.Format("Called 'PauseTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
                 );
         }
-        public static string GetDLog_BXTwCTXOnStop<T>(BXTweenCTX<T> gContext)
+        public static string DLog_BXTwCTXOnStop<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
                 (   // Main String
@@ -185,7 +174,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                     LogRich(string.Format("Called 'StopTween()' on context \"{0}\".", Log_BXTwCTXGetDebugFormatInfo(gContext)))
                 );
         }
-        public static string GetDLog_BXTwCTXOnUpdateContextCoroutine<T>(BXTweenCTX<T> gContext)
+        public static string DLog_BXTwCTXOnUpdateContextCoroutine<T>(BXTweenCTX<T> gContext)
         {
             return string.Format
                 (   // Main String

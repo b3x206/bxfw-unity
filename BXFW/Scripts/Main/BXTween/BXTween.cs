@@ -89,7 +89,6 @@ namespace BXFW.Tweening
         /// Utility for checking if the type is tweenable.
         /// </summary>
         /// <param name="t">Type to check.</param>
-        /// <returns>Bool = If it's tweenable | MethodInfo = For usage if tweenable</returns>
         public static bool IsTweenableType(Type t)
         {
             // Get method if it's tweenable (dynamic using reflection)
@@ -98,8 +97,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Utility for checking if the type is tweenable.
         /// </summary>
-        /// <param name="t">Type to check.</param>
-        /// <returns>Bool = If it's tweenable | MethodInfo = For usage if tweenable</returns>
+        /// <typeparam name="T">Type to check.</typeparam>
         public static bool IsTweenableType<T>()
         {
             return IsTweenableType(typeof(T));

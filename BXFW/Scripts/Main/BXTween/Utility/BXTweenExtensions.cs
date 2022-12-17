@@ -97,7 +97,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="RectTransform"/>
-        public static BXTweenCTX<Vector3> BXTwChangePos(this RectTransform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> BXTwMove(this RectTransform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
             {
@@ -109,7 +109,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosX(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveX(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -122,7 +122,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosY(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveY(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -135,7 +135,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosZ(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveZ(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -161,7 +161,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangeAnchorPosX(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveAnchorPosX(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -174,7 +174,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangeAnchorPosY(this RectTransform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveAnchorPosY(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -234,11 +234,36 @@ namespace BXFW.Tweening
         {
             return BXTwChangeRect(target, other.rect, Duration);
         }
+
+        public static BXTweenCTX<float> BXTwFadeAlpha(this Graphic target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.color.a, LastValue, Duration, (float f) => { target.color = new Color(target.color.r, target.color.g, target.color.b, f); }, target);
+
+            return Context;
+        }
+        public static BXTweenCTX<Color> BXTwChangeColor(this Graphic target, Color LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.color, LastValue, Duration, (Color c) => { target.color = c; }, target);
+
+            return Context;
+        }
         #endregion
 
         #region Standard (UnityEngine)
         /// <see cref="Transform">
-        public static BXTweenCTX<Vector3> BXTwChangePos(this Transform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> BXTwMove(this Transform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
             {
@@ -251,7 +276,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosX(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveX(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -264,7 +289,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosY(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveY(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -277,7 +302,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangePosZ(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveZ(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -535,6 +560,51 @@ namespace BXFW.Tweening
 
             var Context = To(target.farClipPlane, LastValue, Duration,
                 (float f) => { target.farClipPlane = f; }, target);
+
+            return Context;
+        }
+        
+        /// <see cref="AudioSource"/>
+        public static BXTweenCTX<float> BXTwFadeVolume(this AudioSource target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.volume, LastValue, Duration,
+                (float f) => { target.volume = f; }, target);
+
+            return Context;
+        }
+        public static BXTweenCTX<float> BXTwPitch(this AudioSource target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.pitch, LastValue, Duration,
+                (float f) => { target.pitch = f; }, target);
+
+            return Context;
+        }
+        /// <summary>
+        /// Tweens the <see cref="AudioSource.spatialBlend"/> property.
+        /// <br>Target value is clamped between 0-1.</br>
+        /// </summary>
+        public static BXTweenCTX<float> BXTwSpatialBlend(this AudioSource target, float LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.spatialBlend, LastValue, Duration,
+                (float f) => { target.spatialBlend = Mathf.Clamp01(f); }, target);
 
             return Context;
         }

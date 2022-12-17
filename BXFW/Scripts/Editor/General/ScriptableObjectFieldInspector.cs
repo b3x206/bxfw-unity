@@ -81,7 +81,10 @@ namespace BXFW
         // TODO (low priority) :
         // AdvancedDropdown implementation on UnityEditor.IMGUI.Controls
 
-        private float SingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
+        /// <summary>
+        /// Size of a single line height with padding applied.
+        /// </summary>
+        protected float SingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
 
         /// <summary>
         /// Sets value of target safely.
@@ -384,31 +387,42 @@ namespace BXFW
             var previousWidth = position.width;
             var gEnabled = GUI.enabled;
 
+            // Drag-Drop gui.
+            EditorAdditionals.MakeDroppableAreaGUI(
+            () => // OnDrag
+            {
+                if (DebugMode)
+                    Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Dragged object stats => Length:{0}, Object:{1}", DragAndDrop.objectReferences.Length, DragAndDrop.objectReferences[0].GetType().BaseType));
+
+                if (
+                    DragAndDrop.objectReferences.Length == 1 &&
+                    // Accept drag if the previous base type matches
+                    DragAndDrop.objectReferences[0].GetType().GetBaseTypes().Contains(typeof(T))
+                )
+                {
+                    // Clear if there is previous object.
+                    if (hasAssetPath)
+                        SetValueOfTarget(property, null);
+
+                    SetValueOfTarget(property, DragAndDrop.objectReferences[0] as T);
+                    target = DragAndDrop.objectReferences[0] as T;
+
+                    if (DebugMode)
+                        Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Assigned target to '{0}'.", target));
+
+                    // this repaints the propertydrawer
+                    property.serializedObject.Update();
+                    property.serializedObject.ApplyModifiedProperties();
+                    // notify the unity that we set a variable and scene is modified
+                    EditorUtility.SetDirty(property.serializedObject.targetObject);
+                }
+            }, new Rect(position)
+            {
+                height = SingleLineHeight
+            });
+
             if (target == null)
             {
-                EditorAdditionals.MakeDroppableAreaGUI(
-                () => // OnDrag
-                {
-                    if (
-                        DragAndDrop.objectReferences.Length == 1 &&
-                        // Accept drag if the previous base type matches
-                        DragAndDrop.objectReferences[0].GetType().BaseType == typeof(T)
-                    )
-                    {
-                        SetValueOfTarget(property, DragAndDrop.objectReferences[0] as T);
-                        target = DragAndDrop.objectReferences[0] as T;
-
-                        if (DebugMode)
-                            Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Assigned target to '{0}'.", target));
-
-                        // this repaints the propertydrawer
-                        property.serializedObject.Update();
-                        property.serializedObject.ApplyModifiedProperties();
-                        // notify the unity that we set a variable and scene is modified
-                        EditorUtility.SetDirty(property.serializedObject.targetObject);
-                    }
-                }, position);
-
                 position.width = previousWidth * .4f;
                 GUI.Label(position, label);
                 position.x += previousWidth * .4f;
@@ -470,7 +484,6 @@ namespace BXFW
 
                 // Remove reference (no matter what, so that the reference is cleared and setting values to the previous one doesn't change 2 objects)
                 SetValueOfTarget(property, null);
-                //fieldInfo.SetValue(property.GetParentOfTargetField().Value, null);
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
 
                 EditorGUI.EndProperty();

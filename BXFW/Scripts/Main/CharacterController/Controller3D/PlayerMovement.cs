@@ -105,6 +105,9 @@ namespace BXFW
             set { m_externVelocity = value; }
         }
         private Vector3 mWishDir;
+        /// <summary>
+        /// Direction that the input wishes to move.
+        /// </summary>
         public Vector3 WishDir
         {
             get { return mWishDir; }
@@ -323,7 +326,6 @@ namespace BXFW
         }
 
 #if UNITY_EDITOR
-        // Shows interaction bounding box. (incorrectly at least)
         private void OnDrawGizmos()
         {
             if (groundCheckTransform == null) return;
