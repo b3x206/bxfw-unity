@@ -120,13 +120,13 @@ namespace BXFW.Tweening.Editor
                 CurrentSettings.diagnosticMode = dbgMode;
             }
 
+            // Keep reset enabled
+            GUI.enabled = gEnabled;
             if (GUILayout.Button("Reset", GUILayout.Width(50f)))
             {
                 Undo.RecordObject(CurrentSettings, "Reset BXTween Settings");
                 CurrentSettings.FromSettings(CreateInstance<BXTweenSettings>());
             }
-
-            GUI.enabled = gEnabled;
         }
     }
     #endregion

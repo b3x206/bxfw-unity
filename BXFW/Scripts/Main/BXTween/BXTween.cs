@@ -15,7 +15,26 @@ namespace BXFW.Tweening
     public static class BXTween
     {
         public static BXTweenCore Current;
-        public static List<ITweenCTX> CurrentRunningTweens = new List<ITweenCTX>();
+        private static readonly List<ITweenCTX> mCurrentRunningTweens = new List<ITweenCTX>();
+        public static List<ITweenCTX> CurrentRunningTweens
+        {
+            get 
+            {
+                if (mCurrentRunningTweens.Count >= CurrentSettings.maxTweens)
+                {
+                    int setValue = CurrentSettings.maxTweens * 4;
+                    Debug.LogWarning(BXTweenStrings.GetWarn_ExceededMaxTweens(CurrentSettings.maxTweens, setValue));
+                    CurrentSettings.maxTweens = setValue;
+                }
+
+                if (mCurrentRunningTweens.Capacity != CurrentSettings.maxTweens)
+                {
+                    mCurrentRunningTweens.Capacity = CurrentSettings.maxTweens;
+                }
+
+                return mCurrentRunningTweens; 
+            }
+        }
 
         private static BXTweenSettings currentSettings;
         public static BXTweenSettings CurrentSettings

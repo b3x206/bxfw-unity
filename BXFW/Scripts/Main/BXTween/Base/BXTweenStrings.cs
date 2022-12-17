@@ -288,7 +288,12 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
                 WarnRich(string.Format("[BXTween::{0}]->", methodName), true),
                 LogRich(string.Format("Tween target (on tween extension) is configured incorrectly. Here's what's wrong : {0}", whatIsWrong)));
         }
-
+        public static string GetWarn_ExceededMaxTweens(int prevMax, int setMax)
+        {
+            return string.Format("{0} {1}",
+                WarnRich("[BXTweenCTX::StartTween]->", true),
+                LogRich(string.Format("Exceeded maximum tween limit ({0}). If you need more tweens (without warnings) change this setting. (Set [{0}->{1}], This setting only allocates capacity)", prevMax, setMax)));
+        }
         #endregion
 
         #region Errors

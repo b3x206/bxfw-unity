@@ -198,7 +198,7 @@ namespace BXFW.Tweening
                     // Set lerp
                     // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
 
-                    var SetValue = lerpMethod.Invoke(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                    T SetValue = lerpMethod(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
                     ctx.CurrentElapsed = Elapsed;
 
                     try
@@ -273,9 +273,9 @@ namespace BXFW.Tweening
         {
             // Floats can't convert to integer unless there's an explicit cast
             // (you could also define this method on BXTweenCustomLerp)
-            static int lerpUnclampedDelegate(int from, int to, float time) { return (int)Mathf.LerpUnclamped(from, to, time); }
+            static int LerpIntUnclampedDelegate(int from, int to, float time) { return (int)Mathf.LerpUnclamped(from, to, time); }
 
-            yield return GenericTo(ctx, lerpUnclampedDelegate);
+            yield return GenericTo(ctx, LerpIntUnclampedDelegate);
         }
         public IEnumerator To(BXTweenCTX<float> ctx)
         {
