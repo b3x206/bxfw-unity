@@ -88,8 +88,9 @@ namespace BXFW
 
         /// <summary>
         /// Sets value of target safely.
+        /// <br>The <paramref name="obj"/> passed could be anything.</br>
         /// </summary>
-        private void SetValueOfTarget(SerializedProperty property, T obj)
+        protected void SetValueOfTarget(SerializedProperty property, T obj)
         {
             // Set value
             // If the parent is an array, set the target index into the 'obj'
@@ -122,7 +123,7 @@ namespace BXFW
                     // This most likely shouldn't happen (unless using a custom field parent with IEnumerable)
                     // as unity doesn't serialize read-only Lists or weird c# lists.
                     if (DebugMode)
-                        Debug.LogWarning("[ScriptableObjectFieldInspector::SetValueOfTarget] Target is in field parent with interface 'IEnumerable' but falling back to default FieldInfo set method.");
+                        Debug.LogWarning("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget] Target is in field parent with interface 'IEnumerable' but falling back to default FieldInfo set method.");
 
                     try
                     {
@@ -149,7 +150,7 @@ namespace BXFW
         /// <br>Because if the setting fails (this only applies if the target property is contained inside a prefab)
         /// it calls <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> to it.</br>
         /// </summary>
-        private void SetValueOfTargetDelegate(SerializedProperty property, T obj)
+        protected void SetValueOfTargetDelegate(SerializedProperty property, T obj)
         {
             if (property == null)
                 throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
@@ -247,7 +248,7 @@ namespace BXFW
                 return SingleLineHeight;
 
             SObject ??= new SerializedObject(target);
-            float h = 0f;
+            float h = 0f; // instead of using currentY, use a different inline variable
             SerializedProperty prop = SObject.GetIterator();
             bool expanded = true;
             while (prop.NextVisible(expanded))

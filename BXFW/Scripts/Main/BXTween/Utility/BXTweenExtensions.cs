@@ -28,7 +28,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<Color> BXTwChangeColor(this TextMeshProUGUI target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> BXTwColor(this TextMeshProUGUI target, Color LastValue, float Duration)
         {
             if (target == null)
             {
@@ -58,7 +58,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Image"/>
-        public static BXTweenCTX<Color> BXTwChangeColor(this Image target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> BXTwColor(this Image target, Color LastValue, float Duration)
         {
             if (target == null)
             {
@@ -148,7 +148,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<Vector3> BXTwChangeAnchoredPosition(this RectTransform target, Vector2 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> BXTwMoveAnchorPos(this RectTransform target, Vector2 LastValue, float Duration)
         {
             if (target == null)
             {
@@ -192,13 +192,7 @@ namespace BXFW.Tweening
         // Or use an special BXTweenCTX class, saying it changes multiple values?
         // (which only use float as parameter, with name like MultiBXTweenCTX?)
 
-        /// <summary>
-        /// NOTE : If you want accurate tweening in this method with rect transforms, please read.
-        /// <br>1 : Get the RectTransform's rect using <see cref="BXTweenCustomLerp.GetCanvasRect(RectTransform)"/>.</br>
-        /// <br/>
-        /// <br>And that's it. For other rect purposes, use as you wish.</br>
-        /// </summary>
-        public static BXTweenCTX<float> BXTwChangeRect(this RectTransform target, Rect LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwRect(this RectTransform target, Rect LastValue, float Duration)
         {
             if (target == null)
             {
@@ -230,9 +224,9 @@ namespace BXFW.Tweening
         /// <br>You cannot change the parameters without creating new tween.</br>
         /// <br>The 'time' parameter always goes between 0 to 1. (curves can be unclamped)</br>
         /// </summary>
-        public static BXTweenCTX<float> BXTwChangeRect(this RectTransform target, RectTransform other, float Duration)
+        public static BXTweenCTX<float> BXTwRect(this RectTransform target, RectTransform other, float Duration)
         {
-            return BXTwChangeRect(target, other.rect, Duration);
+            return BXTwRect(target, other.rect, Duration);
         }
 
         public static BXTweenCTX<float> BXTwFadeAlpha(this Graphic target, float LastValue, float Duration)
@@ -247,7 +241,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<Color> BXTwChangeColor(this Graphic target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> BXTwColor(this Graphic target, Color LastValue, float Duration)
         {
             if (target == null)
             {
@@ -423,7 +417,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Material">
-        public static BXTweenCTX<Color> BXTwChangeColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
+        public static BXTweenCTX<Color> BXTwColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
             {
@@ -455,7 +449,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="SpriteRenderer"/>
-        public static BXTweenCTX<Color> BXTwChangeColor(this SpriteRenderer target, Color LastValue, float Duration)
+        public static BXTweenCTX<Color> BXTwColor(this SpriteRenderer target, Color LastValue, float Duration)
         {
             if (target == null)
             {
@@ -487,7 +481,11 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Camera"/>
-        public static BXTweenCTX<float> BXTwChangeFOV(this Camera target, float LastValue, float Duration)
+        
+        /// <summary>
+        /// Tweens the <see cref="Camera.fieldOfView"/> property.
+        /// </summary>
+        public static BXTweenCTX<float> BXTwFOV(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -499,7 +497,11 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<Matrix4x4> BXTwChangeProjectionMatrix(this Camera target, Matrix4x4 LastValue, float Duration)
+        /// <summary>
+        /// Tweens the <see cref="Camera.projectionMatrix"/> field.
+        /// <br>Useful for changing perspective from ortho to perspective, and so on.</br>
+        /// </summary>
+        public static BXTweenCTX<Matrix4x4> BXTwProjectionMatrix(this Camera target, Matrix4x4 LastValue, float Duration)
         {
             if (target == null)
             {
@@ -511,7 +513,10 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangeOrthoSize(this Camera target, float LastValue, float Duration)
+        /// <summary>
+        /// Tweens the <see cref="Camera.orthographicSize"/> field.
+        /// </summary>
+        public static BXTweenCTX<float> BXTwOrthoSize(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -524,7 +529,10 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<Color> BXTwChangeBGColor(this Camera target, Color LastValue, float Duration)
+        /// <summary>
+        /// Tweens the <see cref="Camera.backgroundColor"/> property.
+        /// </summary>
+        public static BXTweenCTX<Color> BXTwBGColor(this Camera target, Color LastValue, float Duration)
         {
             if (target == null)
             {
@@ -537,7 +545,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangeNearClipPlane(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwNearClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
@@ -550,7 +558,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwChangeFarClipPlane(this Camera target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwFarClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
             {
