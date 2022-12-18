@@ -222,10 +222,14 @@ namespace BXFW
                             {
                                 var pow = ScriptableObject.CreateInstance(type) as T;
 
-                                typeMenus.AddItem(new GUIContent(string.Format("New {0}", type.Name)), false, () =>
-                                {
-                                    SetValueOfTargetDelegate(property, (T)ScriptableObject.CreateInstance(type));
-                                });
+                                typeMenus.AddItem(new GUIContent(
+                                    string.Format("New {0}{1}",
+                                    // append a dot (.) if the namespace isn't blank.
+                                    !string.IsNullOrWhiteSpace(type.Namespace) ? $"{type.Namespace}." : string.Empty, type.Name)), false, 
+                                    () =>
+                                    {
+                                        SetValueOfTargetDelegate(property, (T)ScriptableObject.CreateInstance(type));
+                                    });
                             }
                         }
                     }

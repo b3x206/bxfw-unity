@@ -6,6 +6,7 @@ using TMPro;
 using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.Assertions;
 
 namespace BXFW.UI
 {
@@ -471,12 +472,13 @@ namespace BXFW.UI
         /// </summary>
         /// <param name="btnSelect">Index to select. Clamped value.</param>
         /// <param name="silentSelect">
-        /// Whether if the <see cref="OnTabButtonsClicked"/> event should invoke. 
-        /// This is set to <see langword="true"/> by default.
+        /// Whether if the <see cref="OnTabButtonsClicked"/> event should not invoke. 
+        /// This is set to <see langword="false"/> by default.
         /// </param>
         public void SetSelectedButtonIndex(int btnSelect, bool silentSelect = false)
         {
-            var IndexSelect = Mathf.Clamp(btnSelect, 0, TabButtons.Count - 1);
+            Assert.IsTrue(TabButtons.Count != 0, string.Format("[TabSystem::SetSelectedButtonIndex] There's no item in TabButtons array in TabSystem {0}.", this.GetPath()));
+            int IndexSelect = Mathf.Clamp(btnSelect, 0, TabButtons.Count - 1);
             TabButton ButtonToSelScript = TabButtons[IndexSelect];
 
             if (ButtonToSelScript != null)
