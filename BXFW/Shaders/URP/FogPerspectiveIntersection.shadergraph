@@ -1,5 +1,5 @@
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.GraphData",
     "m_ObjectId": "a90e71c010a3441497f2c54ca1527b82",
     "m_Properties": [
@@ -19,6 +19,12 @@
     "m_Keywords": [
         {
             "m_Id": "2c15a3eef24d43a9b01dc6bca3a37a31"
+        }
+    ],
+    "m_Dropdowns": [],
+    "m_CategoryData": [
+        {
+            "m_Id": "72f71cb59b654979ad5dd8b9b2bbf88d"
         }
     ],
     "m_Nodes": [
@@ -687,10 +693,11 @@
         "serializedMesh": {
             "m_SerializedMesh": "{\"mesh\":{\"instanceID\":0}}",
             "m_Guid": ""
-        }
+        },
+        "preventRotation": false
     },
     "m_Path": "Shader Graphs",
-    "m_ConcretePrecision": 0,
+    "m_GraphPrecision": 0,
     "m_PreviewMode": 2,
     "m_OutputNode": {
         "m_Id": ""
@@ -1059,9 +1066,13 @@
         "m_GuidSerialized": "9a2a57df-f640-426c-9760-befcd90d2878"
     },
     "m_Name": "SubtractTexture",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Texture2D_19afe4d751ed4d2ca02025ec109ad632",
     "m_OverrideReferenceName": "_SubtractTexture",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_Precision": 0,
     "overrideHLSLDeclaration": false,
     "hlslDeclarationOverride": 0,
@@ -1070,6 +1081,8 @@
         "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
         "m_Guid": ""
     },
+    "isMainTexture": false,
+    "useTilingAndOffset": false,
     "m_Modifiable": true,
     "m_DefaultType": 0
 }
@@ -1342,19 +1355,24 @@
 }
 
 {
-    "m_SGVersion": 0,
+    "m_SGVersion": 1,
     "m_Type": "UnityEditor.ShaderGraph.ShaderKeyword",
     "m_ObjectId": "2c15a3eef24d43a9b01dc6bca3a37a31",
     "m_Guid": {
         "m_GuidSerialized": "a9c1c58d-f37a-4254-9307-1cce2f605658"
     },
     "m_Name": "SubtractModeEnum",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "ENUM_2C15A3EEF24D43A9B01DC6BCA3A37A31",
     "m_OverrideReferenceName": "_SUBTRACTMODE",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_KeywordType": 1,
     "m_KeywordDefinition": 0,
     "m_KeywordScope": 0,
+    "m_KeywordStages": 63,
     "m_Entries": [
         {
             "id": 1,
@@ -2368,6 +2386,30 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "72f71cb59b654979ad5dd8b9b2bbf88d",
+    "m_Name": "",
+    "m_ChildObjectList": [
+        {
+            "m_Id": "a052d26ec83c44e98cfdfbd5f55e1bb7"
+        },
+        {
+            "m_Id": "9162cf96c8ba4c299ec9dc4a62aa531c"
+        },
+        {
+            "m_Id": "ddc715bbfebd44f88d0ee2a5ba87d7ec"
+        },
+        {
+            "m_Id": "19afe4d751ed4d2ca02025ec109ad632"
+        },
+        {
+            "m_Id": "2c15a3eef24d43a9b01dc6bca3a37a31"
+        }
+    ]
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "774f4eebe2c6495eb295cb0bfbcf1d56",
     "m_Id": 0,
@@ -2802,9 +2844,13 @@
         "m_GuidSerialized": "e5639eed-83bd-4a56-a6bb-d628a4d12158"
     },
     "m_Name": "Intersection Offset",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Vector1_9162cf96c8ba4c299ec9dc4a62aa531c",
     "m_OverrideReferenceName": "_IntersectionOffset",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_Precision": 0,
     "overrideHLSLDeclaration": false,
     "hlslDeclarationOverride": 0,
@@ -2955,9 +3001,13 @@
         "m_GuidSerialized": "1c952328-ed6a-4941-af9d-73b962cd913f"
     },
     "m_Name": "Fog Color",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Color_a052d26ec83c44e98cfdfbd5f55e1bb7",
     "m_OverrideReferenceName": "_Color",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_Precision": 0,
     "overrideHLSLDeclaration": false,
     "hlslDeclarationOverride": 0,
@@ -2968,6 +3018,7 @@
         "b": 1.0,
         "a": 1.0
     },
+    "isMainColor": false,
     "m_ColorMode": 0
 }
 
@@ -3302,7 +3353,8 @@
         "m_SerializableColors": []
     },
     "m_TextureType": 0,
-    "m_NormalMapSpace": 0
+    "m_NormalMapSpace": 0,
+    "m_EnableGlobalMipBias": true
 }
 
 {
@@ -3966,9 +4018,13 @@
         "m_GuidSerialized": "82e47831-33a7-4a83-ab76-adcb437f6ff5"
     },
     "m_Name": "Subtract",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Boolean_ddc715bbfebd44f88d0ee2a5ba87d7ec",
     "m_OverrideReferenceName": "_Subtract",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_Precision": 0,
     "overrideHLSLDeclaration": false,
     "hlslDeclarationOverride": 0,
@@ -4439,16 +4495,22 @@
 }
 
 {
-    "m_SGVersion": 0,
+    "m_SGVersion": 1,
     "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalTarget",
     "m_ObjectId": "fe920466974b4d9e844ac8a4062614c3",
     "m_ActiveSubTarget": {
         "m_Id": "0f05daef3e054bbb9672b517088213d8"
     },
+    "m_AllowMaterialOverride": false,
     "m_SurfaceType": 1,
+    "m_ZTestMode": 4,
+    "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
-    "m_TwoSided": false,
+    "m_RenderFace": 2,
     "m_AlphaClip": false,
-    "m_CustomEditorGUI": ""
+    "m_CastShadows": true,
+    "m_ReceiveShadows": true,
+    "m_CustomEditorGUI": "",
+    "m_SupportVFX": false
 }
 

@@ -1,5 +1,5 @@
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.GraphData",
     "m_ObjectId": "a36baa5bc741472c92438c626c6151ed",
     "m_Properties": [
@@ -8,6 +8,12 @@
         }
     ],
     "m_Keywords": [],
+    "m_Dropdowns": [],
+    "m_CategoryData": [
+        {
+            "m_Id": "1f49ce2527c04e74ba980f44988cdb0b"
+        }
+    ],
     "m_Nodes": [
         {
             "m_Id": "4650aaacca91648fa9d3c7ed18d0129d"
@@ -558,10 +564,11 @@
         "serializedMesh": {
             "m_SerializedMesh": "{\"mesh\":{\"instanceID\":0}}",
             "m_Guid": ""
-        }
+        },
+        "preventRotation": false
     },
     "m_Path": "Shader Graphs",
-    "m_ConcretePrecision": 0,
+    "m_GraphPrecision": 0,
     "m_PreviewMode": 2,
     "m_OutputNode": {
         "m_Id": ""
@@ -601,17 +608,23 @@
 }
 
 {
-    "m_SGVersion": 0,
+    "m_SGVersion": 1,
     "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalTarget",
     "m_ObjectId": "012236c2d3a44b7b8203e4dcc34c3090",
     "m_ActiveSubTarget": {
         "m_Id": "c4ebd39220c346de8850bae3ba1e93cd"
     },
+    "m_AllowMaterialOverride": false,
     "m_SurfaceType": 1,
+    "m_ZTestMode": 4,
+    "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
-    "m_TwoSided": false,
+    "m_RenderFace": 2,
     "m_AlphaClip": false,
-    "m_CustomEditorGUI": ""
+    "m_CastShadows": true,
+    "m_ReceiveShadows": true,
+    "m_CustomEditorGUI": "",
+    "m_SupportVFX": false
 }
 
 {
@@ -994,6 +1007,18 @@
     "m_CustomColors": {
         "m_SerializableColors": []
     }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "1f49ce2527c04e74ba980f44988cdb0b",
+    "m_Name": "",
+    "m_ChildObjectList": [
+        {
+            "m_Id": "89030f93ae8f388d91688a39ad6babab"
+        }
+    ]
 }
 
 {
@@ -2088,16 +2113,20 @@
 }
 
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.Internal.ColorShaderProperty",
     "m_ObjectId": "89030f93ae8f388d91688a39ad6babab",
     "m_Guid": {
         "m_GuidSerialized": "10c9b364-a230-4a8a-9dda-50439d9446f3"
     },
     "m_Name": "Fog Color",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Color_B92A5DAE",
     "m_OverrideReferenceName": "_FogColor",
     "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
     "m_Precision": 0,
     "overrideHLSLDeclaration": false,
     "hlslDeclarationOverride": 0,
@@ -2108,6 +2137,7 @@
         "b": 1.0,
         "a": 1.0
     },
+    "isMainColor": false,
     "m_ColorMode": 0
 }
 
@@ -3439,7 +3469,8 @@
     "m_CustomColors": {
         "m_SerializableColors": []
     },
-    "m_Space": 1
+    "m_Space": 1,
+    "m_PositionSource": 0
 }
 
 {
