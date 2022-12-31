@@ -28,9 +28,6 @@ namespace BXFW
 
             if (InteractInput)
             {
-                // Invert Interaction layer.
-                // Player_InteractionLayerIgnore = ~(Player_InteractionLayerIgnore << 9);
-
                 // Steps to interact in a tps context:
                 // 1 : Create a check sphere,
                 // 2 : Loop through objects to find a interface.
@@ -54,12 +51,14 @@ namespace BXFW
                 }
 
                 // TODO : Seperate fps & tps, this raycast is complete except for the error overlap sphere margin
+                // or they could stay the same, as it will probably work fine for fps (except interaction rotation ofc)
 
                 // Steps to interact in a fps context:
                 // 1 : Create a raycast,
                 // 2 : Find a interface on raycasted object (We might use spherecast on raycast point to add error margin).
                 // 3 : Invoke 
                 // or we could use the Vector3.Dot with tolerance, but that requires reference to all interactables
+                // or could use Physics.<insert primitive shape here>Cast
                 //if (Physics.Raycast(Player_Movement.Player_Camera.transform.position, Player_Movement.Player_Camera.transform.forward, out RaycastHit h, Player_InteractionRadius.magnitude, Player_InteractionLayer))
                 //{
                 //    if (h.transform.TryGetComponent(out IPlayerInteractable pInteract))
@@ -76,7 +75,6 @@ namespace BXFW
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Color c = new Color(.01f, .87f, .98f, .5f); // some blue
             var prevMatrix = Gizmos.matrix;
             var prevColor = Gizmos.color;
 
@@ -84,7 +82,7 @@ namespace BXFW
             Vector3 intPoint = transform.InverseTransformPoint(Player_InteractionPoint);
             Matrix4x4 trMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
             Gizmos.matrix = trMatrix;
-            Gizmos.color = c;
+            Gizmos.color = new Color(.01f, .87f, .98f, .5f);  // some nice blue
 
             // Position is correct
             // (using InverseTransformPosition, because the gizmo matrix also changes position + scale)

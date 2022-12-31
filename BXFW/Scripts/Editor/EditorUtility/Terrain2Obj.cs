@@ -1,13 +1,16 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Globalization;
+
 using UnityEditor;
 using UnityEngine;
 
 namespace BXFW.Tools.Editor
 {
     public enum SaveFormat { Triangles, Quads }
-    public enum SaveResolution { Full = 0, Half, Quarter, Eighth, Sixteenth }
+    public enum SaveResolution { Full, Half, Quarter, Eighth, Sixteenth }
     
     // TODO :
     // 1 : Import materials too (if possible, .obj doesn't have mats but we can import them seperately or use an different format)
@@ -30,11 +33,11 @@ namespace BXFW.Tools.Editor
         {
             _terrain = null;
             var terrainObject = Selection.activeObject as Terrain;
-
             if (terrainObject == null)
             {
                 terrainObject = Terrain.activeTerrain;
             }
+
             // don't throw null reference exception if the terrain is still null.
             if (terrainObject != null)
             {
@@ -42,9 +45,8 @@ namespace BXFW.Tools.Editor
                 _terrainPos = terrainObject.transform.position;
             }
 
-            var window = GetWindow<Terrain2Obj>();
+            var window = GetWindow<Terrain2Obj>(true, "Terrain -> '.obj' File");
             window.Show();
-            window.titleContent = new GUIContent("Terrain -> '.obj' File");
         }
 
         private void OnGUI()
@@ -149,6 +151,8 @@ namespace BXFW.Tools.Editor
                 }
             }
 
+            CultureInfo prevCulture = Thread.CurrentThread.CurrentCulture;
+
             // Export to .obj
             var sw = new StreamWriter(fileName);
             try
@@ -156,14 +160,14 @@ namespace BXFW.Tools.Editor
                 sw.WriteLine("# Unity terrain OBJ File");
 
                 // Write vertices
-                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US"); // why this
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
                 _counter = _tCount = 0;
                 _totalCount = ((tVertices.Length * 2) + (_saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / ProgressUpdateInterval;
                 for (var i = 0; i < tVertices.Length; i++)
                 {
                     UpdateProgress();
                     var sb = new StringBuilder("v ", 20);
-                    // StringBuilder stuff is done this way because it's faster than using the "{0} {1} {2}"etc. format
+                    // StringBuilder stuff is done this way because it's faster than using the "{0} {1} {2}" etc. format
                     // Which is important when you're exporting huge terrains.
                     sb.Append(tVertices[i].x.ToString()).Append(" ").
                        Append(tVertices[i].y.ToString()).Append(" ").
@@ -214,6 +218,7 @@ namespace BXFW.Tools.Editor
 
             sw.Close();
             _terrain = null;
+            Thread.CurrentThread.CurrentCulture = prevCulture;
 
             EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving file to disc.", "This might take a while...", 1f);
             GetWindow<Terrain2Obj>().Close();

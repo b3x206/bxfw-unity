@@ -1,13 +1,12 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
 using UnityEditor;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// Handles input operations in editor.
-    /// <br>Registers itself as an editor update operation once it's been ally called.</br>
-    /// <br>Has an input buffer, you should really only use this in editor.</br>
     /// <br>Create a 'EditorInput' object on the thing you want to capture input on, and call <see cref="PollEvents"/> on the suitable method.</br>
     /// </summary>
     public class EditorInput
@@ -18,7 +17,12 @@ namespace BXFW.Tools.Editor
 
         // 'GetKey' / Poll related inputs.
         private readonly HashSet<KeyCode> editorInputBuffer = new HashSet<KeyCode>();
-        
+     
+        private static string GetWarn_EventCurrentNull([CallerMemberName] string methodName = "\"null method\"")
+        {
+            return string.Format("[EditorInput::{0}] Called method while the 'Event.current' is null. Only call this from input polled from 'OnGUI'.", methodName);
+        }
+
         // was planning to use a static event thing, but the unity 'globalEventHandler' doesn't capture mouse clicks
         // Maybe i could hook the entire unity window (or all created windows) but that won't work at all.
         //static EditorInput()
@@ -37,7 +41,10 @@ namespace BXFW.Tools.Editor
             // editorInputBuffer should only contain unique values instead (that's why it's an hashset)
             // It will be iterated every EditorApplication globalEventHandler
             if (Event.current == null)
+            {
+                Debug.LogWarning(GetWarn_EventCurrentNull());
                 return;
+            }
 
             switch (Event.current.type)
             {
@@ -69,7 +76,10 @@ namespace BXFW.Tools.Editor
             get
             {
                 if (Event.current == null)
+                {
+                    Debug.LogWarning(GetWarn_EventCurrentNull());
                     return Vector2.zero;
+                }
 
                 return Event.current.delta;
             }
@@ -84,7 +94,10 @@ namespace BXFW.Tools.Editor
             get
             {
                 if (Event.current == null)
+                {
+                    Debug.LogWarning(GetWarn_EventCurrentNull());
                     return Vector2.zero;
+                }
 
                 return Event.current.mousePosition;
             }
@@ -97,7 +110,10 @@ namespace BXFW.Tools.Editor
             get
             {
                 if (Event.current == null)
+                {
+                    Debug.LogWarning(GetWarn_EventCurrentNull());
                     return false;
+                }
 
                 return Event.current.type == EventType.MouseDrag;
             }
@@ -121,7 +137,10 @@ namespace BXFW.Tools.Editor
             get
             {
                 if (Event.current == null)
+                {
+                    Debug.LogWarning(GetWarn_EventCurrentNull());
                     return false;
+                }
 
                 return Event.current.type == EventType.MouseDown || Event.current.type == EventType.KeyDown;
             }
@@ -134,7 +153,10 @@ namespace BXFW.Tools.Editor
             get
             {
                 if (Event.current == null)
+                {
+                    Debug.LogWarning(GetWarn_EventCurrentNull());
                     return Vector2.zero;
+                }
 
                 return Event.current.type == EventType.ScrollWheel ? Event.current.delta : Vector2.zero;
             }
@@ -155,7 +177,10 @@ namespace BXFW.Tools.Editor
         public bool GetKeyDown(KeyCode key)
         {
             if (Event.current == null)
+            {
+                Debug.LogWarning(GetWarn_EventCurrentNull());
                 return false;
+            }
 
             switch (Event.current.type)
             {
@@ -176,7 +201,10 @@ namespace BXFW.Tools.Editor
         public bool GetKeyUp(KeyCode key)
         {
             if (Event.current == null)
+            {
+                Debug.LogWarning(GetWarn_EventCurrentNull());
                 return false;
+            }
 
             switch (Event.current.type)
             {

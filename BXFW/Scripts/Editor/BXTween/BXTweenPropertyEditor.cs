@@ -13,6 +13,7 @@ namespace BXFW.ScriptEditor
         {
             // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
             currentPropRect++;
+
             var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
             return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (currentPropRect + 1)) + 8, parentRect.size.x, propHeight);
         }
@@ -22,7 +23,6 @@ namespace BXFW.ScriptEditor
         private SerializedProperty propRepeatAmount;
         private SerializedProperty propRepeatType;
         private SerializedProperty propTargetObject;
-        //private SerializedProperty propUseTweenCurve;
         private SerializedProperty propAllowCustomCurveOvershoot;
         private SerializedProperty propTweenCurve;
         private SerializedProperty propTweenEase;
@@ -47,8 +47,7 @@ namespace BXFW.ScriptEditor
             propRepeatAmount = property.FindPropertyRelative("_RepeatAmount");
             propRepeatType = property.FindPropertyRelative("_TweenRepeatType");
             propTargetObject = property.FindPropertyRelative("_TargetObject");
-            // This is drawn using EditorGUI.Toggle to activate the property getter-setter.
-            //propUseTweenCurve = property.FindPropertyRelative("_UseTweenCurve"); 
+            // _UseTweenCurve is drawn using EditorGUI.Toggle to activate the property getter-setter.
             propAllowCustomCurveOvershoot = property.FindPropertyRelative("_AllowInterpolationEaseOvershoot");
             propTweenCurve = property.FindPropertyRelative("_TweenCurve");
             propTweenEase = property.FindPropertyRelative("_TweenEase");
@@ -81,7 +80,6 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.BeginChangeCheck();
 
-                // (maybe) TODO : Use properties of 'targetValue' for updating the property.
                 EditorGUI.indentLevel++;
                 EditorGUI.PropertyField(GetPropertyRect(position), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
                 EditorGUI.PropertyField(GetPropertyRect(position), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
@@ -117,7 +115,7 @@ namespace BXFW.ScriptEditor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            // FIXME : Calculate height properly
+            // FIXME : Calculate height properly (this very much works for now so idc)
             // (yes, the proper way of doing this [unfortunately] is iterating all properties and getting their heights)
             // This will work fine for single drawn properties, but for stuff like arrays, this is a problem if there's more than 2 expanded properties.
 

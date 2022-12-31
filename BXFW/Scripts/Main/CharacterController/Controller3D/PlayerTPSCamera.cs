@@ -2,6 +2,10 @@
 
 namespace BXFW
 {
+    /// <summary>
+    /// TPS camera for <see cref="PlayerMovement"/>.
+    /// <br>Note : This script is based of <see cref="PivotRotatingCamera"/>.</br>
+    /// </summary>
     [RequireComponent(typeof(Camera))]
     public class PlayerTPSCamera : MonoBehaviour
     {

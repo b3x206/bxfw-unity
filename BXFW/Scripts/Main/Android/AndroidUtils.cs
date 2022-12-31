@@ -1,7 +1,7 @@
+#if UNITY_ANDROID
 using System.Collections;
 using UnityEngine;
 
-#if UNITY_ANDROID
 namespace BXFW
 {
     /// <summary>

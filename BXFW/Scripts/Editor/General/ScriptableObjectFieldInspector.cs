@@ -333,7 +333,7 @@ namespace BXFW
         }
 
         // hack : position given is incorrect on EventType.Layout
-        // drawing GUILayout editors require an GUILayout area, so we need the correct 'position' reference.
+        // drawing GUILayout editors require an GUILayout area, so we need the correct 'position'.
         private Rect correctPosition;
         private float currentY;
         private Rect GetPropertyRect(Rect position, SerializedProperty prop)
@@ -603,6 +603,9 @@ namespace BXFW
 
                     try
                     {
+                        // Save the current GUILayout setting (?)
+
+                        // Begin, draw, exit new area
                         GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
                         customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
 
@@ -610,6 +613,8 @@ namespace BXFW
 
                         GUILayout.EndScrollView();
                         GUILayout.EndArea();
+                        
+                        // Load the previous GUILayout settings
                     }
                     catch (Exception)
                     {

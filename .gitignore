@@ -1,8 +1,9 @@
 # Ignore these directories/files intentionally.
-[Pp]layer[Cc]ontroller3[Dd]/
-RigidbodyTransformConstraint3D.cs
+/[Pp]layer[Cc]ontroller3[Dd]/
+/docs/
 
 # Ignore files (these are not complete, and i am actually not planning on adding these)
+RigidbodyTransformConstraint3D.cs
 RangeFloat.cs
 RFAttribute.cs
 
