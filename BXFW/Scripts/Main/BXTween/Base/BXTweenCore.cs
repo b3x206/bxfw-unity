@@ -1,8 +1,39 @@
-﻿/// BXTween Version : 0.6.2
+﻿using System;
+using System.Collections;
+
+using UnityEngine;
+
+using BXFW.Tweening.Events;
+using static BXFW.Tweening.BXTween;
+
+/// BXTween Version : 1.0
 ///                  (state, major, minor) : 
-///                  state => Stability/usability state : 0 is alpha, 1 is going to be a 'betaish' release
+///                  state => Stability/usability state : is beta, there will be bugs but they won't be breaking
+///                           unfortunately since i am not really following any guidelines there will be also hotfixes.
 ///                  major => Major revision introducing features & api change (this is going to be very messy in alpha)
 ///                  minor => minor bug fixes (hotfixes also enter to this category)
+/// 
+/// Oh, you are actually reading this? well, this is actually not really in 'alpha' and there is a stable-ish game made (see Fall Xtra) using BXTween
+/// I think at this state, BXTween is complete except for missing some features and not really following conventions for standard tweening scripts
+/// Because of this, i will only add new features if i like them or i will only (only is a strong word, 
+/// perhaps i could change it if there's a better way of doing stuff) change the code if there is a bug.
+/// Or i could add support to unity Dots system, if i feel enough interest to it.
+/// For the time being, it works fine enough™ so yeah, this will do.
+/// 
+/// Orrr you could contribute new ideas by studying the code / checking the features if you really want to look at my undocumented code for more than 2 seconds.
+/// This is a tweening script written from scratch, since 2020. There have been several (3) revisions done, all of the revising actually meaning a full rewrite 
+/// (so this is actually "CTween 3", or "BXTween" as "CTween" sounded too associated with the C programming language, even though i was going for "C as in Coroutine")
+/// And now we are in 2023 (time does really fly, huh?). Since BXFW (and doing free work for passion and learning) seems to make a total failure out of me 
+/// (the only thing BXFW contributed to me was discovering code like it was never done by anyone else, but when i look what the others do, BXFW looks just cringe),
+/// i will now focus on more "important" things, even though i don't think they are important.
+/// Well, it's the thought of importance that really counts, so i better consider the "important" as Important. (hope it won't throw an InvalidCastException)
+/// B3X out (<b>for now</b> i will focus on documenting and other "important" stuff, "important" stuff that are in real life; <b>and then</b> i will return to actual BXFW development.)
+/// This may be the last BXFW commit after i am done with the other scripts. (we still got a 2D controller to do, but i will probably just press the delete button and skip that, 
+/// as i don't feel motivated to do anything other than write my feelings down the void that no one knows)
+/// I won't stop coding until all the computers in the world is gone. This is just a crappy vent that you didn't even ask for. Do i wanna exist? I really don't know. Do i wanna plan for future? I don't know.
+/// I. Just don't know. The only thing i know is that if i don't know, it won't be pretty. I don't want anything yet i want everything. It's just overwhelming.
+/// (does you even exist? is you me? or is it you? we will never know. alright bye)
+/// 
 /// <remarks>
 /// BXTween :
 ///     It does tweens.
@@ -35,6 +66,7 @@
 ///     1 : Has many features (bugs, but i call them features)
 ///     2 : Runs with very high performance (about 1 tween per 3 hours!! [that is equal to 1,54320987654321e-6 tweens per second] wow such fast)
 ///     3 : Very coding pattern (what)
+///     4 : Who cares about consistency? if the code works it's good enough.
 /// 
 /// But why did you spend effort on this? there are better alternatives :
 ///     I don't know
@@ -42,23 +74,9 @@
 /// Okay, but i am still not convinced yet.
 ///     cool, i will convince
 ///     It has, uh, properties. yeah and it also has lackluster support of shortcut methods
-///     In fact half of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
+///     In fact quarter (yes quarter now we are doing REAL oop) of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
 /// 
 /// </remarks>
-
-/** -------------------------------------------------- 
-/// General TODO:
-/// 1: Lower boilerplate (Flags.VeryHard | Flags.GoneWrong)
-/// 'Partially done as the 'To' methods are lower boilerplated'
-* -------------------------------------------------- **/
-
-using System;
-using System.Collections;
-
-using UnityEngine;
-
-using BXFW.Tweening.Events;
-using static BXFW.Tweening.BXTween;
 
 namespace BXFW.Tweening
 {
@@ -180,7 +198,7 @@ namespace BXFW.Tweening
                         // Check if the timescale is tampered with
                         // if it's below zero, just skip the frame
                         if (Time.timeScale <= 0f)
-                        { yield return null; }
+                            yield return null;
                     }
 
                     // Target object
@@ -271,11 +289,7 @@ namespace BXFW.Tweening
         // The generic one is also usable to public, as long as you supply your own lerp method.
         public IEnumerator To(BXTweenCTX<int> ctx)
         {
-            // Floats can't convert to integer unless there's an explicit cast
-            // (you could also define this method on BXTweenCustomLerp)
-            static int LerpIntUnclampedDelegate(int from, int to, float time) { return (int)Mathf.LerpUnclamped(from, to, time); }
-
-            yield return GenericTo(ctx, LerpIntUnclampedDelegate);
+            yield return GenericTo(ctx, BXTweenCustomLerp.IntLerpUnclamped);
         }
         public IEnumerator To(BXTweenCTX<float> ctx)
         {

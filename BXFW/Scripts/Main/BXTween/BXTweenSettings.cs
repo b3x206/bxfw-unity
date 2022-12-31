@@ -1,8 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Text;
-using System.Security.Cryptography;
-
 using UnityEngine;
 
 namespace BXFW.Tweening

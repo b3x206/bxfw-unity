@@ -2,8 +2,9 @@
 /[Pp]layer[Cc]ontroller3[Dd]/
 /docs/
 
-# Ignore files (these are not complete, and i am actually not planning on adding these)
+# Ignore files (scripts that are not really nice / work)
 RigidbodyTransformConstraint3D.cs
+RigidbodyTransformConstraint2D.cs
 RangeFloat.cs
 RFAttribute.cs
 

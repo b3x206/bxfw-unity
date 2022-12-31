@@ -18,9 +18,9 @@ namespace BXFW.Tweening.Events
     /// Tween easing method, for use with <see cref="BXTweenLerpMethod{T}"/> or any lerp method's time parameter.
     /// <br>Used in <see cref="BXTweenEase"/>.</br>
     /// </summary>
-    /// <param name="time">Time value. Interpolate time linearly if possible.</param>
+    /// <param name="time">Time value. <b>ALWAYS</b> interpolate time linearly (a simple delta time addition works).</param>
     /// <returns>Interpolation value (usually between 0-1)</returns>
-    public delegate float BXTweenEaseSetMethod(float time, bool clamped = true);
+    public delegate float BXTweenEaseSetMethod(float time);
     /// <summary>
     /// A pretty generic linear interpolation method.
     /// <br>Interpolates from the first parameter to the second parameter, in span of 'time' 

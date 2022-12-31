@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Runtime.CompilerServices;
 
 namespace BXFW.Tweening
 {
@@ -38,18 +39,27 @@ namespace BXFW.Tweening
         /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// <br>(parameter <paramref name="time"/> is clamped between 0-1)</br>
         /// </summary>
-        public static void LerpRectTransform(Rect start, Rect end, float time, RectTransform target)
+        public static void RectTransformLerp(Rect start, Rect end, float time, RectTransform target)
         {
-            LerpRectTransformUnclamped(start, end, Mathf.Clamp01(time), target);
+            RectTransformLerpUnclamped(start, end, Mathf.Clamp01(time), target);
         }
         /// <summary>
         /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// </summary>
-        public static void LerpRectTransformUnclamped(Rect start, Rect end, float time, RectTransform target)
+        public static void RectTransformLerpUnclamped(Rect start, Rect end, float time, RectTransform target)
         {
             target.localPosition = Vector2.Lerp(start.center, end.center, time);
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Lerp(start.width, end.width, time));
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Lerp(start.height, end.height, time));
+        }
+
+        /// <summary>
+        /// <see cref="Mathf.LerpUnclamped"/> with int cast.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int IntLerpUnclamped(int start, int end, float time)
+        {
+            return (int)Mathf.LerpUnclamped(start, end, time);
         }
     }
 }

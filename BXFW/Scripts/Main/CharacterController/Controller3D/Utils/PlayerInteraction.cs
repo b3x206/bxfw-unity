@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using BXFW;
 
 namespace BXFW
 {
@@ -18,7 +17,7 @@ namespace BXFW
         {
             get
             {
-                return transform.position + /*transform.forward +*/ transform.TransformDirection(Player_InteractionPointOffset);
+                return transform.position + transform.TransformDirection(Player_InteractionPointOffset);
             }
         }
 
@@ -28,11 +27,9 @@ namespace BXFW
 
             if (InteractInput)
             {
-                // Steps to interact in a tps context:
-                // 1 : Create a check sphere,
-                // 2 : Loop through objects to find a interface.
-                // 3 : Invoke 
-                var Player_EnvInteract =
+                // For the time being, use the tps method as it will
+                // work fine with the PlayerFPSCamera class we have
+                Collider[] Player_EnvInteract =
                     Physics.OverlapBox(Player_InteractionPoint,
                         Player_InteractionRadius,
                         transform.rotation,
@@ -49,32 +46,15 @@ namespace BXFW
                         }
                     }
                 }
-
-                // TODO : Seperate fps & tps, this raycast is complete except for the error overlap sphere margin
-                // or they could stay the same, as it will probably work fine for fps (except interaction rotation ofc)
-
-                // Steps to interact in a fps context:
-                // 1 : Create a raycast,
-                // 2 : Find a interface on raycasted object (We might use spherecast on raycast point to add error margin).
-                // 3 : Invoke 
-                // or we could use the Vector3.Dot with tolerance, but that requires reference to all interactables
-                // or could use Physics.<insert primitive shape here>Cast
-                //if (Physics.Raycast(Player_Movement.Player_Camera.transform.position, Player_Movement.Player_Camera.transform.forward, out RaycastHit h, Player_InteractionRadius.magnitude, Player_InteractionLayer))
-                //{
-                //    if (h.transform.TryGetComponent(out IPlayerInteractable pInteract))
-                //    {
-                //        if (pInteract.AllowPlayerInteraction)
-                //        {
-                //            pInteract.OnPlayerInteract(this);
-                //        }
-                //    }
-                //}
             }
         }
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
+            // The shown gizmo draws the desired interaction bounds
+            // If the interaction logic on 'Update' doesn't work as intended
+            // update with the correct behaviour (OnDrawGizmosSelected OverlapBox)
             var prevMatrix = Gizmos.matrix;
             var prevColor = Gizmos.color;
 

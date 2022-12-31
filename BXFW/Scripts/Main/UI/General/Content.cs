@@ -5,7 +5,7 @@ using UnityEngine;
 namespace BXFW.UI
 {
     /// <summary>
-    /// UI content.
+    /// Defined UI content. Similar to <see cref="GUIContent"/>.
     /// </summary>
     [Serializable]
     public class Content

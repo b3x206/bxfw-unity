@@ -1,12 +1,10 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-using BXFW.Tools.Editor;
-
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(ReCalcCubeTexture))]
-    public class ReCalcCubeTexEditor : Editor
+    [CustomEditor(typeof(ReCalculateCubeUV))]
+    public class ReCalculateCubeUVEditor : Editor
     {
         /// <summary>
         /// Directory to save.
@@ -28,11 +26,11 @@ namespace BXFW.ScriptEditor
                 return UFilePath;
             }
         }
-        private ReCalcCubeTexture Target
+        private ReCalculateCubeUV Target
         {
             get
             {
-                return (ReCalcCubeTexture)target;
+                return (ReCalculateCubeUV)target;
             }
         }
 

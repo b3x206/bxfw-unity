@@ -72,6 +72,9 @@ namespace BXFW
 
         public CustomInputEvent()
         { }
+        /// <summary>
+        /// Creates a CustomInputEvent with <see cref="KeyCode"/>s already assigned.
+        /// </summary>
         public CustomInputEvent(KeyCode[] kCodes)
         {
             KeyCodeReq = kCodes;
@@ -87,6 +90,9 @@ namespace BXFW
 
         public static bool operator ==(CustomInputEvent lhs, CustomInputEvent rhs)
         {
+            if (Equals(lhs, null))
+                return Equals(rhs, null);
+
             return lhs.Equals(rhs);
         }
         public static bool operator !=(CustomInputEvent lhs, CustomInputEvent rhs)

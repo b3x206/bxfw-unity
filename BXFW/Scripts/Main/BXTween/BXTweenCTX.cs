@@ -58,7 +58,7 @@ namespace BXFW.Tweening
         public bool IsRunning { get; private set; } = false;
         public bool IsPaused
         {
-            get { return CurrentElapsed > float.Epsilon && !IsRunning; }
+            get { return CurrentElapsed > Mathf.Epsilon && !IsRunning; }
         }
         /// <summary>
         /// Helper variable for <see cref="IsValuesSwitched"/>.
@@ -87,8 +87,7 @@ namespace BXFW.Tweening
                 // Start value or the EndValue is, most of the time, not null. (because the T is generally struct)
                 // A failsafe was added to check if the typeof(T) is struct (IsValueType)
                 return SetterFunction != null && IteratorCoroutine != null && // Step 1 and 2
-                    (typeof(T).IsValueType || (StartValue != null && EndValue != null)) && // Struct / Class check (check values if class)
-                    (TargetObjectIsOptional || TargetObject != null); // Step 3
+                    (typeof(T).IsValueType || (StartValue != null && EndValue != null)); // Struct / Class check (check values if class)
             }
         }
         // -- Target (Identifier and Null checks)
@@ -272,7 +271,7 @@ namespace BXFW.Tweening
             }
 
             BXTweenEaseSetMethod EaseMethod = BXTweenEase.EaseMethods[Easing];
-            TimeSetLerp = (float progress, bool _) => { return EaseMethod.Invoke(progress, Clamp01); };
+            TimeSetLerp = (float progress) => { return Clamp01 ? Mathf.Clamp01(EaseMethod.Invoke(progress)) : EaseMethod.Invoke(progress); };
 
             return this;
         }
@@ -308,11 +307,11 @@ namespace BXFW.Tweening
             // Clamp value between 0-1
             if (clamp)
             {
-                TimeSetLerp = (float progress, bool _) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
+                TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
             }
             else
             {
-                TimeSetLerp = (float progress, bool _) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); };
+                TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); };
             }
 
             return this;

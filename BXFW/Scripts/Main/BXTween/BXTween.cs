@@ -18,7 +18,7 @@ namespace BXFW.Tweening
         private static readonly List<ITweenCTX> mCurrentRunningTweens = new List<ITweenCTX>();
         public static List<ITweenCTX> CurrentRunningTweens
         {
-            get 
+            get
             {
                 if (mCurrentRunningTweens.Count >= CurrentSettings.maxTweens)
                 {
@@ -32,7 +32,7 @@ namespace BXFW.Tweening
                     mCurrentRunningTweens.Capacity = CurrentSettings.maxTweens;
                 }
 
-                return mCurrentRunningTweens; 
+                return mCurrentRunningTweens;
             }
         }
 
@@ -177,7 +177,7 @@ namespace BXFW.Tweening
 
             if (CurrentSettings.diagnosticMode)
             {
-                Debug.Log(BXTweenStrings.DLog_BXTwCallGenericTo<T>(StartValue, TargetValue, Duration, TargetObject));
+                Debug.Log(BXTweenStrings.DLog_BXTwCallGenericTo(StartValue, TargetValue, Duration, TargetObject));
             }
             // Check Tweenable
             if (tweenMethod == null)

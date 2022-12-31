@@ -4,7 +4,7 @@ namespace BXFW
 {
     /// <summary>
     /// Counts fps.
-    /// <br>Call <see cref="UpdateFPSCounter"/> on every <c>Update()</c> [NOT <c>FixedUpdate()</c>] for accurate measuring.</br>
+    /// <br>Call <see cref="UpdateFPSCounter"/> on every <c>Update()</c> [NOT <c>FixedUpdate()</c>] for measuring.</br>
     /// </summary>
     [System.Serializable]
     public class FPSCounter

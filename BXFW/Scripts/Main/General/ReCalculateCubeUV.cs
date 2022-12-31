@@ -5,10 +5,10 @@ namespace BXFW
     /// Most of the work for this script is done on the editor script <see cref="ReCalcCubeTexEditor"/> anyway.
     /// Note that it can be recalculated in runtime too.
     /// <summary>
-    /// Calculates the cube texture tile.
+    /// Calculates the cube texture uv, like it's triplanar.
     /// </summary>
     [ExecuteInEditMode(), RequireComponent(typeof(MeshFilter), typeof(Renderer))]
-    public class ReCalcCubeTexture : MonoBehaviour
+    public class ReCalculateCubeUV : MonoBehaviour
     {
         // -- Variables
         private Vector3 currentCalcScale;

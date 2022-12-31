@@ -47,7 +47,7 @@ namespace BXFW.Tweening
     public static class BXTweenEase
     {
         /// <summary>
-        /// All hardcoded ease methods in a hashmap.
+        /// All hardcoded ease methods in a dictionary.
         /// </summary>
         public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> EaseMethods = new Dictionary<EaseType, BXTweenEaseSetMethod>
         {
@@ -86,146 +86,146 @@ namespace BXFW.Tweening
         #region Ease Methods
         // Note : All ease methods change between -Infinity~Infinity.
         // Clamping is done by setting a bool.
-        private static float Linear(float t, bool clamped = true)
+        private static float Linear(float t)
         {
             var tVal = t;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuadIn(float t, bool clamped = true)
+        private static float QuadIn(float t)
         {
             var tVal = t * t;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuadOut(float t, bool clamped = true)
+        private static float QuadOut(float t)
         {
             var tVal = t * (2f - t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuadInOut(float t, bool clamped = true)
+        private static float QuadInOut(float t)
         {
             var tVal = t < 0.5f ? 2f * t * t : -1f + ((4f - (2f * t)) * t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CubicIn(float t, bool clamped = true)
+        private static float CubicIn(float t)
         {
             var tVal = t * t * t;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CubicOut(float t, bool clamped = true)
+        private static float CubicOut(float t)
         {
             var tVal = ((t - 1f) * t * t) + 1f;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CubicInOut(float t, bool clamped = true)
+        private static float CubicInOut(float t)
         {
             var tVal = t < 0.5f ? 4f * t * t * t : ((t - 1f) * ((2f * t) - 2f) * ((2 * t) - 2)) + 1f;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuartIn(float t, bool clamped = true)
+        private static float QuartIn(float t)
         {
             var tVal = t * t * t * t;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuartOut(float t, bool clamped = true)
+        private static float QuartOut(float t)
         {
             var tVal = 1f - ((t - 1f) * t * t * t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuartInOut(float t, bool clamped = true)
+        private static float QuartInOut(float t)
         {
             var tVal = t < 0.5f ? 8f * t * t * t * t : 1f - (8f * (t - 1f) * t * t * t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuintIn(float t, bool clamped = true)
+        private static float QuintIn(float t)
         {
             var tVal = t * t * t * t * t;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuintOut(float t, bool clamped = true)
+        private static float QuintOut(float t)
         {
             var tVal = 1f + ((t - 1f) * t * t * t * t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float QuintInOut(float t, bool clamped = true)
+        private static float QuintInOut(float t)
         {
             var tVal = t < 0.5f ? 16f * t * t * t * t * t : 1f + (16f * (t - 1f) * t * t * t * t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float BounceIn(float t, bool clamped = true)
+        private static float BounceIn(float t)
         {
             var tVal = 1f - BounceOut(1f - t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float BounceOut(float t, bool clamped = true)
+        private static float BounceOut(float t)
         {
             var tVal = t < 0.363636374f ? 7.5625f * t * t : t < 0.727272749f ? (7.5625f * (t -= 0.545454562f) * t) + 0.75f : t < 0.909090936f ? (7.5625f * (t -= 0.8181818f) * t) + 0.9375f : (7.5625f * (t -= 21f / 22f) * t) + (63f / 64f);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float BounceInOut(float t, bool clamped = true)
+        private static float BounceInOut(float t)
         {
             var tVal = t < 0.5f ? BounceIn(t * 2f) * 0.5f : (BounceOut((t * 2f) - 1f) * 0.5f) + 0.5f;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ElasticIn(float t, bool clamped = true)
+        private static float ElasticIn(float t)
         {
             var tVal = -(Mathf.Pow(2, 10 * (t -= 1)) * Mathf.Sin((t - (0.3f / 4f)) * (2 * Mathf.PI) / 0.3f));
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ElasticOut(float t, bool clamped = true)
+        private static float ElasticOut(float t)
         {
             var tVal = t == 1f ? 1f : 1f - ElasticIn(1f - t);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ElasticInOut(float t, bool clamped = true)
+        private static float ElasticInOut(float t)
         {
             var tVal = (t *= 2f) == 2f ? 1f : t < 1f ? -0.5f * (Mathf.Pow(2f, 10f * (t -= 1)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f)) :
                 ((Mathf.Pow(2f, -10f * (t -= 1f)) * Mathf.Sin((t - 0.1125f) * (2f * Mathf.PI) / 0.45f) * 0.5f) + 1f);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CircularIn(float t, bool clamped = true)
+        private static float CircularIn(float t)
         {
             var tVal = -(Mathf.Sqrt(1 - (t * t)) - 1);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CircularOut(float t, bool clamped = true)
+        private static float CircularOut(float t)
         {
             var tVal = Mathf.Sqrt(1f - ((t -= 1f) * t));
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float CircularInOut(float t, bool clamped = true)
+        private static float CircularInOut(float t)
         {
             var tVal = (t *= 2f) < 1f ? -1f / 2f * (Mathf.Sqrt(1f - (t * t)) - 1f) : 0.5f * (Mathf.Sqrt(1 - ((t -= 2) * t)) + 1);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float SinusIn(float t, bool clamped = true)
+        private static float SinusIn(float t)
         {
             var tVal = -Mathf.Cos(t * (Mathf.PI * 0.5f)) + 1f;
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float SinusOut(float t, bool clamped = true)
+        private static float SinusOut(float t)
         {
             var tVal = Mathf.Sin(t * (Mathf.PI * 0.5f));
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float SinusInOut(float t, bool clamped = true)
+        private static float SinusInOut(float t)
         {
             var tVal = -0.5f * (Mathf.Cos(Mathf.PI * t) - 1f);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ExponentialIn(float t, bool clamped = true)
+        private static float ExponentialIn(float t)
         {
             var tVal = Mathf.Pow(2f, 10f * (t - 1f));
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ExponentialOut(float t, bool clamped = true)
+        private static float ExponentialOut(float t)
         {
             var tVal = Mathf.Sin(t * (Mathf.PI * 0.5f));
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
-        private static float ExponentialInOut(float t, bool clamped = true)
+        private static float ExponentialInOut(float t)
         {
             var tVal = -0.5f * (Mathf.Cos(Mathf.PI * t) - 1f);
-            return clamped ? Mathf.Clamp01(tVal) : tVal;
+            return tVal;
         }
         #endregion
     }

@@ -212,7 +212,7 @@ namespace BXFW.Tweening
 
             var Context = To(0f, 1f, Duration, (float f) =>
             {
-                BXTweenCustomLerp.LerpRectTransformUnclamped(rectStart, rectEnd, f, target);
+                BXTweenCustomLerp.RectTransformLerpUnclamped(rectStart, rectEnd, f, target);
             }, target);
 
             return Context;

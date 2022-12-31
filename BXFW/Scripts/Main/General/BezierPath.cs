@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace BXFW
 {
-    /// This is class because structs are inconvient when getting reference. 
     /// <summary>
     /// Represents a bezier point.
     /// </summary>

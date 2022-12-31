@@ -2,6 +2,9 @@
 
 namespace BXFW
 {
+    /// <summary>
+    /// An fps camera, that rotates the target transform horizontally and rotates itself vertically.
+    /// </summary>
     public class PlayerFPSCamera : MonoBehaviour
     {
         [Header("Camera References")]
@@ -31,7 +34,7 @@ namespace BXFW
 
         private void CameraLookUpdate()
         {
-            //Mouse input calc
+            // Mouse input calc
             float mouseX = (RawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X")) * SensitivityMouse * Time.smoothDeltaTime;
             float mouseY = (RawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * SensitivityMouse * Time.smoothDeltaTime;
 

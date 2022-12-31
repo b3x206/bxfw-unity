@@ -173,14 +173,14 @@ namespace BXFW
         /// </summary>
         public event AddRemoveRangeDelegate OnAddRange;
         /// <summary>
-        /// Called when multiple objects are removed from this array.
-        /// </summary>
-        public event AddRemoveRangeDelegate OnRemoveRange;
-        /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Remove(T)"/> is called.
         /// <br>For multiple removals, use <see cref="OnRemoveRange"/> instead.</br>
         /// </summary>
         public event AddRemoveDelegate OnRemove;
+        /// <summary>
+        /// Called when multiple objects are removed from this array.
+        /// </summary>
+        public event AddRemoveRangeDelegate OnRemoveRange;
         /// <summary>
         /// Called when anything happens to a list.
         /// <br>This includes adding and removing, unlike the <see cref="Changed"/> event.</br>
