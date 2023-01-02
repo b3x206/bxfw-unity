@@ -54,7 +54,9 @@ namespace BXFW
             get { return _CurrentCameraOffsetIndex; }
             set { _CurrentCameraOffsetIndex = Mathf.Clamp(value, 0, CameraOffsetTargets.Length - 1); }
         }
-        /// <summary>The <see cref="UnityEngine.Events.UnityEvent{T0}"/> setter.</summary>
+        /// <summary>
+        /// The <see cref="UnityEngine.Events.UnityEvent{T0}"/> setter.
+        /// </summary>
         public void SetCurrentCameraOffsetIndex(int Offset)
         { CurrentCameraOffsetIndex = Offset; }
 

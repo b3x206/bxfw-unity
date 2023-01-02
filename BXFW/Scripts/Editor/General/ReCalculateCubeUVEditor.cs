@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System.IO;
+using UnityEditor;
 using UnityEngine;
 
 namespace BXFW.ScriptEditor
@@ -6,12 +7,26 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(ReCalculateCubeUV))]
     public class ReCalculateCubeUVEditor : Editor
     {
+        private ReCalculateCubeUV Target
+        {
+            get
+            {
+                return (ReCalculateCubeUV)target;
+            }
+        }
         /// <summary>
         /// Directory to save.
         /// </summary>
-        private readonly string DirSave = $"{System.IO.Directory.GetCurrentDirectory()}/Assets/Prefabs/GenMeshes";
+        private readonly string DirSave = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Prefabs/GenMeshes");
         /// <summary>
-        /// Returns the unity save directory.
+        /// The absolute dir + file name to save.
+        /// </summary>
+        private string FileSave
+        {
+            get { return string.Format("{0}.asset", Path.Combine(DirSave, Target.CubeMeshName)); }
+        }
+        /// <summary>
+        /// Returns the unity (relative) save directory.
         /// Like : <c>Assets/Directory/GenMeshes</c>, does not include the <c>C:/</c> stuff on the start.
         /// </summary>
         private string UDirSave
@@ -20,18 +35,18 @@ namespace BXFW.ScriptEditor
             {
                 // Remove the extension
                 var UFilePath = DirSave.Split('.')[0];
-                // Remove the junk.
-                UFilePath = UFilePath.Substring(UFilePath.IndexOf('/', System.IO.Directory.GetCurrentDirectory().Length) + 1 /*(omit character '/')*/);
+                // Remove the junk. (Add 1 to omit '/', Subtract 7 to include the 'Assets' directory on the start)
+                UFilePath = UFilePath.Substring(UFilePath.IndexOf('/', Directory.GetCurrentDirectory().Length) - 6);
 
                 return UFilePath;
             }
         }
-        private ReCalculateCubeUV Target
+        /// <summary>
+        /// The relative dir + file name to save. (with .asset appended for full file name)
+        /// </summary>
+        private string UFileSave
         {
-            get
-            {
-                return (ReCalculateCubeUV)target;
-            }
+            get { return string.Format("{0}.asset", Path.Combine(UDirSave, Target.CubeMeshName)); }
         }
 
         #region Utility
@@ -42,33 +57,33 @@ namespace BXFW.ScriptEditor
         {
             var TargetMesh = Target.GetCalculateMesh();
 
-            AssetDatabase.CreateAsset(TargetMesh, $"{UDirSave}/{Target.CubeMeshName}.asset");
+            AssetDatabase.CreateAsset(TargetMesh, UFileSave);
             AssetDatabase.SaveAssets();
 
             return TargetMesh;
         }
         /// <summary>
         /// Gets the UV Cube created.
-        /// <br>If there is no UV cube, it also creates one using <see cref="CreateUVCube()"/>.</br>
+        /// <br>If there is no UV cube, it also creates one using <see cref="CreateUVCubeToAssets()"/>.</br>
         /// </summary>
         private Mesh GetUVCubeFromAssets()
         {
             // Get Directory
-            if (!System.IO.Directory.Exists(DirSave))
-                System.IO.Directory.CreateDirectory(DirSave);
+            if (!Directory.Exists(DirSave))
+                Directory.CreateDirectory(DirSave);
 
             if (string.IsNullOrEmpty(Target.CubeMeshName))
             {
                 Target.CubeMeshName = "Cube_InstUV";
             }
 
-            string[] FileNames = System.IO.Directory.GetFiles(DirSave, $"{Target.CubeMeshName}.*");
+            string[] FileNames = Directory.GetFiles(DirSave, string.Format("{0}.*", Target.CubeMeshName));
 
             // At least one matching file exists, the file name is files[0].
             // Use that cube as mesh.
             if (FileNames.Length > 0)
             {
-                var MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>($"{UDirSave}/{Target.CubeMeshName}.asset");
+                var MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>(UFileSave);
 
                 if (MeshAssign != null)
                 {
@@ -100,16 +115,24 @@ namespace BXFW.ScriptEditor
             // Draw line
             GUIAdditionals.DrawUILineLayout(new Color(.5f, .5f, .5f));
 
+            var TargetRenderer = Target.GetComponent<Renderer>();
+            var TargetMeshFilter = Target.GetComponent<MeshFilter>();
+
+            // Only show this HelpBox if the target mesh wasn't applied to this object also.
+            if (File.Exists(FileSave) && TargetMeshFilter.sharedMesh.name != Target.CubeMeshName)
+            {
+                EditorGUILayout.HelpBox(string.Format("[ReCalculateCubeUV] A mesh asset with the same name {0} exists. Please change the name to prevent data loss.", Target.CubeMeshName), MessageType.Warning);
+            }
+            if (TargetRenderer.sharedMaterial != null && TargetRenderer.sharedMaterial.mainTexture != null && TargetRenderer.sharedMaterial.mainTexture.wrapMode != TextureWrapMode.Repeat)
+            {
+                EditorGUILayout.HelpBox("[ReCalculateCubeUV] Make sure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.", MessageType.Warning);
+            }
+
             // Button to recalculate
             if (GUILayout.Button("Re-Calculate Cube texture."))
             {
-                // Get References
-                var TargetMeshFilter = Target.GetComponent<MeshFilter>();
-                var TargetRenderer = Target.GetComponent<Renderer>();
-
-                // If it's not a prefab.
-                // if (PrefabUtility.GetCorrespondingObjectFromSource(Target.gameObject) == null)
-                if (!Target.IsPrefab)
+                // Prefab check (if no prefab object)
+                if (PrefabUtility.GetCorrespondingObjectFromSource(Target.gameObject) == null)
                 {
                     // Set mesh & texture
                     TargetMeshFilter.mesh = GetUVCubeFromAssets();
@@ -121,40 +144,26 @@ namespace BXFW.ScriptEditor
                             tex.wrapMode = TextureWrapMode.Repeat;
                         }
                     }
-                    else
-                    {
-                        Debug.LogWarning("[ReCalcCubeTexture::Calculate<in editor>] Make sure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.");
-                    }
                 }
-                else // It's a prefab, do a different procedure
+                else
                 {
-                    if (EditorUtility.DisplayDialog("[ReCalcCubeTexture]",
-                        "Warning : You are about to modify a prefab. Are you sure you want to do it?",
-                        "Yes", "No"))
+                    // Set Prefab specific flags
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(TargetMeshFilter);
+
+                    // Set mesh & texture
+                    TargetMeshFilter.mesh = GetUVCubeFromAssets();
+                    var tex = TargetRenderer.sharedMaterial.mainTexture;
+                    if (tex != null)
                     {
-                        // Set Prefab specific flags
-                        PrefabUtility.RecordPrefabInstancePropertyModifications(TargetMeshFilter);
-                        EditorUtility.SetDirty(Target.gameObject);
-
-                        // Set mesh & texture
-                        TargetMeshFilter.mesh = GetUVCubeFromAssets();
-                        var tex = TargetRenderer.sharedMaterial.mainTexture;
-                        if (tex != null)
+                        if (tex.wrapMode != TextureWrapMode.Repeat)
                         {
-                            if (tex.wrapMode != TextureWrapMode.Repeat)
-                            {
-                                tex.wrapMode = TextureWrapMode.Repeat;
-                            }
+                            tex.wrapMode = TextureWrapMode.Repeat;
                         }
-                        else
-                        {
-                            Debug.LogWarning("[ReCalcCubeTexture::Calculate<in editor>] Make sure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.");
-                        }
-
-                        // Apply Prefab
-                        PrefabUtility.ApplyObjectOverride
-                            (TargetMeshFilter, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(Target), InteractionMode.UserAction);
                     }
+
+                    // Apply Prefab
+                    EditorUtility.SetDirty(Target.gameObject);
+                    PrefabUtility.ApplyObjectOverride(TargetMeshFilter, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(Target), InteractionMode.UserAction);  
                 }
             }
         }

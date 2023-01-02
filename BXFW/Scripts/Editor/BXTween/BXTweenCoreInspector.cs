@@ -28,12 +28,11 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Tween interface <see cref="ITweenCTX"/> filtering filter.
         /// </summary>
-        private struct TweenFilter
+        private struct EditorTweenFilter
         {
             public bool ReverseIterateListObjects;
             public bool IgnoreNullTargetObject;
             public Object TargetObject;
-            [Tooltip("Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower.")]
             public int BreakAtTweenCount;
 
             public bool ShouldFilter(ITweenCTX tw)
@@ -41,8 +40,7 @@ namespace BXFW.ScriptEditor
                 return (IgnoreNullTargetObject && tw.TargetObject == null) || (TargetObject != null && tw.TargetObject != TargetObject);
             }
         }
-
-        private TweenFilter currentFilter;
+        private EditorTweenFilter currentFilter;
 
         private GUIStyle boxStyle;
         private GUIStyle headerTextStyle;
@@ -81,12 +79,12 @@ namespace BXFW.ScriptEditor
             // Draw ReadOnly status properties 
             if (!Application.isPlaying)
             {
-                EditorGUILayout.HelpBox("[BXTween] BXTween (for now) only works in runtime.", MessageType.Warning);
+                EditorGUILayout.HelpBox("BXTween only works in runtime.", MessageType.Warning);
                 GUI.enabled = gEnabled;
                 return;
             }
 
-            EditorGUILayout.LabelField("::[BXTweenCore]", headerTextStyle, GUILayout.Height(32f));
+            EditorGUILayout.LabelField(":: [BXTweenCore]", headerTextStyle, GUILayout.Height(32f));
 
             // Draw stats from the BXTween class
             EditorGUILayout.LabelField(string.Format("Tween Amount (running) = {0}", BXTween.CurrentRunningTweens.Count));
@@ -108,10 +106,10 @@ namespace BXFW.ScriptEditor
                 EditorGUI.indentLevel += 2;
 
                 // Draw filter tweens area
-                currentFilter.BreakAtTweenCount = EditorGUILayout.IntField("Tween Amount To Pause (Break)", currentFilter.BreakAtTweenCount);
-                currentFilter.ReverseIterateListObjects = EditorGUILayout.Toggle("Reverse Tweens View", currentFilter.ReverseIterateListObjects);
-                currentFilter.IgnoreNullTargetObject = EditorGUILayout.Toggle("Ignore Null Target Object", currentFilter.IgnoreNullTargetObject);
-                currentFilter.TargetObject = EditorGUILayout.ObjectField("Target Object", currentFilter.TargetObject, typeof(Object), true);
+                currentFilter.BreakAtTweenCount = Mathf.Clamp(EditorGUILayout.IntField(new GUIContent("Tween Amount To Pause (Break)", "Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower."), currentFilter.BreakAtTweenCount), -1, int.MaxValue);
+                currentFilter.ReverseIterateListObjects = EditorGUILayout.Toggle(new GUIContent("Reverse Tweens View", "Reverses the current view, so the last tween run is the topmost."), currentFilter.ReverseIterateListObjects);
+                currentFilter.IgnoreNullTargetObject = EditorGUILayout.Toggle(new GUIContent("Ignore Null Target Object", "Ignores null target object. See BXTweenCTX<T>.TargetObject"), currentFilter.IgnoreNullTargetObject);
+                currentFilter.TargetObject = EditorGUILayout.ObjectField(new GUIContent("Target Object", "Target object that the tween should have. See BXTweenCTX<T>.TargetObject"), currentFilter.TargetObject, typeof(Object), true);
                 
                 EditorGUI.indentLevel -= 2;
             }

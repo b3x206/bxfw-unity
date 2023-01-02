@@ -5,7 +5,7 @@ namespace BXFW
     /// Most of the work for this script is done on the editor script <see cref="ReCalcCubeTexEditor"/> anyway.
     /// Note that it can be recalculated in runtime too.
     /// <summary>
-    /// Calculates the cube texture uv, like it's triplanar.
+    /// Calculates the cube texture uv so it's tiled properly.
     /// </summary>
     [ExecuteInEditMode(), RequireComponent(typeof(MeshFilter), typeof(Renderer))]
     public class ReCalculateCubeUV : MonoBehaviour
@@ -43,9 +43,7 @@ namespace BXFW
 
             filter.mesh = GetCalculateMesh();
         }
-#if UNITY_EDITOR
-        public bool IsPrefab { get { return UnityEditor.PrefabUtility.GetCorrespondingObjectFromSource(gameObject) != null; } }
-#endif
+
         /// <summary>
         /// Returns the mesh inside this object with extra checks.
         /// </summary>

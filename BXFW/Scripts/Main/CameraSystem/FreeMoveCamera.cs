@@ -28,8 +28,8 @@ namespace BXFW
         public float CameraLookSensitivity = 10f;
         public float CameraMoveSpeed = 10f;
         public float BoostedCameraMoveSpeedAdd = 10f;
-        public Vector2 MinMaxXRotation = new Vector2(0f, 0f);
-        public Vector2 MinMaxYRotation = new Vector2(0f, 0f);
+        public Vector2 MinMaxXRotation = Vector2.zero;
+        public Vector2 MinMaxYRotation = Vector2.zero;
 
         // -- Input Settings -- //
         private readonly IList<string> InputLookAxis    = new string[] { "Mouse X", "Mouse Y" };
@@ -45,8 +45,8 @@ namespace BXFW
         [InspectorLine(.4f, .4f, .4f)]
         public CustomInputEvent InputEventDisableEnable = new KeyCode[] { KeyCode.F8 };
 
-        public new Transform transform { get; private set; }
-        private Quaternion OriginalRotation;
+        public Transform TargetTransform { get; private set; }
+        private Quaternion originalRotation;
         private bool isInit = false;
         private void Start()
         {
@@ -59,11 +59,11 @@ namespace BXFW
         {
             if (isInit) return;
 
-            transform = MoveTransform == null ? GetComponent<Transform>() : MoveTransform;
+            TargetTransform = MoveTransform == null ? GetComponent<Transform>() : MoveTransform;
 
             // Initial rotation shouldn't have X axis rotation, otherwise the angleaxis does stupid stuff and the Z rotates too.
-            transform.rotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
-            OriginalRotation = transform.rotation;
+            TargetTransform.rotation = Quaternion.Euler(0f, TargetTransform.rotation.eulerAngles.y, 0f);
+            originalRotation = TargetTransform.rotation;
             isInit = true;
         }
 
@@ -96,7 +96,7 @@ namespace BXFW
                     CurrentRotationY = Mathf.Clamp(CurrentRotationY, MinMaxYRotation.x, MinMaxYRotation.y);
                 }
 
-                transform.rotation = OriginalRotation *
+                TargetTransform.rotation = originalRotation *
                     (Quaternion.AngleAxis(CurrentRotationX, Vector3.up) * Quaternion.AngleAxis(CurrentRotationY, -Vector3.right));
 
                 // Move player
@@ -148,7 +148,7 @@ namespace BXFW
                     }
                 }
 
-                transform.Translate(MoveTranslate);
+                TargetTransform.Translate(MoveTranslate);
             }
             else
             {

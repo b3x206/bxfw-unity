@@ -1,17 +1,15 @@
-﻿using BXFW;
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace BXFW.UI
 {
     /// <summary>
-    /// Defined UI content. Similar to <see cref="GUIContent"/>.
+    /// Defined UI content. Similar to <see cref="GUIContent"/>, but used by <see cref="TabSystem"/>.
     /// </summary>
     [Serializable]
     public class Content
     {
         [Tooltip("Text content that this button stores.")][TextArea] public string text;
-        // [Tooltip("Tooltip content that this button stores.")] public string tooltip; (TODO : Unity UI tooltips system.)
         [InspectorBigSpriteField, Tooltip("Sprite content.")] public Sprite image;
         [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
         [SerializeField] internal bool receiveContentFromComponents = false;

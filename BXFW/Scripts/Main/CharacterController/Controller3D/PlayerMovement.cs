@@ -19,7 +19,6 @@ namespace BXFW
     /// <see cref="CharacterController"/> based player movement component.
     /// </summary>
     /// TODO 1 : Make BXFW.Modules a thing (abstract scriptable object based module system, allowing custom variables + behaviour)
-    /// TODO 2 : Extend from UnityEngine.CharacterController
     [RequireComponent(typeof(CharacterController)), DisallowMultipleComponent]
     public sealed class PlayerMovement : MonoBehaviour
     {
@@ -27,21 +26,21 @@ namespace BXFW
         public CharacterController Controller { get; private set; }
 
         [Header("Player Settings")]
-        public LayerMask Player_GroundMask;
-        public float speed = 400f;
-        public float runSpeed = 800f;
-        public float jumpSpeed = 3f;
+        public LayerMask groundMask;
+        public float speed = 200f;
+        public float runSpeed = 300f;
+        public float jumpSpeed = 5f;
         public float rigidBodyPushPower = 1f;
         public float rbWeight = 1f;
         public bool canMove = true;
         public bool canInputMove = true;
         [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
         // Input
-        public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
-        public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
-        public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
-        public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
-        public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
+        public CustomInputEvent moveForwardInput  = new CustomInputEvent(true, new KeyCode[] { KeyCode.W, KeyCode.UpArrow });
+        public CustomInputEvent moveBackwardInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.S, KeyCode.DownArrow });
+        public CustomInputEvent moveLeftInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.A, KeyCode.LeftArrow });
+        public CustomInputEvent moveRightInput    = new CustomInputEvent(true, new KeyCode[] { KeyCode.D, KeyCode.RightArrow });
+        public CustomInputEvent moveRunInput      = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftShift });
         /// <summary>
         /// Returns whether if the any of the 'move' input events is being done.
         /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
@@ -63,26 +62,30 @@ namespace BXFW
                 return canMove && MoveInputIsPressed;
             }
         }
-        public CustomInputEvent moveJumpInput   = new KeyCode[] { KeyCode.Space };
-        public CustomInputEvent moveCrouchInput = new KeyCode[] { KeyCode.LeftControl };
+        public CustomInputEvent moveJumpInput   = new CustomInputEvent(true, new KeyCode[] { KeyCode.Space });
+        public CustomInputEvent moveCrouchInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftControl });
 
         [Header("Player Kinematic Physics")]
-        [SerializeField] private bool m_UseGravity = true;
+        [SerializeField] private bool useGravity = true;
         [Tooltip("Controls whether if the player can move kinematically. (User input)")]
         public bool canMoveKinematic = true;
         public bool UseGravity
         {
             get
-            { return m_UseGravity; }
+            { return useGravity; }
             set
             {
                 // m_Player_GravityVelocity = value ? m_Player_GravityVelocity : Vector3.zero;
-                m_UseGravity = value;
+                useGravity = value;
             }
         }
-        /// <summary>Current gravity for the player controller.</summary>
+        /// <summary>
+        /// Current gravity for the player controller.
+        /// </summary>
         public Vector3 gravity = Physics.gravity;
-        /// <summary>Control whether the player is in ground.</summary>
+        /// <summary>
+        /// Control whether the player is in ground.
+        /// </summary>
         public bool IsGrounded { get; private set; } = false;
 
         // -- Player Reference
@@ -156,17 +159,19 @@ namespace BXFW
         /// </summary>
         private float m_TPSRotateV;
 
-        // TODO 3 : Create a player input method, that polls all the inputs in Update
-        private bool jumpKeyInputQueue = false;
         private void Update()
         {
-            if (moveJumpInput.IsKeyDown())
-                jumpKeyInputQueue = true;
+            moveForwardInput.Poll();
+            moveBackwardInput.Poll();
+            moveLeftInput.Poll();
+            moveRightInput.Poll();
+            moveCrouchInput.Poll();
+            moveJumpInput.Poll();
         }
         private void FixedUpdate()
         {
             //// Is Player Grounded? 
-            IsGrounded = Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, Player_GroundMask);
+            IsGrounded = Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
             
             if (!canMoveKinematic) return; // Can player move?
 
@@ -183,10 +188,9 @@ namespace BXFW
             m_internalVelocity = mWishDir + m_gravityVelocity + m_externVelocity;
 
             //// Jumping         ////
-            if (jumpKeyInputQueue)
+            if (moveJumpInput.IsKeyDown())
             {
                 PlayerJump();
-                jumpKeyInputQueue = false;
             }
 
             //// Apply Movement  ////
@@ -208,7 +212,7 @@ namespace BXFW
             float move_h = input.x;
             float move_v = input.y;
 
-            Vector3 move_inputDir = new Vector3(move_h, 0f, move_v).normalized; // Input (normalized)
+            Vector3 move_inputDir = new Vector3(move_h, 0f, move_v).normalized;
 
             /// If player wants to move
             if (move_inputDir.sqrMagnitude >= 0.1f)
@@ -217,7 +221,7 @@ namespace BXFW
                 {
                     case PlayerViewType.FPS:
                         //// Just move to the forward, assume the camera script rotating the player. ////
-                        move_actualDir = ((transform.right * move_inputDir.x) + (transform.forward * move_inputDir.z)) * move_currentSpeed;
+                        move_actualDir = ((transform.right * move_inputDir.x) + (transform.forward * move_inputDir.z)).normalized;
                         break;
                     case PlayerViewType.TPS:
                         {
@@ -232,7 +236,7 @@ namespace BXFW
 
                             //// Movement (Relative to character pos and rot) ////
                             // Add camera affected movement vector to the movement vec.
-                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
+                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized;
                         }
                         break;
 
@@ -240,7 +244,7 @@ namespace BXFW
                         {
                             // Do TPS movement without rotating the player.
                             float move_targetAngle = (Mathf.Atan2(move_inputDir.x, move_inputDir.z) * Mathf.Rad2Deg) + targetCamera.transform.eulerAngles.y;
-                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized * move_currentSpeed;
+                            move_actualDir = (Quaternion.Euler(0f, move_targetAngle, 0f) * Vector3.forward).normalized;
                         }
                         break;
 
@@ -256,7 +260,7 @@ namespace BXFW
                 move_actualDir = Vector3.zero;
             }
 
-            return move_actualDir;
+            return move_actualDir * move_currentSpeed;
         }
 
         private const float DEFAULT_GROUNDED_GRAVITY = -2f;
@@ -267,7 +271,7 @@ namespace BXFW
         private void PlayerGravity()
         {
             // -- No gravity
-            if (!m_UseGravity)
+            if (!useGravity)
             {
                 m_gravityVelocity = Vector3.zero;
                 return;
@@ -297,7 +301,7 @@ namespace BXFW
 
             /// The '2f' added to this is required as <see cref="PlayerGravity()"/> function sets player gravity to -2f always.
             //m_gravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
-            m_gravityVelocity += -gravity.normalized * (jumpSpeed + DEFAULT_GROUNDED_GRAVITY);
+            m_gravityVelocity = -gravity.normalized * (jumpSpeed + DEFAULT_GROUNDED_GRAVITY);
         }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {

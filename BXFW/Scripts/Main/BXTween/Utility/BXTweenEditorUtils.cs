@@ -14,7 +14,7 @@ namespace BXFW.Tweening.Editor
     /// <br>This does not affect <see cref="BXTweenSettingsEditor"/>.</br>
     /// </summary>
     [CustomEditor(typeof(BXTweenSettings))]
-    public class BXTweenSettingsInspector : UnityEditor.Editor
+    internal class BXTweenSettingsInspector : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
@@ -36,16 +36,14 @@ namespace BXFW.Tweening.Editor
     /// <summary>
     /// Editor that allows for editing / generating a <see cref="BXTweenSettings"/> file.
     /// </summary>
-    public class BXTweenSettingsEditor : EditorWindow
+    internal class BXTweenSettingsEditor : EditorWindow
     {
         public const string WindowMenuItemRegister = "Window/BXTween/Settings";
         [MenuItem(WindowMenuItemRegister)]
         public static void OpenSettingsEditor()
         {
             var w = GetWindow<BXTweenSettingsEditor>(true, "BXTween Settings", focus: true);
-            // Set size constraints
-            w.minSize = new Vector2(250f, 400f);
-            // Show already hidden window.
+            w.minSize = new Vector2(300f, 550f);
             w.Show();
         }
 
@@ -77,6 +75,14 @@ namespace BXFW.Tweening.Editor
             EditorGUI.BeginChangeCheck();
             var gEnabled = GUI.enabled;
 
+            GUIAdditionals.DrawUILineLayout(Color.gray);
+            EditorGUILayout.LabelField(new GUIContent(":: BXTween 1.0b ::"), new GUIStyle(EditorStyles.boldLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = EditorStyles.boldFont.fontSize + 2
+            });
+
+            GUIAdditionals.DrawUILineLayout(Color.gray);
             EditorGUILayout.LabelField(new GUIContent(":: General"), EditorStyles.boldLabel);
             var enableTw = EditorGUILayout.Toggle(new GUIContent("Enable BXTween", "Enables BXTween. If this option is false, BXTween won't run on start."), CurrentSettings.enableBXTween);
             if (!enableTw)
@@ -84,8 +90,8 @@ namespace BXFW.Tweening.Editor
                 GUI.enabled = false;
             }
 
-            var ignoreTS = EditorGUILayout.Toggle(new GUIContent("Ignore Time.timeScale", "Ignores Time.timeScale. Basically slowing down game won't affect the tweens."), CurrentSettings.ignoreTimeScale);
-            var maxTwn = Mathf.Clamp(EditorGUILayout.IntField(new GUIContent("Max Tween Count", "Maximum amount of runnable tweens. If this gets exceeded this limit will be incremented with a warning."), CurrentSettings.maxTweens), -1, int.MaxValue);
+            var ignoreTS = EditorGUILayout.Toggle(new GUIContent("Ignore Time.timeScale", "Manipulating game speed using timeScale won't affect the tweens."), CurrentSettings.ignoreTimeScale);
+            var maxTwn = Mathf.Clamp(EditorGUILayout.IntField(new GUIContent("Max Tween Count", "Maximum amount of runnable tweens. If this gets exceeded this limit will be incremented with a warning. (Set -1 to disable)"), CurrentSettings.maxTweens), -1, int.MaxValue);
 
             EditorGUILayout.LabelField(new GUIContent(":: BXTweenStrings"), EditorStyles.boldLabel);
             var lColor = EditorGUILayout.ColorField("Log Color", CurrentSettings.LogColor);
@@ -126,6 +132,23 @@ namespace BXFW.Tweening.Editor
             {
                 Undo.RecordObject(CurrentSettings, "Reset BXTween Settings");
                 CurrentSettings.FromSettings(CreateInstance<BXTweenSettings>());
+            }
+
+            GUIAdditionals.DrawUILineLayout(Color.gray);
+            if (EditorApplication.isPlaying)
+            {
+                EditorGUILayout.LabelField(new GUIContent(":: Runtime"), EditorStyles.boldLabel);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Show BXTween Debug"))
+                {
+                    Selection.activeGameObject = BXTween.Current.gameObject;
+                }
+                GUILayout.Label("Selects the BXTweenCore GameObject.", new GUIStyle(EditorStyles.centeredGreyMiniLabel)
+                {
+                    wordWrap = true
+                });
+                GUILayout.EndHorizontal();
             }
         }
     }
