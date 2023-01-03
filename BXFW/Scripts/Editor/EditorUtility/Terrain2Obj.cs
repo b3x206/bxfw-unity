@@ -28,7 +28,7 @@ namespace BXFW.Tools.Editor
         private int _totalCount;
         private const int ProgressUpdateInterval = 10000;
 
-        [MenuItem("Tools/Terrain/Export To Obj...")]
+        [MenuItem("Tools/Terrain/Export To .obj")]
         private static void Init()
         {
             _terrain = null;

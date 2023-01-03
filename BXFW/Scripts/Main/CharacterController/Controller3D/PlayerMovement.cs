@@ -4,15 +4,14 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Input Axis for rotating the camera.
+    /// Input Axis for input related things.
     /// </summary>
     [Flags]
-    public enum CameraRotationAxes
+    public enum InputAxis
     {
         None = 0,         // 0
         MouseX = 1 << 0,  // 1
         MouseY = 1 << 1,  // 2
-        // MouseX | MouseY : 3
     }
 
     /// <summary>
@@ -110,6 +109,7 @@ namespace BXFW
         private Vector3 mWishDir;
         /// <summary>
         /// Direction that the input wishes to move.
+        /// <br>Set in <see cref="PlayerMove(Vector2)"/>.</br>
         /// </summary>
         public Vector3 WishDir
         {
@@ -167,6 +167,7 @@ namespace BXFW
             moveRightInput.Poll();
             moveCrouchInput.Poll();
             moveJumpInput.Poll();
+            moveRunInput.Poll();
         }
         private void FixedUpdate()
         {
@@ -176,7 +177,7 @@ namespace BXFW
             if (!canMoveKinematic) return; // Can player move?
 
             //// Main Movement    ///
-            mWishDir = canInputMove ? PlayerMove(new Vector2(
+            Vector3 move = canInputMove ? PlayerMove(new Vector2(
                 Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
                 Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
                 )) * Time.fixedDeltaTime : Vector3.zero;
@@ -185,7 +186,7 @@ namespace BXFW
             PlayerGravity();
 
             //// Set velocity.   ////
-            m_internalVelocity = mWishDir + m_gravityVelocity + m_externVelocity;
+            m_internalVelocity = move + m_gravityVelocity + m_externVelocity;
 
             //// Jumping         ////
             if (moveJumpInput.IsKeyDown())
@@ -204,7 +205,7 @@ namespace BXFW
         public Vector3 PlayerMove(Vector2 input)
         {
             if (!canMove)
-            { return Vector3.zero; }
+                return Vector3.zero;
 
             Vector3 move_actualDir; // Dir on return;
             float move_currentSpeed = moveRunInput ? runSpeed : speed;
@@ -231,8 +232,7 @@ namespace BXFW
                             // Interpolate the current angle
                             float move_angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, move_targetAngle, ref m_TPSRotateV, TPS_tsRotateDamp);
                             // Apply damped rotation.
-                            // TODO 4 : Preserve previous rotation + rotate in transform.up direction
-                            transform.rotation = Quaternion.Euler(0f, move_angle, 0f);
+                            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, move_angle, transform.rotation.eulerAngles.z);
 
                             //// Movement (Relative to character pos and rot) ////
                             // Add camera affected movement vector to the movement vec.
@@ -260,6 +260,7 @@ namespace BXFW
                 move_actualDir = Vector3.zero;
             }
 
+            mWishDir = move_actualDir;
             return move_actualDir * move_currentSpeed;
         }
 

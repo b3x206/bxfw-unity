@@ -200,11 +200,6 @@ namespace BXFW
         /// <summary>
         /// Get a texture of a circle.
         /// </summary>
-        /// <param name="size"></param>
-        /// <param name="circleColor"></param>
-        /// <param name="strokeColor"></param>
-        /// <param name="strokeThickness"></param>
-        /// <returns></returns>
         public static Texture GetCircleTexture(Vector2 size, Color circleColor, Color strokeColor = default, float strokeThickness = 0f)
         {
             tempCircleMat.color = circleColor;

@@ -2,14 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// About the 'SnappableTransforms' being a class that you inherit from :
-///     * That may cause issues on multiple classes that use a component system instead of a 'oop' approach
-///     * However, this approach has the advantage of not calling <see cref="GameObject.GetComponent{T}"/> twice.
-///     
-///     * Because of this, i may make these classes as sealed class components instead of inheritable classes.
-///     * so, a maybe TODO moment here again??
-///     (this method is fine though if you are careful enough)
-
 namespace BXFW
 {
     /// <summary>
@@ -55,24 +47,24 @@ namespace BXFW
         /// </summary>
         public bool Snappable_IsSetup { get; private set; } = false;
 
-        private Dictionary<SnapPoint, Transform> m_Snappable_SnapPoints;
+        private Dictionary<SnapPoint, Transform> m_SnapPoints;
         /// <summary>
         /// Snap points that are assigned on <see cref="InitSetupSnapTransform()"/>
         /// </summary>
-        public Dictionary<SnapPoint, Transform> Snappable_SnapPoints
+        public Dictionary<SnapPoint, Transform> SnapPoints
         {
             get
             {
-                if (m_Snappable_SnapPoints == null)
+                if (m_SnapPoints == null)
                 {
                     InitSetupSnapTransform();
                 }
 
-                return m_Snappable_SnapPoints;
+                return m_SnapPoints;
             }
             private set
             {
-                m_Snappable_SnapPoints = value;
+                m_SnapPoints = value;
             }
         }
 
@@ -83,7 +75,7 @@ namespace BXFW
         {
             if (Snappable_IsSetup) return;
 
-            Snappable_SnapPoints = new Dictionary<SnapPoint, Transform>();
+            SnapPoints = new Dictionary<SnapPoint, Transform>();
 
             // Weird, but this might happen on very edge situations.
             // (Like calling 'Destroy()' at the same time on this method or having a 'new Transform transform' variable)
@@ -100,7 +92,7 @@ namespace BXFW
             tLDL.localScale = Vector3.one;
             tLDL.localRotation = Quaternion.identity;
             tLDL.localPosition = new Vector3(-0.5f, -0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerDwnLeft, tLDL);
+            SnapPoints.Add(SnapPoint.LowerDwnLeft, tLDL);
 
             // ---- 1 ----
             var tLDR = new GameObject("CubeSnap-LowerDwnRight").transform;
@@ -108,7 +100,7 @@ namespace BXFW
             tLDR.localScale = Vector3.one;
             tLDR.localRotation = Quaternion.identity;
             tLDR.localPosition = new Vector3(0.5f, -0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerDwnRight, tLDR);
+            SnapPoints.Add(SnapPoint.LowerDwnRight, tLDR);
 
             // ---- 2 ----
             var tUDR = new GameObject("CubeSnap-UpperDwnRight").transform;
@@ -116,7 +108,7 @@ namespace BXFW
             tUDR.localScale = Vector3.one;
             tUDR.localRotation = Quaternion.identity;
             tUDR.localPosition = new Vector3(0.5f, 0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperDwnRight, tUDR);
+            SnapPoints.Add(SnapPoint.UpperDwnRight, tUDR);
 
             // ---- 3 ----
             var tUDL = new GameObject("CubeSnap-UpperDwnLeft").transform;
@@ -124,7 +116,7 @@ namespace BXFW
             tUDL.localScale = Vector3.one;
             tUDL.localRotation = Quaternion.identity;
             tUDL.localPosition = new Vector3(-0.5f, 0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperDwnLeft, tUDL);
+            SnapPoints.Add(SnapPoint.UpperDwnLeft, tUDL);
 
             // ---- 4 ---- ////////////////////////// UP (front)
             var tLUL = new GameObject("CubeSnap-LowerUpLeft").transform;
@@ -132,7 +124,7 @@ namespace BXFW
             tLUL.localScale = Vector3.one;
             tLUL.localRotation = Quaternion.identity;
             tLUL.localPosition = new Vector3(-0.5f, -0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerUpLeft, tLUL);
+            SnapPoints.Add(SnapPoint.LowerUpLeft, tLUL);
 
             // ---- 5 ----
             var tLUR = new GameObject("CubeSnap-LowerUpRight").transform;
@@ -140,7 +132,7 @@ namespace BXFW
             tLUR.localScale = Vector3.one;
             tLUR.localRotation = Quaternion.identity;
             tLUR.localPosition = new Vector3(0.5f, -0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerUpRight, tLUR);
+            SnapPoints.Add(SnapPoint.LowerUpRight, tLUR);
 
             // ---- 6 ----
             var tUUR = new GameObject("CubeSnap-UpperUpRight").transform;
@@ -148,7 +140,7 @@ namespace BXFW
             tUUR.localScale = Vector3.one;
             tUUR.localRotation = Quaternion.identity;
             tUUR.localPosition = new Vector3(0.5f, 0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperUpRight, tUUR);
+            SnapPoints.Add(SnapPoint.UpperUpRight, tUUR);
 
             // ---- 7 ----
             var tUUL = new GameObject("CubeSnap-UpperUpLeft").transform;
@@ -156,7 +148,7 @@ namespace BXFW
             tUUL.localScale = Vector3.one;
             tUUL.localRotation = Quaternion.identity;
             tUUL.localPosition = new Vector3(-0.5f, 0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperUpLeft, tUUL);
+            SnapPoints.Add(SnapPoint.UpperUpLeft, tUUL);
             #endregion
 
             #region Center Snap Pieces
@@ -165,63 +157,63 @@ namespace BXFW
             tLDC.localScale = Vector3.one;
             tLDC.localRotation = Quaternion.identity;
             tLDC.localPosition = new Vector3(0f, -0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerDwnCenter, tLDC);
+            SnapPoints.Add(SnapPoint.LowerDwnCenter, tLDC);
 
             var tUDC = new GameObject("CubeSnap-UpperDwnCenter").transform;
             tUDC.SetParent(transform);
             tUDC.localScale = Vector3.one;
             tUDC.localRotation = Quaternion.identity;
             tUDC.localPosition = new Vector3(0f, 0.5f, -0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperDwnCenter, tUDC);
+            SnapPoints.Add(SnapPoint.UpperDwnCenter, tUDC);
 
             var tLUC = new GameObject("CubeSnap-LowerUpCenter").transform;
             tLUC.SetParent(transform);
             tLUC.localScale = Vector3.one;
             tLUC.localRotation = Quaternion.identity;
             tLUC.localPosition = new Vector3(0f, -0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerUpCenter, tLUC);
+            SnapPoints.Add(SnapPoint.LowerUpCenter, tLUC);
 
             var tUUC = new GameObject("CubeSnap-UpperUpCenter").transform;
             tUUC.SetParent(transform);
             tUUC.localScale = Vector3.one;
             tUUC.localRotation = Quaternion.identity;
             tUUC.localPosition = new Vector3(0f, 0.5f, 0.5f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperUpCenter, tUUC);
+            SnapPoints.Add(SnapPoint.UpperUpCenter, tUUC);
 
             var tLLC = new GameObject("CubeSnap-LowerLeftCenter").transform;
             tLLC.SetParent(transform);
             tLLC.localScale = Vector3.one;
             tLLC.localRotation = Quaternion.identity;
             tLLC.localPosition = new Vector3(-0.5f, -0.5f, 0f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerLeftCenter, tLLC);
+            SnapPoints.Add(SnapPoint.LowerLeftCenter, tLLC);
 
             var tULC = new GameObject("CubeSnap-UpperLeftCenter").transform;
             tULC.SetParent(transform);
             tULC.localScale = Vector3.one;
             tULC.localRotation = Quaternion.identity;
             tULC.localPosition = new Vector3(-0.5f, 0.5f, 0f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperLeftCenter, tULC);
+            SnapPoints.Add(SnapPoint.UpperLeftCenter, tULC);
 
             var tLRC = new GameObject("CubeSnap-LowerRightCenter").transform;
             tLRC.SetParent(transform);
             tLRC.localScale = Vector3.one;
             tLRC.localRotation = Quaternion.identity;
             tLRC.localPosition = new Vector3(0.5f, -0.5f, 0f);
-            Snappable_SnapPoints.Add(SnapPoint.LowerRightCenter, tLRC);
+            SnapPoints.Add(SnapPoint.LowerRightCenter, tLRC);
 
             var tURC = new GameObject("CubeSnap-UpperRightCenter").transform;
             tURC.SetParent(transform);
             tURC.localScale = Vector3.one;
             tURC.localRotation = Quaternion.identity;
             tURC.localPosition = new Vector3(0.5f, 0.5f, 0f);
-            Snappable_SnapPoints.Add(SnapPoint.UpperRightCenter, tURC);
+            SnapPoints.Add(SnapPoint.UpperRightCenter, tURC);
 
             var tCTR = new GameObject("CubeSnap-ObjCenter").transform;
             tCTR.SetParent(transform);
             tCTR.localScale = Vector3.one;
             tCTR.localRotation = Quaternion.identity;
             tCTR.localPosition = new Vector3(0.5f, 0.5f, 0f);
-            Snappable_SnapPoints.Add(SnapPoint.ObjCenter, tURC);
+            SnapPoints.Add(SnapPoint.ObjCenter, tURC);
             #endregion
 
             Snappable_IsSetup = true;
@@ -260,18 +252,18 @@ namespace BXFW
             {
                 var PrevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.Snappable_SnapPoints[pointTarget].position;
+                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
                 transformTarget.transform.SetParent(SnapHelper);
-                SnapHelper.position = Snappable_SnapPoints[pointThis].position;
+                SnapHelper.position = SnapPoints[pointThis].position;
                 transformTarget.transform.SetParent(PrevParent);
             }
             else
             {
                 var PrevParent = transform.parent;
 
-                SnapHelper.position = Snappable_SnapPoints[pointThis].position;
+                SnapHelper.position = SnapPoints[pointThis].position;
                 transform.SetParent(SnapHelper);
-                SnapHelper.position = transformTarget.Snappable_SnapPoints[pointTarget].position;
+                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
                 transform.SetParent(PrevParent);
             }
 
@@ -310,7 +302,7 @@ namespace BXFW
 
             SnapHelper.position = transformTarget.position + transformTargetPosOffset;
             transformTarget.transform.SetParent(SnapHelper);
-            SnapHelper.position = Snappable_SnapPoints[pointThis].position;
+            SnapHelper.position = SnapPoints[pointThis].position;
             transformTarget.transform.SetParent(PrevParent);
 
             Destroy(SnapHelper.gameObject);
@@ -354,12 +346,12 @@ namespace BXFW
             {
                 var PrevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.Snappable_SnapPoints[pointTarget].position;
+                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
                 transformTarget.transform.SetParent(SnapHelper);
 
                 // -- Setup axis stuff
                 var sHelperPosSet = new Vector3();
-                var snappableSPointPos = Snappable_SnapPoints[pointThis].position;
+                var snappableSPointPos = SnapPoints[pointThis].position;
                 if (alignAxis.x > 0)
                 {
                     sHelperPosSet.x = snappableSPointPos.x;
@@ -394,11 +386,11 @@ namespace BXFW
             {
                 var PrevParent = transform.parent;
 
-                SnapHelper.position = Snappable_SnapPoints[pointThis].position;
+                SnapHelper.position = SnapPoints[pointThis].position;
                 transform.SetParent(SnapHelper);
                 // -- Setup axis stuff
                 var sHelperPosSet = new Vector3();
-                var snappableSPointPos = transformTarget.Snappable_SnapPoints[pointThis].position;
+                var snappableSPointPos = transformTarget.SnapPoints[pointThis].position;
                 if (alignAxis.x > 0)
                 {
                     sHelperPosSet.x = snappableSPointPos.x;

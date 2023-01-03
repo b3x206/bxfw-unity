@@ -9,175 +9,13 @@ using System.Collections;
 namespace BXFW.Data
 {
     /// <summary>
-    /// Data for the localized text.
-    /// <br/>
-    /// <br>To create new of this class, use the following step:</br>
-    /// <br><c><see langword="new"/> <see cref="LocalizedTextData"/>(localized_text_id, <see langword="new"/> Dictionary[str, str] { language_id, text_content })</c></br>
-    /// <para>And so on.. The constructor isn't 'concise' enough and this is 'experimental'.</para>
-    /// </summary>
-    [Serializable]
-    public class LocalizedTextData : IEnumerable<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
-    {
-        /// TODO : Put <see cref="DefaultLocale"/> to a different place.
-        public static string DefaultLocale = "en";
-        public static string ISOCurrentLocale => System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-        public string TextID;
-
-        // TODO : Use the BXFW.SerializableDictionary class (no need for ISerializationCallbackReceiver)
-        private readonly Dictionary<string, string> LocalizedValues = new Dictionary<string, string>();
-        public IDictionary<string, string> Data
-        {
-            get
-            {
-                return LocalizedValues;
-            }
-        }
-        /// <summary>
-        /// Returns the total size (approximation, takes the length of the dictionary strings) of the <see cref="LocalizedTextData"/> data.
-        /// </summary>
-        public int StringSize
-        {
-            get
-            {
-                int sizeValues = 0;
-                int sizeKeys = 0;
-
-                foreach (var value in LocalizedValues.Values)
-                {
-                    sizeValues += value.Length;
-                }
-                foreach (var key in LocalizedValues.Keys)
-                {
-                    sizeKeys += key.Length;
-                }
-
-                return sizeValues + sizeKeys;
-            }
-        }
-
-        public string this[string key]
-        {
-            get
-            {
-                if (!LocalizedValues.TryGetValue(key, out string value))
-                    return string.Format("{0} (no-locale) | {1}", key, TextID); // OnError, just return the problematic TextID.
-
-                return value;
-            }
-        }
-
-        public bool ContainsLocale(string key)
-        {
-            return LocalizedValues.ContainsKey(key);
-        }
-
-        /// <summary>
-        /// Returns the current locale string. If it doesn't exist it fallbacks to <see cref="DefaultLocale"/>.
-        /// <br>If the default locale doesn't also exist, it fallbacks to the first value.</br>
-        /// </summary>
-        public string GetCurrentLocaleString()
-        {
-            if (LocalizedValues.Count == 0)
-                throw new NullReferenceException("[LocalizedTextData::GetCurrentLocaleString] No locale strings registered.");
-
-            var locale = ISOCurrentLocale;
-            if (ContainsLocale(locale))
-                return this[locale];
-
-            if (ContainsLocale(DefaultLocale))
-                return this[DefaultLocale];
-
-            // Return the first in values
-            return LocalizedValues.Values.ToArray()[0];
-        }
-
-        // -- Operator / Class
-        /// <summary>
-        /// Creates an completely empty data.
-        /// </summary>
-        public LocalizedTextData()
-        { }
-        /// <summary>
-        /// Creates an new <see cref="LocalizedTextData"/> object. (without an id, use for inline localization)
-        /// </summary>
-        /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(Dictionary<string, string> values)
-        {
-            TextID = string.Empty;
-            LocalizedValues = values;
-        }
-        /// <summary>
-        /// Creates an new <see cref="LocalizedTextData"/> object.
-        /// </summary>
-        /// <param name="textID">ID of the localized text.</param>
-        /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(string textID, Dictionary<string, string> values)
-        {
-            TextID = textID;
-            LocalizedValues = values;
-        }
-        public static explicit operator string(LocalizedTextData text)
-        {
-            return text.GetCurrentLocaleString();
-        }
-
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
-        {
-            return LocalizedValues.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return LocalizedValues.GetEnumerator();
-        }
-
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
-
-        public static bool operator ==(LocalizedTextData lhs, LocalizedTextData rhs)
-        {
-            bool lNull = lhs is null;
-            bool rNull = rhs is null;
-
-            if (lNull)
-            {
-                return rNull;
-            }
-
-            return lhs.Equals(rhs);
-        }
-        public static bool operator !=(LocalizedTextData lhs, LocalizedTextData rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        public bool Equals(LocalizedTextData other)
-        {
-            if (other == null)
-                return false;
-            
-            return LocalizedValues == other.LocalizedValues && TextID == other.TextID;
-        }
-
-        public override int GetHashCode()
-        {
-            int hashCode = -2018306565;
-            hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(TextID);
-            hashCode = (hashCode * -1521134295) + EqualityComparer<Dictionary<string, string>>.Default.GetHashCode(LocalizedValues);
-            return hashCode;
-        }
-    }
-
-    /// <summary>
     /// Parses localized text asset.
-    /// <br>Note : This is 'Not' recommended to be used in this state.</br>
+    /// <br>Note : This is 'Not' recommended to be used in this state, use an actual localization library.</br>
     /// <br>This is more of an 'experimental' thing.</br>
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
-    /// // For some reason git does not correctly commit the turkish characters.
+    /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this is probs ansi.
     /// TEXT_ID => en="Text Content", tr="Yazi icerik"
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
     /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
@@ -185,6 +23,7 @@ namespace BXFW.Data
     public static class LocalizedAssetParser
     {
         public const char NewLineChar = '\n';
+        public const char TabChar = '\t';
         public const char EscapeChar = '\\';
 
         public const char CommentChar = ';';
@@ -247,8 +86,7 @@ namespace BXFW.Data
                     newStr.Append("\\n");
                     continue;
                 }
-                // added as an special exception, FIXME
-                if (c == '\t')
+                if (c == TabChar)
                 {
                     newStr.Append("\\t");
                     continue;
@@ -395,13 +233,14 @@ namespace BXFW.Data
                             // TODO : Make a delegate dict (with escape chars) for behaviour on escape chars
                             if (dataChar == 'n')
                             {
-                                localeValueParsed.AppendLine();
+                                // don't call AppendLine, in windows it appends CRLF even though all files/datas are LF
+                                localeValueParsed.Append(NewLineChar);
                                 currDataStrIsEscapeChar = false;
                                 continue;
                             }
                             if (dataChar == 't')
                             {
-                                localeValueParsed.Append('\t');
+                                localeValueParsed.Append(TabChar);
                                 currDataStrIsEscapeChar = false;
                                 continue;
                             }
@@ -471,7 +310,7 @@ namespace BXFW.Data
                     // Append the dictionary data. 
                     // It looks like : localeValue="whatever here is there.", (comma added if other elements exist)
                     sb.Append(
-                        // yes, inferred string (whatever the '$' thing is called) is indeed nicer to work with (this is done for older c#)
+                        // yes, inferred string (whatever the '$' thing before "" is called) is indeed nicer to work with
                         string.Format("{0}{1}{2}{3}{2}{4} ",
                             textWLocaleKey, LocaleDefChar, SurroundChar,        // Definition Char
                             textWLocaleValue.ConvertQuotationString(),          // Content

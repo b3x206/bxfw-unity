@@ -11,9 +11,13 @@ namespace BXFW
     /// </summary>
     public class TouchDragField : Selectable, IDragHandler
     {
-        /// <summary> Movement delta for the TouchField. </summary>
+        /// <summary>
+        /// Movement delta for the TouchField.
+        /// </summary>
         public Vector2 DragDelta { get; private set; }
-        /// <summary> Whether if the drag field is being dragged. </summary>
+        /// <summary>
+        /// Whether if the drag field is being pressed / dragged.
+        /// </summary>
         public bool Pressed { get; private set; }
 
         public bool UseDragHandler = true;
@@ -22,7 +26,7 @@ namespace BXFW
         public sealed class DragEvent : UnityEvent<Vector2> { }
         public DragEvent OnDragField;
 
-        protected int PointerId;
+        protected int PointerId = 0;
         private Vector2 PointerOld;
         private Touch? currentTouch;
 
@@ -38,10 +42,10 @@ namespace BXFW
                 // The pointerID is not expected to change
                 if (!currentTouch.HasValue)
                 {
-                    currentTouch = Input.touches[PointerId];
+                    currentTouch = Input.GetTouch(PointerId);
                 }
 
-                if (PointerId >= 0 && PointerId < Input.touches.Length)
+                if (PointerId >= 0 && PointerId < Input.touchCount)
                 {
                     DragDelta = currentTouch.Value.position - PointerOld;
                     PointerOld = currentTouch.Value.position;

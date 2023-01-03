@@ -40,9 +40,18 @@ namespace BXFW
             IsKeyDown = 1 << 1,
             IsKeyUp = 1 << 2,
         }
-        private EventType pollCurrentType;
+        private EventType m_pollCurrentType;
+        private EventType PollCurrentType 
+        { 
+            get { return m_pollCurrentType; } 
+            set
+            {
+                m_pollCurrentType = value;
+                pollTime = Time.time;
+            }
+        }
         private KeyCode   pollCurrentKey;
-        private bool isKey;
+        private float     pollTime;
 
         /// <summary>
         /// Polls event.
@@ -62,50 +71,75 @@ namespace BXFW
                 }
             }
 
-            isKey = pollCurrentKey != KeyCode.None || SetIsInvokable;
+            bool isKey = pollCurrentKey != KeyCode.None || SetIsInvokable;
 
             if (isKey)
             {
-                switch (pollCurrentType)
+                switch (PollCurrentType)
                 {
                     case EventType.None:
-                        pollCurrentType = EventType.IsKeyDown; // only 1 event
+                        PollCurrentType = EventType.IsKeyDown; // only 1 event
                         break;
                     // Pressed for more than 2 frames
                     case EventType.IsKeyDown:
-                        pollCurrentType = EventType.IsKeyDown | EventType.IsKey; // 2 events invoked and awaiting to be used.
+                        PollCurrentType = EventType.IsKeyDown | EventType.IsKey; // 2 events invoked and awaiting to be used.
                         break;
                 }
             }
             else
             {
-                pollCurrentType = EventType.IsKeyUp; // only 1 event
+                PollCurrentType = EventType.IsKeyUp; // only 1 event
             }
         }
         /// <summary>
         /// Uses the polled event.
-        /// <br>Returns <c>None</c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
+        /// <br>Returns <c>None &amp; 0f</c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
         /// <br>Note that after using the event, the event valeus are reset.</br>
         /// </summary>
-        public void Use(out EventType t, out KeyCode k)
+        public void Use(out EventType type, out KeyCode key, out float time)
         {
-            t = pollCurrentType;
-            k = pollCurrentKey;
+            type = PollCurrentType;
+            key = pollCurrentKey;
+            time = pollTime;
 
-            switch (pollCurrentType)
+            switch (PollCurrentType)
             {
+                case EventType.None:
+                    if (!isPolled)
+                        Debug.LogWarning("[CustomKeyEvent::Use] Called use even though this event isn't polled. Set 'isPolled' to true to fix this.");
+                    break;
+
                 default:
-                    pollCurrentType = EventType.None;
+                    PollCurrentType = EventType.None;
                     break;
 
                 case EventType.IsKeyDown | EventType.IsKey:
-                    pollCurrentType = EventType.IsKey; // IsKeyDown event should be now used.
+                    PollCurrentType = EventType.IsKey; // IsKeyDown event should be now used.
                     break;
                 case EventType.IsKey: // do nothing as this event is disabled from Poll()
                     break;
             }
 
             pollCurrentKey = KeyCode.None;
+        }
+        /// <summary>
+        /// Uses the polled event.
+        /// <br>Returns <c><see cref="EventType.None"/> &amp; <see cref="KeyCode.None"/></c> / 
+        /// default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
+        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// </summary>
+        public void Use(out EventType type, out KeyCode key)
+        {
+            Use(out type, out key, out float _);
+        }
+        /// <summary>
+        /// Uses the polled event.
+        /// <br>Returns <c><see cref="EventType.None"/></c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
+        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// </summary>
+        public void Use(out EventType type)
+        {
+            Use(out type, out KeyCode _, out float _);
         }
 
         public bool IsKey()

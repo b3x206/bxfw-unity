@@ -135,10 +135,9 @@ namespace BXFW.Tweening.Editor
             }
 
             GUIAdditionals.DrawUILineLayout(Color.gray);
+            EditorGUILayout.LabelField(new GUIContent(":: Runtime"), EditorStyles.boldLabel);
             if (EditorApplication.isPlaying)
             {
-                EditorGUILayout.LabelField(new GUIContent(":: Runtime"), EditorStyles.boldLabel);
-
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Show BXTween Debug"))
                 {
@@ -149,6 +148,13 @@ namespace BXFW.Tweening.Editor
                     wordWrap = true
                 });
                 GUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.LabelField(new GUIContent("Switch to play mode to see this section."), new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter
+                });
             }
         }
     }

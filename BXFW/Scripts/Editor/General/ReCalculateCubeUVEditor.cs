@@ -83,7 +83,7 @@ namespace BXFW.ScriptEditor
             // Use that cube as mesh.
             if (FileNames.Length > 0)
             {
-                var MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>(UFileSave);
+                Mesh MeshAssign = AssetDatabase.LoadAssetAtPath<Mesh>(UFileSave);
 
                 if (MeshAssign != null)
                 {
@@ -93,16 +93,14 @@ namespace BXFW.ScriptEditor
                 }
                 else
                 {
-                    // This error theoretically shouldn't happen.
-                    Debug.LogError(string.Format("[ReCalcCubeTexture] The loaded mesh was null. There's no such asset named as {0}??", Target.CubeMeshName));
+                    // This error shouldn't happen.
+                    Debug.LogError(string.Format("[ReCalculcateCubeUV] The loaded mesh was null. There's no such asset named as '{0}'?", Target.CubeMeshName));
                     return null;
                 }
             }
             else // Create and save the cube.
             {
-                var TargetMesh = CreateUVCubeToAssets();
-
-                return TargetMesh;
+                return CreateUVCubeToAssets();
             }
         }
         #endregion

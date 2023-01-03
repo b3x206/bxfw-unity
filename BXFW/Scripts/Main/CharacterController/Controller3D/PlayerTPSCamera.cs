@@ -19,11 +19,14 @@ namespace BXFW
         [SerializeField] private float SensitivityMouse = 100f;
         public float SensitivityMouseCamera { get => SensitivityMouse; set => SensitivityMouse = value; }
         [Space] // In-game settings
-        [Tooltip("Uses FixedUpdate() tick method to update the camera position.")]
-        public bool UseFixedUpdate = false;
+        [Tooltip("Uses FixedUpdate() tick method to update the camera position.\nUseful when following objects moving in FixedUpdate().")]
+        public bool MoveInFixedUpdate = true;
+        [Tooltip("Uses FixedUpdate() tick method to update the camera rotation.\nUseful when the game is locked / has lower than FixedUpdate() fps.")]
+        public bool LookInFixedUpdate = false;
+
         [Tooltip("Camera rotation axes. X only makes horizontal rotate and Y does vertical.")]
-        public CameraRotationAxes CurrentAxes = CameraRotationAxes.MouseX | CameraRotationAxes.MouseY;
-        public CameraRotationAxes InvertAxes = CameraRotationAxes.MouseX;
+        public InputAxis CurrentAxes = InputAxis.MouseX | InputAxis.MouseY;
+        public InputAxis InvertAxes;
         [Tooltip("Camera offset, for the player follow.")]
         public Vector3 PlayerTransformPositionOffset;
         [Tooltip("Distance between the 'PlayerTransform' and the camera.")]
@@ -40,15 +43,19 @@ namespace BXFW
 
         private void Update()
         {
-            if (UseFixedUpdate) return;
+            if (!LookInFixedUpdate)
+                CameraLookUpdate(Time.deltaTime);
 
-            CameraLookUpdate(Time.deltaTime);
+            if (!MoveInFixedUpdate)
+                CameraMoveUpdate(Time.deltaTime);
         }
         private void FixedUpdate()
         {
-            if (!UseFixedUpdate) return;
+            if (LookInFixedUpdate)
+                CameraLookUpdate(Time.fixedDeltaTime);
 
-            CameraLookUpdate(Time.fixedDeltaTime);
+            if (MoveInFixedUpdate)
+                CameraMoveUpdate(Time.fixedDeltaTime);
         }
 
         /// <summary>
@@ -65,22 +72,10 @@ namespace BXFW
             xAxis *= SensitivityMouse * deltaTime;
             yAxis *= SensitivityMouse * deltaTime;
 
-            switch (InvertAxes)
-            {
-                case CameraRotationAxes.MouseX | CameraRotationAxes.MouseY:
-                    xAxis *= -1;
-                    yAxis *= -1;
-                    break;
-                case CameraRotationAxes.MouseX:
-                    xAxis *= -1;
-                    break;
-                case CameraRotationAxes.MouseY:
-                    yAxis *= -1;
-                    break;
-
-                default:
-                    break;
-            }
+            if ((InvertAxes & InputAxis.MouseX) == InputAxis.MouseX)
+                xAxis *= -1;
+            if ((InvertAxes & InputAxis.MouseY) == InputAxis.MouseY)
+                yAxis *= -1;
 
             // Clamping
             if (LookVerticalAngleClamp != Vector2.zero)
@@ -95,25 +90,19 @@ namespace BXFW
             }
 
             // Rotating
-            switch (CurrentAxes)
-            {
-                case CameraRotationAxes.MouseX | CameraRotationAxes.MouseY:
-                    transform.Rotate(Vector3.right, yAxis);
-                    transform.Rotate(Vector3.up, -xAxis, Space.World);
-                    break;
-                case CameraRotationAxes.MouseX:
-                    transform.Rotate(Vector3.up, -xAxis, Space.World);
-                    break;
-                case CameraRotationAxes.MouseY:
-                    transform.Rotate(Vector3.right, yAxis);
-                    break;
-
-                default:
-                    break;
-            }
+            if ((CurrentAxes & InputAxis.MouseX) == InputAxis.MouseX)
+                transform.Rotate(Vector3.up, -xAxis, Space.World);
+            if ((CurrentAxes & InputAxis.MouseY) == InputAxis.MouseY)
+                transform.Rotate(Vector3.right, yAxis);
 
             transform.Translate(0f, 0f, -DistanceFromTarget, Space.Self);
-
+        }
+        
+        /// <summary>
+        /// Updates the follow position of the camera.
+        /// </summary>
+        private void CameraMoveUpdate(float deltaTime)
+        {
             // Offseted position
             Vector3 offsetPos = PlayerTransform.position + (transform.TransformPoint(PlayerTransformPositionOffset) - transform.position);
             // Lerp origin position

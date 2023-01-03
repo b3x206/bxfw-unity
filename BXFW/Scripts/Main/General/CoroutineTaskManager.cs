@@ -45,7 +45,7 @@ namespace BXFW
     /// </summary>
     public class CoroutineTask
     {
-        /// Returns true if and only if the coroutine is running.  Paused tasks
+        /// Returns true if and only if the coroutine is running. Paused tasks
         /// are considered to be running.
         public bool Running
         {
@@ -118,7 +118,7 @@ namespace BXFW
                 handler(manual);
         }
 
-        private TaskManager.TaskState task;
+        private readonly TaskManager.TaskState task;
     }
 
     /// <summary>

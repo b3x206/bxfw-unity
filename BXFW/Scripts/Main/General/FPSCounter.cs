@@ -29,19 +29,19 @@ namespace BXFW
             if (PrevTimeElapsed == TimeElapsed) return;
 
             if (FPSTimer <= 0)
-            { FPSTimer = RefreshTime; }
+            { 
+                FPSTimer = RefreshTime;
+            }
             else
-            { FPSTimer -= TimeElapsed; }
+            { 
+                FPSTimer -= TimeElapsed;
+            }
 
             // If statement is seperated for getting 'TimeElapsed' more accurately.
             if (FPSTimer <= 0)
             {
-                // Set fps to '60' if smoothDeltaTime returns 0f.
-                // This fixed a bug where the starting fps is -1 and doesn't update.
-                // (Basically it fixes some issues,
-                //  but can be removed as the updating mechanism was modified after the last time this comment was written)
                 if (TimeElapsed <= 0f)
-                { TimeElapsed = 0.016f; }
+                    TimeElapsed = 0.016f;
 
                 CurrentFPS = (int)(1f / TimeElapsed);
             }

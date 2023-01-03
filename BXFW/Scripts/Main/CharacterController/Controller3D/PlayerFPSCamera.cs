@@ -22,11 +22,11 @@ namespace BXFW
         private float xRotation = 0f;
         [Tooltip("The limit is splitted to 2 before acting as input")]
         [SerializeField] private float HeadRotationLimit = 180f;
-        public CameraRotationAxes CurrentAxes = CameraRotationAxes.MouseX | CameraRotationAxes.MouseY;
+        public InputAxis CurrentAxes = InputAxis.MouseX | InputAxis.MouseY;
 
         private void Update()
         {
-            if (CurrentAxes != CameraRotationAxes.None)
+            if (CurrentAxes != InputAxis.None)
             {
                 CameraLookUpdate();
             }
@@ -45,20 +45,20 @@ namespace BXFW
             // Rotate player with camera
             switch (CurrentAxes)
             {
-                case CameraRotationAxes.MouseX | CameraRotationAxes.MouseY:
+                case InputAxis.MouseX | InputAxis.MouseY:
                     // You can probably use euler function method as well, it's unity being unity.
                     transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);
                     PlayerTransform.Rotate(Vector3.up * mouseX);
                     break;
 
-                case CameraRotationAxes.MouseX:
+                case InputAxis.MouseX:
                     PlayerTransform.Rotate(Vector3.up * mouseX);
                     break;
-                case CameraRotationAxes.MouseY:
+                case InputAxis.MouseY:
                     transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);
                     break;
 
-                case CameraRotationAxes.None:
+                case InputAxis.None:
                 default:
                     break;
             }

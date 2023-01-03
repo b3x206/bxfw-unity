@@ -1,9 +1,4 @@
-﻿#if UNITY_EDITOR
-// This is an editor exclusive namespace.
-using BXFW.Tools.Editor;
-#endif
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -21,7 +16,7 @@ namespace BXFW
         /// <summary>
         /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
         /// </summary>
-        public bool Snappable_IsSetup { get; private set; } = false;
+        public bool SIsSetup { get; private set; } = false;
 
         [SerializeField, HideInInspector] private MeshFilter m_CurrentMeshFilter;
         /// <summary>Current mesh filter on this object that the script is attached to.</summary>
@@ -38,20 +33,20 @@ namespace BXFW
             }
         }
 
-        private List<Vector3> m_Snappable_VertPoints;
+        private List<Vector3> m_VertPoints;
         /// <summary>
         /// Initilazed vertice points on the mesh filter.
         /// </summary>
-        public List<Vector3> Snappable_VertPoints
+        public List<Vector3> VertPoints
         {
             get
             {
-                if (transform.hasChanged || !Snappable_IsSetup)
+                if (transform.hasChanged || !SIsSetup)
                 {
                     UpdateSnapPoints();
                 }
 
-                return m_Snappable_VertPoints;
+                return m_VertPoints;
             }
         }
 
@@ -94,11 +89,11 @@ namespace BXFW
                 return;
             }
 
-            if (m_Snappable_VertPoints == null)
+            if (m_VertPoints == null)
             {
-                m_Snappable_VertPoints = new List<Vector3>();
+                m_VertPoints = new List<Vector3>();
             }
-            m_Snappable_VertPoints.Clear();
+            m_VertPoints.Clear();
 
             var listDrawnVerts = new List<Vector3>(verts.Length / 3); // There are always 2 excess verts.
 
@@ -111,7 +106,7 @@ namespace BXFW
                 { continue; }
 
                 listDrawnVerts.Add(currentVert);
-                m_Snappable_VertPoints.Add(currentVert);
+                m_VertPoints.Add(currentVert);
             }
         }
 
@@ -155,18 +150,18 @@ namespace BXFW
             {
                 var PrevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.Snappable_VertPoints[pointTarget];
+                SnapHelper.position = transformTarget.VertPoints[pointTarget];
                 transformTarget.transform.SetParent(SnapHelper);
-                SnapHelper.position = Snappable_VertPoints[pointThis];
+                SnapHelper.position = VertPoints[pointThis];
                 transformTarget.transform.SetParent(PrevParent);
             }
             else
             {
                 var PrevParent = transform.parent;
 
-                SnapHelper.position = Snappable_VertPoints[pointThis];
+                SnapHelper.position = VertPoints[pointThis];
                 transform.SetParent(SnapHelper);
-                SnapHelper.position = transformTarget.Snappable_VertPoints[pointTarget];
+                SnapHelper.position = transformTarget.VertPoints[pointTarget];
                 transform.SetParent(PrevParent);
             }
 
@@ -209,18 +204,18 @@ namespace BXFW
             {
                 var PrevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.Snappable_SnapPoints[pointTarget].position;
+                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
                 transformTarget.transform.SetParent(SnapHelper);
-                SnapHelper.position = Snappable_VertPoints[pointThis];
+                SnapHelper.position = VertPoints[pointThis];
                 transformTarget.transform.SetParent(PrevParent);
             }
             else
             {
                 var PrevParent = transform.parent;
 
-                SnapHelper.position = Snappable_VertPoints[pointThis];
+                SnapHelper.position = VertPoints[pointThis];
                 transform.SetParent(SnapHelper);
-                SnapHelper.position = transformTarget.Snappable_SnapPoints[pointTarget].position;
+                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
                 transform.SetParent(PrevParent);
             }
 
@@ -260,7 +255,7 @@ namespace BXFW
 
             SnapHelper.position = transformTarget.position + transformTargetPosOffset;
             transformTarget.transform.SetParent(SnapHelper);
-            SnapHelper.position = Snappable_VertPoints[pointThis];
+            SnapHelper.position = VertPoints[pointThis];
             transformTarget.transform.SetParent(PrevParent);
 
             Destroy(SnapHelper.gameObject);
@@ -280,13 +275,13 @@ namespace BXFW
 
             var prevGColor = Gizmos.color;
 
-            for (int i = 0; i < m_Snappable_VertPoints.Count; i++)
+            for (int i = 0; i < m_VertPoints.Count; i++)
             {
                 // Draw with offset for duplicate vert.
-                GizmoUtility.DrawText($"V:{i}", m_Snappable_VertPoints[i], Color.green, true);
+                GizmoUtility.DrawText($"V:{i}", m_VertPoints[i], Color.green, true);
                 Gizmos.color = new Color(1f, 0f, 0f, .4f);
                 // Gizmos
-                Gizmos.DrawSphere(m_Snappable_VertPoints[i], .05f);
+                Gizmos.DrawSphere(m_VertPoints[i], .05f);
             }
 
             Gizmos.color = prevGColor;

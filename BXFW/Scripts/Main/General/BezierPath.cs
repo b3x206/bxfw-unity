@@ -116,6 +116,7 @@ namespace BXFW
     }
 
     // TODO : Use this as an scriptable object to hold a proper reference.
+    // TODO 2 : Iterate using a KeyValuePair because tuples are too new
     /// <summary>
     /// Represents a bezier path.
     /// </summary>

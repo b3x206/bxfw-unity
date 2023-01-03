@@ -7,7 +7,7 @@ namespace BXFW
     /// <summary>
     /// Calculates the cube texture uv so it's tiled properly.
     /// </summary>
-    [ExecuteInEditMode(), RequireComponent(typeof(MeshFilter), typeof(Renderer))]
+    [ExecuteInEditMode, RequireComponent(typeof(MeshFilter), typeof(Renderer))]
     public class ReCalculateCubeUV : MonoBehaviour
     {
         // -- Variables
@@ -38,7 +38,7 @@ namespace BXFW
             }
             else
             {
-                Debug.LogWarning("[ReCalcCubeTexture::Calculate] Make sure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.");
+                Debug.LogWarning("[ReCalculateCubeUV::Calculate] Make sure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.");
             }
 
             filter.mesh = GetCalculateMesh();
@@ -56,7 +56,7 @@ namespace BXFW
             if (meshFilter.sharedMesh == null)
             {
                 meshFilter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
-                Debug.LogWarning(string.Format("[ReCalcCubeTexture::GetMesh] The mesh was null on object \"{0}\". Assigned the default unity cube.", name));
+                Debug.LogWarning(string.Format("[ReCalculateCubeUV::GetMesh] The mesh was null on object \"{0}\". Assigned the default unity cube.", name));
             }
             var meshCopy = Instantiate(meshFilter.sharedMesh);
             mesh = meshFilter.mesh = meshCopy;
@@ -96,8 +96,8 @@ namespace BXFW
             if (meshUVs.Length != 24)
             {
                 throw new System.ArgumentOutOfRangeException(
-                    "[ReCalcCubeTexture::SetupUvMap] It seems like you are using a mesh with uv's different than the default unity cube."
-                    );
+                    "[ReCalculateCubeUV::SetupUvMap] You are using a mesh with uv's different than the default unity cube."
+                );
             }
 
             // Front
