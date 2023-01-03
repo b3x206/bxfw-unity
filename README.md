@@ -8,9 +8,8 @@ Contains certain utilites for problems and makes development 'easier' (for me, t
 The code is &lt;summary/&gt; ified, basically what the code does is in the code file (which is not docs).
 
 ## How to use : 
-* NOTE : For the time being, clone the nightly branch as the stable 'master' branch is out of date.
-* Once the 'nightly' branch is complete, it will be merged.
-* Clone using ```git clone -b nightly https://github.com/b3x206/bxfw-unity.git ``` for now. (Or download the zip of the 'nightly' branch)
+* Clone using ```$ git clone https://github.com/b3x206/bxfw-unity.git``` to desired directory (somewhere inside Assets folder, it has to be inside Assets). (Or download the zip of source code)
+* To clone into a folder with different name just add a name argument like ```$ <git command for clone> desired_folder_name```.
 
 ## Problem / Bug? :
 * create issue i guess
