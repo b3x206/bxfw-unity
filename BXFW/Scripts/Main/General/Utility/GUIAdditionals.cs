@@ -358,7 +358,7 @@ namespace BXFW
                 camProj = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
 
             Matrix4x4 matrixCamPos = Matrix4x4.TRS(camPos, camRot, new Vector3(1, 1, -1));
-            Matrix4x4 matrixCam = (camProj * matrixCamPos.inverse);
+            Matrix4x4 matrixCam = camProj * matrixCamPos.inverse;
 
             // Draw mesh manually
             tempRT.BlitMesh(matrixMesh, matrixCam, meshTarget, meshMat);

@@ -61,7 +61,7 @@ namespace BXFW.Data
             return dict;
         }
         /// <summary>
-        /// Converts the strings with quotations to have escape characters in it. (for the parse file)
+        /// Converts the strings with quotations to have escape characters in it. (for the parse saving file)
         /// </summary>
         private static string ConvertQuotationString(this string target)
         {
