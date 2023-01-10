@@ -10,8 +10,6 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using System.Collections;
-using static UnityEngine.GraphicsBuffer;
-using static Codice.CM.Common.CmCallContext;
 
 namespace BXFW
 {
@@ -118,7 +116,7 @@ namespace BXFW
 
         /// <summary>
         /// Sets value of target safely.
-        /// <br>The <paramref name="obj"/> passed could be anything.</br>
+        /// <br>The <paramref name="obj"/> passed can be anything.</br>
         /// </summary>
         protected void SetValueOfTarget(SerializedProperty property, T obj)
         {
@@ -129,13 +127,17 @@ namespace BXFW
 
             if (obj != null)
             {
-                Editor customInspector = Editor.CreateEditor(obj);
+                // Refresh the CustomInspector with a new target, because we can't set target (we can, but unity seems to not really like it).
+                if (currentCustomInspector != null)
+                    UnityEngine.Object.DestroyImmediate(currentCustomInspector);
+
+                currentCustomInspector = Editor.CreateEditor(obj);
 
                 if (DebugMode && currentCustomInspector == null)
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget(Search Custom Editor)] No suitable editor found for obj '{0}'.", obj));
             }
 
-            // why
+            // why (c# array moment)
             if (fieldInfo.FieldType.GetInterfaces().Contains(typeof(IEnumerable)))
             {
                 // Set the index directly
@@ -145,7 +147,7 @@ namespace BXFW
 
                 int index = property.GetPropertyArrayIndex();
 
-                // We also have to ensure the array is a 'settable' type
+                // We also have to ensure the array is a 'members that you can set' type
                 // Object we cast to is reference, but singular objects may still need FieldInfo set.
                 if (parent is IList<T> refList)
                 {
@@ -158,7 +160,7 @@ namespace BXFW
                 else
                 {
                     // List is not settable, fallback to previous method
-                    // This most likely shouldn't happen (unless using a custom field parent with IEnumerable)
+                    // This most likely shouldn't happen (unless using a custom field parent that has IEnumerable interface)
                     // as unity doesn't serialize read-only Lists or weird c# lists.
                     if (DebugMode)
                         Debug.LogWarning("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget] Target is in field parent with interface 'IEnumerable' but falling back to default FieldInfo set method.");
@@ -440,10 +442,8 @@ namespace BXFW
 
                                 // Set the target dirty
                                 // With this way, cloning of the 'ReorderableList' no longer causes issues,
-                                // because this script now hunts for the same existing references with the same parent.
+                                // because this script (tells unity to) hunt for the same existing references with the same parent.
                                 EditorUtility.SetDirty(target);
-                                // Make name prettier
-                                instObject.name = instObject.name.Replace("(Clone)", "_c");
 
                                 // Set the current dictionary key to be the 'instObject' (so that the object isn't cloned twice, or more)
                                 drawnScriptableObjects[key] = target;
@@ -478,7 +478,7 @@ namespace BXFW
                     target = DragAndDrop.objectReferences[0] as T;
 
                     if (DebugMode)
-                        Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Assigned target to '{0}'.", target));
+                        Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Accepted & assigned target to '{0}'.", target));
 
                     // this repaints the propertydrawer
                     property.serializedObject.Update();

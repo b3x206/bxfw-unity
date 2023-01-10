@@ -250,7 +250,7 @@ namespace BXFW
 
             rb.AddForce(Mathf.Lerp(0, explosionForce, (1 - explosionDistance)) * explosionDir, mode);
         }
-        
+
         // -- Mesh + Transform (TODO : Convert these methods to take a transform matrix and a mesh.
         /// <summary>
         /// Converts vertex position to world position on the mesh.
@@ -293,8 +293,8 @@ namespace BXFW
                 return new Vector3[0];
             }
 
-            Vector3[]  vertices = new Vector3[8];
-            Matrix4x4  thisMatrix = coll.transform.localToWorldMatrix;
+            Vector3[] vertices = new Vector3[8];
+            Matrix4x4 thisMatrix = coll.transform.localToWorldMatrix;
             Quaternion storedRotation = coll.transform.rotation;
             coll.transform.rotation = Quaternion.identity;
 
@@ -1169,9 +1169,14 @@ namespace BXFW
                 PlayerPrefs.GetFloat(string.Format("{0}_B", SaveKey)), PlayerPrefs.GetFloat(string.Format("{0}_A", SaveKey)));
         }
         public static void SetEnum<T>(string SaveKey, T value)
+#if CSHARP_7_3_OR_NEWER
+            where T : Enum
+#endif
         {
+#if !CSHARP_7_3_OR_NEWER
             if (!typeof(T).IsEnum)
                 throw new InvalidOperationException(string.Format("[Additionals::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+#endif
 
             if (string.IsNullOrEmpty(SaveKey))
             {
@@ -1182,9 +1187,14 @@ namespace BXFW
             PlayerPrefs.SetInt(string.Format("{0}_ENUM:{1}", SaveKey, typeof(T).Name), Convert.ToInt32(value));
         }
         public static T GetEnum<T>(string SaveKey)
+#if CSHARP_7_3_OR_NEWER
+            where T : Enum
+#endif
         {
+#if !CSHARP_7_3_OR_NEWER
             if (!typeof(T).IsEnum)
                 throw new InvalidOperationException(string.Format("[Additionals::GetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+#endif
 
             if (string.IsNullOrEmpty(SaveKey))
             {
@@ -1238,12 +1248,10 @@ namespace BXFW
             {
                 if (!string.IsNullOrEmpty(assemblyName) && !string.IsNullOrEmpty(typeName))
                 {
-                    Type typeToDeserialize;
-
                     assemblyName = Assembly.GetExecutingAssembly().FullName;
 
                     // The following line of code returns the type. 
-                    typeToDeserialize = Type.GetType(string.Format("{0}, {1}", typeName, assemblyName));
+                    Type typeToDeserialize = Type.GetType(string.Format("{0}, {1}", typeName, assemblyName));
 
                     return typeToDeserialize;
                 }
@@ -1378,7 +1386,7 @@ namespace BXFW
                     };
 
                     stream.Position = 0;
-                    // You should use json instead anyway
+                    // You should use json instead anyway, anyone can inject custom data that will cause an issue.
                     DSerObj = (ExpectT)bformatter.Deserialize(stream);
                 }
             }
@@ -1404,7 +1412,9 @@ namespace BXFW
 
             byte[] fileContentData = new byte[fileContents.Length];
             for (int i = 0; i < fileContents.Length; i++)
-            { fileContentData[i] = Convert.ToByte(fileContents[i]); }
+            { 
+                fileContentData[i] = Convert.ToByte(fileContents[i]); 
+            }
 
             return BLoad<ExpectT>(fileContentData);
         }
