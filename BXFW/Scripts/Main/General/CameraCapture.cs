@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -29,7 +27,7 @@ namespace BXFW.Tools.Editor
         private void Update()
         {
             if (Input.GetKeyDown(CaptureKey))
-            { TakeScreenshot(); }
+            { TakeCameraShot(); }
         }
 
         // Other functions
@@ -38,7 +36,7 @@ namespace BXFW.Tools.Editor
             get { return PlayerPrefs.GetInt("LastScrID"); }
             set { PlayerPrefs.SetInt("LastScrID", value); }
         }
-        public void TakeScreenshot()
+        public void TakeCameraShot()
         {
             if (ScreenshotCamera == null) { Debug.LogError("[CameraCapture::TakeScreenshot] Screenshot camera is null."); return; }
 

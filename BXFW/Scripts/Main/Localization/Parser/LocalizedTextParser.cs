@@ -20,16 +20,35 @@ namespace BXFW.Data
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
     /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
     /// </example>
-    public static class LocalizedAssetParser
+    public static class LocalizedTextParser
     {
+        public class ParseException : Exception
+        {
+            public ParseException() : base()
+            { }
+
+            public ParseException(string msg) : base(msg)
+            { }
+
+            public ParseException(string msg, Exception innerExcept) : base(msg, innerExcept)
+            { }
+
+            public ParseException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext ctx) : base(info, ctx)
+            { }
+        }
+
         public const char NewLineChar = '\n';
+        public const char SpaceChar = ' ';
         public const char TabChar = '\t';
+        public const char VTabChar = '\v';
         public const char EscapeChar = '\\';
 
         public const char CommentChar = ';';
         public const char LocaleDefSeperateChar = ',';
         public const char SurroundChar = '"';
         public const char LocaleDefChar = '=';
+        public const char PragmaDefChar = '#';
+        public const string PragmaDefString = "pragma";
         public const string TextIDDefChar = "=>";
 
         /// <summary>
@@ -63,7 +82,7 @@ namespace BXFW.Data
         /// <summary>
         /// Converts the strings with quotations to have escape characters in it. (for the parse saving file)
         /// </summary>
-        private static string ConvertQuotationString(this string target)
+        private static string ConvertToParseableString(this string target)
         {
             var newStr = new StringBuilder(target.Length);
 
@@ -97,12 +116,34 @@ namespace BXFW.Data
 
             return newStr.ToString();
         }
+        /// <summary>
+        /// Reads string until it's no longer whitespace and returns the index of non-whitespace char.
+        /// <br>Returns -1 if all of the string is whitespace.</br>
+        /// </summary>
+        private static int IndexOfNonWhitespace(this string target)
+        {
+            int index = 0;
+            foreach (char c in target)
+            {
+                if (char.IsWhiteSpace(c))
+                {
+                    index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return index != target.Length ? index : -1;
+        }
 
         /// <summary>
         /// Parses the text into a list of localized text.
         /// </summary>
         /// <param name="parseString">The string to parse.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parseString"/> is null.</exception>
+        /// <exception cref="ParseException">Thrown when any parse related error occurs.</exception>
         public static List<LocalizedTextData> Parse(string parseString)
         {
             if (string.IsNullOrWhiteSpace(parseString))
@@ -111,29 +152,61 @@ namespace BXFW.Data
             }
 
             // Split lines and prepare list of text code representations.
-            var parseStringSplit = parseString.Split(NewLineChar);
+            string[] parseStringSplit = parseString.Split(NewLineChar);
             var currentAsset = new List<LocalizedTextData>();
+            var globalPragmaSettings = new Dictionary<string, string>();
 
             // Iterate all lines
-            foreach (string line in parseStringSplit)
+            for (int i = 0; i < parseStringSplit.Length; i++)
             {
+                string line = parseStringSplit[i];
+
                 // Ignore blank lines.
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                // Ignore comment lines
+                // Pragma + comment lines
                 // NOTE : Only comment lines starting with ';' is ignored.
-                if (line.TrimStart().StartsWith(CommentChar.ToString()))
-                    continue;
+                {
+                    int trimCount = line.IndexOfNonWhitespace();    // index does not contain the rest of the line
+                    string trimmedLine = line.Substring(trimCount); // because of this, this does contain rest of line
 
-                // Use consistent 'IndexOf' method : Basically only catch the first index of the def char substring.
+                    if (trimmedLine.StartsWith(CommentChar.ToString()))
+                        continue;
+
+                    // Check if pragma line
+                    if (trimmedLine.StartsWith(PragmaDefChar.ToString()))
+                    {
+                        int indexOfPragmaDef = line.IndexOf(PragmaDefString);
+                        if (indexOfPragmaDef != -1)
+                        {
+                            // Push pragma and continue
+                            string splitString = line.Substring(indexOfPragmaDef + PragmaDefString.Length + 1);
+                            string[] pragmaKeyValue = splitString.Split(SpaceChar, VTabChar, TabChar);
+                            // because for some reason string.Split loves to add random empty stuff.
+                            pragmaKeyValue = pragmaKeyValue.Where((s) => !string.IsNullOrWhiteSpace(s)).ToArray();
+
+                            if (pragmaKeyValue.Length != 2)
+                                throw new ParseException(string.Format("[LocalizationDictionaryParser::Parse] Error on '{0}:{1}' : Invalid pragma seperation. Expected length was 2, got '{2}'.", 
+                                    i + 1, indexOfPragmaDef + PragmaDefString.Length, pragmaKeyValue.Length));
+
+                            globalPragmaSettings.Add(pragmaKeyValue[0], pragmaKeyValue[1]);
+                        }
+                        else
+                        {
+                            throw new ParseException(string.Format("[LocalizationDictionaryParser::Parse] Error on '{0}:{1}' : Invalid pragma definition / char.", i + 1, trimCount + 1));
+                        }
+
+                        continue;
+                    }
+                }
 
                 // Split string BEFORE '=>' char sequence (get id)
                 // Omit '=>'
                 string TextID = line.Substring(0, line.IndexOf(TextIDDefChar)).Trim();
 
                 // Split string AFTER '=>' char sequence (omit char sequence)
-                string LocaleDefStringLine = line.Substring(line.IndexOf(TextIDDefChar) + TextIDDefChar.Length + 1).Trim(/*' '*/);
+                string LocaleDefStringLine = line.Substring(line.IndexOf(TextIDDefChar) + TextIDDefChar.Length + 1).Trim();
                 // Definitions split ([0]='en="bla bla"' [1]='tr="bla bla"')
                 string[] LocaleDefsSplit = LocaleDefStringLine.Split(LocaleDefSeperateChar);
 
@@ -152,14 +225,10 @@ namespace BXFW.Data
 
                     // There should be exactly 2 values (on substring)
                     // Use consistent index of & trim from space
-
-                    // Key : 0 -> length of key
+                    // Key   = [0 : index of locale def character]
                     string localeKey = localeKeyValueString.Substring(0, localeKeyValueString.IndexOf(LocaleDefChar)).Trim();
-                    // Value: index of the first assign param -> end of string
+                    // Value = [index of locale def character : end]
                     string localeValue = localeKeyValueString.Substring(localeKeyValueString.IndexOf(LocaleDefChar) + 1).Trim();
-
-                    // Use this to debug substring related incidents
-                    // Debug.Log($"to parse : localeKey={localeKey} | localeValue={localeValue}");
 
                     listLocaleLang.Add(localeKey); // Add the locale definition
 
@@ -168,22 +237,19 @@ namespace BXFW.Data
                     // This is because we parse assuming that the escape characters are written in code as is.
                     // Basically if we parse a plain text file '\' has no meaning.
 
-                    // Get conversion of the locale key (convert into escaped chars)
-                    // This is not needed as we are parsing
-                    // string localeKey = localeValue.ConvertQuotationString();
-
                     if (!localeValue.Contains(SurroundChar))
                     {
                         Debug.LogError(string.Format("[LocalizedAssetParser::Parse] Parsed line with key \"{0}\" is not valid. [Not surrounded in \"'s properly]. Line Parsed : \n{1}", TextID, line));
                         break;
                     }
 
-                    // Parse the string.
+                    // -- Reading the localeData contained in quotation --
+                    // We can ignore comment char + pragma char for now.
+                    // Parse the string contained in quotations
                     StringBuilder localeValueParsed = new StringBuilder(localeValue.Length);
                     // TODO : Handle these chars better (For now this will do).
                     var localeValueParseBegin = false;
                     var currDataStrIsEscapeChar = false;
-
                     foreach (char dataChar in localeValue)
                     {
                         #region Escape Char
@@ -230,7 +296,6 @@ namespace BXFW.Data
                         if (currDataStrIsEscapeChar)
                         {
                             // If the current character is 'n' (or t, we ignore t and other chars for now), this is not invalidly escaped at all
-                            // TODO : Make a delegate dict (with escape chars) for behaviour on escape chars
                             if (dataChar == 'n')
                             {
                                 // don't call AppendLine, in windows it appends CRLF even though all files/datas are LF
@@ -247,6 +312,7 @@ namespace BXFW.Data
 
                             // This is done anyways because an escape sequence was already inserted.
                             // Ignore the 'Invalidly Escaped' character.
+                            //throw new ParseException("[LocalizationDictionaryParser::Parse] Invalid escape character {0}. (in line {1})");
                             currDataStrIsEscapeChar = false;
                         }
                         #endregion
@@ -263,11 +329,11 @@ namespace BXFW.Data
                 {
                     if (listLocaleLang.Count == 0 || listLocaleData.Count == 0)
                     {
-                        Debug.LogWarning(string.Format("[LocalizedAssetParser::Parse] Warning while parsing : No locale / data was found while searching (keeping search). String parsed :\n{0}", line));
+                        Debug.LogWarning(string.Format("[LocalizedAssetParser::Parse] Warning while parsing : No locale / data was found while searching (parse will continue). String parsed :\n{0}", line));
                         continue;
                     }
 
-                    currentAsset.Add(new LocalizedTextData(TextID, CreateDictFromLists(listLocaleLang, listLocaleData)));
+                    currentAsset.Add(new LocalizedTextData(TextID, CreateDictFromLists(listLocaleLang, listLocaleData), globalPragmaSettings));
                 }
             }
 
@@ -313,14 +379,14 @@ namespace BXFW.Data
                         // yes, inferred string (whatever the '$' thing before "" is called) is indeed nicer to work with
                         string.Format("{0}{1}{2}{3}{2}{4} ",
                             textWLocaleKey, LocaleDefChar, SurroundChar,        // Definition Char
-                            textWLocaleValue.ConvertQuotationString(),          // Content
+                            textWLocaleValue.ConvertToParseableString(),          // Content
                             i != assets.Count - 1 ? LocaleDefSeperateChar : ' ' // Seperation comma (parse)
                         )
                     );
                 }
 
                 // Create a new line
-                sb.AppendLine();
+                sb.Append(NewLineChar);
             }
 
             return sb.ToString();

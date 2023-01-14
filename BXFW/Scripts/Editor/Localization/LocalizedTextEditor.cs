@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using BXFW.Data;
 using System.Text;
 using Codice.Client.BaseCommands;
+using System.Linq;
+using System.Globalization;
 
 namespace BXFW.ScriptEditor
 {
@@ -70,8 +72,24 @@ namespace BXFW.ScriptEditor
                             for (int i = 0; i < dataList.Count; i++)
                             {
                                 var data = dataList[i];
+                                
+                                // foreaching
+                                int j = 0, keyCount = data.Data.Keys.Count();
+                                StringBuilder previewStrings = new StringBuilder(data.TextID.Length);
+                                foreach (string key in data.Data.Keys)
+                                {
+                                    // Show 3 as maximum (4th element is + more)
+                                    if (j == 3)
+                                    {
+                                        previewStrings.Append(string.Format(" + {0} more", keyCount - (j + 1)));
+                                        break;
+                                    }
 
-                                menu.AddItem(new GUIContent(data.TextID), target.textID == data.TextID, () =>
+                                    previewStrings.Append(j != keyCount - 1 ? string.Format("{0}, ", key) : key);
+                                    j++;
+                                }
+
+                                menu.AddItem(new GUIContent(string.Format("{0} ({1})", data.TextID, previewStrings.ToString())), target.textID == data.TextID, () =>
                                 {
                                     Undo.RecordObject(target, "Change text id.");
                                     target.textID = data.TextID;
@@ -95,7 +113,7 @@ namespace BXFW.ScriptEditor
                 { nameof(LocalizedText.spoofLocale), new KeyValuePair<MatchGUIActionOrder, System.Action>(
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
-                        var spoofables = System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.NeutralCultures);
+                        List<CultureInfo> spoofables = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
                         GenericMenu menu = new GenericMenu();
 
                         menu.AddItem(new GUIContent("None"), string.IsNullOrWhiteSpace(target.spoofLocale), () =>
@@ -104,9 +122,27 @@ namespace BXFW.ScriptEditor
                         });
                         menu.AddSeparator(string.Empty);
 
-                        for (int i = 0; i < spoofables.Length; i++)
+                        if (target.TextData != null)
                         {
-                            var info = spoofables[i];
+                            // Add existing spoofables
+                            LocalizedTextData targetData = target.TextData.SingleOrDefault(x => x.TextID == target.textID);
+                            foreach (var idValuePair in targetData.Data)
+                            {
+                                if (spoofables.RemoveAll(x => x.TwoLetterISOLanguageName == idValuePair.Key) != 0)
+                                {
+                                    menu.AddItem(new GUIContent(string.Format("{0} (exists)", idValuePair.Key)), target.spoofLocale == idValuePair.Key,() =>
+                                    {
+                                        Undo.RecordObject(target, "Change spoof locale.");
+                                        target.spoofLocale = idValuePair.Key;
+                                    });
+                                }
+                            }
+                            menu.AddSeparator(string.Empty);
+                        }
+
+                        for (int i = 0; i < spoofables.Count; i++)
+                        {
+                            CultureInfo info = spoofables[i];
 
                             menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), target.spoofLocale == info.TwoLetterISOLanguageName, () =>
                             {
@@ -118,7 +154,7 @@ namespace BXFW.ScriptEditor
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));
                         if (GUILayout.Button(string.IsNullOrWhiteSpace(target.spoofLocale) ?
-                            $"None ({LocalizedTextData.ISOCurrentLocale})" : target.spoofLocale, EditorStyles.popup))
+                            string.Format("None ({0})", LocalizedTextData.ISOCurrentLocale) : target.spoofLocale, EditorStyles.popup))
                         {
                             menu.ShowAsContext();
                         }

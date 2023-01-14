@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace BXFW.Data
 {
@@ -22,6 +23,11 @@ namespace BXFW.Data
         public static string ISOCurrentLocale => System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         public string TextID;
 
+        /// <summary>
+        /// Contains the definitions that start with #pragma.
+        /// <br>An optional extension way of defining variables.</br>
+        /// </summary>
+        public readonly Dictionary<string, string> PragmaDefinitions = new Dictionary<string, string>();
         // TODO : Use the BXFW.SerializableDictionary class (no need for ISerializationCallbackReceiver)
         private readonly Dictionary<string, string> LocalizedValues = new Dictionary<string, string>();
         public IDictionary<string, string> Data
@@ -77,7 +83,7 @@ namespace BXFW.Data
         public string GetCurrentLocaleString()
         {
             if (LocalizedValues.Count == 0)
-                throw new NullReferenceException("[LocalizedTextData::GetCurrentLocaleString] No locale strings registered.");
+                throw new NullReferenceException("[LocalizedTextData::GetCurrentLocaleString] No locale strings registered!");
 
             var locale = ISOCurrentLocale;
             if (ContainsLocale(locale))
@@ -87,6 +93,7 @@ namespace BXFW.Data
                 return this[DefaultLocale];
 
             // Return the first in values
+            Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
             return LocalizedValues.Values.ToArray()[0];
         }
 
@@ -100,21 +107,22 @@ namespace BXFW.Data
         /// Creates an new <see cref="LocalizedTextData"/> object. (without an id, use for inline localization)
         /// </summary>
         /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(Dictionary<string, string> values)
-        {
-            TextID = string.Empty;
-            LocalizedValues = values;
-        }
+        public LocalizedTextData(Dictionary<string, string> values) : this(string.Empty, values)
+        { }
         /// <summary>
         /// Creates an new <see cref="LocalizedTextData"/> object.
         /// </summary>
-        /// <param name="textID">ID of the localized text.</param>
+        /// <param name="TextID">ID of the localized text.</param>
         /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(string textID, Dictionary<string, string> values)
+        public LocalizedTextData(string TextID, Dictionary<string, string> values) : this(TextID, values, null)
+        { }
+        public LocalizedTextData(string textID, Dictionary<string, string> values, Dictionary<string, string> pragmaDefs)
         {
-            TextID = textID;
-            LocalizedValues = values;
+            TextID              = textID;
+            LocalizedValues     = values;
+            PragmaDefinitions   = pragmaDefs;
         }
+
         public static explicit operator string(LocalizedTextData text)
         {
             return text.GetCurrentLocaleString();
