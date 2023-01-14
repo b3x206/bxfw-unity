@@ -239,8 +239,7 @@ namespace BXFW.Data
 
                     if (!localeValue.Contains(SurroundChar))
                     {
-                        Debug.LogError(string.Format("[LocalizedAssetParser::Parse] Parsed line with key \"{0}\" is not valid. [Not surrounded in \"'s properly]. Line Parsed : \n{1}", TextID, line));
-                        break;
+                        throw new ParseException(string.Format("[LocalizedAssetParser::Parse] Parsed line {0} with key \"{1}\" is not valid. [Not surrounded in \"'s properly]. Line Parsed : \n{2}", i + 1, TextID, line));
                     }
 
                     // -- Reading the localeData contained in quotation --
@@ -263,6 +262,7 @@ namespace BXFW.Data
                                 // Escape char is written as '\\'.
                                 localeValueParsed.Append(dataChar);
                                 currDataStrIsEscapeChar = false;
+                                continue;
                             }
 
                             currDataStrIsEscapeChar = true;

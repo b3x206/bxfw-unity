@@ -139,10 +139,6 @@ namespace BXFW.Tweening
         /// The internal 'To' method. Takes a setter and a context.
         /// <br>Doesn't do error checking to see whether if <typeparamref name="T"/> is tweenable.</br>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ctx"></param>
-        /// <param name="lerpMethod"></param>
-        /// <returns></returns>
         public IEnumerator GenericTo<T>(BXTweenCTX<T> ctx, BXTweenLerpMethod<T> lerpMethod)
         {
             // Main Loop (with repeat)

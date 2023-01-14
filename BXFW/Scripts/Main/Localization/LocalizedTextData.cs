@@ -20,7 +20,7 @@ namespace BXFW.Data
     {
         /// TODO : Put <see cref="DefaultLocale"/> to a different place.
         public static string DefaultLocale = "en";
-        public static string ISOCurrentLocale => System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+        public static string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         public string TextID;
 
         /// <summary>

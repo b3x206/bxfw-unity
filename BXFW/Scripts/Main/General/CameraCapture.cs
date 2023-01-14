@@ -74,9 +74,13 @@ namespace BXFW.Tools.Editor
             Debug.Log(string.Format("[CameraCapture::TakeScreenshot] Saved image at : {0}", fileName));
             // Increment ScreenshotID for unique file names.
             ScreenshotID++;
-            
+
             // Cleanup
-            Destroy(tempRT);
+            if (Application.isPlaying)
+                Destroy(tempRT);
+            else
+                DestroyImmediate(tempRT);
+
             ScreenshotCamera.aspect = prevAspect;
         }
 #endif
