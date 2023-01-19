@@ -128,12 +128,14 @@ namespace BXFW.Tweening
         }
         private static float QuartOut(float t)
         {
-            var tVal = 1f - ((t - 1f) * t * t * t);
+            var tInv = 1f - t; // inverted t (assuming t = clamped between 0-1)
+            var tVal = 1 - (tInv * tInv * tInv * tInv);
             return tVal;
         }
         private static float QuartInOut(float t)
         {
-            var tVal = t < 0.5f ? 8f * t * t * t * t : 1f - (8f * (t - 1f) * t * t * t);
+            var tI2v = (-2 * t) + 2; // (-2 * x) + 2
+            var tVal = t < 0.5f ? 8f * t * t * t * t : 1f - ((tI2v * tI2v * tI2v * tI2v) / 2f);
             return tVal;
         }
         private static float QuintIn(float t)
@@ -143,12 +145,14 @@ namespace BXFW.Tweening
         }
         private static float QuintOut(float t)
         {
-            var tVal = 1f + ((t - 1f) * t * t * t * t);
+            var tInv = 1f - t; // inverted t (assuming t = clamped between 0-1)
+            var tVal = 1f - (tInv * tInv * tInv * tInv * tInv);
             return tVal;
         }
         private static float QuintInOut(float t)
         {
-            var tVal = t < 0.5f ? 16f * t * t * t * t * t : 1f + (16f * (t - 1f) * t * t * t * t);
+            var tI2v = (-2 * t) + 2; // (-2 * x) + 2
+            var tVal = t < 0.5f ? 16f * t * t * t * t * t : 1f - ((tI2v * tI2v * tI2v * tI2v * tI2v) / 2f);
             return tVal;
         }
         private static float BounceIn(float t)

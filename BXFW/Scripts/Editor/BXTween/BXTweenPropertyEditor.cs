@@ -8,7 +8,8 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(BXTweenPropertyBase), true)]
     public class BXTweenPropertyEditor : PropertyDrawer
     {
-        private int currentPropRect = -1;
+        private bool shouldUpdateProperty = false; // Call 'UpdateProperty' after drawing gui.
+        private int currentPropRect = -1;          // Property rect index.
         private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
         {
             // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
@@ -38,7 +39,7 @@ namespace BXFW.ScriptEditor
             // Basically there's one instance of this script running.
             if (property == null)
             {
-                Debug.LogError("[CTweenPropertyEditor] Error : Passed property is null for initilazing 'SerializedProperty' variables.");
+                Debug.LogError("[BXTweenPropertyEditor] Error : Passed property is null for initilazing 'SerializedProperty' variables.");
                 return;
             }
 
@@ -65,17 +66,26 @@ namespace BXFW.ScriptEditor
             property.isExpanded = EditorGUI.Foldout(rectFoldout, property.isExpanded, label);
 
             // Current property index drawing 
-            var targetTw = property.GetTarget();
-            var targetValue = (BXTweenPropertyBase)targetTw.Value;
+            var targetValue = (BXTweenPropertyBase)property.GetTarget().Value;
             
             bool useTwCurve = false;
             if (targetValue != null)
             {
                 useTwCurve = targetValue.UseTweenCurve;
             }
+            // Call UpdateProperty here (after first OnGUI) to update in realtime?
+            // seems to work fine, this isn't an absolute necessity, it's editor stuff
+            // The 'UpdateProperty' is called with the assigned parameters from inspector in 'SetupProperty'
+            // So, this is just an editor improvement, as EditorGUI.EndProperty doesn't seem to update the ease properly
+            // (curve works fine as it probably calls OnGUI more than 1 time).
+            if (shouldUpdateProperty)
+            {
+                targetValue.UpdateProperty();
+            }
 
             // Reset 'GetPropertyRect' positioning.
             currentPropRect = -1;
+            shouldUpdateProperty = false;
             if (property.isExpanded)
             {
                 EditorGUI.BeginChangeCheck();
@@ -103,11 +113,7 @@ namespace BXFW.ScriptEditor
                 EditorGUI.PropertyField(GetPropertyRect(position, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
                 EditorGUI.indentLevel--;
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    // PropertyField should set the scene object dirty, so yes : it was unnecessary.
-                    targetValue.UpdateProperty();
-                }
+                shouldUpdateProperty = EditorGUI.EndChangeCheck();
             }
 
             EditorGUI.EndProperty();
