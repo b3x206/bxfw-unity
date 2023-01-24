@@ -5,6 +5,8 @@ using UnityEditor;
 using UnityEngine;
 
 using BXFW.Tools.Editor;
+using UnityEditorInternal;
+using System;
 
 namespace BXFW.ScriptEditor
 {
@@ -80,35 +82,37 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
-    internal class InspectorLineDrawer : PropertyDrawer
+    internal class InspectorLineDrawer : DecoratorDrawer
     {
         private InspectorLineAttribute targetAttribute;
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        public override float GetHeight()
         {
-            float addHeight = 0f;
+            targetAttribute ??= (InspectorLineAttribute)attribute;
 
-            if (targetAttribute != null)
-                addHeight = targetAttribute.GetYPosHeightOffset();
-
-            return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;
+            return targetAttribute.GetYPosHeightOffset() * 2f;
         }
 
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public override void OnGUI(Rect position)
         {
-            targetAttribute = (InspectorLineAttribute)property.GetTarget().Key.GetCustomAttribute(typeof(InspectorLineAttribute));
+            targetAttribute ??= (InspectorLineAttribute)attribute;
 
-            var posRect = GUIAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
-            EditorGUI.PropertyField(posRect, property, label, true);
+            position.y += targetAttribute.GetYPosHeightOffset() / 2f;
+            GUIAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
         }
     }
 
     [CustomPropertyDrawer(typeof(InspectorReadOnlyViewAttribute))]
     internal class ReadOnlyDrawer : PropertyDrawer
     {
+        private PropertyDrawer targetTypeCustomDrawer;
+        private bool UseCustomDrawer => targetTypeCustomDrawer != null;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property, label, true);
+            targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
+
+            return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -116,7 +120,15 @@ namespace BXFW.ScriptEditor
             var gEnabled = GUI.enabled;
 
             GUI.enabled = false;
-            EditorGUI.PropertyField(position, property, label, true);
+            if (UseCustomDrawer)
+            {
+                // yeah, it will display 'No GUI implemented' unity. definitely.
+                targetTypeCustomDrawer.OnGUI(position, property, label);
+            }
+            else
+            {
+                EditorGUI.PropertyField(position, property, label, true);
+            }
             GUI.enabled = gEnabled;
         }
     }

@@ -140,7 +140,7 @@ namespace BXFW.Tools.Editor
         // TODO : Add method to also copy from already existing instance id (overwrite method?)
         #endregion
 
-        #region Property Field Helpers
+        #region Property Field / Custom Property Drawer Helpers
         // This allows for getting the property field target
 
         // we could use c# string method abuse or SerializedObject.GetArrayIndexSomething(index) method.
@@ -352,6 +352,37 @@ namespace BXFW.Tools.Editor
             }
 
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
+        }
+        
+        /// <summary>
+        /// Get the property drawer for the field type that you are inspecting.
+        /// <br>Very useful for <c>Attribute</c> targeting PropertyDrawers.</br>
+        /// <br>Will throw <see cref="InvalidOperationException"/> if called from a property drawer that's target is an actual class.</br>
+        /// </summary>
+        /// TODO : Maybe create a new 'PropertyDrawer' class named 'AttributePropertyDrawer' with better enforcement?
+        public static PropertyDrawer GetTargetPropertyDrawer(PropertyDrawer requester)
+        {
+            if (requester == null)
+                throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
+
+            // Get the attribute type for target PropertyDrawer's CustomPropertyDrawer target type
+            Type attributeTargetType = (Type)typeof(CustomPropertyDrawer).GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
+            if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
+                throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
+
+            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(SceneView)).             // Internal class is contained in the same assembly (UnityEditor.CoreModule)
+                GetType("UnityEditor.ScriptAttributeUtility", true).                             // Internal class that has dictionary for all custom PropertyDrawer's
+                GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static). // Utility method to get type from the internal class
+                Invoke(null, new object[] { requester.fieldInfo.FieldType });                    // Call with the type parameter. It will return a type that needs instantiation using Activator.
+
+            PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
+            if (resultDrawer != null)
+            {
+                // Leave m_Attribute as is, there's no need to access that.
+                typeof(PropertyDrawer).GetField("m_FieldInfo", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(resultDrawer, requester.fieldInfo);
+            }
+
+            return resultDrawer;
         }
         #endregion
 
