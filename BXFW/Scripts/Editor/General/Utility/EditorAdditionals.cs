@@ -375,6 +375,10 @@ namespace BXFW.Tools.Editor
                 GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static). // Utility method to get type from the internal class
                 Invoke(null, new object[] { requester.fieldInfo.FieldType });                    // Call with the type parameter. It will return a type that needs instantiation using Activator.
 
+            // Ignore this, this means that there's no 'PropertyDrawer' implemented.
+            if (propertyDrawerType == null)
+                return null;
+
             PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
             {

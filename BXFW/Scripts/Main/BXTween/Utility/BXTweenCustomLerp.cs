@@ -13,6 +13,7 @@ namespace BXFW.Tweening
         /// Interpolates a Matrix4x4.
         /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 MatrixLerp(Matrix4x4 src, Matrix4x4 dest, float time)
         {
             return MatrixLerpUnclamped(src, dest, Mathf.Clamp01(time));
@@ -33,22 +34,33 @@ namespace BXFW.Tweening
             return ret;
         }
 
-        // Fixed the canvas get code by just going : RectTransform.rect.center
-        // Yes, i do make unreasonable coding choices
         /// <summary>
         /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// <br>(parameter <paramref name="time"/> is clamped between 0-1)</br>
         /// </summary>
-        public static void RectTransformLerp(Rect start, Rect end, float time, RectTransform target)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RectTransformLerp(Rect start, Rect end, float time, RectTransform target, Space posSpace = Space.Self)
         {
-            RectTransformLerpUnclamped(start, end, Mathf.Clamp01(time), target);
+            RectTransformLerpUnclamped(start, end, Mathf.Clamp01(time), target, posSpace);
         }
         /// <summary>
         /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// </summary>
-        public static void RectTransformLerpUnclamped(Rect start, Rect end, float time, RectTransform target)
+        public static void RectTransformLerpUnclamped(Rect start, Rect end, float time, RectTransform target, Space posSpace = Space.Self)
         {
-            target.localPosition = Vector2.Lerp(start.center, end.center, time);
+            switch (posSpace)
+            {
+                case Space.World:
+                    target.position = Vector2.Lerp(start.center, end.center, time);
+                    break;
+                case Space.Self:
+                    target.localPosition = Vector2.Lerp(start.center, end.center, time);
+                    break;
+
+                default:
+                    throw new System.ArgumentException(string.Format("Invalid space {0}.", posSpace));
+            }
+
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Lerp(start.width, end.width, time));
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Lerp(start.height, end.height, time));
         }

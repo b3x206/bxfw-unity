@@ -37,7 +37,7 @@ namespace BXFW.ScriptEditor
 
             public bool ShouldFilter(ITweenCTX tw)
             {
-                return (IgnoreNullTargetObject && tw.TargetObject == null) || (TargetObject != null && tw.TargetObject != TargetObject);
+                return tw != null && (IgnoreNullTargetObject && tw.TargetObject == null) || (TargetObject != null && tw.TargetObject != TargetObject);
             }
         }
         private EditorTweenFilter currentFilter;
@@ -120,16 +120,16 @@ namespace BXFW.ScriptEditor
 
             runningTwScroll = GUILayout.BeginScrollView(runningTwScroll, GUILayout.Height(scrollAreaHeight));
             // Draw the list of current running tweens (with name)
-            for (int i = 0; i < BXTween.CurrentRunningTweens.Count; i++)
+            for (int guiInd = 0; guiInd < BXTween.CurrentRunningTweens.Count; guiInd++)
             {
-                int j = currentFilter.ReverseIterateListObjects ? BXTween.CurrentRunningTweens.Count - (i + 1) : i;
+                int twInd = currentFilter.ReverseIterateListObjects ? BXTween.CurrentRunningTweens.Count - (guiInd + 1) : guiInd;
 
-                ITweenCTX tw = BXTween.CurrentRunningTweens[j];
+                ITweenCTX tw = BXTween.CurrentRunningTweens[twInd];
 
                 // Allocate toggles (use 'i' parameter, as it's the only one that goes sequentially)
                 // We just want to reverse the 'CurrentRunningTweens'
                 // Otherwise it's very easy to get ArgumentOutOfRangeException
-                if (i > expandedTweens.Count - 1)
+                if (guiInd > expandedTweens.Count - 1)
                     expandedTweens.Add(false);
 
                 // Filtering
@@ -138,9 +138,16 @@ namespace BXFW.ScriptEditor
 
                 // Get target type using reflection instead, no need to pollute the interface,
                 // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.
-                expandedTweens[i] = GUILayout.Toggle(expandedTweens[i], $"Tween {j} | Type={tw.GetType().GenericTypeArguments.SingleOrDefault()}, Target={tw.TargetObject}", boxStyle);
+                try
+                {
+                    expandedTweens[guiInd] = GUILayout.Toggle(expandedTweens[guiInd], $"[*] Tween {twInd} | Type={tw.GetType().GenericTypeArguments.SingleOrDefault()}, Target={tw.TargetObject}", boxStyle);
+                }
+                catch (System.Exception e)
+                {
+                    expandedTweens[guiInd] = GUILayout.Toggle(expandedTweens[guiInd], $"[!] Tween {twInd} | Exception={e.Message}", boxStyle);
+                }
 
-                if (expandedTweens[i])
+                if (expandedTweens[guiInd])
                 {
                     // Show more information about the tween
                     // Assume that this type is BXTweenCTX, but the generic is unknown

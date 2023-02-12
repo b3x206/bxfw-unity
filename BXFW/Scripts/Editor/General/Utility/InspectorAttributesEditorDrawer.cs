@@ -5,8 +5,6 @@ using UnityEditor;
 using UnityEngine;
 
 using BXFW.Tools.Editor;
-using UnityEditorInternal;
-using System;
 
 namespace BXFW.ScriptEditor
 {
