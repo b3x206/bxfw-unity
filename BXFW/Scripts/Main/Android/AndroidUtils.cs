@@ -1,5 +1,4 @@
 #if UNITY_ANDROID
-using System.Collections;
 using UnityEngine;
 
 namespace BXFW

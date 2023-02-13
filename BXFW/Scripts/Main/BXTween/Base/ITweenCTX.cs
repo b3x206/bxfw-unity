@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BXFW.Tweening
+﻿namespace BXFW.Tweening
 {
     /// <summary>
     /// Generic tween interface. Used for storing tweens in a generic agnostic way.

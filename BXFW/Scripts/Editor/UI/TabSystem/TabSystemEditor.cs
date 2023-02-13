@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
-
-using TMPro;
 using BXFW.UI;
 
 namespace BXFW.ScriptEditor

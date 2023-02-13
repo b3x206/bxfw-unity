@@ -4,7 +4,6 @@ using System.Text;
 using System.Collections.Generic;
 
 using UnityEngine;
-using System.Collections;
 
 namespace BXFW.Data
 {
