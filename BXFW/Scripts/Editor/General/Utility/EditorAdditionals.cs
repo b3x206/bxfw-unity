@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.ProjectWindowCallback;
+using Codice.Client.BaseCommands.BranchExplorer;
 
 namespace BXFW.Tools.Editor
 {
@@ -455,18 +456,6 @@ namespace BXFW.Tools.Editor
             }
         }
 
-        public static void CreateReadOnlyTextField(string label, string text = null)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            if (label != null)
-                EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.labelWidth - 4));
-            if (text != null)
-                EditorGUILayout.SelectableLabel(text, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
-
-            EditorGUILayout.EndHorizontal();
-        }
-
         /// <summary>
         /// Draw default inspector with commands inbetween. (Allowing to put custom gui between).
         /// <br>This works as same as <see cref="UnityEditor.Editor.OnInspectorGUI"/>'s <see langword="base"/> call.</br>
@@ -711,73 +700,111 @@ namespace BXFW.Tools.Editor
             EditorGUI.indentLevel = prev_indent;
         }
 
-        /// System namespace doesn't have a thing like this so.
-        public delegate void RefIndexDelegate<T>(int arg1, ref T arg2);
-
-        ///// <summary>Internal unity icon for icon pointing downwards.</summary>
-        //private const string UInternal_PopupTex = "Icon Dropdown";
-
         /// <summary>
         /// Create custom array with fields.
-        /// <br>Known issues : Only support standard arrays (because <see cref="List{T}"/> is read only), everything has to be passed by reference.</br>
-        /// <br>Need to take an persistant bool value for dropdown menu. Pass true always if required to be open.</br>
+        /// <br>Known issues : Only support standard arrays and data types convertible to it. 
+        /// <br>Need to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
         /// </summary>
-        /// <param name="toggleDropdwnState">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
-        /// <param name="GenericDrawList">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
-        /// <param name="OnArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
-        public static bool UnityArrayGUICustom<T>(bool toggleDropdwnState, ref T[] GenericDrawList, RefIndexDelegate<T> OnArrayFieldDrawn) where T : new()
+        /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
+        /// <param name="genericDrawList">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
+        /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
+        public static bool UnityArrayGUICustom<T>(bool toggle, IEnumerable<T> genericDrawList, Action<int> onArrayFieldDrawn)
+            where T : new()
         {
-            int prev_indent = EditorGUI.indentLevel;
+            int prevIndent = EditorGUI.indentLevel;
+            int arrayLength = genericDrawList.Count();
+            IList<T> drawList = null;
+            T[] drawArray = null;
+            {
+                if (genericDrawList is IList<T> list)
+                {
+                    drawList = list;
+                }
+                else if (genericDrawList is T[] array)
+                {
+                    drawArray = array;
+                }
+                else
+                {
+                    throw new ArgumentException(string.Format("[EditorAdditionals::UnityArrayGUICustom] Passed 'GenericDrawList' is an immutable type ({0}).", genericDrawList.GetType()));
+                }
+            }
 
-            EditorGUI.indentLevel = prev_indent + 2;
+            void ResizeGenericArray(int size)
+            {
+                if (drawList != null)
+                {
+                    drawList.Resize(size);
+                    return;
+                }
+                if (drawArray != null)
+                {
+                    Array.Resize(ref drawArray, size);
+                    return;
+                }
+            }
+            T GetElementGenericArray(int index)
+            {
+                if (drawList != null)
+                {
+                    return drawList[index];
+                }
+                if (drawArray != null)
+                {
+                    return drawArray[index];
+                }
+
+                throw new NullReferenceException("[EditorAdditionals::UnityArrayGUICustom::GetElementGenericArray] Arrays are null.");
+            }
+
+            EditorGUI.indentLevel = prevIndent + 2;
             // Create the size & dropdown field
             GUILayout.BeginHorizontal();
 
-            var currToggleDropdwnState = GUILayout.Toggle(toggleDropdwnState, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
+            var currToggleDropdwnState = GUILayout.Toggle(toggle, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
             EditorGUILayout.LabelField(string.Format("{0} List", typeof(T).Name), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
-            int curr_arr_Size = EditorGUILayout.IntField("Size", GenericDrawList.Length, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f));
-            curr_arr_Size = curr_arr_Size < 0 ? 0 : curr_arr_Size;
+            int currentSizeField = Mathf.Clamp(EditorGUILayout.IntField("Size", arrayLength, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f)), 0, int.MaxValue);
             GUILayout.EndHorizontal();
 
-            if (toggleDropdwnState)
+            if (toggle)
             {
                 // Resize array
-                if (curr_arr_Size != GenericDrawList.Length)
+                if (currentSizeField != arrayLength)
                 {
-                    Array.Resize(ref GenericDrawList, curr_arr_Size);
+                    ResizeGenericArray(currentSizeField);
                 }
 
-                EditorGUI.indentLevel = prev_indent + 3;
+                EditorGUI.indentLevel = prevIndent + 3;
                 // Create the array fields (stupid)
-                for (int i = 0; i < GenericDrawList.Count(); i++)
+                for (int i = 0; i < arrayLength; i++)
                 {
-                    if (GenericDrawList[i] == null) continue;
+                    if (GetElementGenericArray(i) == null)
+                        continue;
 
-                    // GUILayout.BeginVertical(gsBG);
                     EditorGUI.indentLevel--;
                     EditorGUILayout.LabelField(string.Format("Element {0}", i), EditorStyles.boldLabel);
                     EditorGUI.indentLevel++;
-                    OnArrayFieldDrawn.Invoke(i, ref GenericDrawList[i]);
-                    // GUILayout.EndVertical();
+
+                    onArrayFieldDrawn.Invoke(i);
                 }
 
-                EditorGUI.indentLevel = prev_indent + 1;
+                EditorGUI.indentLevel = prevIndent + 1;
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("+"))
                 {
-                    Array.Resize(ref GenericDrawList, curr_arr_Size + 1);
+                    ResizeGenericArray(currentSizeField + 1);
                 }
                 if (GUILayout.Button("-"))
                 {
-                    Array.Resize(ref GenericDrawList, curr_arr_Size - 1);
+                    ResizeGenericArray(currentSizeField - 1);
                 }
                 GUILayout.EndHorizontal();
             }
 
             // Keep previous indent
-            EditorGUI.indentLevel = prev_indent;
+            EditorGUI.indentLevel = prevIndent;
             return currToggleDropdwnState;
         }
         #endregion

@@ -120,7 +120,7 @@ namespace BXFW.ScriptEditor
             GUI.enabled = false;
             if (UseCustomDrawer)
             {
-                // yeah, it will display 'No GUI implemented' unity. definitely.
+                // yeah, it will display 'No GUI implemented'. definitely.
                 targetTypeCustomDrawer.OnGUI(position, property, label);
             }
             else

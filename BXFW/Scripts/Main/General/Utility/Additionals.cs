@@ -1001,30 +1001,27 @@ namespace BXFW
         }
 
         // -- Array Utils
-#if CSHARP_7_3_OR_NEWER
-        /// <summary>
-        /// Similar to the python's <c>'enumerate()'</c> keyword for it's <see langword="for"/> loops.
-        /// </summary>
-        /// <typeparam name="T">Type of the actual object to enumerate.</typeparam>
-        /// <param name="enumerable">The enumerated object.</param>
-        /// <returns>Object + Index of <c><see langword="foreach"/></c>.</returns>
-        public static IEnumerable<(int, T)> Enumerate<T>(this IEnumerable<T> enumerable)
+        public static void RemoveRange<T>(this IList<T> l, int index, int count)
         {
-            int i = -1;
-
-            foreach (T obj in enumerable)
+            for (; count > 0; count--, index++)
             {
-                i++;
-                yield return (i, obj);
+                l.RemoveAt(index);
             }
         }
-#endif
+        public static void AddRange<T>(this IList<T> l, IEnumerable<T> collection)
+        {
+            foreach (T item in collection)
+            {
+                l.Add(item);
+            }
+        }
+
         /// <summary>Resize array.</summary>
         /// <param name="newT">
         /// The instance of a new generic.
         /// This is added due to '<typeparamref name="T"/>' not being a '<see langword="new"/> <typeparamref name="T"/>()' able type.
         /// </param>
-        public static void Resize<T>(this List<T> list, int sz, T newT)
+        public static void Resize<T>(this IList<T> list, int sz, T newT)
         {
             int cur = list.Count;
             if (sz < cur)
@@ -1033,25 +1030,35 @@ namespace BXFW
             }
             else if (sz > cur)
             {
-                if (sz > list.Capacity) // this bit is purely an optimisation, to avoid multiple automatic capacity changes.
-                    list.Capacity = sz;
-
                 list.AddRange(Enumerable.Repeat(newT, sz - cur));
             }
         }
         /// <summary
         /// >Resize array.
         /// </summary>
+        public static void Resize<T>(this IList<T> list, int sz) where T : new()
+        {
+            Resize(list, sz, new T());
+        }
+        public static void Resize<T>(this List<T> list, int sz, T newT)
+        {
+            // Optimize
+            if (sz > list.Capacity)
+                list.Capacity = sz;
+
+            Resize((IList<T>)list, sz, newT);
+        }
         public static void Resize<T>(this List<T> list, int sz) where T : new()
         {
             Resize(list, sz, new T());
         }
+
         /// <summary>Resets array values to their default values.</summary>
         /// <typeparam name="T">Type of array.</typeparam>
         /// <param name="array">The array to reset it's values.</param>
         public static void ResetArray<T>(this T[] array)
         {
-            T genDefValue = (T)default;
+            T genDefValue = default;
 
             for (int i = 0; i < array.Length; i++)
             {
