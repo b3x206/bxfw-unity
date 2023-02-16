@@ -124,6 +124,7 @@ namespace BXFW.Tweening.Editor
                 CurrentSettings.DefaultRepeatType = dRepeatType;
 
                 CurrentSettings.diagnosticMode = dbgMode;
+                EditorUtility.SetDirty(CurrentSettings);
             }
 
             // Keep reset enabled
@@ -132,6 +133,7 @@ namespace BXFW.Tweening.Editor
             {
                 Undo.RecordObject(CurrentSettings, "Reset BXTween Settings");
                 CurrentSettings.FromSettings(CreateInstance<BXTweenSettings>());
+                EditorUtility.SetDirty(CurrentSettings);
             }
 
             GUIAdditionals.DrawUILineLayout(Color.gray);

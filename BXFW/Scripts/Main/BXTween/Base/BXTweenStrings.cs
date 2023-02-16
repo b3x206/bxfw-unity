@@ -292,7 +292,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
         {
             return string.Format("{0} {1}",
                 WarnRich("[BXTweenCTX::StartTween]->", true),
-                LogRich(string.Format("Exceeded maximum tween limit ({0}). If you need more tweens (without warnings) change this setting. (Set [{0}->{1}], This setting only allocates capacity)", prevMax, setMax)));
+                LogRich(string.Format("Exceeded maximum tween limit ({0}). If you need more tweens (without warnings) change this setting (it won't serialize after an unity reboot). (Set [{0}->{1}], This setting only allocates capacity)", prevMax, setMax)));
         }
         #endregion
 
