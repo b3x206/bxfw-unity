@@ -305,11 +305,11 @@ namespace BXFW.Tweening
 
             if (ctx != null)
             {
-                // ctx will be stopped.
+                // stop ctx to avoid problems
                 ctx.StopTween();
             }
 
-            // Do deep copy
+            // Do copy
             ctx = new BXTweenCTX<T>(TwContext);
         }
         #endregion

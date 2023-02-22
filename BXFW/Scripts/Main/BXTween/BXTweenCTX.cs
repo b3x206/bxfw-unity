@@ -478,7 +478,7 @@ namespace BXFW.Tweening
             if (copyFrom.OnEndActionUnityEvent != null)
                 SetEndingEvent(copyFrom.OnEndActionUnityEvent);
 
-            // !! setter(s), musn't be null
+            // !! setter(s), must not be null
             SetEase(copyFrom.Easing);
             SetSetter(copyFrom.SetterFunction);
 

@@ -43,7 +43,7 @@ namespace BXFW
     /// SOFTWARE.
     /// 
     /// ============================================================================
-    public static class RenderTextureUtils
+    public static class RenderTextureUtility
     {
         #region Quad creation
         static Mesh quad;

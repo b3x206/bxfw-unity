@@ -264,7 +264,7 @@ namespace BXFW
             Matrix4x4 matrixCam = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
 
             // Draw mesh manually
-            tempRT.BlitMesh(matrixMesh, matrixCam, RenderTextureUtils.GetQuad(), matTarget);
+            tempRT.BlitMesh(matrixMesh, matrixCam, RenderTextureUtility.GetQuad(), matTarget);
 
             return tempRT;
         }

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 
 namespace BXFW.Tools.Editor
 {
+    /// This is in the BXFW asmdef because BXTweenCTX uses it in #if UNITY_EDITOR context to start tweens
+    /// Since that functionality wasn't really used, it could be removed and this class could be put into BXFW.Editor.
     /// <summary>
     /// Execute coroutines in edit mode.
     /// </summary>
@@ -41,7 +43,7 @@ namespace BXFW.Tools.Editor
         private static void Update()
         {
             if (CoroutineInProgress.Count <= 0)
-            { return; }
+                return; 
 
             for (int i = 0; i < CoroutineInProgress.Count; i++)
             {

@@ -6,7 +6,7 @@ namespace BXFW
     /// <summary>
     /// Android specific utilities.
     /// </summary>
-    public static class AndroidUtils
+    public static class AndroidUtility
     {
         /// <summary>
         /// The vibration JavaObject that's controlled. Set on construction.
@@ -15,7 +15,7 @@ namespace BXFW
 
         // Trick Unity into giving the App vibration permission when it builds.
         // This check will always be false, but the compiler doesn't know that.
-        static AndroidUtils()
+        static AndroidUtility()
         {
             if (Application.isEditor)
             {
