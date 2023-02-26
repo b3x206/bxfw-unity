@@ -10,51 +10,51 @@ namespace BXFW
     public class PlayerTPSCamera : MonoBehaviour
     {
         [Header("Camera Reference")]
-        public Transform PlayerTransform;
+        public Transform playerTransform;
         private Vector3 followTargetPos;
 
         [Header("Camera Settings")] // Input settings
-        [SerializeField] private bool RawMouseLook = true;
-        public bool SensitivityMouseRawInput { get => RawMouseLook; set => RawMouseLook = value; }
-        [SerializeField] private float SensitivityMouse = 100f;
-        public float SensitivityMouseCamera { get => SensitivityMouse; set => SensitivityMouse = value; }
+        [SerializeField] private bool rawMouseLook = true;
+        public bool SensitivityMouseRawInput { get => rawMouseLook; set => rawMouseLook = value; }
+        [SerializeField] private float sensitivityMouse = 100f;
+        public float SensitivityMouseCamera { get => sensitivityMouse; set => sensitivityMouse = value; }
         [Space] // In-game settings
         [Tooltip("Uses FixedUpdate() tick method to update the camera position.\nUseful when following objects moving in FixedUpdate().")]
-        public bool MoveInFixedUpdate = true;
+        public bool moveInFixedUpdate = true;
         [Tooltip("Uses FixedUpdate() tick method to update the camera rotation.\nUseful when the game is locked / has lower than FixedUpdate() fps.")]
-        public bool LookInFixedUpdate = false;
+        public bool lookInFixedUpdate = false;
 
         [Tooltip("Camera rotation axes. X only makes horizontal rotate and Y does vertical.")]
-        public InputAxis CurrentAxes = InputAxis.MouseX | InputAxis.MouseY;
-        public InputAxis InvertAxes;
+        public InputAxis currentAxes = InputAxis.MouseX | InputAxis.MouseY;
+        public InputAxis invertAxes;
         [Tooltip("Camera offset, for the player follow.")]
-        public Vector3 PlayerTransformPositionOffset;
+        public Vector3 playerTransformPositionOffset;
         [Tooltip("Distance between the 'PlayerTransform' and the camera.")]
-        public float DistanceFromTarget = 4f;
+        public float distanceFromTarget = 4f;
         [Tooltip("Follow dampening. Set to 0 or lower for no smooth follow.")]
-        public float FollowDamp = 2f;
+        public float followDamp = 4f;
         [Tooltip("Camera clamp for vertical looking.")]
-        public Vector2 LookVerticalAngleClamp = Vector2.zero;
+        public Vector2 lookVerticalAngleClamp = Vector2.zero;
 
         private void Awake()
         {
-            followTargetPos = PlayerTransform.position;
+            followTargetPos = playerTransform.position;
         }
 
         private void Update()
         {
-            if (!LookInFixedUpdate)
+            if (!lookInFixedUpdate)
                 CameraLookUpdate(Time.deltaTime);
 
-            if (!MoveInFixedUpdate)
+            if (!moveInFixedUpdate)
                 CameraMoveUpdate(Time.deltaTime);
         }
         private void FixedUpdate()
         {
-            if (LookInFixedUpdate)
+            if (lookInFixedUpdate)
                 CameraLookUpdate(Time.fixedDeltaTime);
 
-            if (MoveInFixedUpdate)
+            if (moveInFixedUpdate)
                 CameraMoveUpdate(Time.fixedDeltaTime);
         }
 
@@ -67,35 +67,35 @@ namespace BXFW
             transform.position = followTargetPos;
 
             // Rotate using transform.Rotate
-            float xAxis = RawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X");
-            float yAxis = RawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y");
-            xAxis *= SensitivityMouse * deltaTime;
-            yAxis *= SensitivityMouse * deltaTime;
+            float xAxis = rawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X");
+            float yAxis = rawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y");
+            xAxis *= sensitivityMouse * deltaTime;
+            yAxis *= sensitivityMouse * deltaTime;
 
-            if ((InvertAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            if ((invertAxes & InputAxis.MouseX) == InputAxis.MouseX)
                 xAxis *= -1;
-            if ((InvertAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            if ((invertAxes & InputAxis.MouseY) == InputAxis.MouseY)
                 yAxis *= -1;
 
             // Clamping
-            if (LookVerticalAngleClamp != Vector2.zero)
+            if (lookVerticalAngleClamp != Vector2.zero)
             {
                 // Get Rotation to apply
                 Vector3 CurrentRotationEuler = Additionals.FixEulerRotation(transform.eulerAngles);
                 // Clamp vertical look
-                CurrentRotationEuler.x = Mathf.Clamp(CurrentRotationEuler.x, LookVerticalAngleClamp.x, LookVerticalAngleClamp.y);
+                CurrentRotationEuler.x = Mathf.Clamp(CurrentRotationEuler.x, lookVerticalAngleClamp.x, lookVerticalAngleClamp.y);
                 CurrentRotationEuler.z = 0f;
                 // Apply clamped Rotation
                 transform.localRotation = Quaternion.Euler(CurrentRotationEuler);
             }
 
             // Rotating
-            if ((CurrentAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            if ((currentAxes & InputAxis.MouseX) == InputAxis.MouseX)
                 transform.Rotate(Vector3.up, -xAxis, Space.World);
-            if ((CurrentAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            if ((currentAxes & InputAxis.MouseY) == InputAxis.MouseY)
                 transform.Rotate(Vector3.right, yAxis);
 
-            transform.Translate(0f, 0f, -DistanceFromTarget, Space.Self);
+            transform.Translate(0f, 0f, -distanceFromTarget, Space.Self);
         }
         
         /// <summary>
@@ -104,11 +104,11 @@ namespace BXFW
         private void CameraMoveUpdate(float deltaTime)
         {
             // Offseted position
-            Vector3 offsetPos = PlayerTransform.position + (transform.TransformPoint(PlayerTransformPositionOffset) - transform.position);
+            Vector3 offsetPos = playerTransform.position + (transform.TransformPoint(playerTransformPositionOffset) - transform.position);
             // Lerp origin position
-            followTargetPos = FollowDamp >= 0f ? Vector3.Lerp(followTargetPos,
+            followTargetPos = followDamp >= 0f ? Vector3.Lerp(followTargetPos,
                 offsetPos,
-                FollowDamp * deltaTime) : offsetPos;
+                followDamp * deltaTime) : offsetPos;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace BXFW
         // 1. Fix Inspector being unable to draw custom fields
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        // 2. AdvancedDropdown implementation for null selector on UnityEditor.IMGUI.Controls
+        // 2. AdvancedDropdown implementation for null field selector on UnityEditor.IMGUI.Controls
 
         /// <summary>
         /// Menu that contains the create names and delegates.
@@ -295,7 +295,7 @@ namespace BXFW
                         Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::GetPropertyHeight(Search Custom Editor)] No suitable editor found for obj '{0}'.", target));
                 }
             }
-           
+
             // Check if object is null (generically)
             // If null, don't 
             if (target == null || !property.isExpanded)
@@ -356,9 +356,98 @@ namespace BXFW
             return position;
         }
 
+        /// <summary>
+        /// Handles drawn <see cref="ScriptableObject"/>s, doing as the default behaviour for drawn non-<see cref="UnityEngine.Object"/> objects.
+        /// </summary>
+        protected void HandleDifferentDrawers(SerializedProperty property, T target, bool allowCloneTarget)
+        {
+            // Do not make unique if the target is prefab or we have asset path
+            // Because : prefabs can't store local scriptable objects (only scenes)
+            // :: If the object exists in project view, no need to clone; it's very easy to clone anyways + we can use 'Delete' to lose reference on the current object.
+            if (!MakeDrawnScriptableObjectsUnique || !allowCloneTarget)
+                return;
+
+            // Get whether if the same item was drawn twice on the same array / SerializedProperty
+            // If so, clone the second (current) item, as it's a reference to the previous item
+            // only control the absolute parent as that contains the script.
+            // ---
+            // Contains the object_name+key_name (prefixed)
+            // Allowing for the same named variable object (on different objects) to be not cloned every time.
+            // ---
+            // Unity targetObject names could be different or string.Empty, so use GetInstanceID as this PropertyDrawer only runs tempoarily
+            // So instance ID's are feasible
+            string key = string.Format("{0}{1}{2}", property.serializedObject.targetObject.GetInstanceID().ToString(), KEY_PREFIX, property.propertyPath);
+            if (!drawnScriptableObjects.ContainsKey(key))
+            {
+                // Register key if it doesn't exist.
+                drawnScriptableObjects.Add(key, target);
+            }
+            else // do not check on the first OnGUI call as the target could not be ready.
+            {
+                // the following code is bad. pls find better ways (such as seperating this to a seperate guard claused function/method/whatever)
+
+                // Check if key is null, if so assign the target.
+                if (drawnScriptableObjects[key] == null)
+                    drawnScriptableObjects[key] = target;
+                // If the key is not null (after assigning the target), don't ignore and start searching
+                if (drawnScriptableObjects[key] != null)
+                {
+                    KeyValuePair<string, T> propPair = drawnScriptableObjects.SingleOrDefault(p =>
+                        // Key is different && Same object parent (using InstanceID as temp) && Same reference to object
+                        p.Key != key && TrimRightPrefix(p.Key) == TrimRightPrefix(key) && p.Value == target);
+
+                    if (!string.IsNullOrEmpty(propPair.Key))
+                    {
+                        string uniquePropPath = TrimLeftPrefix(propPair.Key);
+                        SerializedProperty existingProp = property.serializedObject.FindProperty(uniquePropPath);
+                        bool uniquePropertyExists = existingProp != null; // Object slot actually exists?
+
+                        // Remove junk item from dict if property doesn't exist at all (on current object).
+                        if (!uniquePropertyExists)
+                        {
+                            if (DebugMode)
+                                Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Property '{0}' doesn't exist, removing.", key));
+
+                            drawnScriptableObjects.Remove(key);
+                        }
+                        // Key is already contained on different drawn property, and is being planned to be drawn for different property path.
+                        // The 'SingleOrDefault' returns null string if there's no matching target value.
+                        else if (propPair.Key != key)
+                        {
+                            // Clone 'target' and paste it to 'target'
+                            // TODO : Only do this in the arrays (or test if other objects work [such as 2 monobehaviours drawn at the same time with same scriptable object] correctly),
+                            // other inspectors 'probably' could contain a reference to the 'target'
+
+                            if (DebugMode)
+                                Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Copied target {0} to property {1}", target, existingProp.propertyPath));
+
+                            // Copy cloned object reference into an actual clone
+                            T instObject = UnityEngine.Object.Instantiate(propPair.Value);
+
+                            // Assign the clone (ASSIGN LIKE THIS, JUST SETTING THE 'property.objectReferenceValue' DOES NOT WORK)
+                            SetValueOfTarget(property, instObject);
+                            target = instObject;                    // Set tempoary variables too
+
+                            // Set the target dirty
+                            // With this way, cloning of the 'ReorderableList' no longer causes issues,
+                            // because this script (tells unity to) hunt for the same existing references with the same parent.
+                            EditorUtility.SetDirty(target);
+
+                            // Set the current dictionary key to be the 'instObject' (so that the object isn't cloned twice, or more)
+                            drawnScriptableObjects[key] = target;
+                        }
+                    }
+                }
+            }
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (Event.current.type != EventType.Layout) { correctPosition = position; }
+            // correct position if we aren't layouting
+            if (Event.current.type != EventType.Layout)
+            {
+                correctPosition = position;
+            }
 
             // The 'property' is for the object field that is only for assigning.
             EditorGUI.BeginProperty(position, label, property);
@@ -368,98 +457,21 @@ namespace BXFW
             // This works, because we are working with ScriptableObject's
             // Otherwise use BXFW's EditorAdditionals.GetTarget(SerializedProperty)
             UnityEngine.Object propTarget = property.objectReferenceValue;
-            var target = propTarget as T;
+            T target = propTarget as T;
             bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
             // Dynamic 'ShowOnProject' button + make unique is disabled if the prefab actually exists in project
             string currentAssetPath = AssetDatabase.GetAssetPath(target);
             bool hasAssetPath = !string.IsNullOrWhiteSpace(currentAssetPath);
 
-            // Do not make unique if the target is prefab or we have asset path
-            // Because : prefabs can't store local scriptable objects (only scenes)
-            // :: If the object exists in project view, no need to clone; it's very easy to clone anyways + we can use 'Delete' to lose reference on the current object.
-            if (MakeDrawnScriptableObjectsUnique && !targetIsPrefab && !hasAssetPath)
-            {
-                // Get whether if the same item was drawn twice on the same array / SerializedProperty
-                // If so, clone the second (current) item, as it's a reference to the previous item
-                // only control the absolute parent as that contains the script.
-                // ---
-                // Contains the object_name+key_name (prefixed)
-                // Allowing for the same named variable object (on different objects) to be not cloned every time.
-                // ---
-                // Unity targetObject names could be different or string.Empty, so use GetInstanceID as this PropertyDrawer only runs tempoarily
-                // So instance ID's are feasible
-                string key = string.Format("{0}{1}{2}", property.serializedObject.targetObject.GetInstanceID().ToString(), KEY_PREFIX, property.propertyPath);
-                if (!drawnScriptableObjects.ContainsKey(key))
-                {
-                    // Register key if it doesn't exist.
-                    drawnScriptableObjects.Add(key, target);
-                }
-                else // do not check on the first OnGUI call as the target could not be ready.
-                {
-                    // the following code is bad. pls find better ways (such as seperating this to a seperate guard claused function/method/whatever)
-
-                    // Check if key is null, if so assign the target.
-                    if (drawnScriptableObjects[key] == null)
-                        drawnScriptableObjects[key] = target;
-                    // If the key is not null (after assigning the target), don't ignore and start searching
-                    if (drawnScriptableObjects[key] != null)
-                    {
-                        KeyValuePair<string, T> propPair = drawnScriptableObjects.SingleOrDefault(p =>
-                            // Key is different && Same object parent (using InstanceID as temp) && Same reference to object
-                            p.Key != key && TrimRightPrefix(p.Key) == TrimRightPrefix(key) && p.Value == target);
-
-                        if (!string.IsNullOrEmpty(propPair.Key))
-                        {
-                            string uniquePropPath = TrimLeftPrefix(propPair.Key);
-                            SerializedProperty existingProp = property.serializedObject.FindProperty(uniquePropPath);
-                            bool uniquePropertyExists = existingProp != null; // Object slot actually exists?
-
-                            // Remove junk item from dict if property doesn't exist at all (on current object).
-                            if (!uniquePropertyExists)
-                            {
-                                if (DebugMode)
-                                    Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Property '{0}' doesn't exist, removing.", key));
-
-                                drawnScriptableObjects.Remove(key);
-                            }
-                            // Key is already contained on different drawn property, and is being planned to be drawn for different property path.
-                            // The 'SingleOrDefault' returns null string if there's no matching target value.
-                            else if (propPair.Key != key)
-                            {
-                                // Clone 'target' and paste it to 'target'
-                                // TODO : Only do this in the arrays (or test if other objects work [such as 2 monobehaviours drawn at the same time with same scriptable object] correctly),
-                                // other inspectors 'probably' could contain a reference to the 'target'
-
-                                if (DebugMode)
-                                    Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Copied target {0} to property {1}", target, existingProp.propertyPath));
-
-                                // Copy cloned object reference into an actual clone
-                                T instObject = UnityEngine.Object.Instantiate(propPair.Value);
-
-                                // Assign the clone (ASSIGN LIKE THIS, JUST SETTING THE 'property.objectReferenceValue' DOES NOT WORK)
-                                SetValueOfTarget(property, instObject);
-                                target = instObject;                    // Set tempoary variables too
-
-                                // Set the target dirty
-                                // With this way, cloning of the 'ReorderableList' no longer causes issues,
-                                // because this script (tells unity to) hunt for the same existing references with the same parent.
-                                EditorUtility.SetDirty(target);
-
-                                // Set the current dictionary key to be the 'instObject' (so that the object isn't cloned twice, or more)
-                                drawnScriptableObjects[key] = target;
-                            }
-                        }
-                    }
-                }
-            }
+            // 'target' passes as reference because it has to be a class.
+            HandleDifferentDrawers(property, target, !targetIsPrefab && !hasAssetPath);
 
             // GUI related
-            var previousWidth = position.width;
-            var gEnabled = GUI.enabled;
+            float previousWidth = position.width;
+            bool gEnabled = GUI.enabled;
 
             // Drag-Drop gui.
-            EditorAdditionals.MakeDroppableAreaGUI(
-            () => // OnDrag
+            EditorAdditionals.MakeDroppableAreaGUI(onDragAcceptAction: () =>
             {
                 if (DebugMode)
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Dragged object stats => Length:{0}, Object:{1}", DragAndDrop.objectReferences.Length, DragAndDrop.objectReferences[0].GetType().BaseType));
@@ -486,10 +498,8 @@ namespace BXFW
                     // notify the unity that we set a variable and scene is modified
                     EditorUtility.SetDirty(property.serializedObject.targetObject);
                 }
-            }, new Rect(position)
-            {
-                height = SingleLineHeight
-            });
+            }, new Rect(position) { height = SingleLineHeight });
+
             // Null target gui.
             if (target == null)
             {
@@ -613,17 +623,20 @@ namespace BXFW
 
                         GUILayout.EndScrollView();
                         GUILayout.EndArea();
-                        
-                        // Load the previous GUILayout settings
+
+                        // Load the previous GUILayout settings (?, again)
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
+                        if (DebugMode)
+                            Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::DrawCustomInspector] Exception occurred while calling CustomInspector. Falling back to solely inspector view. This is a known issue. e={0}\n{1}", e.Message, e.StackTrace));
+
                         // OnInspectorGUI creates another area inside of another area, no matter what
                         // We have to convince the inspector of unity that : yes we are totally drawing the CustomPropertyDrawer, there's no other editors drawn here
 
                         // ok unity, you win. i give up
                         // the button will just select scriptable object if we can't draw the OnInspectorGUI
-                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor), 
+                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor),
                             "View on Current Inspector\n(object has custom editor, thus cannot be\n viewed in a nested GUILayout area.)"))
                         {
                             AssetDatabase.OpenAsset(target);

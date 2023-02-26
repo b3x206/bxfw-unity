@@ -8,25 +8,25 @@ namespace BXFW
     public class PlayerFPSCamera : MonoBehaviour
     {
         [Header("Camera References")]
-        [SerializeField] private Transform PlayerTransform = null;
+        [SerializeField] private Transform playerTransform;
 
         [Header("Camera Settings")]
         /// Note about RawMouseLook : Keep it true as default, otherwise mouse movement is jerky.
-        [SerializeField] private bool RawMouseLook = true;
-        public bool SensitivityMouseRawInput { get => RawMouseLook; set => RawMouseLook = value; }
+        [SerializeField] private bool rawMouseLook = true;
+        public bool SensitivityMouseRawInput { get => rawMouseLook; set => rawMouseLook = value; }
 
-        [SerializeField] private float SensitivityMouse = 100f;
-        public float SensitivityMouseCamera { get => SensitivityMouse; set => SensitivityMouse = value; }
+        [SerializeField] private float sensitivityMouse = 100f;
+        public float SensitivityMouseCamera { get => sensitivityMouse; set => sensitivityMouse = value; }
 
         [Header("Camera Constraints")]
         private float xRotation = 0f;
         [Tooltip("The limit is splitted to 2 before acting as input")]
-        [SerializeField] private float HeadRotationLimit = 180f;
-        public InputAxis CurrentAxes = InputAxis.MouseX | InputAxis.MouseY;
+        [SerializeField] private float headRotationLimit = 180f;
+        public InputAxis currentAxes = InputAxis.MouseX | InputAxis.MouseY;
 
         private void Update()
         {
-            if (CurrentAxes != InputAxis.None)
+            if (currentAxes != InputAxis.None)
             {
                 CameraLookUpdate();
             }
@@ -35,24 +35,24 @@ namespace BXFW
         private void CameraLookUpdate()
         {
             // Mouse input calc
-            float mouseX = (RawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X")) * SensitivityMouse * Time.smoothDeltaTime;
-            float mouseY = (RawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * SensitivityMouse * Time.smoothDeltaTime;
+            float mouseX = (rawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X")) * sensitivityMouse * Time.smoothDeltaTime;
+            float mouseY = (rawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * sensitivityMouse * Time.smoothDeltaTime;
 
             // Mouse up looking
             xRotation -= mouseY;
-            xRotation = Mathf.Clamp(xRotation, -HeadRotationLimit / 2f, HeadRotationLimit / 2f);
+            xRotation = Mathf.Clamp(xRotation, -headRotationLimit / 2f, headRotationLimit / 2f);
 
             // Rotate player with camera
-            switch (CurrentAxes)
+            switch (currentAxes)
             {
                 case InputAxis.MouseX | InputAxis.MouseY:
                     // You can probably use euler function method as well, it's unity being unity.
                     transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);
-                    PlayerTransform.Rotate(Vector3.up * mouseX);
+                    playerTransform.Rotate(Vector3.up * mouseX);
                     break;
 
                 case InputAxis.MouseX:
-                    PlayerTransform.Rotate(Vector3.up * mouseX);
+                    playerTransform.Rotate(Vector3.up * mouseX);
                     break;
                 case InputAxis.MouseY:
                     transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);

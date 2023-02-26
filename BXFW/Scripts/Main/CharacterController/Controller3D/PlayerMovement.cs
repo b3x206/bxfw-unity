@@ -17,14 +17,13 @@ namespace BXFW
     /// <summary>
     /// <see cref="CharacterController"/> based player movement component.
     /// </summary>
-    /// TODO 1 : Make BXFW.Modules a thing (abstract scriptable object based module system, allowing custom variables + behaviour)
     [RequireComponent(typeof(CharacterController)), DisallowMultipleComponent]
     public sealed class PlayerMovement : MonoBehaviour
     {
         /// <summary>Character controller on this class.</summary>
         public CharacterController Controller { get; private set; }
 
-        [Header("Player Settings")]
+        [Header("Primary Settings")]
         public LayerMask groundMask;
         public float speed = 200f;
         public float runSpeed = 300f;
@@ -32,14 +31,17 @@ namespace BXFW
         public float rigidBodyPushPower = 1f;
         public float rbWeight = 1f;
         public bool canMove = true;
-        public bool canInputMove = true;
         [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
-        // Input
-        public CustomInputEvent moveForwardInput  = new CustomInputEvent(true, new KeyCode[] { KeyCode.W, KeyCode.UpArrow });
-        public CustomInputEvent moveBackwardInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.S, KeyCode.DownArrow });
-        public CustomInputEvent moveLeftInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.A, KeyCode.LeftArrow });
-        public CustomInputEvent moveRightInput    = new CustomInputEvent(true, new KeyCode[] { KeyCode.D, KeyCode.RightArrow });
-        public CustomInputEvent moveRunInput      = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftShift });
+        
+        [InspectorLine(.4f, .4f, .4f), Header("Input")]
+        public bool canInputMove = true;
+        public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
+        public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
+        public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
+        public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
+        public CustomInputEvent moveJumpInput = new KeyCode[] { KeyCode.Space };
+        public CustomInputEvent moveCrouchInput = new KeyCode[] { KeyCode.LeftControl };
         /// <summary>
         /// Returns whether if the any of the 'move' input events is being done.
         /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
@@ -54,29 +56,22 @@ namespace BXFW
         /// <summary>
         /// Returns =&gt; <c><see cref="canMove"/> &amp;&amp; <see cref="MoveInputIsPressed"/></c>
         /// </summary>
-        public bool ShouldMove
+        public bool MustMove
         {
             get
             {
                 return canMove && MoveInputIsPressed;
             }
         }
-        public CustomInputEvent moveJumpInput   = new CustomInputEvent(true, new KeyCode[] { KeyCode.Space });
-        public CustomInputEvent moveCrouchInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftControl });
 
-        [Header("Player Kinematic Physics")]
+        [InspectorLine(.4f, .4f, .4f), Header("Player Kinematic Physics")]
         [SerializeField] private bool useGravity = true;
         [Tooltip("Controls whether if the player can move kinematically. (User input)")]
-        public bool canMoveKinematic = true;
+        public bool canMoveInput = true;
         public bool UseGravity
         {
-            get
-            { return useGravity; }
-            set
-            {
-                // m_Player_GravityVelocity = value ? m_Player_GravityVelocity : Vector3.zero;
-                useGravity = value;
-            }
+            get { return useGravity; }
+            set { useGravity = value; }
         }
         /// <summary>
         /// Current gravity for the player controller.
@@ -89,7 +84,7 @@ namespace BXFW
 
         // -- Player Reference
         public enum PlayerViewType { FPS, TPS, Free, FreeRelativeCam }
-        [Header("Player Reference")]
+        [InspectorLine(.4f, .4f, .4f), Header("Player Reference")]
         public PlayerViewType currentCameraView = PlayerViewType.FPS;
         [Tooltip("Players camera.")]
         public Camera targetCamera;
@@ -125,12 +120,9 @@ namespace BXFW
         ///         m_             ]--> Used for private variables.
         ///         Player_        ]--> Implies that this is a variable on a player
         ///         [VelocityName] ]--> Name of the velocity.
-        /// 2 : Apply the velocity to <see cref="m_internalVelocity"/>. (Always apply the velocity consistently).
+        /// 2 : Apply the velocity to <see cref="m_internalVelocity"/>.
 
-        /// <summary>
-        /// <c>[ **Special** Internal Velocity]</c> Current Player veloicty.
-        /// <br><c>Note :</c> Always add <see cref="m_externVelocity"/> to this velocity!</br>
-        /// </summary>
+        /// <summary>The internal velocity, applied to the actual movement.</summary>
         [SerializeField, InspectorReadOnlyView] private Vector3 m_internalVelocity;
         /// <summary><c>[External Velocity]</c> Total velocity changed by other scripts.</summary>
         [SerializeField, InspectorReadOnlyView] private Vector3 m_externVelocity;
@@ -173,20 +165,22 @@ namespace BXFW
         {
             //// Is Player Grounded? 
             IsGrounded = Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
-            
-            if (!canMoveKinematic) return; // Can player move?
 
-            //// Main Movement    ///
-            Vector3 move = canInputMove ? PlayerMove(new Vector2(
-                Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
-                Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
+            Vector3 inputVelocity = Vector3.zero;
+            if (canMoveInput)
+            {
+                //// Main Movement    ///
+                inputVelocity = canInputMove ? PlayerMove(new Vector2(
+                    Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
+                    Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
                 )) * Time.fixedDeltaTime : Vector3.zero;
+            }
 
             //// Gravity         ////
             PlayerGravity();
 
             //// Set velocity.   ////
-            m_internalVelocity = move + m_gravityVelocity + m_externVelocity;
+            m_internalVelocity = inputVelocity + m_gravityVelocity + m_externVelocity;
 
             //// Jumping         ////
             if (moveJumpInput.IsKeyDown())
@@ -199,7 +193,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Player movement. (similar to godot's move_and_slide())
+        /// Player movement. Returns relative movement depending on the settings.
         /// </summary>
         /// <returns>Player movement vector. (NOT multiplied with <see cref="Time.deltaTime"/>)</returns>
         public Vector3 PlayerMove(Vector2 input)

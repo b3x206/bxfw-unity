@@ -7,34 +7,34 @@ namespace BXFW
     /// </summary>
     public class PlayerInteraction : MonoBehaviour
     {
-        public CustomInputEvent InteractInput = new KeyCode[] { KeyCode.E };
-        public Vector3 Player_InteractionPointOffset;
-        public Vector3 Player_InteractionRadius = new Vector3(1.2f, 1.2f, 1.2f);
-        public LayerMask Player_InteractionLayer;
-        public bool Player_CanInteract = true;
+        public CustomInputEvent interactionInput = new KeyCode[] { KeyCode.E };
+        public Vector3 interactionPointOffset;
+        public Vector3 interactionBoxSize = new Vector3(1.2f, 1.2f, 1.2f);
+        public LayerMask interactionLayer;
+        public bool canInteract = true;
 
-        public Vector3 Player_InteractionPoint
+        public Vector3 InteractionPoint
         {
             get
             {
-                return transform.position + transform.TransformDirection(Player_InteractionPointOffset);
+                return transform.position + transform.TransformDirection(interactionPointOffset);
             }
         }
 
         private void Update()
         {
-            if (!Player_CanInteract) return;
+            if (!canInteract) return;
 
-            if (InteractInput)
+            if (interactionInput)
             {
-                // For the time being, use the tps method as it will
-                // work fine with the PlayerFPSCamera class we have
                 Collider[] Player_EnvInteract =
-                    Physics.OverlapBox(Player_InteractionPoint,
-                        Player_InteractionRadius,
-                        transform.rotation,
-                        Player_InteractionLayer,
-                        QueryTriggerInteraction.Collide);
+                    Physics.OverlapBox(
+                        center: transform.InverseTransformPoint(InteractionPoint),
+                        halfExtents: interactionBoxSize,
+                        orientation: transform.rotation,
+                        interactionLayer,
+                        QueryTriggerInteraction.Collide
+                    );
 
                 for (int i = 0; i < Player_EnvInteract.Length; i++)
                 {
@@ -59,14 +59,14 @@ namespace BXFW
             var prevColor = Gizmos.color;
 
             // Apply parent matrix to get rotation too
-            Vector3 intPoint = transform.InverseTransformPoint(Player_InteractionPoint);
+            Vector3 intPoint = transform.InverseTransformPoint(InteractionPoint);
             Matrix4x4 trMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
             Gizmos.matrix = trMatrix;
-            Gizmos.color = new Color(.01f, .87f, .98f, .5f);  // some nice blue
+            Gizmos.color = canInteract ? new Color(.01f, .87f, .98f, .5f) : new Color(.4f, .4f, .4f, .5f);
 
             // Position is correct
             // (using InverseTransformPosition, because the gizmo matrix also changes position + scale)
-            Gizmos.DrawCube(intPoint, Player_InteractionRadius);
+            Gizmos.DrawCube(intPoint, interactionBoxSize);
 
             Gizmos.matrix = prevMatrix;
             Gizmos.color = prevColor;

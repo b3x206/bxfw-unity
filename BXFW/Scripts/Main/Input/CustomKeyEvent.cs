@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BXFW
 {
+    /// TODO : Fix input polling (doesn't work)
     /// <summary>
     /// <see cref="KeyCode"/> event that can be remapped from inspector.
     /// </summary>
@@ -122,6 +123,16 @@ namespace BXFW
 
             pollCurrentKey = KeyCode.None;
         }
+
+        /// <summary>
+        /// Uses the polled event.
+        /// <br>Returns <c><see cref="EventType.None"/></c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
+        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// </summary>
+        public void Use(out EventType type)
+        {
+            Use(out type, out KeyCode _, out float _);
+        }
         /// <summary>
         /// Uses the polled event.
         /// <br>Returns <c><see cref="EventType.None"/> &amp; <see cref="KeyCode.None"/></c> / 
@@ -131,15 +142,6 @@ namespace BXFW
         public void Use(out EventType type, out KeyCode key)
         {
             Use(out type, out key, out float _);
-        }
-        /// <summary>
-        /// Uses the polled event.
-        /// <br>Returns <c><see cref="EventType.None"/></c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
-        /// <br>Note that after using the event, the event valeus are reset.</br>
-        /// </summary>
-        public void Use(out EventType type)
-        {
-            Use(out type, out KeyCode _, out float _);
         }
 
         public bool IsKey()

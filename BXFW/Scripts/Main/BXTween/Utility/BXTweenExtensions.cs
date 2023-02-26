@@ -97,57 +97,6 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="RectTransform"/>
-        public static BXTweenCTX<Vector3> BXTwMove(this RectTransform target, Vector3 LastValue, float Duration)
-        {
-            if (target == null)
-            {
-                Debug.LogError(BXTweenStrings.Err_TargetNull);
-                return null;
-            }
-
-            var Context = To(target.position, LastValue, Duration, (Vector3 v) => { target.position = v; }, target);
-
-            return Context;
-        }
-        public static BXTweenCTX<float> BXTwMoveX(this RectTransform target, float LastValue, float Duration)
-        {
-            if (target == null)
-            {
-                Debug.LogError(BXTweenStrings.Err_TargetNull);
-                return null;
-            }
-
-            var Context = To(target.position.x, LastValue, Duration,
-                (float f) => { target.position = new Vector3(f, target.position.y, target.position.z); }, target);
-
-            return Context;
-        }
-        public static BXTweenCTX<float> BXTwMoveY(this RectTransform target, float LastValue, float Duration)
-        {
-            if (target == null)
-            {
-                Debug.LogError(BXTweenStrings.Err_TargetNull);
-                return null;
-            }
-
-            var Context = To(target.position.y, LastValue, Duration,
-                (float f) => { target.position = new Vector3(target.position.x, f, target.position.z); }, target);
-
-            return Context;
-        }
-        public static BXTweenCTX<float> BXTwMoveZ(this RectTransform target, float LastValue, float Duration)
-        {
-            if (target == null)
-            {
-                Debug.LogError(BXTweenStrings.Err_TargetNull);
-                return null;
-            }
-
-            var Context = To(target.position.z, LastValue, Duration,
-                (float f) => { target.position = new Vector3(target.position.x, target.position.y, f); }, target);
-
-            return Context;
-        }
         public static BXTweenCTX<Vector3> BXTwMoveAnchorPos(this RectTransform target, Vector2 LastValue, float Duration)
         {
             if (target == null)
@@ -220,6 +169,7 @@ namespace BXFW.Tweening
 
         /// <summary>
         /// NOTE : This shortcut is more limited than others.
+        /// (because it uses a custom lerp, and the lerp parameter is the tweened float)
         /// <br/>
         /// <br>You cannot change the parameters without creating new tween.</br>
         /// <br>The 'time' parameter always goes between 0 to 1. (curves can be unclamped)</br>
@@ -229,6 +179,7 @@ namespace BXFW.Tweening
             return BXTwRect(target, other.rect, Duration);
         }
 
+        /// <see cref="Graphic"/>
         public static BXTweenCTX<float> BXTwFadeAlpha(this Graphic target, float LastValue, float Duration)
         {
             if (target == null)
@@ -257,7 +208,7 @@ namespace BXFW.Tweening
 
         #region Standard (UnityEngine)
         /// <see cref="Transform">
-        public static BXTweenCTX<Vector3> BXTwMove(this Transform target, Vector3 LastValue, float Duration)
+        public static BXTweenCTX<Vector3> BXTwMove(this Transform target, Vector3 LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
             {
@@ -265,12 +216,23 @@ namespace BXFW.Tweening
                 return null;
             }
 
-            var Context = To(target.position, LastValue, Duration,
-                (Vector3 v) => { target.position = v; }, target);
+            BXTweenCTX<Vector3> Context;
+            switch (space)
+            {
+                default:
+                case Space.World:
+                    Context = To(target.position, LastValue, Duration,
+                        (Vector3 v) => { target.position = v; }, target);
+                    break;
+                case Space.Self:
+                    Context = To(target.localPosition, LastValue, Duration,
+                        (Vector3 v) => { target.localPosition = v; }, target);
+                    break;
+            }
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwMoveX(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveX(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
             {
@@ -278,12 +240,23 @@ namespace BXFW.Tweening
                 return null;
             }
 
-            var Context = To(target.position.x, LastValue, Duration,
-                (float f) => { target.position = new Vector3(f, target.position.y, target.position.z); }, target);
+            BXTweenCTX<float> Context;
+            switch (space)
+            {
+                default:
+                case Space.World:
+                    Context = To(target.position.x, LastValue, Duration,
+                        (float f) => { target.position = new Vector3(f, target.position.y, target.position.z); }, target);
+                    break;
+                case Space.Self:
+                    Context = To(target.localPosition.x, LastValue, Duration,
+                        (float f) => { target.localPosition = new Vector3(f, target.localPosition.y, target.localPosition.z); }, target);
+                    break;
+            }
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwMoveY(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveY(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
             {
@@ -291,12 +264,23 @@ namespace BXFW.Tweening
                 return null;
             }
 
-            var Context = To(target.position.y, LastValue, Duration,
-                (float f) => { target.position = new Vector3(target.position.x, f, target.position.z); }, target);
+            BXTweenCTX<float> Context;
+            switch (space)
+            {
+                default:
+                case Space.World:
+                    Context = To(target.position.y, LastValue, Duration,
+                        (float f) => { target.position = new Vector3(target.position.x, f, target.position.z); }, target);
+                    break;
+                case Space.Self:
+                    Context = To(target.localPosition.y, LastValue, Duration,
+                        (float f) => { target.localPosition = new Vector3(target.localPosition.x, f, target.localPosition.z); }, target);
+                    break;
+            }
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwMoveZ(this Transform target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwMoveZ(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
             {
@@ -304,8 +288,19 @@ namespace BXFW.Tweening
                 return null;
             }
 
-            var Context = To(target.position.z, LastValue, Duration,
-                (float f) => { target.position = new Vector3(target.position.x, target.position.y, f); }, target);
+            BXTweenCTX<float> Context;
+            switch (space)
+            {
+                default:
+                case Space.World:
+                    Context = To(target.position.z, LastValue, Duration,
+                        (float f) => { target.position = new Vector3(target.position.x, target.position.y, f); }, target);
+                    break;
+                case Space.Self:
+                    Context = To(target.localPosition.z, LastValue, Duration,
+                        (float f) => { target.localPosition = new Vector3(target.localPosition.x, target.localPosition.y, f); }, target);
+                    break;
+            }
 
             return Context;
         }
@@ -375,6 +370,14 @@ namespace BXFW.Tweening
                 (Vector3 f) => { target.localScale = f; }, target);
 
             return Context;
+        }
+        /// <summary>
+        /// Same as <see cref="BXTwScale(Transform, Vector3, float)"/>, but a <see langword="new"/> <see cref="Vector3"/>() 
+        /// is created with all the parameters equaling to <paramref name="LastValue"/>.
+        /// </summary>
+        public static BXTweenCTX<Vector3> BXTwScale(this Transform target, float LastValue, float Duration)
+        {
+            return BXTwScale(target, new Vector3(LastValue, LastValue, LastValue), Duration);
         }
         public static BXTweenCTX<float> BXTwScaleX(this Transform target, float LastValue, float Duration)
         {
