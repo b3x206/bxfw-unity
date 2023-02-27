@@ -14,13 +14,16 @@ namespace BXFW.Data
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
-    /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this is probs ansi.
+    /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this file is probs ansi.
     /// TEXT_ID => en="Text Content", tr="Yazi icerik"
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
     /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
     /// </example>
     public static class LocalizedTextParser
     {
+        /// <summary>
+        /// Exception that occurs when the parse fails.
+        /// </summary>
         public class ParseException : Exception
         {
             public ParseException() : base()
