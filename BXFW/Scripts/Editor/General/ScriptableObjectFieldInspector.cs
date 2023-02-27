@@ -200,7 +200,7 @@ namespace BXFW
             if (targetIsPrefab && obj != null)
             {
                 // Pull the creation window thing
-                string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), "", "asset", ""); // contains absolute path to file
+                string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), string.Empty, "asset", string.Empty); // contains absolute path to file
                 if (string.IsNullOrWhiteSpace(absPath))
                 {
                     // Destroy temp object + cancel
@@ -236,8 +236,6 @@ namespace BXFW
 
             SetValueOfTarget(property, obj);
 
-            // TODO : Test if this is redundant? maybe it's not
-            // Or test if this works with normal prefab asset creations?
             if (targetIsPrefab)
                 EditorUtility.SetDirty(obj);
         }

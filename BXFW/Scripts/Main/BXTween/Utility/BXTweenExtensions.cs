@@ -232,6 +232,10 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        public static BXTweenCTX<Vector3> BXTwMoveLocal(this Transform target, Vector3 LastValue, float Duration)
+        {
+            return BXTwMove(target, LastValue, Duration, Space.Self);
+        }
         public static BXTweenCTX<float> BXTwMoveX(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
@@ -303,6 +307,18 @@ namespace BXFW.Tweening
             }
 
             return Context;
+        }
+        public static BXTweenCTX<float> BXTwMoveLocalX(this Transform target, float LastValue, float Duration)
+        {
+            return BXTwMoveX(target, LastValue, Duration, Space.Self);
+        }
+        public static BXTweenCTX<float> BXTwMoveLocalY(this Transform target, float LastValue, float Duration)
+        {
+            return BXTwMoveY(target, LastValue, Duration, Space.Self);
+        }
+        public static BXTweenCTX<float> BXTwMoveLocalZ(this Transform target, float LastValue, float Duration)
+        {
+            return BXTwMoveZ(target, LastValue, Duration, Space.Self);
         }
         public static BXTweenCTX<Quaternion> BXTwRotate(this Transform target, Quaternion LastValue, float Duration)
         {

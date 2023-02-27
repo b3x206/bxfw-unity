@@ -24,13 +24,12 @@ namespace BXFW
         public CharacterController Controller { get; private set; }
 
         [Header("Primary Settings")]
-        public LayerMask groundMask;
+        public bool canMove = true;
         public float speed = 200f;
         public float runSpeed = 300f;
         public float jumpSpeed = 5f;
-        public float rigidBodyPushPower = 1f;
+        public float rbPushPower = 1f;
         public float rbWeight = 1f;
-        public bool canMove = true;
         [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
         
         [InspectorLine(.4f, .4f, .4f), Header("Input")]
@@ -40,8 +39,8 @@ namespace BXFW
         public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
         public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
         public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
-        public CustomInputEvent moveJumpInput = new KeyCode[] { KeyCode.Space };
-        public CustomInputEvent moveCrouchInput = new KeyCode[] { KeyCode.LeftControl };
+        public CustomInputEvent moveJumpInput     = new KeyCode[] { KeyCode.Space };
+        public CustomInputEvent moveCrouchInput   = new KeyCode[] { KeyCode.LeftControl };
         /// <summary>
         /// Returns whether if the any of the 'move' input events is being done.
         /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
@@ -66,8 +65,6 @@ namespace BXFW
 
         [InspectorLine(.4f, .4f, .4f), Header("Player Kinematic Physics")]
         [SerializeField] private bool useGravity = true;
-        [Tooltip("Controls whether if the player can move kinematically. (User input)")]
-        public bool canMoveInput = true;
         public bool UseGravity
         {
             get { return useGravity; }
@@ -78,7 +75,11 @@ namespace BXFW
         /// </summary>
         public Vector3 gravity = Physics.gravity;
         /// <summary>
-        /// Control whether the player is in ground.
+        /// The collision mask to check what is considered ground.
+        /// </summary>
+        public LayerMask groundMask;
+        /// <summary>
+        /// Check whether the player is in ground.
         /// </summary>
         public bool IsGrounded { get; private set; } = false;
 
@@ -151,30 +152,27 @@ namespace BXFW
         /// </summary>
         private float m_TPSRotateV;
 
-        private void Update()
-        {
-            moveForwardInput.Poll();
-            moveBackwardInput.Poll();
-            moveLeftInput.Poll();
-            moveRightInput.Poll();
-            moveCrouchInput.Poll();
-            moveJumpInput.Poll();
-            moveRunInput.Poll();
-        }
+        // TODO : Fix 'CustomInputEvent' polling.
+        //private void Update()
+        //{
+        //    moveForwardInput.Poll();
+        //    moveBackwardInput.Poll();
+        //    moveLeftInput.Poll();
+        //    moveRightInput.Poll();
+        //    moveCrouchInput.Poll();
+        //    moveJumpInput.Poll();
+        //    moveRunInput.Poll();
+        //}
         private void FixedUpdate()
         {
             //// Is Player Grounded? 
-            IsGrounded = Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
+            IsGrounded = useGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
 
-            Vector3 inputVelocity = Vector3.zero;
-            if (canMoveInput)
-            {
-                //// Main Movement    ///
-                inputVelocity = canInputMove ? PlayerMove(new Vector2(
-                    Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
-                    Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
-                )) * Time.fixedDeltaTime : Vector3.zero;
-            }
+            //// Main Movement    ///
+            Vector3 inputVelocity = canInputMove ? PlayerMove(new Vector2(
+                Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
+                Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
+            )) * Time.fixedDeltaTime : Vector3.zero;
 
             //// Gravity         ////
             PlayerGravity();
@@ -300,7 +298,7 @@ namespace BXFW
         }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (rigidBodyPushPower <= 0f)
+            if (rbPushPower <= 0f)
                 return;
 
             // Push rigidbodies 
@@ -318,7 +316,7 @@ namespace BXFW
             else
             {
                 // Normal push
-                force = hit.controller.velocity * rigidBodyPushPower;
+                force = hit.controller.velocity * rbPushPower;
             }
 
             rb.AddForceAtPosition(force, hit.point);

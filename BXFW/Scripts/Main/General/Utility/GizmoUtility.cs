@@ -1,12 +1,13 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System;
 using UnityEngine;
 
 namespace BXFW
 {
     /// <summary>
-    /// Utility to draw gizmos.
+    /// Extended draw shapes for unity class <see cref="Gizmos"/>.
     /// </summary>
     public static class GizmoUtility
     {
@@ -33,7 +34,13 @@ namespace BXFW
             Gizmos.color = color;
             Gizmos.DrawCube(Vector3.zero, boxCollider.size);
         }
-        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+
+        /// <summary>Draws an arrow to the unity scene using <see cref="Gizmos"/> class.</summary>
+        /// <param name="pos">Start position of the arrow.</param>
+        /// <param name="direction">Direction point of the arrow.</param>
+        /// <param name="arrowHeadLength">Head side rays length.</param>
+        /// <param name="arrowHeadAngle">Head side rays angle.</param>
+        public static void DrawArrow(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
             Gizmos.DrawRay(pos, direction);
 
@@ -42,36 +49,73 @@ namespace BXFW
             Gizmos.DrawRay(pos + direction, right * arrowHeadLength);
             Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
         }
-        public static void DrawArrowGizmos(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        /// <summary>
+        /// Draws an arrow to the scene using <see cref="Gizmos"/> with switchable color.
+        /// <br>Modifies <see cref="Gizmos.color"/> and resets it to it's previous value.</br>
+        /// </summary>
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
+            var gColor = Gizmos.color;
             Gizmos.color = color;
-            Gizmos.DrawRay(pos, direction);
-
-            Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Gizmos.DrawRay(pos + direction, right * arrowHeadLength);
-            Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
+            DrawArrow(pos, direction, arrowHeadLength, arrowHeadAngle);
+            Gizmos.color = gColor;
         }
 
-        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        /// <summary>
+        /// Draws a circle to the scene using <see cref="Gizmos"/>.
+        /// </summary>
+        /// <param name="pos">Position of the circle.</param>
+        /// <param name="direction">Direction that the circle looks towards. Set to Vector3.zero to look towards <c>forward</c>.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        public static void DrawCircle(Vector3 pos, Vector3 direction, float radius)
         {
-            Debug.DrawRay(pos, direction);
+            int lenSphere = 16;
+            Vector3[] v = new Vector3[lenSphere]; // Sphere points (normalized)
+            for (int i = 0; i < lenSphere; i++)
+            {
+                float fl = i / (float)lenSphere; // current lerp
+                float c = Mathf.Cos(fl * (float)(Math.PI * 2.0));
+                float s = Mathf.Sin(fl * (float)(Math.PI * 2.0));
 
-            Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Debug.DrawRay(pos + direction, right * arrowHeadLength);
-            Debug.DrawRay(pos + direction, left * arrowHeadLength);
+                // Rotate using 'direction'.
+                Vector3 setVector = new Vector3(c, s, 0f);
+                if (direction != Vector3.zero)
+                    setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+
+                v[i] = setVector;
+            }
+
+            int len = v.Length;
+            for (int i = 0; i < len; i++)
+            {
+                // Calculate sphere points using radius
+                Vector3 sX = pos + (radius * v[(0 * len) + i]);
+                Vector3 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
+
+                Gizmos.DrawLine(sX, eX);
+            }
         }
-        public static void DrawArrowDebug(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        /// <summary>
+        /// Draws a circle to the scene using <see cref="Gizmos"/> with switchable color.
+        /// <br>Modifies <see cref="Gizmos.color"/> and resets it to it's previous value.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, Vector3 direction, float radius, Color color)
         {
-            Debug.DrawRay(pos, direction, color);
-
-            Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Debug.DrawRay(pos + direction, right * arrowHeadLength, color);
-            Debug.DrawRay(pos + direction, left * arrowHeadLength, color);
+            var gColor = Gizmos.color;
+            Gizmos.color = color;
+            DrawCircle(pos, direction, radius);
+            Gizmos.color = gColor;
         }
 
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="cullText">Should the text be culled if it's not visible by the camera?</param>
+        /// <param name="oX">X offset.</param>
+        /// <param name="oY">Y offset.</param>
         public static void DrawText(string text, Vector3 worldPos, Color? color = null, bool cullText = true, float oX = 0f, float oY = 0f)
         {
 #if UNITY_EDITOR
@@ -79,7 +123,8 @@ namespace BXFW
 
             var restoreColor = GUI.color;
 
-            if (color.HasValue) GUI.color = color.Value;
+            if (color.HasValue)
+                GUI.color = color.Value;
 
             var view = SceneView.currentDrawingSceneView;
             Vector3 screenPos = view.camera.WorldToScreenPoint(worldPos);
@@ -97,6 +142,7 @@ namespace BXFW
             Handles.Label(TransformByPixel(worldPos, oX, oY), text);
 
             GUI.color = restoreColor;
+
             Handles.EndGUI();
 #else
             Debug.LogWarning("[GizmoUtility::DrawText] DrawText only works in unity editor.");
