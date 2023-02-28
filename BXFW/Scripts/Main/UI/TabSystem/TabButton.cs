@@ -70,8 +70,8 @@ namespace BXFW.UI
         public Image ButtonImage { get { return buttonImage; } internal set { buttonImage = value; } }
 
         [Header(":: Internal Reference")]
-        [InspectorReadOnlyView, SerializeField] internal int ButtonIndex = 0;
-        [InspectorReadOnlyView, SerializeField] internal TabSystem ParentTabSystem;
+        [ReadOnlyView, SerializeField] internal int ButtonIndex = 0;
+        [ReadOnlyView, SerializeField] internal TabSystem ParentTabSystem;
 
         // -- Initilaze
         private void Start()

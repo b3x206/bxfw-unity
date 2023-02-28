@@ -43,6 +43,7 @@ namespace BXFW
         /// Directory of the 'Resources' file.
         /// </summary>
         private static readonly string LoadableResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
+        private const string ASSET_EXT_PREFIX = ".asset";
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory.
@@ -51,7 +52,7 @@ namespace BXFW
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
 #endif
-        public static T CreateEditorInstance(string relativeDir, string fileName)
+        public static T CreateEditorInstance(string relativeDir, string fileName, bool enforceAssetPrefix = true)
         {
 #if UNITY_EDITOR
             if (Instance != null)
@@ -75,6 +76,9 @@ namespace BXFW
 
             // Actually create the thing.
             var cInstance = CreateInstance<T>();
+
+            if (enforceAssetPrefix && !fileName.EndsWith(ASSET_EXT_PREFIX))
+                fileName += ASSET_EXT_PREFIX;
 
             UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(relativeParentDir, fileName));
             UnityEditor.AssetDatabase.Refresh();

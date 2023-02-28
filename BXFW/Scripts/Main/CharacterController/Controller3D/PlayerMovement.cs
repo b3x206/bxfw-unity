@@ -124,11 +124,11 @@ namespace BXFW
         /// 2 : Apply the velocity to <see cref="m_internalVelocity"/>.
 
         /// <summary>The internal velocity, applied to the actual movement.</summary>
-        [SerializeField, InspectorReadOnlyView] private Vector3 m_internalVelocity;
+        [SerializeField, ReadOnlyView] private Vector3 m_internalVelocity;
         /// <summary><c>[External Velocity]</c> Total velocity changed by other scripts.</summary>
-        [SerializeField, InspectorReadOnlyView] private Vector3 m_externVelocity;
+        [SerializeField, ReadOnlyView] private Vector3 m_externVelocity;
         /// <summary><c>[Internal Velocity]</c> Gravity velocity.</summary>
-        [SerializeField, InspectorReadOnlyView] private Vector3 m_gravityVelocity;
+        [SerializeField, ReadOnlyView] private Vector3 m_gravityVelocity;
 
         ///////////////// Function
         private void Awake()
@@ -165,6 +165,10 @@ namespace BXFW
         //}
         private void FixedUpdate()
         {
+            // Don't move.
+            if (!canMove)
+                return;
+
             //// Is Player Grounded? 
             IsGrounded = useGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
 
@@ -191,7 +195,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Player movement. Returns relative movement depending on the settings.
+        /// Player movement. Returns relative movement <b>depending on the settings. (! this means speed is applied !)</b>
         /// </summary>
         /// <returns>Player movement vector. (NOT multiplied with <see cref="Time.deltaTime"/>)</returns>
         public Vector3 PlayerMove(Vector2 input)

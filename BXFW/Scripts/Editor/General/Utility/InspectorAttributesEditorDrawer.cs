@@ -12,15 +12,15 @@ namespace BXFW.ScriptEditor
     /// Draws the '<see cref="Texture2D"/>' inspector for sprites.
     /// <br>Limitations -> Doesn't support scene objects.</br>
     /// </summary>
-    [CustomPropertyDrawer(typeof(InspectorBigSpriteFieldAttribute))]
-    internal class InspectorBigSpriteFieldDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(BigSpriteFieldAttribute))]
+    internal class BigSpriteFieldDrawer : PropertyDrawer
     {
         private const float warnHelpBoxRectHeight = 22f;
         private float targetBoxRectHeight
         {
             get
             {
-                var targetAttribute = attribute as InspectorBigSpriteFieldAttribute;
+                var targetAttribute = attribute as BigSpriteFieldAttribute;
 
                 return targetAttribute.spriteBoxRectHeight;
             }
@@ -100,7 +100,7 @@ namespace BXFW.ScriptEditor
         }
     }
 
-    [CustomPropertyDrawer(typeof(InspectorReadOnlyViewAttribute))]
+    [CustomPropertyDrawer(typeof(ReadOnlyViewAttribute))]
     internal class ReadOnlyDrawer : PropertyDrawer
     {
         private PropertyDrawer targetTypeCustomDrawer;
@@ -128,6 +128,61 @@ namespace BXFW.ScriptEditor
                 EditorGUI.PropertyField(position, property, label, true);
             }
             GUI.enabled = gEnabled;
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(ClampAttribute))]
+    internal class ClampDrawer : PropertyDrawer
+    {
+        private const float warnHelpBoxRectHeight = 22f;
+        private ClampAttribute CAttribute => attribute as ClampAttribute;
+        private const float DR_PADDING = 2f; 
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float addHeight = 0f;
+
+            if (property.propertyType != SerializedPropertyType.Integer && property.propertyType != SerializedPropertyType.Float)
+            {
+                addHeight += warnHelpBoxRectHeight;
+            }
+            else
+            {
+                addHeight += EditorGUIUtility.singleLineHeight + DR_PADDING;
+            }
+
+            return addHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            position.height -= DR_PADDING;
+            position.y += DR_PADDING / 2f;
+
+            if (property.propertyType == SerializedPropertyType.Float)
+            {
+                EditorGUI.BeginChangeCheck();
+                float v = Mathf.Clamp(EditorGUI.FloatField(position, label, property.floatValue), (float)CAttribute.min, (float)CAttribute.max);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped float");
+                    property.floatValue = v;
+                }
+            }
+            else if (property.propertyType == SerializedPropertyType.Integer)
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = Mathf.Clamp(EditorGUI.IntField(position, label, property.intValue), (int)CAttribute.min, (int)CAttribute.max);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped int");
+                    property.intValue = v;
+                }
+            }
+            else
+            {
+                EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either int or float.", MessageType.Warning);
+            }
         }
     }
 }

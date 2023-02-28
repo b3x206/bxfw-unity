@@ -10,7 +10,7 @@ namespace BXFW.UI
     public class Content
     {
         [Tooltip("Text content that this button stores.")][TextArea] public string text;
-        [InspectorBigSpriteField, Tooltip("Sprite content.")] public Sprite image;
+        [BigSpriteField, Tooltip("Sprite content.")] public Sprite image;
         [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
         [SerializeField] internal bool receiveContentFromComponents = false;
 

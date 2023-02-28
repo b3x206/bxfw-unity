@@ -23,7 +23,7 @@ namespace BXFW.UI
         public Sprite ActiveSprite;
         public Sprite DisabledSprite;
 
-        [SerializeField, InspectorReadOnlyView] private Image baseChildProgressImage;
+        [SerializeField, ReadOnlyView] private Image baseChildProgressImage;
         [SerializeField, HideInInspector] private List<Image> childProgressImages = new List<Image>();
 
         /// <summary>

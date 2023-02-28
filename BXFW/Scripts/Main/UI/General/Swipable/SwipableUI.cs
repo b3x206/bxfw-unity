@@ -48,7 +48,7 @@ namespace BXFW.UI
         [Header(":: References")] public RectTransform ItemContainer;
 
         [Header(":: Current")]
-        [SerializeField, InspectorReadOnlyView] private int _CurrentMenu;
+        [SerializeField, ReadOnlyView] private int _CurrentMenu;
         /// <summary><see cref="UnityEvent"/> invoked when <see cref="CurrentMenu"/> or <see cref="IEndDragHandler.OnEndDrag(PointerEventData)"/>(with difference) is called.</summary>
         public SwipableUIOnMenuChangeEvent OnMenuChangeEvent;
         /// <summary>The current menu. Changing this variable starts the swipe animation and goes to that menu.</summary>

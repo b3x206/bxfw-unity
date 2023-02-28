@@ -65,6 +65,10 @@ namespace BXFW
         /// Reserved height for the <see cref="currentCustomInspector"/>.
         /// </summary>
         protected virtual float ReservedHeightCustomEditor => 300;
+        /// <summary>
+        /// Allows to change the scriptable object <see cref="UnityEngine.Object.name"/> directly using a input field.
+        /// </summary>
+        protected virtual bool DisplayObjectNameEditor => false;
 
         /// <summary>
         /// Currently drawn list of the scriptable objects.
@@ -151,6 +155,16 @@ namespace BXFW
                 // Object we cast to is reference, but singular objects may still need FieldInfo set.
                 if (parent is IList<T> refList)
                 {
+                    if (index >= refList.Count)
+                    {
+                        // Array is most likely resized, but we still have a dead link to the property.
+                        // Just skip this entire 'SetValueOfTarget'??
+                        if (DebugMode)
+                            Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget] Given SerializedProperty index {0} is larger than array size. Letting the exception carnage happen.", index));
+                        else
+                            index = Mathf.Clamp(index, 0, refList.Count - 1);
+                    }
+
                     refList[index] = obj;
                 }
                 else if (parent is Array refArray)
@@ -390,9 +404,24 @@ namespace BXFW
                 // If the key is not null (after assigning the target), don't ignore and start searching
                 if (drawnScriptableObjects[key] != null)
                 {
-                    KeyValuePair<string, T> propPair = drawnScriptableObjects.SingleOrDefault(p =>
-                        // Key is different && Same object parent (using InstanceID as temp) && Same reference to object
-                        p.Key != key && TrimRightPrefix(p.Key) == TrimRightPrefix(key) && p.Value == target);
+                    KeyValuePair<string, T> propPair;
+
+                    try
+                    {
+                        // Same key pairs could be included, as this may not return a Single object.
+                        propPair = drawnScriptableObjects.SingleOrDefault(p =>
+                           // Key is different && Same object parent (using InstanceID as temp) && Same reference to object
+                           p.Key != key && TrimRightPrefix(p.Key) == TrimRightPrefix(key) && p.Value == target);
+                    }
+                    catch (Exception e)
+                    {
+                        if (DebugMode)
+                            Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Exception occured while HandleDifferentDrawers. Not handling e={0}\n{1}", e.Message, e.StackTrace));
+                        
+                        // just needs a refreshin clear.
+                        //drawnScriptableObjects.Clear();
+                        return;
+                    }
 
                     if (!string.IsNullOrEmpty(propPair.Key))
                     {
@@ -527,31 +556,63 @@ namespace BXFW
                 return;
             }
 
+            // why am i allowed to write GUI code? this is an abomination
+            // well, atleast this is easily fixable, unlike my life xDDxDXDXD
+            // buut, it works (and it has suprisingly ok performance) so why touch it?
+
             // -- Property label
-            Rect propFoldoutLabel = GetPropertyRect(position, SingleLineHeight); // width is equal to 'previousWidth'
+            Rect rInspectorInfo = GetPropertyRect(position, SingleLineHeight); // width is equal to 'previousWidth'
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
-            float foldoutLabelWidth = hasAssetPath ? 1f - (BTN_DELETE_WIDTH + BTN_SHOWPRJ_WIDTH) : 1f - BTN_DELETE_WIDTH;
+            const float BTN_FOLDOUT_MIN_WIDTH = .033f;
+            float rFoldoutRefWidth = 1f - BTN_DELETE_WIDTH;
 
-            propFoldoutLabel.width = previousWidth * foldoutLabelWidth;
-            property.isExpanded = EditorGUI.Foldout(propFoldoutLabel, property.isExpanded, label);
+            if (hasAssetPath)
+                rFoldoutRefWidth -= BTN_SHOWPRJ_WIDTH;
+            // set DisplayObjectNameEditor condition inline as we need the 'rFoldoutRefWidth' reference for the label name editor.
+            rInspectorInfo.width = previousWidth * (DisplayObjectNameEditor ? BTN_FOLDOUT_MIN_WIDTH : rFoldoutRefWidth);
 
-            propFoldoutLabel.x += previousWidth * foldoutLabelWidth;   // Start pos
-            propFoldoutLabel.width = previousWidth * BTN_SHOWPRJ_WIDTH;
+            property.isExpanded = EditorGUI.Foldout(rInspectorInfo, property.isExpanded, DisplayObjectNameEditor ? GUIContent.none : label);
+            // This GUI element is inserted (foldout space is squished for this property), so yeah.
+            if (DisplayObjectNameEditor)
+            {
+                GUI.enabled = !hasAssetPath;
+
+                rInspectorInfo.x += previousWidth * BTN_FOLDOUT_MIN_WIDTH;
+                float lblNameEditorWidth = 1f - (1f - (rFoldoutRefWidth - BTN_FOLDOUT_MIN_WIDTH));
+                rInspectorInfo.width = previousWidth * lblNameEditorWidth;
+
+                // Make 'read-only' if the file actually exists in project
+                // Having Object.name and the file name different, unity doesn't like.
+                EditorGUI.BeginChangeCheck();
+                string tName = EditorGUI.TextField(rInspectorInfo, hasAssetPath ? string.Format("{0} (change name of file)", target.name) : target.name);
+                if (EditorGUI.EndChangeCheck() && !hasAssetPath)
+                {
+                    Undo.RecordObject(target, "set name");
+                    target.name = tName;
+                }
+                rInspectorInfo.x -= previousWidth * BTN_FOLDOUT_MIN_WIDTH;
+
+                GUI.enabled = true;
+            }
+
+            // 'Show On Project' button
+            rInspectorInfo.x += previousWidth * rFoldoutRefWidth;   // Start pos
+            rInspectorInfo.width = previousWidth * BTN_SHOWPRJ_WIDTH;
             if (hasAssetPath)
             {
                 // Display a button to highlight the asset source
-                if (GUI.Button(propFoldoutLabel, "Show On Project"))
+                if (GUI.Button(rInspectorInfo, "Show On Project"))
                 {
                     // Highlight the source object in the 'Project' folder
                     ProjectWindowUtil.ShowCreatedAsset(target);
                 }
 
-                propFoldoutLabel.x += previousWidth * BTN_SHOWPRJ_WIDTH;    // Add 1 more button to pos
+                rInspectorInfo.x += previousWidth * BTN_SHOWPRJ_WIDTH;    // Add 1 more button to pos
             }
 
-            propFoldoutLabel.width = previousWidth * BTN_DELETE_WIDTH;
-            if (GUI.Button(propFoldoutLabel, "Delete"))
+            rInspectorInfo.width = previousWidth * BTN_DELETE_WIDTH;
+            if (GUI.Button(rInspectorInfo, "Delete"))
             {
                 // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead just remove the reference
                 if (!hasAssetPath)
@@ -609,6 +670,8 @@ namespace BXFW
                     // If you want to tackle this too (i have schizophrenia, there's no you) just know that unity will most likely win
                     // because it likes to delete your GUILayout area, you also can't just call OnInspectorGUI inside other inspectors (nested GUILayout area moment)
 
+                    // As workaround, just open the entire ScriptableObject in the inspector
+                    // yes, waste of space. but unity won
                     try
                     {
                         // Save the current GUILayout setting (?)

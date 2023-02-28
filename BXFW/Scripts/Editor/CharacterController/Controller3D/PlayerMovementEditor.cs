@@ -14,6 +14,10 @@ namespace BXFW.ScriptEditor
             var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
             var target = base.target as PlayerMovement;
 
+            if (!target.canMove)
+            {
+                dict.Add(nameof(target.canMove), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => EditorGUILayout.HelpBox("Player will not move. These settings won't change anything.", MessageType.Info)));
+            }
             if (!target.canInputMove)
             {
                 dict.Add(nameof(target.moveForwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
