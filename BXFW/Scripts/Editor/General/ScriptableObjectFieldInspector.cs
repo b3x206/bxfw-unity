@@ -122,8 +122,11 @@ namespace BXFW
         /// Sets value of target safely.
         /// <br>The <paramref name="obj"/> passed can be anything.</br>
         /// </summary>
-        protected void SetValueOfTarget(SerializedProperty property, T obj)
+        protected void SetValueOfTarget(SerializedProperty property, T obj, bool allowUndo = true)
         {
+            if (allowUndo)
+                Undo.RecordObject(property.serializedObject.targetObject, string.Format("Set value of {0}", property.name));
+            
             // Set value
             // If the parent is an array, set the target index into the 'obj'
             var parentTargetPair = property.GetParentOfTargetField();
@@ -158,11 +161,8 @@ namespace BXFW
                     if (index >= refList.Count)
                     {
                         // Array is most likely resized, but we still have a dead link to the property.
-                        // Just skip this entire 'SetValueOfTarget'??
-                        if (DebugMode)
-                            Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget] Given SerializedProperty index {0} is larger than array size. Letting the exception carnage happen.", index));
-                        else
-                            index = Mathf.Clamp(index, 0, refList.Count - 1);
+                        // ok
+                        Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector::SetValueOfTarget] Given SerializedProperty index {0} is larger than array size. Letting the exception carnage happen.", index));
                     }
 
                     refList[index] = obj;
@@ -195,6 +195,15 @@ namespace BXFW
                 // the fieldInfo directly points to the object's actual field
                 fieldInfo.SetValue(parent, obj);
             }
+
+            // Forces unity to serialize the assigned object
+            // (Undo.RecordObject does this anyways, this is no undo force serialization)
+            if (!allowUndo)
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
+
+            // This is very necessary to save the reference!
+            // (Otherwise it doesn't save the file reference unless it's a default, non-prefab unity scene)
+            AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
         }
         /// <summary>
         /// Sets value of target.
@@ -209,9 +218,10 @@ namespace BXFW
             if (property == null)
                 throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
 
-            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+            bool targetParentIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+            bool targetParentHasAssetPath = !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
 
-            if (targetIsPrefab && obj != null)
+            if ((targetParentIsPrefab || targetParentHasAssetPath) && obj != null)
             {
                 // Pull the creation window thing
                 string absPath = EditorUtility.SaveFilePanelInProject(string.Format("Create {0} Instance", typeof(T).Name), string.Empty, "asset", string.Empty); // contains absolute path to file
@@ -232,10 +242,8 @@ namespace BXFW
 
                 if (AssetDatabase.IsValidFolder(baseAssetFolder))
                 {
-                    EditorUtility.SetDirty(obj);
-
                     AssetDatabase.CreateAsset(obj, relPath);
-                    AssetDatabase.SaveAssets();
+                    AssetDatabase.SaveAssetIfDirty(obj);
                     AssetDatabase.Refresh();
 
                     ProjectWindowUtil.ShowCreatedAsset(obj);
@@ -249,9 +257,6 @@ namespace BXFW
             }
 
             SetValueOfTarget(property, obj);
-
-            if (targetIsPrefab)
-                EditorUtility.SetDirty(obj);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -281,7 +286,7 @@ namespace BXFW
                                 typeMenus.AddItem(new GUIContent(
                                     string.Format("New {0}{1}",
                                     // append a dot (.) if the namespace isn't blank.
-                                    !string.IsNullOrWhiteSpace(type.Namespace) ? $"{type.Namespace}." : string.Empty, type.Name)), false,
+                                    !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)), false,
                                     () =>
                                     {
                                         // Apply value
@@ -298,7 +303,7 @@ namespace BXFW
 
                 // Since the following scope is called only once, we can leech off that
                 // Get custom inspector
-                if (currentCustomInspector == null)
+                if (currentCustomInspector == null && target != null)
                 {
                     // Just assign, the 'UseCustomInspector' also ignores the default ones.
                     currentCustomInspector = Editor.CreateEditor(target);
@@ -371,12 +376,12 @@ namespace BXFW
         /// <summary>
         /// Handles drawn <see cref="ScriptableObject"/>s, doing as the default behaviour for drawn non-<see cref="UnityEngine.Object"/> objects.
         /// </summary>
-        protected void HandleDifferentDrawers(SerializedProperty property, T target, bool allowCloneTarget)
+        protected void HandleDifferentDrawers(SerializedProperty property, T target)
         {
             // Do not make unique if the target is prefab or we have asset path
             // Because : prefabs can't store local scriptable objects (only scenes)
             // :: If the object exists in project view, no need to clone; it's very easy to clone anyways + we can use 'Delete' to lose reference on the current object.
-            if (!MakeDrawnScriptableObjectsUnique || !allowCloneTarget)
+            if (!MakeDrawnScriptableObjectsUnique)
                 return;
 
             // Get whether if the same item was drawn twice on the same array / SerializedProperty
@@ -396,11 +401,12 @@ namespace BXFW
             }
             else // do not check on the first OnGUI call as the target could not be ready.
             {
-                // the following code is bad. pls find better ways (such as seperating this to a seperate guard claused function/method/whatever)
-
                 // Check if key is null, if so assign the target.
                 if (drawnScriptableObjects[key] == null)
+                {
                     drawnScriptableObjects[key] = target;
+                }
+
                 // If the key is not null (after assigning the target), don't ignore and start searching
                 if (drawnScriptableObjects[key] != null)
                 {
@@ -419,7 +425,8 @@ namespace BXFW
                             Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Exception occured while HandleDifferentDrawers. Not handling e={0}\n{1}", e.Message, e.StackTrace));
                         
                         // just needs a refreshin clear.
-                        //drawnScriptableObjects.Clear();
+                        // note : this is a crap solution and may cause issues.
+                        drawnScriptableObjects.Clear();
                         return;
                     }
 
@@ -439,7 +446,8 @@ namespace BXFW
                         }
                         // Key is already contained on different drawn property, and is being planned to be drawn for different property path.
                         // The 'SingleOrDefault' returns null string if there's no matching target value.
-                        else if (propPair.Key != key)
+                        // (ensure the passed pair object actually contains the clone on the appopriate property and fix issue #2)
+                        else if (propPair.Key != key && existingProp.objectReferenceValue == propPair.Value)
                         {
                             // Clone 'target' and paste it to 'target'
                             // TODO : Only do this in the arrays (or test if other objects work [such as 2 monobehaviours drawn at the same time with same scriptable object] correctly),
@@ -452,7 +460,7 @@ namespace BXFW
                             T instObject = UnityEngine.Object.Instantiate(propPair.Value);
 
                             // Assign the clone (ASSIGN LIKE THIS, JUST SETTING THE 'property.objectReferenceValue' DOES NOT WORK)
-                            SetValueOfTarget(property, instObject);
+                            SetValueOfTarget(property, instObject, false);
                             target = instObject;                    // Set tempoary variables too
 
                             // Set the target dirty
@@ -485,13 +493,18 @@ namespace BXFW
             // Otherwise use BXFW's EditorAdditionals.GetTarget(SerializedProperty)
             UnityEngine.Object propTarget = property.objectReferenceValue;
             T target = propTarget as T;
-            bool targetIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+
+            // Parent settings. If any of these are true, the following happens:
+            // Unity's unmodifiable serializer decides that 'inline serialization' is too good and just serializes by fileid.
+            // So, if any of these are true
+            bool targetParentIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+            bool targetParentHasAssetPath = !string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
             // Dynamic 'ShowOnProject' button + make unique is disabled if the prefab actually exists in project
-            string currentAssetPath = AssetDatabase.GetAssetPath(target);
-            bool hasAssetPath = !string.IsNullOrWhiteSpace(currentAssetPath);
+            bool targetHasAssetPath = !string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(target));
 
             // 'target' passes as reference because it has to be a class.
-            HandleDifferentDrawers(property, target, !targetIsPrefab && !hasAssetPath);
+            if (!targetParentIsPrefab && !targetHasAssetPath)
+                HandleDifferentDrawers(property, target);
 
             // GUI related
             float previousWidth = position.width;
@@ -510,7 +523,7 @@ namespace BXFW
                 )
                 {
                     // Clear if there is previous object.
-                    if (hasAssetPath)
+                    if (targetHasAssetPath)
                         SetValueOfTarget(property, null);
 
                     SetValueOfTarget(property, DragAndDrop.objectReferences[0] as T);
@@ -536,14 +549,22 @@ namespace BXFW
 
                 position.width = previousWidth * .45f;
                 if (GUI.Button(position, new GUIContent(
-                    targetIsPrefab ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
-                    targetIsPrefab ? "Prefab scenes can't serialize local scriptable objects in prefabs." : "You can also drag scriptable objects."), EditorStyles.popup))
+                    targetParentIsPrefab || targetParentHasAssetPath ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
+                    targetParentIsPrefab || targetParentHasAssetPath ? @"Prefab scenes / Project Assets can't serialize local scriptable objects in themselves.
+(This is due to how the unity serializer works, and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
-                    typeMenus.ShowAsContext();
+                    if (typeMenus != null)
+                        typeMenus.ShowAsContext();
+                    else
+                    {
+                        var m = new GenericMenu();
+                        m.AddDisabledItem(new GUIContent("Click refresh to refresh the list."), true);
+                        m.ShowAsContext();
+                    }
                 }
                 position.x += previousWidth * .46f;
 
-                GUI.enabled = !targetIsPrefab;
+                GUI.enabled = !targetParentIsPrefab;
 
                 position.width = previousWidth * .14f; // 1 - (.46f + .4f)
                 if (GUI.Button(position, "Refresh"))
@@ -567,7 +588,7 @@ namespace BXFW
             const float BTN_FOLDOUT_MIN_WIDTH = .033f;
             float rFoldoutRefWidth = 1f - BTN_DELETE_WIDTH;
 
-            if (hasAssetPath)
+            if (targetHasAssetPath)
                 rFoldoutRefWidth -= BTN_SHOWPRJ_WIDTH;
             // set DisplayObjectNameEditor condition inline as we need the 'rFoldoutRefWidth' reference for the label name editor.
             rInspectorInfo.width = previousWidth * (DisplayObjectNameEditor ? BTN_FOLDOUT_MIN_WIDTH : rFoldoutRefWidth);
@@ -576,7 +597,7 @@ namespace BXFW
             // This GUI element is inserted (foldout space is squished for this property), so yeah.
             if (DisplayObjectNameEditor)
             {
-                GUI.enabled = !hasAssetPath;
+                GUI.enabled = !targetHasAssetPath;
 
                 rInspectorInfo.x += previousWidth * BTN_FOLDOUT_MIN_WIDTH;
                 float lblNameEditorWidth = 1f - (1f - (rFoldoutRefWidth - BTN_FOLDOUT_MIN_WIDTH));
@@ -585,8 +606,9 @@ namespace BXFW
                 // Make 'read-only' if the file actually exists in project
                 // Having Object.name and the file name different, unity doesn't like.
                 EditorGUI.BeginChangeCheck();
-                string tName = EditorGUI.TextField(rInspectorInfo, hasAssetPath ? string.Format("{0} (change name of file)", target.name) : target.name);
-                if (EditorGUI.EndChangeCheck() && !hasAssetPath)
+                string tName = EditorGUI.TextField(rInspectorInfo, target.name);
+
+                if (EditorGUI.EndChangeCheck() && !targetHasAssetPath)
                 {
                     Undo.RecordObject(target, "set name");
                     target.name = tName;
@@ -599,7 +621,7 @@ namespace BXFW
             // 'Show On Project' button
             rInspectorInfo.x += previousWidth * rFoldoutRefWidth;   // Start pos
             rInspectorInfo.width = previousWidth * BTN_SHOWPRJ_WIDTH;
-            if (hasAssetPath)
+            if (targetHasAssetPath)
             {
                 // Display a button to highlight the asset source
                 if (GUI.Button(rInspectorInfo, "Show On Project"))
@@ -615,7 +637,7 @@ namespace BXFW
             if (GUI.Button(rInspectorInfo, "Delete"))
             {
                 // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead just remove the reference
-                if (!hasAssetPath)
+                if (!targetHasAssetPath)
                 {
                     Undo.DestroyObjectImmediate(target);
                 }
