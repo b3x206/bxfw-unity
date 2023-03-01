@@ -37,7 +37,8 @@ namespace BXFW.ScriptEditor
 
             public bool ShouldFilter(ITweenCTX tw)
             {
-                return tw != null && (IgnoreNullTargetObject && tw.TargetObject == null) || (TargetObject != null && tw.TargetObject != TargetObject);
+                return (tw != null && IgnoreNullTargetObject && tw.TargetObject == null) || // Null check + IgnoreNullTargetObject
+                    (TargetObject != null && tw.TargetObject != TargetObject);              // Field 'TargetObject' is assigned
             }
         }
         private EditorTweenFilter currentFilter;
