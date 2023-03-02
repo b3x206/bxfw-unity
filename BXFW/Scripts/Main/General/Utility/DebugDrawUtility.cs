@@ -11,7 +11,11 @@ namespace BXFW
         /// <summary>
         /// Draws a sphere in <see cref="Debug"/> context.
         /// </summary>
-        public static void DrawSphere(Vector4 pos, float radius, Color color)
+        /// <param name="pos">Position of the circle. Can use normal 3d positions.</param>
+        /// <param name="radius">Radius of the circle.</param> 
+        /// <param name="duration">The duration that this sphere will appear for.</param>
+        /// <param name="depthTest">Should the sphere lines be obscured by other objects in scene?</param>
+        public static void DrawSphere(Vector4 pos, float radius, Color color, float duration, bool depthTest)
         {
             // Make unit sphere.
             int lenSphere = 16;
@@ -36,10 +40,111 @@ namespace BXFW
                 Vector4 sZ = pos + (radius * v[(2 * len) + i]);
                 Vector4 eZ = pos + (radius * v[(2 * len) + ((i + 1) % len)]);
 
-                Debug.DrawLine(sX, eX, color);
-                Debug.DrawLine(sY, eY, color);
-                Debug.DrawLine(sZ, eZ, color);
+                Debug.DrawLine(sX, eX, color, duration, depthTest);
+                Debug.DrawLine(sY, eY, color, duration, depthTest);
+                Debug.DrawLine(sZ, eZ, color, duration, depthTest);
             }
+        }
+        /// <summary>
+        /// Draws a sphere to the <see cref="Debug"/> context.
+        /// <br>Contained in the depth test, meaning the drawn sphere lines can be obscured by other objects.</br>
+        /// </summary>
+        public static void DrawSphere(Vector3 pos, float radius, Color color, float duration)
+        {
+            DrawSphere(pos, radius, color, duration, true);
+        }
+        /// <summary>
+        /// Draws a sphere to the <see cref="Debug"/> context.
+        /// <br>Has no duration + contained in depth test.</br>
+        /// </summary>
+        public static void DrawSphere(Vector3 pos, float radius, Color color)
+        {
+            DrawSphere(pos, radius, color, 0f, true);
+        }
+        /// <summary>
+        /// Draws a sphere to the <see cref="Debug"/> context.
+        /// <br>Color is <see cref="Color.white"/>, no duration and contained in the depth test.</br>
+        /// </summary>
+        public static void DrawSphere(Vector3 pos, float radius)
+        {
+            DrawSphere(pos, radius, Color.white, 0f, true);
+        }
+
+        /// <summary>
+        /// Draws a circle to the scene using <see cref="Debug"/>.
+        /// </summary>
+        /// <param name="pos">Position of the circle.</param>
+        /// <param name="direction">Direction that the circle looks towards. Set to Vector3.zero to look towards <c>-forward</c>.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        /// <param name="duration">The duration that this sphere will appear for.</param>
+        /// <param name="depthTest">Should the sphere lines be obscured by other objects in scene?</param>
+        public static void DrawCircle(Vector3 pos, float radius, Vector3 direction, Color color, float duration, bool depthTest)
+        {
+            int lenSphere = 16;
+            Vector3[] v = new Vector3[lenSphere]; // Sphere points (normalized)
+            for (int i = 0; i < lenSphere; i++)
+            {
+                float fl = i / (float)lenSphere; // current lerp
+                float c = Mathf.Cos(fl * (float)(Math.PI * 2.0));
+                float s = Mathf.Sin(fl * (float)(Math.PI * 2.0));
+
+                // Rotate using 'direction'.
+                Vector3 setVector = new Vector3(c, s, 0f);
+                if (direction != Vector3.zero)
+                    setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+
+                v[i] = setVector;
+            }
+
+            int len = v.Length;
+            for (int i = 0; i < len; i++)
+            {
+                // Calculate sphere points using radius
+                Vector3 sX = pos + (radius * v[(0 * len) + i]);
+                Vector3 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
+
+                Debug.DrawLine(sX, eX, color, duration, depthTest);
+            }
+        }
+        /// <summary>
+        /// Draws a circle to the <see cref="Debug"/> context.
+        /// <br>Contained in the depth test, meaning the drawn circle lines can be obscured by other objects.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, float radius, Vector3 direction, Color color, float duration)
+        {
+            DrawCircle(pos, radius, direction, color, duration, true);
+        }
+        /// <summary>
+        /// Draws a circle to the <see cref="Debug"/> context.
+        /// <br>Has no duration + contained in depth test.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, float radius, Vector3 direction, Color color)
+        {
+            DrawCircle(pos, radius, direction, color, 0f, true);
+        }
+        /// <summary>
+        /// Draws a circle to the <see cref="Debug"/> context.
+        /// <br>Color is <see cref="Color.white"/>, no duration and contained in the depth test.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, float radius, Vector3 direction)
+        {
+            DrawCircle(pos, radius, direction, Color.white, 0f, true);
+        }
+        /// <summary>
+        /// Draws a circle to the <see cref="Debug"/> context.
+        /// <br>Direction looks towards <c>-forward</c>, no duration and contained in the depth test.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, float radius, Color color)
+        {
+            DrawCircle(pos, radius, Vector3.zero, color, 0f, true);
+        }
+        /// <summary>
+        /// Draws a circle to the <see cref="Debug"/> context.
+        /// <br>Direction looks towards <c>-forward</c>, color is <see cref="Color.white"/>, no duration and contained in the depth test.</br>
+        /// </summary>
+        public static void DrawCircle(Vector3 pos, float radius)
+        {
+            DrawCircle(pos, radius, Vector3.zero, Color.white, 0f, true);
         }
 
         /// <summary>

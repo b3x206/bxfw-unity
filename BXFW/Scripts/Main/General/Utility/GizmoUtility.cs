@@ -67,7 +67,7 @@ namespace BXFW
         /// <param name="pos">Position of the circle.</param>
         /// <param name="direction">Direction that the circle looks towards. Set to Vector3.zero to look towards <c>forward</c>.</param>
         /// <param name="radius">Radius of the circle.</param>
-        public static void DrawCircle(Vector3 pos, Vector3 direction, float radius)
+        public static void DrawWireCircle(Vector3 pos, float radius, Vector3 direction)
         {
             int lenSphere = 16;
             Vector3[] v = new Vector3[lenSphere]; // Sphere points (normalized)
@@ -99,11 +99,11 @@ namespace BXFW
         /// Draws a circle to the scene using <see cref="Gizmos"/> with switchable color.
         /// <br>Modifies <see cref="Gizmos.color"/> and resets it to it's previous value.</br>
         /// </summary>
-        public static void DrawCircle(Vector3 pos, Vector3 direction, float radius, Color color)
+        public static void DrawWireCircle(Vector3 pos, float radius, Vector3 direction, Color color)
         {
             var gColor = Gizmos.color;
             Gizmos.color = color;
-            DrawCircle(pos, direction, radius);
+            DrawWireCircle(pos, radius, direction);
             Gizmos.color = gColor;
         }
 
