@@ -558,6 +558,21 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
+        /// Returns whether if this 'SerializedObject' is disposed.
+        /// </summary>
+        public static bool IsDisposed(this SerializedObject obj)
+        {
+            return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
+        }
+        /// <summary>
+        /// Returns whether if this 'SerializedProperty' is disposed.
+        /// </summary>
+        public static bool IsDisposed(this SerializedProperty obj)
+        {
+            return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
+        }
+
+        /// <summary>
         /// Returns the children of the SerializedProperty.
         /// </summary>
         public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)

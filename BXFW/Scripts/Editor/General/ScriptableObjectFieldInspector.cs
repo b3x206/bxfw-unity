@@ -10,6 +10,7 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using System.Collections;
+using UnityEditor.Graphs;
 
 namespace BXFW
 {
@@ -124,9 +125,15 @@ namespace BXFW
         /// </summary>
         protected void SetValueOfTarget(SerializedProperty property, T obj, bool allowUndo = true)
         {
+            if (property.IsDisposed() || property.serializedObject.IsDisposed())
+            {
+                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed 'SerializedProperty' is <b>disposed</b>. This most likely happened because this method was called from a delegate.");
+            }
+
+            UnityEngine.Object dirtyTargetObject = property.serializedObject.targetObject;
             if (allowUndo)
-                Undo.RecordObject(property.serializedObject.targetObject, string.Format("Set value of {0}", property.name));
-            
+                Undo.RecordObject(dirtyTargetObject, string.Format("Set value of {0}", property.name));
+
             // Set value
             // If the parent is an array, set the target index into the 'obj'
             var parentTargetPair = property.GetParentOfTargetField();
@@ -199,11 +206,11 @@ namespace BXFW
             // Forces unity to serialize the assigned object
             // (Undo.RecordObject does this anyways, this is no undo force serialization)
             if (!allowUndo)
-                EditorUtility.SetDirty(property.serializedObject.targetObject);
+                EditorUtility.SetDirty(dirtyTargetObject);
 
             // This is very necessary to save the reference!
             // (Otherwise it doesn't save the file reference unless it's a default, non-prefab unity scene)
-            AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
+            AssetDatabase.SaveAssetIfDirty(dirtyTargetObject);
         }
         /// <summary>
         /// Sets value of target.
@@ -218,8 +225,11 @@ namespace BXFW
             if (property == null)
                 throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
 
-            bool targetParentIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
-            bool targetParentHasAssetPath = !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
+            // property.serializedObject could be disposed if this is called from a delegate
+            // If this is disposed, assume this isn't in an prefab or it has an asset path.
+            bool isDisposedAny = property.IsDisposed() || property.serializedObject.IsDisposed();
+            bool targetParentIsPrefab = !isDisposedAny && PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
+            bool targetParentHasAssetPath = !isDisposedAny && !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
 
             if ((targetParentIsPrefab || targetParentHasAssetPath) && obj != null)
             {
@@ -257,6 +267,7 @@ namespace BXFW
             }
 
             SetValueOfTarget(property, obj);
+            property.Dispose(); // Dispose after being called from delegate, as the passed property is a clone.
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -281,17 +292,25 @@ namespace BXFW
                         {
                             if (type.IsSubclassOf(typeof(T)) && type != typeof(T))
                             {
-                                var pow = ScriptableObject.CreateInstance(type) as T;
+                                T elem = ScriptableObject.CreateInstance(type) as T;
 
-                                typeMenus.AddItem(new GUIContent(
-                                    string.Format("New {0}{1}",
-                                    // append a dot (.) if the namespace isn't blank.
-                                    !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)), false,
+                                // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
+                                // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
+                                var copySO = new SerializedObject(property.serializedObject.targetObject);
+                                SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
+
+                                typeMenus.AddItem(
+                                    new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
+                                    false,
                                     () =>
                                     {
                                         // Apply value
-                                        SetValueOfTargetDelegate(property, (T)ScriptableObject.CreateInstance(type));
-                                    });
+                                        SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
+                                        // Dispose tempoary vars
+                                        copySO.Dispose();
+                                        copyProp.Dispose();
+                                    }
+                               );
                             }
                         }
                     }
@@ -447,7 +466,7 @@ namespace BXFW
                         // Key is already contained on different drawn property, and is being planned to be drawn for different property path.
                         // The 'SingleOrDefault' returns null string if there's no matching target value.
                         // (ensure the passed pair object actually contains the clone on the appopriate property and fix issue #2)
-                        else if (propPair.Key != key && existingProp.objectReferenceValue == propPair.Value)
+                        else if (propPair.Key != key && existingProp.objectReferenceValue == propPair.Value && propPair.Value != null)
                         {
                             // Clone 'target' and paste it to 'target'
                             // TODO : Only do this in the arrays (or test if other objects work [such as 2 monobehaviours drawn at the same time with same scriptable object] correctly),
