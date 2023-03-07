@@ -1,19 +1,62 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+
 using BXFW.Tools.Editor;
 using BXFW.SceneManagement;
+using System.IO;
 using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
+    public class UnitySceneReferenceBuildCallback : IPreprocessBuildWithReport, IPostprocessBuildWithReport
+    {
+        public int callbackOrder => 0;
+        public static bool DeleteSceneListAfterBuild = true;
+
+        private const string RELATIVE_DIR_NAME = "SceneList";
+        private const string FILE_NAME = "ListReference";
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            // Pack the references with a serialized list of scene references
+            // This class is stored in 'UnitySceneReference'?
+            if (UnitySceneReferenceList.Instance == null)
+                UnitySceneReferenceList.CreateEditorInstance(RELATIVE_DIR_NAME, FILE_NAME);
+
+            SceneEntry[] entries = new SceneEntry[EditorBuildSettings.scenes.Length];
+            for (int i = 0; i < EditorBuildSettings.scenes.Length; i++)
+            {
+                var editorScene = EditorBuildSettings.scenes[i];
+                entries[i] = new SceneEntry(editorScene.path);
+            }
+
+            UnitySceneReferenceList.Instance.entries = entries;
+        }
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            if (DeleteSceneListAfterBuild)
+            {
+                string assetDirRelative = string.Format("Assets/Resources/{0}", RELATIVE_DIR_NAME);
+                
+                AssetDatabase.DeleteAsset(string.Format("{0}.asset", Path.Combine(assetDirRelative, FILE_NAME)));
+                AssetDatabase.Refresh();
+                Directory.Delete(Path.Combine(Directory.GetCurrentDirectory(), assetDirRelative));
+            }
+        }
+    }
+
     /// <summary>
     /// Draws the property inspector for the <see cref="UnitySceneReference"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(UnitySceneReference))]
-    public class UnitySceneReferenceDrawer : PropertyDrawer
+    internal class UnitySceneReferenceDrawer : PropertyDrawer
     {
         private SceneAsset sceneAsset;
         private SerializedProperty sceneEditorPath;
+        private SerializedProperty sceneIndex;
         private SerializedProperty sceneLoadable;
         private bool ShowOtherGUI => !string.IsNullOrEmpty(sceneEditorPath.stringValue);
         private bool ShowWarningGUI(SerializedProperty property)
@@ -26,6 +69,7 @@ namespace BXFW.ScriptEditor
         private void GatherRelativeProperties(SerializedProperty property)
         {
             sceneEditorPath = property.FindPropertyRelative("sceneEditorPath");
+            sceneIndex = property.FindPropertyRelative("sceneIndex");
             sceneLoadable = property.FindPropertyRelative("sceneLoadable");
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -81,7 +125,7 @@ namespace BXFW.ScriptEditor
 
                 var gEnabled = GUI.enabled;
                 GUI.enabled = false;
-                GUI.Label(scAssetGUIAreaRect, $"I:{target.SceneIndex}");
+                GUI.Label(scAssetGUIAreaRect, $"I:{target.SceneIndex}", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
                 GUI.enabled = gEnabled;
             }
 
@@ -117,6 +161,7 @@ namespace BXFW.ScriptEditor
 
                             // Assign and log the index
                             EditorBuildSettings.scenes = scenes.ToArray();
+                            sceneIndex.intValue = EditorBuildSettings.scenes.Length - 1;
                             Debug.Log($"[UnitySceneReference] Assigned scene to index {EditorBuildSettings.scenes.Length - 1}.");
                         }
                     }

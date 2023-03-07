@@ -6,23 +6,74 @@ namespace BXFW.SceneManagement
 {
     /// <summary>
     /// Allows for scripts to reference a unity scene.
-    /// <br>This class is useful to keep scene indexes in other script, without making them weak links.</br>
+    /// <br>This class is useful to keep scene indexes in other script, without making them weak links. (as long as <see cref="SceneLoadable"/> is true, from the editor)</br>
     /// </summary>
     [Serializable]
     public sealed class UnitySceneReference
     {
         [SerializeField] private string sceneEditorPath; // Another setting meant to be editor written, but can be kept in runtime. (As it's a 'SceneManager' method)
+        [SerializeField] private int sceneIndex = -1;    // Hmm, SceneManager.GetSceneByPath only works if the scene is open, so we really need the index.
         [SerializeField] private bool sceneLoadable;     // Editor writable only readonly setting
+
+        private void CheckSceneIndexValidity()
+        {
+#if UNITY_EDITOR
+            for (int i = 0; i < UnityEditor.EditorBuildSettings.scenes.Length; i++)
+            {
+                var editorScn = UnityEditor.EditorBuildSettings.scenes[i];
+
+                // Check current index validity
+                if (editorScn.path == sceneEditorPath)
+                {
+                    if (sceneIndex != i)
+                    {
+                        // Modify index if invalid
+                        sceneIndex = i;
+                    }
+                }
+            }
+#else
+            // UnitySceneReferenceList exists on built applications
+            for (int i = 0; i < UnitySceneReferenceList.Instance.entries.Length; i++)
+            {
+                var editorScn = UnitySceneReferenceList.Instance.entries[i];
+
+                // Check current index validity
+                if (editorScn.editorPath == sceneEditorPath)
+                {
+                    if (sceneIndex != i)
+                    {
+                        // Modify index if invalid
+                        sceneIndex = i;
+                    }
+                }
+            }
+#endif
+        }
 
         /// <summary>
         /// The scene, loaded from the given editor path.
+        /// <br>Only returns a valid scene if the scene was loaded.</br>
         /// <br>See <see cref="SceneLoadable"/> and <see cref="SceneIndex"/> for </br>
         /// </summary>
         public Scene Scene
         {
             get
             {
-                return SceneManager.GetSceneByPath(sceneEditorPath);
+                // These methods only work if the scene is currently open
+                // see : https://forum.unity.com/threads/scenemanager-getscenebyxxx-is-totally-broken.387958/
+                // Basically, we can't access the scene array, we can only know if we load all scenes one by one.
+                Scene loadedScene = SceneLoadable ? SceneManager.GetSceneByBuildIndex(sceneIndex) : SceneManager.GetSceneByPath(sceneEditorPath);
+
+                if (!loadedScene.IsValid())
+                {
+                    Debug.LogWarning("[UnitySceneReference::(get)Scene] Given scene is not valid because it is either not loaded or it is not loadable.");
+                    return loadedScene;
+                }
+
+                CheckSceneIndexValidity();
+
+                return loadedScene;
             }
         }
         /// <summary>
@@ -33,8 +84,9 @@ namespace BXFW.SceneManagement
         {
             get
             {
+                CheckSceneIndexValidity();
 
-                return Scene.buildIndex;
+                return sceneIndex;
             }
         }
         /// <summary>
@@ -44,6 +96,8 @@ namespace BXFW.SceneManagement
         {
             get
             {
+                CheckSceneIndexValidity();
+
                 return Scene.name;
             }
         }
@@ -54,6 +108,8 @@ namespace BXFW.SceneManagement
         {
             get
             {
+                CheckSceneIndexValidity();
+
                 return sceneEditorPath;
             }
         }
@@ -66,7 +122,13 @@ namespace BXFW.SceneManagement
         {
             get
             {
-                return Scene.buildIndex >= 0 && Scene.buildIndex < SceneManager.sceneCountInBuildSettings && sceneLoadable;
+                CheckSceneIndexValidity();
+
+                return SceneIndex >= 0 && SceneIndex < SceneManager.sceneCountInBuildSettings && sceneLoadable;
+            }
+            set
+            {
+                sceneLoadable = value;
             }
         }
     }

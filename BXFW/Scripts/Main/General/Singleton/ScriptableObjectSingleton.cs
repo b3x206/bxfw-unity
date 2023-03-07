@@ -46,7 +46,7 @@ namespace BXFW
         private const string ASSET_EXT_PREFIX = ".asset";
         /// <summary>
         /// <c>EDITOR ONLY : </c>
-        /// Creates instance at given relative directory.
+        /// Creates instance at given relative directory. Handles <see cref="UnityEditor.AssetDatabase"/> related methods.
         /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called</br>
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
