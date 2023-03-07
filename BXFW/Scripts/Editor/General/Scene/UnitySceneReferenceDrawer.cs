@@ -43,7 +43,7 @@ namespace BXFW.ScriptEditor
                 
                 AssetDatabase.DeleteAsset(string.Format("{0}.asset", Path.Combine(assetDirRelative, FILE_NAME)));
                 AssetDatabase.Refresh();
-                Directory.Delete(Path.Combine(Directory.GetCurrentDirectory(), assetDirRelative));
+                FileUtil.DeleteFileOrDirectory(assetDirRelative);
             }
         }
     }
