@@ -56,7 +56,7 @@ namespace BXFW.SceneManagement
         /// <br>Only returns a valid scene if the scene was loaded.</br>
         /// <br>See <see cref="SceneLoadable"/> and <see cref="SceneIndex"/> for </br>
         /// </summary>
-        public Scene Scene
+        public Scene CurrentOpenScene
         {
             get
             {
@@ -65,11 +65,8 @@ namespace BXFW.SceneManagement
                 // Basically, we can't access the scene array, we can only know if we load all scenes one by one.
                 Scene loadedScene = SceneLoadable ? SceneManager.GetSceneByBuildIndex(sceneIndex) : SceneManager.GetSceneByPath(sceneEditorPath);
 
-                if (!loadedScene.IsValid())
-                {
-                    Debug.LogWarning("[UnitySceneReference::(get)Scene] Given scene is not valid because it is either not loaded or it is not loadable.");
-                    return loadedScene;
-                }
+                //if (!loadedScene.IsValid())
+                //    Debug.LogWarning("[UnitySceneReference::(get)Scene] Given scene is not valid because it is not loaded.");
 
                 CheckSceneIndexValidity();
 
@@ -98,7 +95,7 @@ namespace BXFW.SceneManagement
             {
                 CheckSceneIndexValidity();
 
-                return Scene.name;
+                return CurrentOpenScene.name;
             }
         }
         /// <summary>
@@ -115,7 +112,7 @@ namespace BXFW.SceneManagement
         }
         /// <summary>
         /// Returns whether if the gathered scene is loadable.
-        /// <br>If not, the <see cref="Scene"/> may not return null (or it can be null), but the given scene can't be loaded at all.</br>
+        /// <br>If not, the <see cref="CurrentOpenScene"/> may not return null (or it can be null), but the given scene can't be loaded at all.</br>
         /// <br>This is because unity requires scenes to be registered on Player Settings.</br>
         /// </summary>
         public bool SceneLoadable

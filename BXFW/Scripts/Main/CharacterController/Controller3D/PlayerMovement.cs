@@ -33,7 +33,7 @@ namespace BXFW
         [Range(0f, .999f)] public float TPS_tsRotateDamp = .1f;
         
         [InspectorLine(.4f, .4f, .4f), Header("Input")]
-        public bool canInputMove = true;
+        public bool useInternalInputMove = true;
         public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
         public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
         public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
@@ -41,6 +41,10 @@ namespace BXFW
         public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
         public CustomInputEvent moveJumpInput     = new KeyCode[] { KeyCode.Space };
         public CustomInputEvent moveCrouchInput   = new KeyCode[] { KeyCode.LeftControl };
+        /// <summary>
+        /// Given external input movement to the player.
+        /// </summary>
+        [HideInInspector] public Vector2 moveInput;
         /// <summary>
         /// Returns whether if the any of the 'move' input events is being done.
         /// <br>Excluding <see cref="moveRunInput"/>, as that sets a toggle.</br>
@@ -102,14 +106,17 @@ namespace BXFW
             get { return m_internalVelocity; }
             set { m_externVelocity = value; }
         }
-        private Vector3 mWishDir;
+        /// <summary>
+        /// This 'wishdir' is set to input in <see cref="PlayerMove(Vector2)"/>.
+        /// </summary>
+        private Vector3 m_WishDir;
         /// <summary>
         /// Direction that the input wishes to move.
         /// <br>Set in <see cref="PlayerMove(Vector2)"/>.</br>
         /// </summary>
         public Vector3 WishDir
         {
-            get { return mWishDir; }
+            get { return m_WishDir; }
         }
 
         /////////// ------------
@@ -173,10 +180,13 @@ namespace BXFW
             IsGrounded = useGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
 
             //// Main Movement    ///
-            Vector3 inputVelocity = canInputMove ? PlayerMove(new Vector2(
-                Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
-                Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
-            )) * Time.fixedDeltaTime : Vector3.zero;
+            if (useInternalInputMove)
+                moveInput = new Vector2(
+                    Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
+                    Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
+                );
+
+            Vector3 inputVelocity = PlayerMove(moveInput) * Time.fixedDeltaTime;
 
             //// Gravity         ////
             PlayerGravity();
@@ -200,7 +210,7 @@ namespace BXFW
         /// <returns>Player movement vector. (NOT multiplied with <see cref="Time.deltaTime"/>)</returns>
         public Vector3 PlayerMove(Vector2 input)
         {
-            if (!canMove)
+            if (!canMove || input == Vector2.zero)
                 return Vector3.zero;
 
             Vector3 move_actualDir; // Dir on return;
@@ -256,7 +266,7 @@ namespace BXFW
                 move_actualDir = Vector3.zero;
             }
 
-            mWishDir = move_actualDir;
+            m_WishDir = move_actualDir;
             return move_actualDir * move_currentSpeed;
         }
 

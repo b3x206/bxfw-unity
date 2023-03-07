@@ -20,9 +20,9 @@ namespace BXFW.Tools.Editor
     public enum MatchGUIActionOrder
     {
         // Default Value
-        Before = 0,
-        After = 1 << 0,
-        Omit = 1 << 1,
+        Before = 1 << 0,
+        After = 1 << 1,
+        Omit = 1 << 2,
 
         OmitAndInvoke = After | Omit
     }

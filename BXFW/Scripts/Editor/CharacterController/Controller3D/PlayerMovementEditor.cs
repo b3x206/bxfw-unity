@@ -18,7 +18,7 @@ namespace BXFW.ScriptEditor
             {
                 dict.Add(nameof(target.canMove), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => EditorGUILayout.HelpBox("Player will not move. These settings won't change anything.", MessageType.Info)));
             }
-            if (!target.canInputMove)
+            if (!target.useInternalInputMove)
             {
                 dict.Add(nameof(target.moveForwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
                 dict.Add(nameof(target.moveBackwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));

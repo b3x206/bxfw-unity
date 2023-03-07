@@ -14,6 +14,30 @@ using System.Collections;
 namespace BXFW
 {
     /// <summary>
+    /// Data type that contains a draw command.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public struct DrawGUICommand<T> 
+        where T : ScriptableObject
+    {
+        /// <summary>
+        /// Return the given GUI height.
+        /// <br>Param In 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br>Should return : Intended GUI height.</br>
+        /// <br/>
+        /// <br>If this method is left blank, it should be ignored and height should be assumed as 0.</br>
+        /// </summary>
+        public Func<T, float> GetGUIHeight;
+        /// <summary>
+        /// Create the GUI in this delegate.
+        /// <br>Parameter 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br>Parameter 2 : When this 'DrawGUI' call was made. This event can be called twice with different flags (but only 1 flag).</br>
+        /// <br>Parameter 3 : Allocated rectangle for the given GUI.</br>
+        /// </summary>
+        public Action<T, MatchGUIActionOrder, Rect> DrawGUI;
+    }
+
+    /// <summary>
     /// Creates a ScriptableObject inspector.
     /// <br>Derive from this class and use the <see cref="CustomPropertyDrawer"/> attribute with same type as <typeparamref name="T"/>.</br>
     /// </summary>
@@ -47,6 +71,10 @@ namespace BXFW
         /// <br>Override to disable/enable this function, as it's <b>experimental</b>.</br>
         /// </summary>
         public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DEFAULT_INSPECTOR_TYPE_NAME;
+        /// <summary>
+        /// Custom commands for the default inspector.
+        /// </summary>
+        public virtual Dictionary<string, KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>>> DefaultInspectorCustomCommands => null;
         /// <summary>
         /// Scroll position on the reserved rect.
         /// </summary>
@@ -351,7 +379,22 @@ namespace BXFW
                         continue;
                     }
 
-                    h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                    KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>> cmd = default;
+                    bool hasCustomEditorCommands = DefaultInspectorCustomCommands != null && DefaultInspectorCustomCommands.TryGetValue(prop.name, out cmd);
+
+                    if (hasCustomEditorCommands)
+                    {
+                        if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                            h += (cmd.Value.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
+
+                        if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                    }
+                    else
+                    {
+                        h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                    }
+
                     expanded = false; // used for the expand arrow of unity
                 }
             }
@@ -379,6 +422,10 @@ namespace BXFW
         }
         private Rect GetPropertyRect(Rect position, float height = -1f)
         {
+            // Height == 0f => do nothing
+            if (Mathf.Approximately(height, 0f))
+                return position;
+
             // Reuse the copied struct
             position.y = currentY;
             position.height = height + HEIGHT_PADDING;
@@ -687,7 +734,24 @@ namespace BXFW
                         if (prop.propertyPath == "m_Script")
                             continue;
 
-                        EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                        KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>> cmd = default;
+                        bool hasCustomEditorCommands = DefaultInspectorCustomCommands != null && DefaultInspectorCustomCommands.TryGetValue(prop.name, out cmd);
+
+                        if (hasCustomEditorCommands)
+                        {
+                            if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
+                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+
+                            if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                                EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+
+                            if ((cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                        }
+                        else
+                        {
+                            EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                        }
 
                         expanded = false;
                     }
