@@ -79,7 +79,7 @@ namespace BXFW
         /// </summary>
         public CoroutineTask(IEnumerator c, bool autoStart = true)
         {
-            task = TaskManager.CreateTask(c);
+            task = CoroutineTaskManager.CreateTask(c);
             task.Finished += TaskFinished;
 
             if (autoStart)
@@ -118,18 +118,18 @@ namespace BXFW
                 handler(manual);
         }
 
-        private readonly TaskManager.TaskState task;
+        private readonly CoroutineTaskManager.TaskState task;
     }
 
     /// <summary>
     /// Manages all created <see cref="CoroutineTask"/>'s.
     /// </summary>
-    internal class TaskManager : MonoBehaviour
+    public class CoroutineTaskManager : MonoBehaviour
     {
         /// <summary>
         /// Singleton <see cref="MonoBehaviour"/> variable to run coroutines over.
         /// </summary>
-        private static TaskManager instance;
+        private static CoroutineTaskManager instance;
 
         /// <summary>
         /// Object that represents state of the current coroutine task assigned.
@@ -241,7 +241,7 @@ namespace BXFW
 
         /// <summary>
         /// Constructs a <see cref="TaskState"/> object.
-        /// <br>Initilazes <see cref="TaskManager"/> if it isn't initilazed.</br>
+        /// <br>Initilazes <see cref="CoroutineTaskManager"/> if it isn't initilazed.</br>
         /// </summary>
         /// <param name="coroutine"></param>
         /// <returns></returns>
@@ -250,7 +250,7 @@ namespace BXFW
             if (instance == null)
             {
                 GameObject go = new GameObject("CoroutineTaskManager");
-                instance = go.AddComponent<TaskManager>();
+                instance = go.AddComponent<CoroutineTaskManager>();
                 DontDestroyOnLoad(instance);
             }
 
