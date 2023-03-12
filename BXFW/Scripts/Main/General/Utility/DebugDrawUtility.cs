@@ -148,6 +148,40 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Draws a cube to the debug context.
+        /// <br>This cube is not rotated by function.</br>
+        /// </summary>
+        public static void DrawCube(Vector3 pos, Vector2 size, Color color, float duration, bool depthTest)
+        {
+            Vector3[] verts = new Vector3[4];
+
+            // 2-----3
+            // |     |
+            // |     |
+            // 0-----1
+            verts[0] = new Vector3(pos.x - (size.x / 2f), pos.y - (size.y / 2f), pos.z);
+            verts[1] = new Vector3(pos.x + (size.x / 2f), pos.y - (size.y / 2f), pos.z);
+            verts[2] = new Vector3(pos.x - (size.x / 2f), pos.y + (size.y / 2f), pos.z);
+            verts[3] = new Vector3(pos.x + (size.x / 2f), pos.y + (size.y / 2f), pos.z);
+            Debug.DrawLine(verts[0], verts[1], color, duration, depthTest);
+            Debug.DrawLine(verts[0], verts[2], color, duration, depthTest);
+            Debug.DrawLine(verts[1], verts[3], color, duration, depthTest);
+            Debug.DrawLine(verts[2], verts[3], color, duration, depthTest);
+        }
+        public static void DrawCube(Vector3 pos, Vector2 size, Color color, float duration)
+        {
+            DrawCube(pos, size, color, duration, true);
+        }
+        public static void DrawCube(Vector3 pos, Vector2 size, Color color)
+        {
+            DrawCube(pos, size, color, 0f, true);
+        }
+        public static void DrawCube(Vector3 pos, Vector2 size)
+        {
+            DrawCube(pos, size, Color.white, 0f, true);
+        }
+
+        /// <summary>
         /// Draws an arrow in <see cref="Debug"/> context.
         /// <br>Draw color by default is <see cref="Color.white"/>.</br>
         /// </summary>

@@ -63,7 +63,7 @@ namespace BXFW
         {
             get
             {
-                return canMove && MoveInputIsPressed;
+                return canMove && (MoveInputIsPressed || (!useInternalInputMove && moveInput != Vector2.zero));
             }
         }
 
@@ -214,7 +214,14 @@ namespace BXFW
                 return Vector3.zero;
 
             Vector3 move_actualDir; // Dir on return;
-            float move_currentSpeed = moveRunInput ? runSpeed : speed;
+            float move_currentSpeed = speed;
+            if (useInternalInputMove)
+            {
+                if (moveRunInput)
+                {
+                    move_currentSpeed = runSpeed;
+                }
+            }
 
             float move_h = input.x;
             float move_v = input.y;

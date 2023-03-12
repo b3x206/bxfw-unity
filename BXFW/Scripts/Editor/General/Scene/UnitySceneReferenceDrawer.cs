@@ -3,14 +3,20 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 
-using BXFW.Tools.Editor;
-using BXFW.SceneManagement;
 using System.IO;
 using System.Collections.Generic;
 
+using BXFW.Tools.Editor;
+using BXFW.SceneManagement;
+
 namespace BXFW.ScriptEditor
 {
-    public class UnitySceneReferenceBuildCallback : IPreprocessBuildWithReport, IPostprocessBuildWithReport
+    /// <summary>
+    /// Creates a new file with all of the scenes listed.
+    /// <br>These scenes can be referenced strongly with dragging and dropping a Unity <see cref="SceneAsset"/>, with the index changing correctly on <see cref="UnitySceneReference"/>.</br>
+    /// <br>However, the scenes cannot handle being it's location changed (or name changed), and that's when it loses it's reference.</br>
+    /// </summary>
+    internal class UnitySceneReferenceBuildCallback : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         public int callbackOrder => 0;
         public static bool DeleteSceneListAfterBuild = true;

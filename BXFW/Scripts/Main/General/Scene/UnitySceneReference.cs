@@ -30,8 +30,12 @@ namespace BXFW.SceneManagement
                         // Modify index if invalid
                         sceneIndex = i;
                     }
+                    
+                    return;
                 }
             }
+
+            Debug.LogWarning(string.Format("[UnitySceneReference::CheckSceneIndexValidity] Given scene path {0} does not exist. Most likely this scene has been moved or re-named. Please re-assign the scene reference.", sceneEditorPath));
 #else
             // UnitySceneReferenceList exists on built applications
             for (int i = 0; i < UnitySceneReferenceList.Instance.entries.Length; i++)
@@ -46,8 +50,12 @@ namespace BXFW.SceneManagement
                         // Modify index if invalid
                         sceneIndex = i;
                     }
+
+                    return;
                 }
             }
+
+            Debug.LogError(string.Format("[UnitySceneReference::CheckSceneIndexValidity] Given scene path {0} does not exist. Most likely this scene has been moved or re-named. The scene will fail!", sceneEditorPath));
 #endif
         }
 
