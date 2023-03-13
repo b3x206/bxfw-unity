@@ -113,25 +113,27 @@ namespace BXFW
         /// <param name="text">Text to display and draw.</param>
         /// <param name="worldPos">Position in the world.</param>
         /// <param name="color">Color of the text. </param>
-        /// <param name="cullText">Should the text be culled if it's not visible by the camera?</param>
+        /// <param name="textStyle">Style of the drawn text.</param>
         /// <param name="oX">X offset.</param>
         /// <param name="oY">Y offset.</param>
-        public static void DrawText(string text, Vector3 worldPos, Color? color = null, bool cullText = true, float oX = 0f, float oY = 0f)
+        /// <param name="cullText">Should the text be culled if it's not visible by the camera?</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, GUIStyle textStyle, float oX, float oY, bool cullText = true)
         {
 #if UNITY_EDITOR
             Handles.BeginGUI();
 
             var restoreColor = GUI.color;
-
-            if (color.HasValue)
-                GUI.color = color.Value;
+            GUI.color = color;
+            if (textStyle == null)
+                textStyle = GUI.skin.label;
 
             var view = SceneView.currentDrawingSceneView;
             Vector3 screenPos = view.camera.WorldToScreenPoint(worldPos);
 
             if (cullText)
             {
-                if (screenPos.y < 0 || screenPos.y > Screen.height || screenPos.x < 0 || screenPos.x > Screen.width || screenPos.z < 0)
+                if (screenPos.y < 0 || screenPos.y > Screen.height || screenPos.x < 0 || screenPos.x > Screen.width || screenPos.z < 0 || 
+                    (textStyle != null && textStyle.fontSize <= 0))
                 {
                     GUI.color = restoreColor;
                     Handles.EndGUI();
@@ -139,7 +141,7 @@ namespace BXFW
                 }
             }
 
-            Handles.Label(TransformByPixel(worldPos, oX, oY), text);
+            Handles.Label(TransformByPixel(worldPos, oX, oY), text, textStyle);
 
             GUI.color = restoreColor;
 
@@ -148,6 +150,99 @@ namespace BXFW
             Debug.LogWarning("[GizmoUtility::DrawText] DrawText only works in unity editor.");
 #endif
         }
+        // -- textSize
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="textSize">Font size of the drawn text. You can also change this by using a <see cref="GUIStyle"/>.</param>
+        /// <param name="oX">X offset.</param>
+        /// <param name="oY">Y offset.</param>
+        /// <param name="cullText">Should the text be culled if it's not visible by the camera?</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, int textSize, float oX, float oY, bool cullText)
+        {
+            DrawText(text, worldPos, color, new GUIStyle(GUI.skin.label) { fontSize = textSize }, oX, oY, cullText);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="textSize">Font size of the drawn text. You can also change this by using a <see cref="GUIStyle"/>.</param>
+        /// <param name="oX">X offset.</param>
+        /// <param name="oY">Y offset.</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, int textSize, float oX, float oY)
+        {
+            DrawText(text, worldPos, color, new GUIStyle(GUI.skin.label) { fontSize = textSize }, oX, oY, true);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="textSize">Font size of the drawn text. You can also change this by using a <see cref="GUIStyle"/>.</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, int textSize)
+        {
+            DrawText(text, worldPos, color, new GUIStyle(GUI.skin.label) { fontSize = textSize }, 0f, 0f, true);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="textSize">Font size of the drawn text. You can also change this by using a <see cref="GUIStyle"/>.</param>
+        public static void DrawText(string text, Vector3 worldPos, int textSize)
+        {
+            DrawText(text, worldPos, Color.white, new GUIStyle(GUI.skin.label) { fontSize = textSize }, 0f, 0f, true);
+        }
+        // -- non-textSize
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="oX">X offset.</param>
+        /// <param name="oY">Y offset.</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, float oX, float oY, bool cullText = true)
+        {
+            DrawText(text, worldPos, color, null, oX, oY, cullText);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        /// <param name="cullText">Should the text be culled if it's not visible by the camera?</param>
+        public static void DrawText(string text, Vector3 worldPos, Color color, bool cullText)
+        {
+            DrawText(text, worldPos, color, null, 0f, 0f, cullText);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        /// <param name="color">Color of the text. </param>
+        public static void DrawText(string text, Vector3 worldPos, Color color)
+        {
+            DrawText(text, worldPos, color, null, 0f, 0f, true);
+        }
+        /// <summary>
+        /// Draws a text into the gizmos context.
+        /// </summary>
+        /// <param name="text">Text to display and draw.</param>
+        /// <param name="worldPos">Position in the world.</param>
+        public static void DrawText(string text, Vector3 worldPos)
+        {
+            DrawText(text, worldPos, Color.white, null, 0f, 0f, true);
+        }
+
         internal static Vector3 TransformByPixel(Vector3 position, float x, float y)
         {
             return TransformByPixel(position, new Vector3(x, y));

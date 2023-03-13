@@ -64,4 +64,39 @@ namespace BXFW
 
         public ClampAttribute(double min, double max) { this.min = min; this.max = max; }
     }
+
+    public class ClampVectorAttribute : PropertyAttribute
+    {
+        public readonly double minX, minY, minZ, minW;
+        public readonly double maxX, maxY, maxZ, maxW;
+
+        public ClampVectorAttribute(
+            double minX, double minY, double minZ, double minW,
+            double maxX, double maxY, double maxZ, double maxW
+        )
+        {
+            this.minX = minX;
+            this.minY = minY;
+            this.minZ = minZ;
+            this.minW = minW;
+
+            this.maxX = maxX;
+            this.maxY = maxY;
+            this.maxZ = maxZ;
+            this.maxW = maxW;
+        }
+        public ClampVectorAttribute(
+            double minX, double minY, double minZ,
+            double maxX, double maxY, double maxZ
+        ) : this(minX, minY, minZ, 0f, maxX, maxY, maxZ, 0f)
+        { }
+        public ClampVectorAttribute(
+            double minX, double minY,
+            double maxX, double maxY
+        ) : this(minX, minY, 0f, 0f, maxX, maxY, 0f, 0f)
+        { }
+        public ClampVectorAttribute(double min, double max) :
+            this(min, min, min, min, max, max, max, max)
+        { }
+    }
 }

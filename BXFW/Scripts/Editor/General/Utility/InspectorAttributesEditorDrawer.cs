@@ -185,4 +185,119 @@ namespace BXFW.ScriptEditor
             }
         }
     }
+
+    [CustomPropertyDrawer(typeof(ClampVectorAttribute))]
+    internal class ClampVectorDrawer : PropertyDrawer
+    {
+        private const float warnHelpBoxRectHeight = 22f;
+        private ClampVectorAttribute CAttribute => attribute as ClampVectorAttribute;
+        private const float DR_PADDING = 2f;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float addHeight = 0f;
+
+            if (property.propertyType != SerializedPropertyType.Integer && property.propertyType != SerializedPropertyType.Float)
+            {
+                addHeight += warnHelpBoxRectHeight;
+            }
+            else
+            {
+                addHeight += EditorGUIUtility.singleLineHeight + DR_PADDING;
+            }
+
+            return addHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            position.height -= DR_PADDING;
+            position.y += DR_PADDING / 2f;
+
+            #region Vector2
+            if (property.propertyType == SerializedPropertyType.Vector2)
+            {
+                EditorGUI.BeginChangeCheck();
+                var v = EditorGUI.Vector2Field(position, label, property.vector2Value); 
+                var vClamped = new Vector2(
+                    Mathf.Clamp(v.x, (float)CAttribute.minX, (float)CAttribute.maxX), 
+                    Mathf.Clamp(v.y, (float)CAttribute.minY, (float)CAttribute.maxY)
+                );
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped vector");
+                    property.vector2Value = vClamped;
+                }
+            }
+            else if (property.propertyType == SerializedPropertyType.Vector2Int)
+            {
+                EditorGUI.BeginChangeCheck();
+                var v = EditorGUI.Vector2IntField(position, label, property.vector2IntValue);
+                var vClamped = new Vector2Int(
+                    Mathf.Clamp(v.x, (int)CAttribute.minX, (int)CAttribute.maxX),
+                    Mathf.Clamp(v.y, (int)CAttribute.minY, (int)CAttribute.maxY)
+                );
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped vector");
+                    property.vector2IntValue = vClamped;
+                }
+            }
+            #endregion
+            #region Vector3
+            else if (property.propertyType == SerializedPropertyType.Vector3)
+            {
+                EditorGUI.BeginChangeCheck();
+                var v = EditorGUI.Vector3Field(position, label, property.vector3Value);
+                var vClamped = new Vector3(
+                    Mathf.Clamp(v.x, (float)CAttribute.minX, (float)CAttribute.maxX),
+                    Mathf.Clamp(v.y, (float)CAttribute.minY, (float)CAttribute.maxY),
+                    Mathf.Clamp(v.z, (float)CAttribute.minZ, (float)CAttribute.maxZ)
+                );
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped vector");
+                    property.vector3Value = vClamped;
+                }
+            }
+            else if (property.propertyType == SerializedPropertyType.Vector3Int)
+            {
+                EditorGUI.BeginChangeCheck();
+                var v = EditorGUI.Vector3IntField(position, label, property.vector3IntValue);
+                var vClamped = new Vector3Int(
+                    Mathf.Clamp(v.x, (int)CAttribute.minX, (int)CAttribute.maxX),
+                    Mathf.Clamp(v.y, (int)CAttribute.minY, (int)CAttribute.maxY),
+                    Mathf.Clamp(v.z, (int)CAttribute.minZ, (int)CAttribute.maxZ)
+                );
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped vector");
+                    property.vector3IntValue = vClamped;
+                }
+            }
+            #endregion
+            #region Vector4
+            else if (property.propertyType == SerializedPropertyType.Vector4)
+            {
+                EditorGUI.BeginChangeCheck();
+                var v = EditorGUI.Vector4Field(position, label, property.vector4Value);
+                var vClamped = new Vector4(
+                    Mathf.Clamp(v.x, (float)CAttribute.minX, (float)CAttribute.maxX),
+                    Mathf.Clamp(v.y, (float)CAttribute.minY, (float)CAttribute.maxY),
+                    Mathf.Clamp(v.z, (float)CAttribute.minZ, (float)CAttribute.maxZ),
+                    Mathf.Clamp(v.w, (float)CAttribute.minZ, (float)CAttribute.maxW)
+                );
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped vector");
+                    property.vector4Value = vClamped;
+                }
+            }
+            #endregion
+            else
+            {
+                EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either Vector or VectorInt.", MessageType.Warning);
+            }
+        }
+    }
 }
