@@ -1,4 +1,3 @@
-using BXFW;
 using BXFW.Tools.Editor;
 using System.Collections.Generic;
 using System.Linq;
@@ -343,7 +342,7 @@ namespace BXFW
                                 GUILayout.EndScrollView();
                                 return;
                             }
-                            if (ParallaxObjects.All(x => x == null))
+                            if (ParallaxObjects.Any(x => x == null))
                             { 
                                 Debug.LogWarning("[ParallaxBGEditor] There is blank/null background objects.");
                                 GUILayout.EndScrollView();

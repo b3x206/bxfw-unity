@@ -1,121 +1,8 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using BXFW;
 
 namespace BXFW
 {
-    /// <summary>
-    /// Extensions for the <see cref="TilingSpriteRenderer"/>.
-    /// </summary>
-    public static class TilingSpriteRendererExtensions
-    {
-        /// <summary>
-        /// Helper method for getting sprite alignment from sprite.
-        /// </summary>
-        public static SpriteAlignment GetSpriteAlignment(Sprite spriteAlign)
-        {
-            if (spriteAlign == null)
-            {
-                Debug.LogError("[TilingSpriteRenderer::GetSpriteAlignment] The sprite renderer passed is null.");
-                return SpriteAlignment.Center;
-            }
-
-            // We were using box collider bounds, instead we use standard bounds.
-            // var sRendCol = sRend.AddComponent<BoxCollider2D>();
-            float colX = spriteAlign.bounds.center.x;
-            float colY = spriteAlign.bounds.center.y;
-
-            // Find where is the center
-            if (colX > 0 && colY < 0)
-                return (SpriteAlignment.TopLeft);
-            else if (colX < 0 && colY < 0)
-                return (SpriteAlignment.TopRight);
-            else if (colX == 0 && colY < 0)
-                return (SpriteAlignment.TopCenter);
-            else if (colX > 0 && colY == 0)
-                return (SpriteAlignment.LeftCenter);
-            else if (colX < 0 && colY == 0)
-                return (SpriteAlignment.RightCenter);
-            else if (colX > 0 && colY > 0)
-                return (SpriteAlignment.BottomLeft);
-            else if (colX < 0 && colY > 0)
-                return (SpriteAlignment.BottomRight);
-            else if (colX == 0 && colY > 0)
-                return (SpriteAlignment.BottomCenter);
-            else if (colX == 0 && colY == 0)
-                return (SpriteAlignment.Center);
-            else
-                return (SpriteAlignment.Custom);
-        }
-
-        /// <summary>
-        /// Resizes an sprite mask to the size of the camera fit.
-        /// </summary>
-        /// <param name="relativeCam">Ortographic camera to resize.</param>
-        /// <param name="sRend">The mask to resize.</param>
-        /// <param name="resizeAxis">Axis to resize. Adjust accordingly. 1 means positive on that axis.</param>
-        public static void ResizeSpriteMaskToScreen(this Camera relativeCam, TilingSpriteRenderer sRend, float setMultiplier = 1f, Vector2Int? resizeAxis = null)
-        {
-            if (resizeAxis == null)
-            {
-                resizeAxis = Vector2Int.one;
-            }
-
-            if (sRend == null || relativeCam == null)
-            {
-                Debug.LogWarning("[Additionals::ResizeSpriteToScreen] There is a null variable. Returning.");
-                return;
-            }
-
-            sRend.transform.localScale = new Vector3(1, 1, 1);
-
-            var width = sRend.tiledSprite.bounds.size.x;
-            var height = sRend.tiledSprite.bounds.size.y;
-
-            var worldScreenHeight = relativeCam.orthographicSize * 2.0f;
-            float worldScreenWidth = 1f;
-            if (Application.isEditor)
-                worldScreenWidth = worldScreenHeight / Screen.currentResolution.height * Screen.currentResolution.width;
-            else if (Application.isPlaying)
-                worldScreenWidth = worldScreenHeight / Screen.height * Screen.width;
-
-            Vector2 SetValue = new Vector2(worldScreenWidth / width, worldScreenHeight / height) * setMultiplier;
-            // Debug.Log("{SetValue}");
-
-            if (resizeAxis == Vector2Int.one)
-            {
-                sRend.transform.localScale =
-                        new Vector3(SetValue.x, SetValue.y, sRend.transform.localScale.z);
-            }
-            else if (resizeAxis == Vector2Int.right)
-            {
-                sRend.transform.localScale =
-                        new Vector3(SetValue.x, sRend.transform.localScale.y, sRend.transform.localScale.z);
-            }
-            else if (resizeAxis == Vector2Int.up)
-            {
-                sRend.transform.localScale =
-                        new Vector3(sRend.transform.localScale.x, SetValue.y, sRend.transform.localScale.z);
-            }
-            else
-            {
-                Debug.LogWarning($"[TilingSpriteRenderer::ResizeSpriteToScreen] Invalid axis passed {resizeAxis}.");
-            }
-
-            //if (!sRend.CorrectScaledTransformIsCorrect())
-            //    sRend.GenerateCorrectScaleParent();
-        }
-
-        //public static bool CorrectScaledTransformIsCorrect(this TilingSpriteRenderer sr)
-        //{
-        //    return sr.CorrectScaledParent.localScale == new Vector3
-        //        (1f / sr.transform.localScale.x,
-        //         1f / sr.transform.localScale.y,
-        //         1f / sr.transform.localScale.z);
-        //}
-    }
-
     /// <summary>
     /// TODO : Seperate classes to be base and current.
     /// Don't forget to call <see cref="GenerateGrid()"/> after resizing object.
@@ -277,7 +164,6 @@ namespace BXFW
         {
             get { return AllRenderer[key]; }
         }
-
 
         [SerializeField]
         private SerializableDictionary<Vector2Int, List<SpriteRenderer>> TiledSpriteObjs =
