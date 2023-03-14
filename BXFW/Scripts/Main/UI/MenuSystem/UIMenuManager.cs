@@ -53,7 +53,11 @@ namespace BXFW.UI
         {
             if (InsideMenu && !AllowTwoMenuAtOnce)
             {
-                ExitCurrentMenu();
+                // If we are not actually exiting the current menu
+                if (_CurrentUIMenu != menu)
+                {
+                    ExitCurrentMenu();
+                }
             }
 
             menu.CloseMenu();
