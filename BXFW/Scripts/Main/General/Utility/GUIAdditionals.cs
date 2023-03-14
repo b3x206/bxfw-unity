@@ -272,7 +272,7 @@ namespace BXFW
         /// <summary>
         /// Internal utility method to draw quads (with materials).
         /// </summary>
-        internal static void DrawQuad(Rect guiRect, Material matTarget)
+        private static void DrawQuad(Rect guiRect, Material matTarget)
         {
             GUI.DrawTexture(guiRect, BlitQuad(guiRect.size, matTarget));
         }

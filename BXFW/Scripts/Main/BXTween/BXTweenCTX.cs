@@ -51,6 +51,7 @@ namespace BXFW.Tweening
         public bool InvokeEventOnStop { get; private set; } = true;
         public float Duration { get; private set; } = 0f;
         public float StartDelay { get; private set; } = 0f;
+        public bool InvokeDelayOnRepeat { get; private set; } = false;
         public int RepeatAmount { get; private set; } = 0;
         public RepeatType RepeatType { get; private set; } = CurrentSettings.DefaultRepeatType;
         public bool InvokeEventOnRepeat { get; private set; } = true;
@@ -201,6 +202,19 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetDelay(float delay)
         {
             StartDelay = delay;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets whether if the starting delay should go after the tween has been restarted for a repeat.
+        /// </summary>
+        /// <param name="value">
+        /// The value to set the invocation for the delay on repeat.
+        /// <br>Default value is <see langword="false"/>, meaning that the delay won't invoke on a case of repeat.</br>
+        /// </param>
+        public BXTweenCTX<T> SetInvokeDelayOnRepeat(bool value)
+        {
+            InvokeDelayOnRepeat = value;
 
             return this;
         }
@@ -637,7 +651,7 @@ namespace BXFW.Tweening
             if (_CurrentIteratorCoroutine != null)
 #endif
             {
-                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore.To it needs to stop 'manually'.
+                // Coroutine should stop itself HOWEVER when stop is not called by BXTweenCore. To it needs to stop 'manually'.
                 Current.StopCoroutine(_CurrentIteratorCoroutine);
                 _CurrentIteratorCoroutine = null;
             }

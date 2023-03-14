@@ -141,6 +141,7 @@ namespace BXFW.Tweening
         /// </summary>
         public IEnumerator GenericTo<T>(BXTweenCTX<T> ctx, BXTweenLerpMethod<T> lerpMethod)
         {
+            bool isOnRepeat = false;
             // Main Loop (with repeat)
             // c# info : 'do {} while' is used to make the loop atleast invoke once (ctx.RepeatAmount can be 0).
             do
@@ -153,13 +154,28 @@ namespace BXFW.Tweening
                 }
                 yield return new WaitForEndOfFrame();
 
-                // Delay (don't do delay if the context was paused)
-                if (ctx.StartDelay > 0f && ctx.CurrentElapsed <= float.Epsilon /* equal to : !ctx.WasPaused*/)
+                // Delay (don't do delay if the context was paused, which is checked with CurrentElapsed)
+                // Also respect the tween setting for invoking delay on tween restart
+                if (ctx.StartDelay > 0f && ctx.CurrentElapsed <= float.Epsilon)
                 {
-                    if (!CurrentSettings.ignoreTimeScale)
-                        yield return new WaitForSeconds(ctx.StartDelay);
+                    // Kind of boilerplatey boolean logic, but as long as it works and nobody sees it, there's no problem :)
+                    if (isOnRepeat)
+                    {
+                        if (ctx.InvokeDelayOnRepeat)
+                        {
+                            if (!CurrentSettings.ignoreTimeScale)
+                                yield return new WaitForSeconds(ctx.StartDelay);
+                            else
+                                yield return new WaitForSecondsRealtime(ctx.StartDelay);
+                        }
+                    }
                     else
-                        yield return new WaitForSecondsRealtime(ctx.StartDelay);
+                    {
+                        if (!CurrentSettings.ignoreTimeScale)
+                            yield return new WaitForSeconds(ctx.StartDelay);
+                        else
+                            yield return new WaitForSecondsRealtime(ctx.StartDelay);
+                    }
                 }
 
                 // Main loop
@@ -247,6 +263,7 @@ namespace BXFW.Tweening
 
                     // Set current elapsed to 0 if we are repeating.
                     ctx.CurrentElapsed = 0f;
+                    isOnRepeat = true;
                 }
 
                 // Do a swap between values.
@@ -257,6 +274,7 @@ namespace BXFW.Tweening
             }
             while (ctx.RepeatAmount != 0);
 
+            // bool isRepeat is invalid since here
             // End tween call (also calls ending events and does neccessary clean-up)
             ctx.StopTween();
         }

@@ -496,7 +496,7 @@ namespace BXFW
         {
             return mask == (mask | (1 << layer));
         }
-        /// <summary>Resizes an sprite renderer to the size of the camera fit.</summary>
+        /// <summary>Resizes an sprite renderer to the size of the <b>orthographic</b> camera fit.</summary>
         /// <param name="relativeCam">Orthographic camera to resize.</param>
         /// <param name="sr">Sprite renderer to resize.</param>
         /// <param name="axis">Axis to resize.</param>
@@ -541,7 +541,7 @@ namespace BXFW
                 sr.size = scale;
             }
         }
-        /// <summary>Resizes an mesh renderer to the size of the camera fit.</summary>
+        /// <summary>Resizes an mesh renderer to the size of the <b>orthographic</b> camera fit.</summary>
         /// <param name="relativeCam">Orthographic camera to resize.</param>
         /// <param name="sr">Sprite renderer to resize.</param>
         /// <param name="axis">Axis to resize.</param>
@@ -939,8 +939,8 @@ namespace BXFW
                 list.AddRange(Enumerable.Repeat(newT, sz - cur));
             }
         }
-        /// <summary
-        /// >Resize array.
+        /// <summary>
+        /// Resize array.
         /// </summary>
         public static void Resize<T>(this IList<T> list, int sz) where T : new()
         {
@@ -1186,8 +1186,7 @@ namespace BXFW
             // Make sure the generic is serializable.
             if (typeof(T).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
-                Debug.LogError(string.Format("[Additionals::BSave] Is serializable is false for given type '{0}'.", typeof(T).Name));
-                return;
+                throw new ArgumentException(string.Format("[Additionals::BSave] Given type '{0}' does not have the [System.Serializable] attribute.", typeof(T).Name));
             }
 
             try
@@ -1198,7 +1197,7 @@ namespace BXFW
                 }
                 else if (File.Exists(filePath))
                 {
-                    Debug.Log(string.Format("[Additionals::Save] File '{0}' already exists, creating new file name.", filePath));
+                    Debug.Log(string.Format("[Additionals::BSave] File '{0}' already exists, creating new file name.", filePath));
 
                     /// File path for <see cref="Directory.GetFiles(string)"/>
                     string modifiedFilePath = null;
@@ -1269,7 +1268,10 @@ namespace BXFW
                 }
             }
             catch (Exception e)
-            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
+            {
+                // This can be generalized into 'SerializationException'
+                throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace));
+            }
         }
         /// <summary>
         /// Loads binary saved data from path.
@@ -1283,28 +1285,22 @@ namespace BXFW
             // Require attribute.
             if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
-                Debug.LogError(string.Format("[Additionals::BLoad] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
-                return default;
+                throw new ArgumentException(string.Format("[Additionals::BLoad] Given type '{0}' does not have the [System.Serializable] attribute.", typeof(ExpectT).Name));
             }
 
             ExpectT DSerObj;
 
-            try
+            using (Stream stream = File.OpenRead(filePath))
             {
-                using (Stream stream = File.OpenRead(filePath))
+                BinaryFormatter bformatter = new BinaryFormatter
                 {
-                    BinaryFormatter bformatter = new BinaryFormatter
-                    {
-                        Binder = new VersionDeserializationBinder()
-                    };
+                    Binder = new VersionDeserializationBinder()
+                };
 
-                    stream.Position = 0;
-                    // You should use json instead anyway, anyone can inject custom data that will cause an issue.
-                    DSerObj = (ExpectT)bformatter.Deserialize(stream);
-                }
+                stream.Position = 0;
+                // You should use json instead anyway, anyone can inject custom data that will cause an issue.
+                DSerObj = (ExpectT)bformatter.Deserialize(stream);
             }
-            catch (Exception e)
-            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
 
             return DSerObj;
         }
@@ -1319,8 +1315,7 @@ namespace BXFW
             // Require attribute.
             if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
-                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
-                return default;
+                throw new ArgumentException(string.Format("[Additionals::BLoad] Given type '{0}' does not have the [System.Serializable] attribute.", typeof(ExpectT).Name));
             }
 
             byte[] fileContentData = new byte[fileContents.Length];
@@ -1342,28 +1337,22 @@ namespace BXFW
             // Require attribute.
             if (typeof(ExpectT).GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
-                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given type '{0}'.", typeof(ExpectT).Name));
-                return default;
+                throw new ArgumentException(string.Format("[Additionals::BLoad] Given type '{0}' does not have the [System.Serializable] attribute.", typeof(ExpectT).Name));
             }
 
             ExpectT DSerObj;
 
-            try
+            using (MemoryStream ms = new MemoryStream(fileContents))
             {
-                using (MemoryStream ms = new MemoryStream(fileContents))
+                BinaryFormatter bformatter = new BinaryFormatter
                 {
-                    BinaryFormatter bformatter = new BinaryFormatter
-                    {
-                        Binder = new VersionDeserializationBinder()
-                    };
+                    Binder = new VersionDeserializationBinder()
+                };
 
-                    ms.Position = 0;
-                    DSerObj = (ExpectT)bformatter.Deserialize(ms);
-                }
+                ms.Position = 0;
+                DSerObj = (ExpectT)bformatter.Deserialize(ms);
             }
-            catch (Exception e)
-            { throw new SerializationException(string.Format("[Additionals::Load] An error occured while deserializing.\n->{0}\n->{1}", e.Message, e.StackTrace)); }
-
+            
             return DSerObj;
         }
 
@@ -1372,20 +1361,17 @@ namespace BXFW
         /// </summary>
         /// <param name="obj">Object that has the <see cref="SerializableAttribute"/>.</param>
         /// <returns>Object as serializd byte array.</returns>
-        /// <exception cref="InvalidDataContractException"/>
         public static byte[] ObjectToByteArray(object obj)
         {
             if (obj is null)
             {
-                Debug.LogError("[Additionals::ObjectToByteArray] The given object is null.");
-                return null;
+                throw new ArgumentNullException("[Additionals::ObjectToByteArray] The given object is null.");
             }
 
             // Require attribute.
             if (obj.GetType().GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
             {
-                Debug.LogError(string.Format("[Additionals::ObjectToByteArray] Is serializable is false for given object '{0}'.", obj));
-                return null;
+                throw new ArgumentException(string.Format("[Additionals::ObjectToByteArray] Given type '{0}' does not have the [System.Serializable] attribute.", obj));
             }
 
             BinaryFormatter bf = new BinaryFormatter();

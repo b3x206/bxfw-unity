@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.ProjectWindowCallback;
+using Codice.Client.BaseCommands.BranchExplorer;
 
 namespace BXFW.Tools.Editor
 {
@@ -643,14 +644,13 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Shows an array inspector (using unity default).
         /// </summary>
-        /// <param name="list"></param>
-        /// <param name="options"></param>
         public static void ShowEditorList(SerializedProperty list, EditorListOption options = EditorListOption.Default)
         {
             bool showListLabel = (options & EditorListOption.ListLabel) != 0, showListSize = (options & EditorListOption.ListSize) != 0;
 
             if (showListLabel)
             {
+                GUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(list);
                 EditorGUI.indentLevel += 1;
             }
@@ -658,14 +658,24 @@ namespace BXFW.Tools.Editor
             if (!showListLabel || list.isExpanded)
             {
                 if (showListSize)
-                { EditorGUILayout.PropertyField(list.FindPropertyRelative("Array.size")); }
+                { 
+                    EditorGUILayout.PropertyField(list.FindPropertyRelative("Array.size"));
+                    if (showListLabel)
+                    {
+                        GUILayout.EndHorizontal();
+                    }
+                }
 
                 for (int i = 0; i < list.arraySize; i++)
-                { EditorGUILayout.PropertyField(list.GetArrayElementAtIndex(i)); }
+                {
+                    EditorGUILayout.PropertyField(list.GetArrayElementAtIndex(i));
+                }
             }
 
             if (showListLabel)
-            { EditorGUI.indentLevel -= 1; }
+            {
+                EditorGUI.indentLevel -= 1;
+            }
         }
         /// <summary>
         /// Create array with fields.
@@ -673,129 +683,112 @@ namespace BXFW.Tools.Editor
         /// </summary>
         /// <param name="obj">Serialized object of target.</param>
         /// <param name="arrayName">Array field name.</param>
-        public static void UnityArrayGUI(this SerializedObject obj, string arrayName, Action<int> OnArrayFieldDrawn = null)
+        /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other methods.</param>
+        public static void UnityArrayGUI(this SerializedObject obj, string arrayName, Action<int> onArrayFieldDrawn = null)
         {
-            int prev_indent = EditorGUI.indentLevel;
-            var propertyTarget = obj.FindProperty(string.Format("{0}.Array.size", arrayName));
-
+            UnityArrayGUI(obj, true, arrayName, onArrayFieldDrawn);
+        }
+        /// <summary>
+        /// Create array with fields.
+        /// This is a more primitive array drawer, but it works.
+        /// </summary>
+        /// <param name="obj">Serialized object of target.</param>
+        /// <param name="arrayName">Array field name.</param>
+        /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other 'UnityArrayGUI' methods.</param>
+        public static bool UnityArrayGUI(this SerializedObject obj, bool toggle, string arrayName, Action<int> onArrayFieldDrawn = null)
+        {
             // Get size of array
-            int arrSize = propertyTarget.intValue;
+            SerializedProperty arraySizeTarget = obj.FindProperty(string.Format("{0}.Array.size", arrayName));
+            int arrSize = arraySizeTarget.intValue;
+            string arrName = obj.FindProperty(arrayName).name;
 
-            // Create the size field
-            EditorGUI.indentLevel = 1;
-            int curr_arr_Size = EditorGUILayout.IntField("Size", arrSize);
-            // Clamp
-            curr_arr_Size = curr_arr_Size < 0 ? 0 : curr_arr_Size;
-            EditorGUI.indentLevel = 3;
-
-            if (curr_arr_Size != arrSize)
-            {
-                propertyTarget.intValue = curr_arr_Size;
-            }
-
-            // Create the array fields (stupid)
-            for (int i = 0; i < arrSize; i++)
+            // Also draws the 'PropertyField'
+            void OnFieldDrawnCustom(int i)
             {
                 // Create property field.
-                var prop = obj.FindProperty(string.Format("{0}.Array.data[{1}]", arrayName, i));
+                SerializedProperty prop = obj.FindProperty(arrayName).GetArrayElementAtIndex(i);
 
                 // If our property is null, ignore.
                 if (prop == null)
-                    continue;
+                    throw new NullReferenceException(string.Format("[EditorAdditionals::UnityArrayGUI] The drawn property at index {0} does not exist. This should not happen.", i));
 
-                GUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(prop);
-                if (OnArrayFieldDrawn != null)
-                    OnArrayFieldDrawn(i);
-                GUILayout.EndHorizontal();
+
+                onArrayFieldDrawn?.Invoke(i);
             }
 
-            // Keep previous indent
-            EditorGUI.indentLevel = prev_indent;
+            bool toggleValue = UnityArrayCustomGUIInternal(toggle, new GUIContent(arrName), arrSize, (int sz) => { arraySizeTarget.intValue = sz; }, OnFieldDrawnCustom);
+            obj.ApplyModifiedProperties();
+            return toggleValue;
         }
 
         /// <summary>
-        /// Create custom array with fields.
-        /// <br>Known issues : Only support standard arrays and data types convertible to it. 
-        /// <br>Need to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
+        /// Create custom GUI array with fields. (if you are lazy for doing a <see cref="PropertyDrawer"/>)
+        /// <br>Needs to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
         /// </summary>
         /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
-        /// <param name="genericDrawList">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
+        /// <param name="label">Label to draw for the array.</param>
+        /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
         /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
-        public static bool UnityArrayGUICustom<T>(bool toggle, IEnumerable<T> genericDrawList, Action<int> onArrayFieldDrawn)
+        public static bool UnityArrayGUICustom<T>(bool toggle, GUIContent label, ref T[] array, Action<int> onArrayFieldDrawn)
             where T : new()
         {
+            List<T> copyArray = new List<T>(array); // Allocate tempoary resizable array
+            bool toggleStatus = UnityArrayCustomGUIInternal(toggle, label, copyArray.Count, (int sz) => { copyArray.Resize(sz); }, onArrayFieldDrawn);
+            if (copyArray.Count != array.Length)
+            {
+                array = copyArray.ToArray();        // Set the tempoary array to the ref array
+            }
+
+            // While this will cause a ton of garbage, unless we have lower level control of c# doubt i can do better while avoiding boilerplate.
+            // The original plan was to pass the ref into a delegate and use Array.Resize but ref parameters on delegates are no-no :/
+            return toggleStatus;
+        }
+        /// <summary>
+        /// Create custom GUI array with fields. (if you are lazy for doing a <see cref="PropertyDrawer"/>)
+        /// <br>Needs to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
+        /// <br>Passes parameter 'label' as $"{typeof(T).Name} List"</br>
+        /// </summary>
+        /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
+        /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
+        /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
+        public static bool UnityArrayGUICustom<T>(bool toggle, ref T[] array, Action<int> onArrayFieldDrawn)
+            where T : new()
+        {
+            return UnityArrayGUICustom(toggle, new GUIContent(string.Format("{0} List", typeof(T).Name)), ref array, onArrayFieldDrawn);
+        }
+
+        /// <summary>
+        /// Draws a custom array view with a delegate that contains resizing function, and a custom GUI drawing function supplied by the client.
+        /// <br/><br/>
+        /// TODO : Add GUI Rect area placed drawing capabilities. Also retain GUILayout area while doing that 
+        /// (use the GUILayoutUtility.GetRect? or use some internal very secret method that does not allocate an area)
+        /// </summary>
+        private static bool UnityArrayCustomGUIInternal(bool toggle, GUIContent label, int arraySize, Action<int> onArrayResize, Action<int> onArrayFieldDrawn)
+        {
             int prevIndent = EditorGUI.indentLevel;
-            int arrayLength = genericDrawList.Count();
-            IList<T> drawList = null;
-            T[] drawArray = null;
-            {
-                if (genericDrawList is IList<T> list)
-                {
-                    drawList = list;
-                }
-                else if (genericDrawList is T[] array)
-                {
-                    drawArray = array;
-                }
-                else
-                {
-                    throw new ArgumentException(string.Format("[EditorAdditionals::UnityArrayGUICustom] Passed 'GenericDrawList' is an immutable type ({0}).", genericDrawList.GetType()));
-                }
-            }
-
-            void ResizeGenericArray(int size)
-            {
-                if (drawList != null)
-                {
-                    drawList.Resize(size);
-                    return;
-                }
-                if (drawArray != null)
-                {
-                    Array.Resize(ref drawArray, size);
-                    return;
-                }
-            }
-            T GetElementGenericArray(int index)
-            {
-                if (drawList != null)
-                {
-                    return drawList[index];
-                }
-                if (drawArray != null)
-                {
-                    return drawArray[index];
-                }
-
-                throw new NullReferenceException("[EditorAdditionals::UnityArrayGUICustom::GetElementGenericArray] Arrays are null.");
-            }
 
             EditorGUI.indentLevel = prevIndent + 2;
             // Create the size & dropdown field
             GUILayout.BeginHorizontal();
 
-            var currToggleDropdwnState = GUILayout.Toggle(toggle, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
-            EditorGUILayout.LabelField(string.Format("{0} List", typeof(T).Name), EditorStyles.boldLabel);
+            bool currToggleDropdwnState = GUILayout.Toggle(toggle, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
-            int currentSizeField = Mathf.Clamp(EditorGUILayout.IntField("Size", arrayLength, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f)), 0, int.MaxValue);
+            int currentSizeField = Mathf.Clamp(EditorGUILayout.IntField("Size", arraySize, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f)), 0, int.MaxValue);
+            // Resize array
+            if (currentSizeField != arraySize)
+            {
+                onArrayResize(currentSizeField);
+            }
             GUILayout.EndHorizontal();
 
             if (toggle)
             {
-                // Resize array
-                if (currentSizeField != arrayLength)
-                {
-                    ResizeGenericArray(currentSizeField);
-                }
-
                 EditorGUI.indentLevel = prevIndent + 3;
                 // Create the array fields (stupid)
-                for (int i = 0; i < arrayLength; i++)
+                for (int i = 0; i < arraySize; i++)
                 {
-                    if (GetElementGenericArray(i) == null)
-                        continue;
-
                     EditorGUI.indentLevel--;
                     EditorGUILayout.LabelField(string.Format("Element {0}", i), EditorStyles.boldLabel);
                     EditorGUI.indentLevel++;
@@ -808,17 +801,20 @@ namespace BXFW.Tools.Editor
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("+"))
                 {
-                    ResizeGenericArray(currentSizeField + 1);
+                    currentSizeField = Mathf.Clamp(currentSizeField + 1, 0, int.MaxValue);
+                    onArrayResize(currentSizeField);
                 }
                 if (GUILayout.Button("-"))
                 {
-                    ResizeGenericArray(currentSizeField - 1);
+                    currentSizeField = Mathf.Clamp(currentSizeField - 1, 0, int.MaxValue);
+                    onArrayResize(currentSizeField);
                 }
                 GUILayout.EndHorizontal();
             }
 
             // Keep previous indent
             EditorGUI.indentLevel = prevIndent;
+
             return currToggleDropdwnState;
         }
         #endregion
