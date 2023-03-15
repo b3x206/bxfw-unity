@@ -102,8 +102,8 @@ namespace BXFW
         [SerializeField] private TransformAxis2D allowGridAxis = TransformAxis2D.XYAxis;
         public TransformAxis2D AllowGridAxis
         {
-            get 
-            { 
+            get
+            {
                 return allowGridAxis;
             }
             set
@@ -136,14 +136,14 @@ namespace BXFW
         [SerializeField] private Transform correctScaledParent;
         public Transform CorrectScaledParent
         {
-            get 
+            get
             {
-                GenerateCorrectScaleParent();                
+                GenerateCorrectScaleParent();
                 return correctScaledParent;
             }
-            private set 
-            { 
-                correctScaledParent = value; 
+            private set
+            {
+                correctScaledParent = value;
             }
         }
         /// <summary>
@@ -168,23 +168,31 @@ namespace BXFW
                 }
             }
 
+            correctScaledParent.localPosition = Vector3.zero;
             correctScaledParent.localScale = new Vector3(1f / transform.localScale.x, 1f / transform.localScale.y, 1f / transform.localScale.z);
         }
 
-        /// <summary>
-        /// All of the sprite renderers, queue and placement agnostic.
-        /// </summary>
         [SerializeField] private List<SpriteRenderer> allRendererObjects = new List<SpriteRenderer>();
         public SpriteRenderer this[int key]
         {
             get { return allRendererObjects[key]; }
         }
-        
+        /// <summary>
+        /// All of the sprite renderers, queue and placement agnostic.
+        /// </summary>
+        public IReadOnlyList<SpriteRenderer> AllRendererObjects
+        {
+            get
+            {
+                return allRendererObjects;
+            }
+        }
+
         /// <summary>
         /// List wrapper for unity to serialize the tiled objects.
         /// </summary>
         [Serializable]
-        public class SpriteRendererList : List<SpriteRenderer> 
+        public class SpriteRendererList : List<SpriteRenderer>
         {
             public SpriteRendererList()
             { }
@@ -224,7 +232,7 @@ namespace BXFW
             // Set main camera
             if (ResizeTargetCamera == null)
                 ResizeTargetCamera = Camera.main;
-            
+
             // Create correct scaled parent.
             GenerateCorrectScaleParent();
         }
@@ -237,7 +245,7 @@ namespace BXFW
         /// <summary>
         /// Method to regenerate grid.
         /// </summary>
-        /// <returns><see langword="true"/> if the generation was successful. Note that this method removes the previous grid no matter the result.</returns>
+        /// <returns><see langword="true"/> if the generation was successful. Note that this method calls <see cref="ClearGrid"/> no matter the result.</returns>
         public bool GenerateGrid()
         {
             // Call this first to avoid destroying existing stuff
@@ -251,7 +259,9 @@ namespace BXFW
 
             if (TiledSprite == null)
             {
-                Debug.LogError($"[TilingSpriteRenderer::GenerateGrid] The tiledSprite variable is null on object \"{name}\".");
+                if (Application.isPlaying)
+                    Debug.LogError($"[TilingSpriteRenderer::GenerateGrid] The tiledSprite variable is null on object \"{name}\".");
+
                 return false;
             }
 
@@ -287,7 +297,7 @@ namespace BXFW
             {
                 int x;
 
-                SpriteRendererList ListTile = new SpriteRendererList(GridX);
+                var ListTile = new SpriteRendererList(GridX);
                 allRendererObjects.Clear();
 
                 for (x = 0; x < gX; x++)
@@ -319,7 +329,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Get whether the function <see cref="ClearGrid"/> is running.
+        /// Clears the sprites on current arrays.
         /// </summary>
         public void ClearGrid()
         {
@@ -343,12 +353,13 @@ namespace BXFW
                 }
             }
 
-            if (tiledSpriteObjs != null)
+            if (tiledSpriteObjs != null && tiledSpriteObjs.Count > 0)
             {
-                if (tiledSpriteObjs.Count > 0)
-                {
-                    tiledSpriteObjs.Clear();
-                }
+                tiledSpriteObjs.Clear();
+            }
+            if (allRendererObjects != null && allRendererObjects.Count > 0)
+            {
+                allRendererObjects.Clear();
             }
         }
     }

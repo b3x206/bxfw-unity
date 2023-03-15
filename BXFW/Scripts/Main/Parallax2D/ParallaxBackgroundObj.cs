@@ -14,15 +14,18 @@ namespace BXFW
         public ParallaxBackgroundGroup ParentGroup;
 
         public TilingSpriteRenderer TilingSpriteRendererComponent
-        { get { return tilingSpriteRendComp; } private set { tilingSpriteRendComp = value; } }
+        { 
+            get { return tilingSpriteRendComp; } 
+        }
         [SerializeField] private TilingSpriteRenderer tilingSpriteRendComp;
 
         public void InitilazeTilingSpriteRenderer(Sprite rendSprite)
         {
-            if (TilingSpriteRendererComponent == null)
+            if (!TryGetComponent(out tilingSpriteRendComp))
             {
-                TilingSpriteRendererComponent = GetComponent<TilingSpriteRenderer>();
+                tilingSpriteRendComp = gameObject.AddComponent<TilingSpriteRenderer>();
             }
+
             if (rendSprite == null)
             {
                 Debug.LogError("[ParallaxBackgroundObj] Null sprite was passed.");
@@ -34,7 +37,6 @@ namespace BXFW
             TilingSpriteRendererComponent.ResizeTargetCamera = ParentGroup.TargetCamera;
             TilingSpriteRendererComponent.CameraResize = true;
             TilingSpriteRendererComponent.AutoTile = true;
-            //TilingSpriteRendererComponent.ResizeTformSetMultiplier = 3f;
         }
 
         private void Start()
@@ -53,7 +55,6 @@ namespace BXFW
         {
             Scroll();
         }
-
         public void Scroll()
         {
             float Temp =
@@ -66,7 +67,8 @@ namespace BXFW
             // Follow the camera position in Y too
             //float yTemp = ParentGroup.TargetCamera.transform.position.y *
             //    (1 - ParallaxEffectAmount);
-            // Note that we don't need to restart / tile on Y parallax.
+            // Note that we don't need to restart / tile on Y parallax, so the yTemp can be commented
+            // Both axis parallax works the same.
             float yDist = ParentGroup.TargetCamera.transform.position.y *
                 ParallaxEffectAmount;
 

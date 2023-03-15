@@ -11,6 +11,15 @@ namespace BXFW.Tweening
     /// <summary>
     /// Coroutine based tweening system.
     /// Contains all the base methods.
+    /// <br/>
+    /// <br>BXTween interpolates the following types, but can be extended:</br>
+    /// <see cref="int"/>, <see cref="float"/>, <see cref="Color"/>, <see cref="Vector2"/>, 
+    /// <see cref="Vector3"/>, <see cref="Quaternion"/> and <see cref="Matrix4x4"/>
+    /// <br>Custom 'To' methods can be registered by the user, however the <see cref="BXTweenProperty{T}"/>'ies do not work with them.</br>
+    /// <br>
+    /// The tweening can agnostically be extended using custom delegates (on a float tween) with lerps of that respective 
+    /// data type, however they are not as convenient for tweening. The extendability will be added later on.
+    /// </br>
     /// </summary>
     public static class BXTween
     {

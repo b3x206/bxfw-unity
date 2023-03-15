@@ -50,11 +50,10 @@ namespace BXFW
 
                 pxWindow = EditorWindow.CreateWindow<ParallaxBackgroundEditorWindow>();
                 pxWindow.minSize = new Vector2(650f, 500f);
-                pxWindow.InspectedBGObj = (ParallaxBackgroundGroup)target;
+                pxWindow.InspectedBGObj = target;
                 pxWindow.titleContent.text = $"Px Editor | {target.name}";
             }
 
-            //// Other
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -100,8 +99,7 @@ namespace BXFW
         [Range(0f, 1f)][SerializeField] private float BGLayerPrlxAmount = 0f;
         [SerializeField] private bool ModifyBGLayer = true;
         [SerializeField] private ParallaxBGLayerSortMethod CurrentSortMethod = ParallaxBGLayerSortMethod.SpriteRendererIndex;
-        [SerializeField] private int BGLayerStart = -5;
-        // [SerializeField] private float BGZPositionStart = -5;
+        [SerializeField] private int BGOrderStart = -5;
         [SerializeField] private bool SetBGLayerStartAuto = true;
         [SerializeField] private bool SetZPositionAsPositive = false;
         private Vector2 ScrollPos = Vector2.zero;
@@ -118,12 +116,11 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Cleans the <see cref="ParallaxBackgroundGroup.ParallaxBGObjList"/>. <b>(from null variables.)</b>
+        /// Cleans the <see cref="ParallaxBackgroundGroup.ParallaxBGObjs"/>. <b>(from null variables.)</b>
         /// </summary>
         private void CleanBGObjectArray()
         {
-            // Clear current array
-            InspectedBGObj.ParallaxBGObjList.RemoveAll((ParallaxBackgroundObjRegistry d) => d.BackgroundLayer == null);
+            InspectedBGObj.ParallaxBGObjs.RemoveAll((d) => d == null);
         }
 
         private void OnGUI()
@@ -251,13 +248,13 @@ namespace BXFW
                             // Set this first as the layer can be incorrect on start.
                             if (SetBGLayerStartAuto && ModifyBGLayer)
                             {
-                                BGLayerStart = (-5) - InspectedBGObj.ChildAmount;
+                                BGOrderStart = (-5) - InspectedBGObj.ChildAmount;
                             }
 
                             // Refreshable BGLayer.
-                            int BGLayer = BGLayerStart - InspectedBGObj.ChildAmount;
+                            int BGLayer = BGOrderStart - InspectedBGObj.ChildAmount;
 
-                            var ParentSet = new GameObject($"BGHolderGroup{InspectedBGObj.ChildAmount + 1}");
+                            var ParentSet = new GameObject($"BGHolderGroup{InspectedBGObj.ChildAmount}");
                             var pObj = ParentSet.AddComponent<ParallaxBackgroundObj>();
 
                             ParentSet.transform.SetParent(InspectedBGObj.transform);
@@ -283,7 +280,7 @@ namespace BXFW
                             pObj.TilingSpriteRendererComponent.AutoTile = false;
                             pObj.TilingSpriteRendererComponent.GridX = BGSpriteRendererTileX;
 
-                            InspectedBGObj.ParallaxBGObjList.Add(new ParallaxBackgroundObjRegistry(pObj));
+                            InspectedBGObj.ParallaxBGObjs.Add(pObj);
                         }
 
 
@@ -306,7 +303,7 @@ namespace BXFW
                     // Add parallax object
                     if (GUILayout.Button("Add"))
                     {
-                        var BGLayer = BGLayerStart - InspectedBGObj.ChildAmount;
+                        var BGLayer = BGOrderStart - InspectedBGObj.ChildAmount;
 
                         if (Container == null)
                         {
@@ -317,12 +314,12 @@ namespace BXFW
                         // Check if this Container object already is registered
                         if (Container.TryGetComponent(out ParallaxBackgroundObj objComponent))
                         {
-                            for (int i = 0; i < InspectedBGObj.ParallaxBGObjList.Count; i++)
+                            for (int i = 0; i < InspectedBGObj.ParallaxBGObjs.Count; i++)
                             {
-                                if (objComponent == InspectedBGObj.ParallaxBGObjList[i].BackgroundLayer)
+                                if (objComponent == InspectedBGObj.ParallaxBGObjs[i])
                                 {
-                                    Debug.Log($"[ParallaxBGEditor] There is already a parallax object with name \"{InspectedBGObj.ParallaxBGObjList[i].BackgroundLayer.name}\", updated settings.");
-                                    InspectedBGObj.ParallaxBGObjList.Remove(InspectedBGObj.ParallaxBGObjList[i]);
+                                    Debug.Log($"[ParallaxBGEditor] There is already a parallax object with name \"{InspectedBGObj.ParallaxBGObjs[i].name}\", updated settings.");
+                                    InspectedBGObj.ParallaxBGObjs.Remove(InspectedBGObj.ParallaxBGObjs[i]);
                                     break;
                                 }
                             }
@@ -380,10 +377,10 @@ namespace BXFW
 
                         if (SetBGLayerStartAuto && ModifyBGLayer)
                         {
-                            BGLayerStart = (-5) - InspectedBGObj.ChildAmount;
+                            BGOrderStart = (-5) - InspectedBGObj.ChildAmount;
                         }
 
-                        InspectedBGObj.ParallaxBGObjList.Add(new ParallaxBackgroundObjRegistry(pObj));
+                        InspectedBGObj.ParallaxBGObjs.Add(pObj);
                         Debug.Log("[ParallaxBackgroundEditor] Added background.");
                     }
                     #endregion
@@ -392,7 +389,7 @@ namespace BXFW
                     var InspectedObjSO = new SerializedObject(InspectedBGObj);
                     // Create array field "readonly"
                     GUI.enabled = false;
-                    EditorGUILayout.PropertyField(InspectedObjSO.FindProperty(nameof(ParallaxBackgroundGroup.ParallaxBGObjList)), true);
+                    EditorGUILayout.PropertyField(InspectedObjSO.FindProperty(nameof(ParallaxBackgroundGroup.ParallaxBGObjs)), true);
                     GUI.enabled = true;
 
                     GUILayout.BeginHorizontal();
@@ -400,35 +397,35 @@ namespace BXFW
                     if (GUILayout.Button("Destroy List"))
                     {
                         if (EditorUtility.DisplayDialog("Clear Parallax Background...",
-                         "Are you sure you wanna destroy the parallax backgrounds?\n",
-                         "Yes", "No"))
+                            "Are you sure you wanna destroy the parallax backgrounds?\n",
+                            "Yes", "No"))
                         {
-                            foreach (var dict in InspectedBGObj.ParallaxBGObjList)
+                            foreach (var obj in InspectedBGObj.ParallaxBGObjs)
                             {
-                                if (dict.BackgroundLayer == null)
+                                if (obj == null)
                                     return;
 
-                                DestroyImmediate(dict.BackgroundLayer.gameObject);
+                                DestroyImmediate(obj.gameObject);
                             }
 
-                            InspectedBGObj.ParallaxBGObjList.Clear();
+                            InspectedBGObj.ParallaxBGObjs.Clear();
                         }
                     }
                     if (GUILayout.Button("Clear List"))
                     {
                         if (EditorUtility.DisplayDialog("Clear Parallax Background...",
-                         "Are you sure you wanna clean the parallax backgrounds?\nInfo : The background gameobjects are not destroyed.",
-                         "Yes", "No"))
+                            "Are you sure you wanna clean the parallax backgrounds?\nInfo : The background gameobjects are not destroyed.",
+                            "Yes", "No"))
                         {
-                            foreach (var dict in InspectedBGObj.ParallaxBGObjList)
+                            foreach (var obj in InspectedBGObj.ParallaxBGObjs)
                             {
-                                if (dict == null)
+                                if (obj == null)
                                     return;
 
-                                DestroyImmediate(dict.BackgroundLayer);
+                                DestroyImmediate(obj);
                             }
 
-                            InspectedBGObj.ParallaxBGObjList.Clear();
+                            InspectedBGObj.ParallaxBGObjs.Clear();
                         }
                     }
                     if (GUILayout.Button("Remove Nulls"))
@@ -500,8 +497,8 @@ namespace BXFW
                         EditorGUILayout.LabelField("Z Index Start", GUILayout.Width(150));
                         break;
                 }
-                BGLayerStart = EditorGUILayout.IntField(BGLayerStart);
-                BGLayerStart = Mathf.Clamp(BGLayerStart, int.MinValue, -5);
+                BGOrderStart = EditorGUILayout.IntField(BGOrderStart);
+                BGOrderStart = Mathf.Clamp(BGOrderStart, int.MinValue, -5);
                 GUILayout.EndHorizontal();
                 if (SetBGLayerStartAuto)
                 { GUI.enabled = true; }

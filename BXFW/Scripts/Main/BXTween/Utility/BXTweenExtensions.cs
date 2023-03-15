@@ -637,6 +637,19 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Light"/>
+        public static BXTweenCTX<Color> BXTwColor(this Light target, Color LastValue, float Duration)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.color, LastValue, Duration,
+                (Color v) => { target.color = v; }, target);
+
+            return Context;
+        }
         public static BXTweenCTX<float> BXTwFadeLight(this Light target, float LastValue, float Duration)
         {
             if (target == null)
