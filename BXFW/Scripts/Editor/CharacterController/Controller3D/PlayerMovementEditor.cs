@@ -3,52 +3,47 @@ using System.Collections.Generic;
 using BXFW.Tools.Editor;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(PlayerMovement))]
+    [CustomEditor(typeof(PlayerMovement)), CanEditMultipleObjects]
     public class PlayerMovementEditor : Editor
     {
         public override void OnInspectorGUI()
         {
             var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
-            var target = base.target as PlayerMovement;
+            var targets = base.targets.Cast<PlayerMovement>().ToArray();
 
-            if (!target.canMove)
+            if (!targets.All(m => m.canMove))
             {
-                dict.Add(nameof(target.canMove), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => EditorGUILayout.HelpBox("Player will not move. These settings won't change anything.", MessageType.Info)));
+                dict.Add(nameof(PlayerMovement.canMove), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => EditorGUILayout.HelpBox("Player will not move. These settings won't change anything.", MessageType.Info)));
             }
-            if (!target.useInternalInputMove)
+            if (!targets.All(m => m.useInternalInputMove))
             {
-                dict.Add(nameof(target.moveForwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveBackwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveLeftInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveRightInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveCrouchInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveJumpInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.moveRunInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveForwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveBackwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveLeftInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveRightInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveCrouchInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveJumpInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveRunInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
             }
-            if (!target.UseGravity)
+            if (!targets.All(m => m.UseGravity))
             {
-                dict.Add(nameof(target.gravity), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(target.groundMask), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.gravity), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.groundMask), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
             }
-            switch (target.currentCameraView)
+            if (targets.Any(m => m.currentCameraView != PlayerMovement.PlayerViewType.TPS && m.currentCameraView != PlayerMovement.PlayerViewType.FreeRelativeCam))
             {
-                case PlayerMovement.PlayerViewType.TPS:
-                case PlayerMovement.PlayerViewType.FreeRelativeCam:
-                    break;
+                dict.Add(nameof(PlayerMovement.targetCamera), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
+                {
+                    var gEnabled = GUI.enabled;
 
-                default:
-                    dict.Add(nameof(target.targetCamera), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () => 
-                    {
-                        var gEnabled = GUI.enabled;
-
-                        GUI.enabled = false;
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(target.targetCamera)));
-                        GUI.enabled = gEnabled;
-                    }));
-                    break;
+                    GUI.enabled = false;
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(PlayerMovement.targetCamera)));
+                    GUI.enabled = gEnabled;
+                }));
             }
 
             serializedObject.DrawCustomDefaultInspector(dict);

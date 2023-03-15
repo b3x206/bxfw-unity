@@ -1,11 +1,13 @@
-﻿using UnityEditor;
-using BXFW.Tools.Editor;
-using UnityEngine;
-using System.Collections.Generic;
+﻿using UnityEngine;
+using UnityEditor;
+
 using BXFW.Data;
+using BXFW.Tools.Editor;
+
 using System.Text;
 using System.Linq;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
@@ -145,7 +147,7 @@ namespace BXFW.ScriptEditor
 
                             menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), target.spoofLocale == info.TwoLetterISOLanguageName, () =>
                             {
-                                Undo.RecordObject(target, "Change spoof locale.");
+                                Undo.RecordObject(target, "change spoof locale");
                                 target.spoofLocale = info.TwoLetterISOLanguageName;
                             });
                         }

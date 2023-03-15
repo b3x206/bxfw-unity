@@ -74,7 +74,7 @@ namespace BXFW.ScriptEditor
             //var TSo = serializedObject;
 
             // Multiple editors (casting 'targets')
-            var guiTargets = targets.Cast(x => (TilingSpriteRenderer)x).ToArray();
+            var guiTargets = targets.Cast<TilingSpriteRenderer>().ToArray();
             DrawGUIForTargets(guiTargets, serializedObject);
         }
         protected void DrawGUIForTargets(TilingSpriteRenderer[] Targets, SerializedObject TSo)
