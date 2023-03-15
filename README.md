@@ -17,4 +17,5 @@ The code is &lt;summary/&gt; ified, basically what the code does is in the code 
 
 ## Other Stuff : 
 * This project uses the 'RTUtils' script from this github repository, see https://github.com/nothke/unity-utils
+
 <sup><sub>The project mentioned in the up use MIT License, see the repository for more information.</sub><sup>

@@ -36,15 +36,12 @@ namespace BXFW.ScriptEditor
             //{
             undoRecord.Add(target);
             // to be destroyed / created SpriteRenderers gameobjects
-            if (target.AllRendererObjects.Count > 0)
+            foreach (SpriteRenderer sr in target.AllRendererObjects)
             {
-                foreach (SpriteRenderer sr in target.AllRendererObjects)
-                {
-                    if (sr == null)
-                        continue;
+                if (sr == null)
+                    continue;
 
-                    undoRecord.Add(sr.gameObject);
-                }
+                undoRecord.Add(sr.gameObject);
             }
             //}
             
@@ -54,7 +51,7 @@ namespace BXFW.ScriptEditor
             //foreach (var item in Targets)
             //{
             // Register creations (for undo)
-            foreach (var undoRegister in target.AllRendererObjects.Where(sr => !undoRecord.Contains(sr)))
+            foreach (var undoRegister in target.AllRendererObjects.Where(sr => !undoRecord.Contains(sr.gameObject)))
             {
                 if (undoRegister == null)
                     continue;
