@@ -3,7 +3,7 @@
 namespace BXFW
 {
     /// <summary>
-    /// The parallax background sprite renderer group object.
+    /// Represents a scrollable by camera movement, parallaxed <see cref="TilingSpriteRenderer"/>.
     /// </summary>
     [RequireComponent(typeof(TilingSpriteRenderer))]
     public class ParallaxBackgroundObj : MonoBehaviour

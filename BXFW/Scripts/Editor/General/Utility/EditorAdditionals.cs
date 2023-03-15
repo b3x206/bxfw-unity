@@ -24,7 +24,7 @@ namespace BXFW.Tools.Editor
         After = 1 << 1,
         Omit = 1 << 2,
 
-        OmitAndInvoke = After | Omit
+        OmitAndInvoke = Omit | After
     }
 
     public static class EditorAdditionals
@@ -422,7 +422,8 @@ namespace BXFW.Tools.Editor
         public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
         {
             var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
-            if (!shouldAcceptDrag) return;
+            if (!shouldAcceptDrag)
+                return;
 
             MakeDroppableAreaGUI(onDragAcceptAction, customRect);
         }
@@ -439,7 +440,7 @@ namespace BXFW.Tools.Editor
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
                     Rect dropArea = customRect ??
-                        GUILayoutUtility.GetRect(0.0f, 0.0f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                        GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
                     if (!dropArea.Contains(evt.mousePosition))
                         return;
@@ -514,32 +515,26 @@ namespace BXFW.Tools.Editor
                         if (!string.IsNullOrEmpty(MatchingKey))
                         {
                             var Pair = onStringMatchEvent[MatchingKey];
+                            bool hasInvokedCustomCommand = false; // Prevent the command from invoking twice, as this is now enum flags.
 
-                            if (Pair.Key == MatchGUIActionOrder.OmitAndInvoke)
+                            if ((Pair.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before && !hasInvokedCustomCommand)
                             {
+                                hasInvokedCustomCommand = true;
+
                                 if (Pair.Value != null)
                                     Pair.Value();
-
-                                expanded = false;
-                                continue;
                             }
 
-                            // -- Omit GUI
-                            if (Pair.Key == MatchGUIActionOrder.Omit)
+                            if ((Pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                                EditorGUILayout.PropertyField(property, true);
+
+                            if ((Pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
                             {
-                                expanded = false;
-                                continue;
+                                hasInvokedCustomCommand = true;
+
+                                if (Pair.Value != null)
+                                    Pair.Value();
                             }
-
-                            // -- Standard draw
-                            if (Pair.Key == MatchGUIActionOrder.After)
-                            { EditorGUILayout.PropertyField(property, true); }
-
-                            if (Pair.Value != null)
-                                Pair.Value();
-
-                            if (Pair.Key == MatchGUIActionOrder.Before)
-                            { EditorGUILayout.PropertyField(property, true); }
 
                             expanded = false;
                             continue;

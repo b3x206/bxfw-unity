@@ -16,7 +16,6 @@ namespace BXFW
     /// <summary>
     /// Data type that contains a draw command.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public struct DrawGUICommand<T> 
         where T : ScriptableObject
     {

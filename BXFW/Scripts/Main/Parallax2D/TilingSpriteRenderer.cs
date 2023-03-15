@@ -346,9 +346,11 @@ namespace BXFW
                     if (t == null)
                         continue;
 
-                    if (Application.isEditor)
-                        DestroyImmediate(t.gameObject);
+#if UNITY_EDITOR
+                    if (Application.isEditor && !Application.isPlaying)
+                        UnityEditor.Undo.DestroyObjectImmediate(t.gameObject);
                     else
+#endif
                         Destroy(t.gameObject);
                 }
             }

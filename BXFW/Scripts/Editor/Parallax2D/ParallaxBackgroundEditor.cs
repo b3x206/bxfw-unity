@@ -1,4 +1,5 @@
 using BXFW.Tools.Editor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -74,7 +75,7 @@ namespace BXFW
         ZAxisCoords
     }
 
-    [System.Serializable]
+    [Serializable]
     internal struct ValuePair<TKey, TValue>
     {
         public TKey Key;
@@ -134,20 +135,21 @@ namespace BXFW
             }
 
             // This has to be called after an area is created.
-            MakeDropAreaGUI(() =>
+            EditorAdditionals.MakeDroppableAreaGUI(() =>
             {
                 List<Sprite> listSprite = new List<Sprite>(DragAndDrop.paths.Length);
 
                 foreach (var path in DragAndDrop.paths)
                 {
                     var spriteAddList = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                    if (spriteAddList == null) continue;
+                    if (spriteAddList == null)
+                        continue;
 
                     listSprite.Add(spriteAddList);
                 }
 
                 var PrevLength = ParallaxBGArray.Length;
-                System.Array.Resize(ref ParallaxBGArray, PrevLength + listSprite.Count);
+                Array.Resize(ref ParallaxBGArray, PrevLength + listSprite.Count);
 
                 int i = Mathf.Max(0, PrevLength - 1);
                 foreach (var sprite in listSprite)
@@ -162,7 +164,7 @@ namespace BXFW
             // Scroll
             ScrollPos = GUILayout.BeginScrollView(ScrollPos);
 
-            // Styles (why is this a string?)
+            // Styles
             GUIStyle customButton = new GUIStyle(GUI.skin.button)
             {
                 fontSize = 16,
@@ -223,22 +225,22 @@ namespace BXFW
                     {
                         // Check array
                         if (ParallaxBGArray == null)
-                        { 
+                        {
                             Debug.LogWarning("[ParallaxBGEditor] There is no background sprite.");
                             GUILayout.EndScrollView();
-                            return; 
+                            return;
                         }
                         if (ParallaxBGArray.Length <= 0)
-                        { 
+                        {
                             Debug.LogWarning("[ParallaxBGEditor] There is no background sprite added.");
                             GUILayout.EndScrollView();
-                            return; 
+                            return;
                         }
                         if (ParallaxBGArray.All(x => x.Value == null))
-                        { 
+                        {
                             Debug.LogWarning("[ParallaxBGEditor] There is blank/null background sprites.");
                             GUILayout.EndScrollView();
-                            return; 
+                            return;
                         }
 
                         CleanBGObjectArray();
@@ -282,7 +284,6 @@ namespace BXFW
 
                             InspectedBGObj.ParallaxBGObjs.Add(pObj);
                         }
-
 
                         Debug.Log("[ParallaxBackgroundEditor] Created background(s).");
                     }
@@ -328,22 +329,22 @@ namespace BXFW
                         if (ModifyBGLayer)
                         {
                             if (ParallaxObjects == null)
-                            { 
+                            {
                                 Debug.LogWarning("[ParallaxBGEditor] There is no background object.");
                                 GUILayout.EndScrollView();
-                                return; 
+                                return;
                             }
                             if (ParallaxObjects.Length < 0)
-                            { 
+                            {
                                 Debug.LogWarning("[ParallaxBGEditor] There is no background object added.");
                                 GUILayout.EndScrollView();
                                 return;
                             }
                             if (ParallaxObjects.Any(x => x == null))
-                            { 
+                            {
                                 Debug.LogWarning("[ParallaxBGEditor] There is blank/null background objects.");
                                 GUILayout.EndScrollView();
-                                return; 
+                                return;
                             }
                         }
 
@@ -467,7 +468,7 @@ namespace BXFW
             if (CurrentToolbarIndex != 0)
             {
                 EditorGUI.indentLevel++;
-                EditorGUILayout.LabelField("Note : If this value is higher, we assume it is on more back.\nThe bg should be 1 while the most front should be 0.", EditorStyles.miniBoldLabel, GUILayout.Height(30));
+                EditorGUILayout.LabelField("Note : If this value is higher, the code assumes that it is the background.\nThe background should be higher while the topmost foreground should be 0.", EditorStyles.miniBoldLabel, GUILayout.Height(30));
                 EditorGUILayout.PropertyField(so.FindProperty(nameof(BGLayerPrlxAmount)));
                 EditorGUI.indentLevel--;
             }
@@ -513,43 +514,5 @@ namespace BXFW
             GUILayout.Space(250f);
             GUILayout.EndScrollView();
         }
-
-        // Array GUI Utilites in case of you didn't import the additionals.
-        #region Utilites (Can be added to extensions or changed)
-        /// <summary>
-        /// Make gui area drag and droppable.
-        /// <br>This applies to global gui layout.</br>
-        /// </summary>
-        public void MakeDropAreaGUI(System.Action onDragAcceptAction, Rect? customRect = null)
-        {
-            Event evt = Event.current;
-
-            switch (evt.type)
-            {
-                case EventType.DragUpdated:
-                case EventType.DragPerform:
-                    Rect dropArea = customRect ?? GUILayoutUtility.GetRect(0.0f, 0.0f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-                    /* Drawing graphics on drop area is not necessary, optional.
-                    GUIStyle Boxstyle = GUI.skin.box;
-                    Boxstyle.fontSize = 24;
-                    Boxstyle.fontStyle = FontStyle.Bold;
-                    Boxstyle.alignment = TextAnchor.MiddleCenter;
-                    GUI.Box(drop_area, "Drop sprites here...", Boxstyle);
-                    */
-                    if (!dropArea.Contains(evt.mousePosition))
-                        return;
-
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-
-                    if (evt.type == EventType.DragPerform)
-                    {
-                        DragAndDrop.AcceptDrag();
-
-                        onDragAcceptAction?.Invoke();
-                    }
-                    break;
-            }
-        }
-        #endregion
     }
 }

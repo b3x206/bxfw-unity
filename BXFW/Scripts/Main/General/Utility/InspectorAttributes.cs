@@ -11,7 +11,10 @@ namespace BXFW
 #if UNITY_EDITOR
         public readonly float spriteBoxRectHeight = 44f;
 #endif
-        public BigSpriteFieldAttribute(float spriteHeight = 44f)
+        public BigSpriteFieldAttribute()
+        { }
+
+        public BigSpriteFieldAttribute(float spriteHeight)
         {
 #if UNITY_EDITOR
             spriteBoxRectHeight = spriteHeight;
@@ -65,6 +68,9 @@ namespace BXFW
         public ClampAttribute(double min, double max) { this.min = min; this.max = max; }
     }
 
+    /// <summary>
+    /// Attribute to draw clamped vector of any type (except for custom classes) in fields.
+    /// </summary>
     public class ClampVectorAttribute : PropertyAttribute
     {
         public readonly double minX, minY, minZ, minW;
