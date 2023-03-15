@@ -1,23 +1,19 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace BXFW
 {
     /// <summary>
-    /// TODO : Seperate classes to be base and current.
-    /// Don't forget to call <see cref="GenerateGrid()"/> after resizing object.
+    /// Generates a tiled series of sprites, using <see cref="GameObject"/>s and <see cref="SpriteRenderer"/>s.
     /// </summary>
-    // @NOTE the attached sprite's position should be "Top Right" or the children will not align properly
-    // Strech out the image as you need in the sprite render, the following script will auto-correct it when rendered in the game
-    // Generates a nice set of repeated sprites inside a streched sprite renderer
+    [ExecuteAlways]
     public class TilingSpriteRenderer : MonoBehaviour
     {
-        #region Variables
-        public SpriteRenderer RendererRef;
-        // -- Inspector Access
-        [Header("Tiling Options")]
         public bool GridOnAwake = true;
         public bool CameraResize = false;
+        public Camera ResizeTargetCamera;
+
         [SerializeField] private int _SortOrder = 0;
         public int SortOrder
         {
@@ -26,72 +22,74 @@ namespace BXFW
             {
                 _SortOrder = value;
 
-                if (TiledSpriteObjs.Values.Count <= 0)
+                if (tiledSpriteObjs.Values.Count <= 0)
                     return;
 
-                foreach (var list in TiledSpriteObjs.Values)
+                foreach (var list in tiledSpriteObjs.Values)
                 {
                     foreach (var rend in list)
                     {
                         if (rend == null)
-                            Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Renderers are null in object '{name}'.");
+                            Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Null renderer registered in object '{this.GetPath()}'.");
 
                         rend.sortingOrder = value;
                     }
                 }
             }
         }
-        [SerializeField] private Color rendColor = Color.white;
-        public Color RendColor
+        /// <summary>
+        /// Internal color for the renderer.
+        /// </summary>
+        [SerializeField] private Color rendererColor = Color.white;
+        /// <summary>
+        /// Color to set the all children renderers into.
+        /// </summary>
+        public Color Color
         {
-            get { return rendColor; }
+            get { return rendererColor; }
             set
             {
-                rendColor = value;
+                rendererColor = value;
 
-                if (AllRenderer.Count <= 0)
+                if (allRendererObjects.Count <= 0)
                 {
                     // Get child transforms & add
                     foreach (Transform rendAdd in transform)
                     {
                         if (rendAdd.TryGetComponent(out SpriteRenderer set))
-                            AllRenderer.Add(set);
+                            allRendererObjects.Add(set);
                     }
                 }
 
-                foreach (var rend in AllRenderer)
+                foreach (var rend in allRendererObjects)
                 {
                     if (rend == null)
-                        Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Renderers are null in object '{name}'.");
+                        Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Null renderer registered in object '{this.GetPath()}'.");
 
                     rend.color = value;
                 }
             }
         }
-
-        private const float RESIZE_T_SET_MUL_CLAMP_MIN = 0.001f;
-        public Vector2 ResizeTSetMultiplierClamp
+        /// <summary>
+        /// Sprite to tile.
+        /// </summary>
+        public Sprite TiledSprite;
+        /// <summary>
+        /// Bounds of a single sprite renderer.
+        /// <br>Returns a dummy value if there is no sprite renderer.</br>
+        /// </summary>
+        public Bounds SingleBounds
         {
-            get { return resizeTSetMultiplierClamp; }
-            set
+            get
             {
-                value.y = Mathf.Max(value.y, RESIZE_T_SET_MUL_CLAMP_MIN + RESIZE_T_SET_MUL_CLAMP_MIN);
-                value.x = Mathf.Clamp(value.x, RESIZE_T_SET_MUL_CLAMP_MIN, value.y);
+                if (allRendererObjects.Count <= 0)
+                    return TiledSprite != null ? TiledSprite.bounds : default;
 
-                resizeTSetMultiplierClamp = value;
-
-                // Also update the ResizeTransformSetMultiplier
-                ResizeTformSetMultiplier = ResizeTformSetMultiplier;
+                return allRendererObjects[0].bounds;
             }
         }
-        [SerializeField] private Vector2 resizeTSetMultiplierClamp = new Vector2(RESIZE_T_SET_MUL_CLAMP_MIN, 10f); // Default value
-        public float ResizeTformSetMultiplier
-        {
-            get { return resizeTformSetMultiplier; }
-            set { resizeTformSetMultiplier = Mathf.Clamp(value, ResizeTSetMultiplierClamp.x, ResizeTSetMultiplierClamp.y); }
-        }
-        [SerializeField] private float resizeTformSetMultiplier = 1f; // Default value
 
+        [SerializeField] private bool autoTile = false;
         public bool AutoTile
         {
             get { return autoTile; }
@@ -101,17 +99,19 @@ namespace BXFW
                 GenerateGrid();
             }
         }
-        public Vector2Int AllowGridAxis
+        [SerializeField] private TransformAxis2D allowGridAxis = TransformAxis2D.XYAxis;
+        public TransformAxis2D AllowGridAxis
         {
-            get { return allowGridAxis; }
+            get 
+            { 
+                return allowGridAxis;
+            }
             set
             {
                 allowGridAxis = value;
                 GenerateGrid();
             }
         }
-        [SerializeField] private Vector2Int allowGridAxis = Vector2Int.one; // Allow grid on both axis. (Default value desc.)
-        [SerializeField] private bool autoTile = false;
         public int GridX
         {
             get { return gridX; }
@@ -121,7 +121,7 @@ namespace BXFW
                 GenerateGrid();
             }
         }
-        [SerializeField] private int gridX = 0;                             // Default value
+        [SerializeField] private int gridX = 0;
         public int GridY
         {
             get { return gridY; }
@@ -131,54 +131,89 @@ namespace BXFW
                 GenerateGrid();
             }
         }
-        [SerializeField] private int gridY = 0;                             // Default value
+        [SerializeField] private int gridY = 0;
 
-        // Auto resize options
-        //public Vector2Int MaskResizeAxis 
-        //{ 
-        //    get { return maskResizeAxis; } 
-        //    set { maskResizeAxis = value; ResizeObj(); } 
-        //}
-        //[SerializeField] private Vector2Int maskResizeAxis = Vector2Int.right; // Only resize the mask on x. (Default value desc.)
-
-        [Header("Sprite")]
-        public Sprite tiledSprite;
-
-        // -- Script access
-        [SerializeField] private Transform correctScaledTransform;
-        //public Transform CorrectScaledParent 
-        //{ 
-        //    get { return correctScaledTransform; } 
-        //    private set { correctScaledTransform = value; } 
-        //}
-        /// <summary>
-        /// Access the <see cref="TiledSpriteObjs"/> dictionary.
-        /// </summary>
-        /// <param name="key">Key axis. If passed invalid key you will get null object</param>
-        public List<SpriteRenderer> this[Vector2Int key]
+        [SerializeField] private Transform correctScaledParent;
+        public Transform CorrectScaledParent
         {
-            get { return TiledSpriteObjs[key]; }
-            private set { TiledSpriteObjs[key] = value; }
+            get 
+            {
+                GenerateCorrectScaleParent();                
+                return correctScaledParent;
+            }
+            private set 
+            { 
+                correctScaledParent = value; 
+            }
         }
+        /// <summary>
+        /// Generates a correct scaled parent if it doesn't exist, if it does resizes it.
+        /// </summary>
+        public void GenerateCorrectScaleParent()
+        {
+            if (correctScaledParent == null)
+            {
+                correctScaledParent = new GameObject("CorrectScaledParent").transform;
+                correctScaledParent.SetParent(transform);
+            }
+            // Move all 1 layer down children to the 'correctScaledParent'
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+
+                if (child != correctScaledParent && child.parent != correctScaledParent)
+                {
+                    child.SetParent(correctScaledParent);
+                    i--;
+                }
+            }
+
+            correctScaledParent.localScale = new Vector3(1f / transform.localScale.x, 1f / transform.localScale.y, 1f / transform.localScale.z);
+        }
+
+        /// <summary>
+        /// All of the sprite renderers, queue and placement agnostic.
+        /// </summary>
+        [SerializeField] private List<SpriteRenderer> allRendererObjects = new List<SpriteRenderer>();
         public SpriteRenderer this[int key]
         {
-            get { return AllRenderer[key]; }
+            get { return allRendererObjects[key]; }
         }
-
-        [SerializeField]
-        private SerializableDictionary<Vector2Int, List<SpriteRenderer>> TiledSpriteObjs =
-            new SerializableDictionary<Vector2Int, List<SpriteRenderer>>();
-        [SerializeField] private List<SpriteRenderer> AllRenderer = new List<SpriteRenderer>();
-        public Camera ResizeTargetCamera;
-
-        // ---- Tempoary ---- //
-        private bool AwakeCalledInit = false;
-        #endregion
+        
+        /// <summary>
+        /// List wrapper for unity to serialize the tiled objects.
+        /// </summary>
+        [Serializable]
+        public class SpriteRendererList : List<SpriteRenderer> 
+        {
+            public SpriteRendererList()
+            { }
+            public SpriteRendererList(int capacity) : base(capacity)
+            { }
+            public SpriteRendererList(IEnumerable<SpriteRenderer> collection) : base(collection)
+            { }
+        }
+        [SerializeField] private SerializableDictionary<int, SpriteRendererList> tiledSpriteObjs = new SerializableDictionary<int, SpriteRendererList>();
+        /// <summary>
+        /// Get the X tiled sprite renderers on their Y index.
+        /// <br>Index of the X tiles are sequential, but their object placements are not sequential.</br>
+        /// </summary>
+        public IReadOnlyDictionary<int, SpriteRendererList> TiledSpriteObjects
+        {
+            get
+            {
+                return tiledSpriteObjs;
+            }
+        }
 
         private void Awake()
         {
             Initilaze();
-            AwakeCalledInit = true;
+
+            if (GridOnAwake)
+            {
+                GenerateGrid();
+            }
         }
 
         /// <summary>
@@ -187,55 +222,38 @@ namespace BXFW
         public void Initilaze()
         {
             // Set main camera
-            ResizeTargetCamera = Camera.main;
+            if (ResizeTargetCamera == null)
+                ResizeTargetCamera = Camera.main;
+            
             // Create correct scaled parent.
-            //GenerateCorrectScaleParent();
-
-            // Set Tiled objects default value
-            TiledSpriteObjs = new SerializableDictionary<Vector2Int, List<SpriteRenderer>>();
-
-            // -- Awake only events
-            if (!AwakeCalledInit)
-            {
-                if (GridOnAwake)
-                {
-                    GenerateGrid();
-                }
-            }
+            GenerateCorrectScaleParent();
         }
-        //public void GenerateCorrectScaleParent()
-        //{
-        //    if (CorrectScaledParent == null)
-        //    {
-        //        CorrectScaledParent = new GameObject("CorrectScaledParent").transform;
-        //        CorrectScaledParent.SetParent(transform);
-        //    }
 
-        //    CorrectScaledParent.localScale = new Vector3(1f / transform.localScale.x, 1f / transform.localScale.y, 1f / transform.localScale.z);
-        //}
-
+        private void Update()
+        {
+            if (transform.hasChanged)
+                GenerateCorrectScaleParent();
+        }
         /// <summary>
         /// Method to regenerate grid.
         /// </summary>
-        public void GenerateGrid()
+        /// <returns><see langword="true"/> if the generation was successful. Note that this method removes the previous grid no matter the result.</returns>
+        public bool GenerateGrid()
         {
-            /// WARNING : Always set the private (<see cref="gridX"/>/<see cref="gridY"/>) variables inside <see cref="GenerateGrid"/>!
-            /// If you don't do that something bad will happen. (stack overflow exception) 
-            /// The reason is that public values call this method.
+            // Call this first to avoid destroying existing stuff
+            ClearGrid();
 
-            #region GenerateGrid Prepare
-            if (/*(CorrectScaledParent == null ||*/ ResizeTargetCamera == null ||
-                TiledSpriteObjs == null)
+            // Prepare
+            if (CorrectScaledParent == null || ResizeTargetCamera == null || tiledSpriteObjs == null)
             {
                 Initilaze();
             }
 
-            //ResizeObj();
-
-            //if (!this.CorrectScaledTransformIsCorrect())
-            //{
-            //    GenerateCorrectScaleParent();
-            //}
+            if (TiledSprite == null)
+            {
+                Debug.LogError($"[TilingSpriteRenderer::GenerateGrid] The tiledSprite variable is null on object \"{name}\".");
+                return false;
+            }
 
             // Call autotile statement after resize to get correct bound scale.
             if (AutoTile)
@@ -243,25 +261,15 @@ namespace BXFW
                 gridX = 1;
                 gridY = 1;
 
-                // Calculate bounds
-                // Split bounds and ceil the value. (to avoid spaces)
-                // Debug.Log($"Bound mask : {SpriteMaskComponent.bounds.size.x} / {tiledSprite.bounds.size.x} -> {SpriteMaskComponent.bounds.size.x / tiledSprite.bounds.size.x}");
-                gridX = (Mathf.CeilToInt(transform.lossyScale.x / tiledSprite.bounds.size.x) * 2) - gridX;
-                gridY = (Mathf.CeilToInt(transform.lossyScale.y / tiledSprite.bounds.size.y) * 2) - gridY;
+                // Calculate bounds, split bounds and ceil the value. (to avoid spaces)
+                // TODO : Use SpriteMaskComponent.bounds for proper auto tiling
+                gridX = (Mathf.CeilToInt(transform.lossyScale.x / TiledSprite.bounds.size.x) * 2) - gridX;
+                gridY = (Mathf.CeilToInt(transform.lossyScale.y / TiledSprite.bounds.size.y) * 2) - gridY;
             }
 
-            if (tiledSprite == null)
-            {
-                Debug.LogError($"[TilingSpriteRenderer] The tiledSprite variable is null on object \"{name}\".");
-                return;
-            }
-            #endregion
-
-            // Destroy if grid is set to 0? idk
-            ClearGrid();
-
-            #region GenerateGrid Generate Object
-            if ((GridX <= 0 || GridY <= 0) && !AutoTile) return; // No grid
+            // Generate Object
+            if ((GridX <= 0 || GridY <= 0) && !AutoTile)
+                return false; // No grid
 
             /// Returns true if the number is odd.
             /// Delegate.
@@ -271,164 +279,62 @@ namespace BXFW
                 return (currTile % 2) == 1;
             }
 
-            var gX = (AllowGridAxis.x == 1) ? GridX : 1;
-            var gY = (AllowGridAxis.y == 1) ? GridY : 1;
+            // Grid count
+            int gX = ((AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? GridX : 1;
+            int gY = ((AllowGridAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? GridY : 1;
 
             for (int y = 0; y < gY; y++)
             {
-                var ListTile = new List<SpriteRenderer>(GridX);
-                AllRenderer.Clear();
-
                 int x;
+
+                SpriteRendererList ListTile = new SpriteRendererList(GridX);
+                allRendererObjects.Clear();
+
                 for (x = 0; x < gX; x++)
                 {
-                    if (IsClearing) return;
-
-                    var sRend = new GameObject($"Tile({x}, {y})").AddComponent<SpriteRenderer>();
+                    SpriteRenderer sRend = new GameObject($"Tile({x}, {y})").AddComponent<SpriteRenderer>();
                     //sRend.transform.SetParent(CorrectScaledParent);
-                    sRend.transform.SetParent(transform);
-                    sRend.sprite = tiledSprite;
+                    sRend.transform.SetParent(CorrectScaledParent);
+                    sRend.sprite = TiledSprite;
                     sRend.sortingOrder = _SortOrder;
-                    sRend.maskInteraction = SpriteMaskInteraction.None;
+                    sRend.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
                     sRend.transform.localPosition = new Vector3(
                         sRend.bounds.size.x * Mathf.CeilToInt(x / 2f) * (tileRightOrUp(x) ? 1f : -1f),
                         sRend.bounds.size.y * Mathf.CeilToInt(y / 2f) * (tileRightOrUp(y) ? 1f : -1f)
-                        );
+                    );
 
                     sRend.transform.localScale = Vector3.one;
 
-                    if (RendererRef == null)
-                    {
-                        RendererRef = sRend;
-                    }
                     ListTile.Add(sRend);
-                    AllRenderer.Add(sRend);
+                    allRendererObjects.Add(sRend);
                 }
 
-                TiledSpriteObjs.Add(new Vector2Int(x, y), ListTile);
+                tiledSpriteObjs.Add(y, ListTile);
             }
 
-            RendColor = rendColor;
-            #endregion
+            // Set renderable colors
+            Color = rendererColor;
 
-            #region This place is a scrapped bounds calculating thing
-            /*
-            // Destroy all childs.
-            foreach (Transform t in transform)
-            {
-                if (t == transform) continue;
-
-                Destroy(t.gameObject);
-            }
-
-            // Set component settings
-            sRenderer.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
-            sMask.sprite = sprite;
-
-            // Check alignment
-            var align = GetSpriteAlignment(sRenderer);
-            if (align != SpriteAlignment.TopRight)
-            {
-                Debug.LogWarning($"[TilingSpriteRenderer::Awake] You forgot change the sprite pivot to Top Right. The pivot gathered was : \"{align}\".");
-            }
-
-
-            // math
-            Vector2 spriteSize_wu = new Vector2(sRenderer.bounds.size.x / transform.localScale.x, 
-                sRenderer.bounds.size.y / transform.localScale.y);
-            Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
-
-            if (gridX != 0.0f) 
-            {
-                float width_wu = sRenderer.bounds.size.x / gridX;
-                scale.x = width_wu / spriteSize_wu.x;
-                spriteSize_wu.x = width_wu;
-            }
-            if (gridY != 0.0f) 
-            {
-                float height_wu = sRenderer.bounds.size.y / gridY;
-                scale.y = height_wu / spriteSize_wu.y;
-                spriteSize_wu.y = height_wu;
-            }
-
-            // Create gameobject 'prefab'
-            GameObject childPrefab = new GameObject("BGTilePrefab");
-            SpriteRenderer childSprite = childPrefab.AddComponent<SpriteRenderer>();
-            childPrefab.transform.position = transform.position;
-            childSprite.sprite = sRenderer.sprite;
-
-            GameObject child;
-
-            Debug.Log($"For loop conditions // y bounds : i * {(int)spriteSize_wu.y} < {Mathf.RoundToInt(sRenderer.bounds.size.y)} | x bounds : j * {(int)spriteSize_wu.x} < {Mathf.RoundToInt(sRenderer.bounds.size.x)}");
-
-            // TODO : Fix bound calculation.
-            for (int i = 0, h = Mathf.RoundToInt(sRenderer.bounds.size.y); i * spriteSize_wu.y < h; i++) 
-            {
-                Debug.Log($"{i} * {(int)spriteSize_wu.y / 2} < {Mathf.RoundToInt(sRenderer.bounds.size.y)}");
-
-                for (int j = 0, w = Mathf.RoundToInt(sRenderer.bounds.size.x); j * spriteSize_wu.x < w; j++) 
-                {
-                    child = Instantiate(childPrefab);
-                    child.transform.position = transform.position - (new Vector3(spriteSize_wu.x * j, spriteSize_wu.y * i, 0f));
-                    child.transform.localScale = scale;
-                    child.transform.parent = transform;
-                }
-            }
-
-            // Destroy tempoary prefab.
-            Destroy(childPrefab);
-
-            // Disable this SpriteRenderer and let the prefab children render themselves
-            // Note : We only use the sprite renderer for bounds, so i might create a bounds class that is only used for determining bounds.
-            sRenderer.enabled = false; */
-            #endregion
+            return true;
         }
 
-        ///// <summary>
-        ///// Resizes the object according to the camera.
-        ///// </summary>
-        //public void ResizeObj()
-        //{
-        //    if (CameraResize)
-        //    {
-        //        ResizeTargetCamera.ResizeSpriteMaskToScreen(this, ResizeTformSetMultiplier, maskResizeAxis);
-        //    }
-        //}
-
         /// <summary>
-        /// <see cref="ClearGrid"/> should only call SET on this.
         /// Get whether the function <see cref="ClearGrid"/> is running.
         /// </summary>
-        private bool IsClearing = false;
         public void ClearGrid()
         {
-            IsClearing = true;
             if (transform.childCount > 0)
             {
-                // Cache the child count (that updates with the bool condition)
+                // transform.childCount updates when an object is destroyed
+                // keep in current state for the exact amount of children to be destroyed.
                 var childCount = transform.childCount;
 
                 for (int i = 0; i < childCount; i++)
                 {
-                    /// Q: Why is there a constant '0'????
-                    /// A: Well, unity changed stuff.
-                    /// Previously the 'foreach' iterator of a transform does not update it's indexes whenever there is a null member.
-                    /// Since we perform destroy action inside a foreach, our iterator moves 2 steps forward instead of ignoring the 
-                    /// null member (what we mean is the iterator list is stripped from nulls).
-                    /// Whenever this null members are stripped, the array shifts and it does not use the intended value to remove, 
-                    /// leaving half of the transform content intact.
-                    /// This just removes whatever is index 0 now. It should work on all unity versions as index 0 shifts like the 
-                    /// unity 2020 transform iterator.
-                    /// ----
-                    /// TL;DR : this is just a simple hack to mitigate a hard to debug problem, and that's why we have a very long
-                    /// comment here.
                     var t = transform.GetChild(0);
 
                     if (t == null)
-                    {
-                        Debug.Log("Transform is null. Continuing.");
                         continue;
-                    }
 
                     if (Application.isEditor)
                         DestroyImmediate(t.gameObject);
@@ -436,13 +342,12 @@ namespace BXFW
                         Destroy(t.gameObject);
                 }
             }
-            /// It now works (goddamnit unity)
-            IsClearing = false;
-            if (TiledSpriteObjs != null)
+
+            if (tiledSpriteObjs != null)
             {
-                if (TiledSpriteObjs.Count > 0)
+                if (tiledSpriteObjs.Count > 0)
                 {
-                    TiledSpriteObjs.Clear();
+                    tiledSpriteObjs.Clear();
                 }
             }
         }

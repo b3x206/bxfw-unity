@@ -72,14 +72,15 @@ namespace BXFW
     /// <br>NOTE : This is an axis value for position.
     /// For rotation, please use the <see cref="TransformAxis"/> (or <see cref="QuatAxis"/>).</br>
     /// </summary>
+    [Flags]
     public enum TransformAxis2D
     {
         None = 0,
 
-        XAxis,
-        YAxis,
+        XAxis = 1 << 0,
+        YAxis = 1 << 1,
 
-        XYAxis
+        XYAxis = XAxis | YAxis
     }
 
     /// <summary>

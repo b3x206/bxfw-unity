@@ -47,7 +47,7 @@ namespace BXFW
                         continue;
                     }
 
-                    obj.BackgroundLayer.TilingSpriteRendererComponent.RendColor = _GroupColor;
+                    obj.BackgroundLayer.TilingSpriteRendererComponent.Color = _GroupColor;
                 }
             }
         }

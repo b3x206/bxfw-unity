@@ -29,12 +29,12 @@ namespace BXFW
                 return;
             }
 
-            TilingSpriteRendererComponent.tiledSprite = rendSprite;
-            TilingSpriteRendererComponent.AllowGridAxis = Vector2Int.right;
+            TilingSpriteRendererComponent.TiledSprite = rendSprite;
+            TilingSpriteRendererComponent.AllowGridAxis = TransformAxis2D.XAxis;
             TilingSpriteRendererComponent.ResizeTargetCamera = ParentGroup.TargetCamera;
             TilingSpriteRendererComponent.CameraResize = true;
             TilingSpriteRendererComponent.AutoTile = true;
-            TilingSpriteRendererComponent.ResizeTformSetMultiplier = 3f;
+            //TilingSpriteRendererComponent.ResizeTformSetMultiplier = 3f;
         }
 
         private void Start()
@@ -46,7 +46,7 @@ namespace BXFW
 
             StartPos.x = transform.position.x;
             StartPos.y = transform.position.y;
-            Length = TilingSpriteRendererComponent.RendererRef.bounds.size.x;
+            Length = TilingSpriteRendererComponent.SingleBounds.size.x;
         }
 
         private void Update()
