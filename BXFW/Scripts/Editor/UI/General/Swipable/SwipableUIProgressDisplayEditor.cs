@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -7,25 +8,35 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(SwipableUIProgressDisplay))]
+    [CustomEditor(typeof(SwipableUIProgressDisplay)), CanEditMultipleObjects]
     internal class SwipableUIProgressDisplayEditor : Editor
     {
         public override void OnInspectorGUI()
         {
-            var target = base.target as SwipableUIProgressDisplay;
-            target.GenerateChildImage();
+            var targets = base.targets.Cast<SwipableUIProgressDisplay>().ToArray();
+
+            foreach (var target in targets)
+                target.GenerateChildImage();
 
             var dictDraw = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
                 { nameof(SwipableUIProgressDisplay.TargetSwipableUI), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
                     {
-                        if (target.TargetSwipableUI != null)
+                        if (targets.Any(supd => supd.TargetSwipableUI != null))
                         {
                             // Add a button to go to the target swipable ui
-                            if (GUILayout.Button(new GUIContent("Go to target display", "Makes the focus TargetSwipableUI.")))
+                            if (GUILayout.Button(new GUIContent(targets.Length > 1 ? "Go to target display" : "Show target displays", "Makes the focus TargetSwipableUI.")))
                             {
-                                Selection.activeTransform = target.TargetSwipableUI.transform;
-                                SceneView.FrameLastActiveSceneView(); // Frames the scene view to active transform
+                                if (targets.Length > 1)
+                                {
+                                    SwipableUIProgressDisplay[] nonNullUI = targets.Where(t => t.TargetSwipableUI != null).ToArray();
+                                    Selection.objects = nonNullUI;
+                                }
+                                else
+                                {
+                                    Selection.activeTransform = targets[0].TargetSwipableUI.transform;
+                                    SceneView.FrameLastActiveSceneView(); // Frames the scene view to active transform
+                                }
                             }
                         }
                         else
@@ -36,34 +47,32 @@ namespace BXFW.ScriptEditor
                 },
                 { nameof(SwipableUIProgressDisplay.ChildImageFadeType), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
                     {
-                        switch (target.ChildImageFadeType)
-                        { 
-                            case FadeType.None:
-                            case FadeType.CustomUnityEvent:
-                                EditorGUILayout.HelpBox("FadeType : None & CustomUnityEvent is not supported.", MessageType.Warning);
-                                break;
+                        if (targets.Any(t => t.ChildImageFadeType == FadeType.None || t.ChildImageFadeType == FadeType.CustomUnityEvent))
+                        {
+                            EditorGUILayout.HelpBox("FadeType : None & CustomUnityEvent is not supported.", MessageType.Warning);
                         }
                     })
                 }
             };
 
-            switch (target.ChildImageFadeType)
+            bool TargetFadeTypeIsColorFade(SwipableUIProgressDisplay p)
             {
-                case FadeType.None:
-                case FadeType.ColorFade:
-                case FadeType.CustomUnityEvent:
-                    dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    if (!target.ChangeColorWithTween)
-                    {
-                        dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    }
-                    break;
-                case FadeType.SpriteSwap:
+                return p.ChildImageFadeType == FadeType.None || p.ChildImageFadeType == FadeType.ColorFade || p.ChildImageFadeType == FadeType.CustomUnityEvent;
+            }
+            if (targets.All(t => t.ChildImageFadeType == FadeType.SpriteSwap))
+            {
+                dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            }
+            else if (targets.All(t => TargetFadeTypeIsColorFade(t)))
+            {
+                dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                if (targets.Any(t => !t.ChangeColorWithTween))
+                {
                     dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                    break;
+                }
             }
 
             serializedObject.DrawCustomDefaultInspector(dictDraw);
