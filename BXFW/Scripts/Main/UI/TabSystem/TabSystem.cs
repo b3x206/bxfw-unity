@@ -224,7 +224,7 @@ namespace BXFW.UI
                         if (Application.isPlaying)
                         {
                             if (tabButtons[i] != null)
-                                Destroy(tabButtons[i].gameObject);
+                                DestroyImmediate(tabButtons[i].gameObject); // have to DestroyImmediate here as well.
                             else
                             {
                                 // Tab button is null, call CleanTabButtonsList
@@ -275,6 +275,7 @@ namespace BXFW.UI
             // Generate tabs normally after dealing with the '0' stuff.
             GenerateTabs();
         }
+
         /// <summary>
         /// Generates tabs.
         /// </summary>
@@ -286,7 +287,11 @@ namespace BXFW.UI
                 if (Application.isPlaying)
                 {
                     if (tabButtons[tabButtons.Count - 1] != null)
-                        Destroy(tabButtons[tabButtons.Count - 1].gameObject);
+                    {
+                        // We need to use DestroyImmediate here as there's no need for the reference
+                        // Otherwise the script gets stuck at an infinite loop and dies.
+                        DestroyImmediate(tabButtons[tabButtons.Count - 1].gameObject);
+                    }
                     else
                     {
                         // Tab button is null, call CleanTabButtonsList
@@ -331,6 +336,7 @@ namespace BXFW.UI
                 {
                     if (Application.isPlaying)
                     {
+                        // Can most likely use 'Destroy' here as this does not depend on any array related thing.
                         Destroy(transform.GetChild(0).gameObject);
                     }
 #if UNITY_EDITOR
