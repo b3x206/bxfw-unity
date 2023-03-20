@@ -25,7 +25,7 @@ namespace BXFW.ScriptEditor
                         if (targets.Any(supd => supd.TargetSwipableUI != null))
                         {
                             // Add a button to go to the target swipable ui
-                            if (GUILayout.Button(new GUIContent(targets.Length > 1 ? "Go to target display" : "Show target displays", "Makes the focus TargetSwipableUI.")))
+                            if (GUILayout.Button(new GUIContent(targets.Length > 1 ? "Show target displays" : "Go to target display", "Makes the focus TargetSwipableUI.")))
                             {
                                 if (targets.Length > 1)
                                 {
