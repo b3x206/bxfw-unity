@@ -141,10 +141,6 @@ namespace BXFW
                 GenerateCorrectScaleParent();
                 return correctScaledParent;
             }
-            private set
-            {
-                correctScaledParent = value;
-            }
         }
         /// <summary>
         /// Generates a correct scaled parent if it doesn't exist, if it does resizes it.
@@ -216,12 +212,21 @@ namespace BXFW
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return;
+#endif
             Initilaze();
 
             if (GridOnAwake)
             {
                 GenerateGrid();
             }
+        }
+        private void Update()
+        {
+            if (transform.hasChanged)
+                GenerateCorrectScaleParent();
         }
 
         /// <summary>
@@ -235,12 +240,6 @@ namespace BXFW
 
             // Create correct scaled parent.
             GenerateCorrectScaleParent();
-        }
-
-        private void Update()
-        {
-            if (transform.hasChanged)
-                GenerateCorrectScaleParent();
         }
         /// <summary>
         /// Method to regenerate grid.
@@ -278,36 +277,30 @@ namespace BXFW
             }
 
             // Generate Object
-            if ((GridX <= 0 || GridY <= 0) && !AutoTile)
+            if ((gridX <= 0 || gridY <= 0) && !AutoTile)
                 return false; // No grid
 
-            /// Returns true if the number is odd.
-            /// Delegate.
-            /// Info : If unity complains about this method being static remove the static keyword and ignore visual studio. seems to work in 2020 unity.
-            static bool tileRightOrUp(int currTile)
+            bool tileRightOrUp(int currTile)
             {
                 return (currTile % 2) == 1;
             }
 
             // Grid count
-            int gX = ((AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? GridX : 1;
-            int gY = ((AllowGridAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? GridY : 1;
+            int gX = ((AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? gridX : 1;
+            int gY = ((AllowGridAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? gridY : 1;
 
             for (int y = 0; y < gY; y++)
             {
                 int x;
 
-                var ListTile = new SpriteRendererList(GridX);
-                allRendererObjects.Clear();
+                var ListTile = new SpriteRendererList(gridX);
 
                 for (x = 0; x < gX; x++)
                 {
                     SpriteRenderer sRend = new GameObject($"Tile({x}, {y})").AddComponent<SpriteRenderer>();
-                    //sRend.transform.SetParent(CorrectScaledParent);
                     sRend.transform.SetParent(CorrectScaledParent);
                     sRend.sprite = TiledSprite;
                     sRend.sortingOrder = _SortOrder;
-                    sRend.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
                     sRend.transform.localPosition = new Vector3(
                         sRend.bounds.size.x * Mathf.CeilToInt(x / 2f) * (tileRightOrUp(x) ? 1f : -1f),
                         sRend.bounds.size.y * Mathf.CeilToInt(y / 2f) * (tileRightOrUp(y) ? 1f : -1f)
@@ -333,25 +326,31 @@ namespace BXFW
         /// </summary>
         public void ClearGrid()
         {
-            if (transform.childCount > 0)
+            if (correctScaledParent.childCount > 0)
             {
                 // transform.childCount updates when an object is destroyed
                 // keep in current state for the exact amount of children to be destroyed.
-                var childCount = transform.childCount;
+                var childCount = correctScaledParent.childCount;
 
                 for (int i = 0; i < childCount; i++)
                 {
-                    var t = transform.GetChild(0);
+                    var t = correctScaledParent.GetChild(0);
 
                     if (t == null)
                         continue;
 
+                    if (t == correctScaledParent)
+                        continue;
 #if UNITY_EDITOR
                     if (Application.isEditor && !Application.isPlaying)
                         UnityEditor.Undo.DestroyObjectImmediate(t.gameObject);
                     else
 #endif
-                        Destroy(t.gameObject);
+                    {
+                        // Destroy does not work, because making assets that generate objects on scene
+                        // is a bad thing, you need to fiddle with Mesh component instead
+                        DestroyImmediate(t.gameObject);
+                    }
                 }
             }
 

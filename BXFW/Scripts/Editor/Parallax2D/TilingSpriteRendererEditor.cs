@@ -22,6 +22,12 @@ namespace BXFW.ScriptEditor
         /// </summary>
         protected void UndoRecordGridGeneration(Action undoableGenerateAction, string undoMsg, TilingSpriteRenderer target = null)
         {
+            if (EditorApplication.isPlaying)
+            {
+                undoableGenerateAction();
+                return;
+            }
+
             // TODO : Merge undos into one using the Undo group creation outside the foreach
             //var Targets = targets.Cast<TilingSpriteRenderer>();
             if (target == null)
@@ -106,9 +112,12 @@ namespace BXFW.ScriptEditor
                 // This one is not included in UndoRecordGridGeneration as it just modifies grid elements without destroying or creating them.
                 foreach (var target in Targets)
                 {
-                    undoRecord.Add(target);
-                    undoRecord.AddRange(target.AllRendererObjects);
-                    Undo.RecordObjects(undoRecord.ToArray(), "change value RendColor");
+                    if (!EditorApplication.isPlaying)
+                    {
+                        undoRecord.Add(target);
+                        undoRecord.AddRange(target.AllRendererObjects);
+                        Undo.RecordObjects(undoRecord.ToArray(), "change value RendColor");
+                    }
 
                     target.Color = tSRColor;
                 }

@@ -26,7 +26,7 @@ namespace BXFW
             EditorGUILayout.PropertyField
                 (serializedObject.FindProperty(nameof(ParallaxBackgroundGroup.TargetCamera)));
             EditorGUILayout.PropertyField
-                (serializedObject.FindProperty(nameof(ParallaxBackgroundGroup.LengthOffset)));
+                (serializedObject.FindProperty(nameof(ParallaxBackgroundGroup.ScrollAxis)));
             EditorGUILayout.PropertyField
                 (serializedObject.FindProperty(nameof(ParallaxBackgroundGroup.UseGlobalGroupColor)));
 

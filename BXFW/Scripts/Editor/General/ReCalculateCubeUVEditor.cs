@@ -116,13 +116,20 @@ namespace BXFW.ScriptEditor
                 var TargetRenderer = target.GetComponent<Renderer>();
                 var TargetMeshFilter = target.GetComponent<MeshFilter>();
 
+                if (TargetRenderer == null || TargetMeshFilter == null)
+                    continue;
+
                 // Only show this HelpBox if the target mesh wasn't applied to this object also.
-                if (File.Exists(GetFileSaveDir(target)) && TargetMeshFilter.sharedMesh.name != target.CubeMeshName && !drawnMeshAssetExistsWarning)
+                if (File.Exists(GetFileSaveDir(target)) && 
+                    TargetMeshFilter.sharedMesh != null && TargetMeshFilter.sharedMesh.name != target.CubeMeshName &&
+                    !drawnMeshAssetExistsWarning)
                 {
                     EditorGUILayout.HelpBox(string.Format("[ReCalculateCubeUV] A mesh asset with the same name {0} exists. Please change the name to prevent data loss.", target.CubeMeshName), MessageType.Warning);
                     drawnMeshAssetExistsWarning = true;
                 }
-                if (TargetRenderer.sharedMaterial != null && TargetRenderer.sharedMaterial.mainTexture != null && TargetRenderer.sharedMaterial.mainTexture.wrapMode != TextureWrapMode.Repeat && !drawnWrapModePropertyInfo)
+                if (TargetRenderer.sharedMaterial != null && TargetRenderer.sharedMaterial.mainTexture != null &&
+                    TargetRenderer.sharedMaterial.mainTexture.wrapMode != TextureWrapMode.Repeat && 
+                    !drawnWrapModePropertyInfo)
                 {
                     EditorGUILayout.HelpBox("[ReCalculateCubeUV] Ensure the texture you added has the wrapMode property set to TextureWrapMode.Repeat.", MessageType.Warning);
                     drawnWrapModePropertyInfo = true;
@@ -167,6 +174,12 @@ namespace BXFW.ScriptEditor
                     var target = targets[i];
                     var TargetRenderer = target.GetComponent<Renderer>();
                     var TargetMeshFilter = target.GetComponent<MeshFilter>();
+
+                    if (TargetRenderer == null || TargetMeshFilter == null)
+                    {
+                        Debug.LogWarning(string.Format("[ReCalculateCubeUV::ReCalculate] Failed to recalculate on object \"{0}\". This object does not have a MeshFilter or a MeshRenderer.", target.GetPath()));
+                        continue;
+                    }
 
                     // Changing multiple objects?
                     if (i >= 1)

@@ -40,8 +40,8 @@ namespace BXFW
                 }
             }
         }
+        public TransformAxis2D ScrollAxis = TransformAxis2D.XAxis;
         public Camera TargetCamera;
-        public float LengthOffset = 0f;
 
         private void Awake()
         {
