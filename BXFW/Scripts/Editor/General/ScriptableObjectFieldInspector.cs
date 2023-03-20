@@ -24,13 +24,13 @@ namespace BXFW
         /// <br>Param In 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
         /// <br>Should return : Intended GUI height.</br>
         /// <br/>
-        /// <br>If this method is left blank, it should be ignored and height should be assumed as 0.</br>
+        /// <br>If this method is left blank, it is be ignored and height is assumed as 0.</br>
         /// </summary>
         public Func<T, float> GetGUIHeight;
         /// <summary>
         /// Create the GUI in this delegate.
         /// <br>Parameter 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
-        /// <br>Parameter 2 : When this 'DrawGUI' call was made. This event can be called twice with different flags (but only 1 flag).</br>
+        /// <br>Parameter 2 : When this 'DrawGUI' call was made. This event can be called twice with all order flags set.</br>
         /// <br>Parameter 3 : Allocated rectangle for the given GUI.</br>
         /// </summary>
         public Action<T, MatchGUIActionOrder, Rect> DrawGUI;
@@ -182,7 +182,7 @@ namespace BXFW
             {
                 // Set the index directly
                 // the returned field info cannot be a direct reference / pointer to an array element (because c# arrays are weird)
-                // (heck, even the fieldInfo internal variable that unity returns points to that element's array parent)
+                // (heck, even the fieldInfo variable that unity gives points to that element's array parent)
                 // so we have to copy the entire 'IEnumerable' thing and paste into that array.
 
                 int index = property.GetPropertyArrayIndex();
