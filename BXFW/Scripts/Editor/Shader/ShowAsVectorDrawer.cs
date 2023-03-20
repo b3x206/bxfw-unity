@@ -35,11 +35,11 @@ namespace BXFW.ScriptEditor
             // Reserved rect for the label
             Rect labelRect = new Rect(position.x, position.y, labelWidth, position.height);
             // Reserved rect for the vector2 field
-            Rect vec2fieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
+            Rect vecfieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
 
             // Draw
             EditorGUI.LabelField(labelRect, label);
-            Vector2 matValue = EditorGUI.Vector2Field(vec2fieldRect, GUIContent.none, value);
+            Vector2 matValue = EditorGUI.Vector2Field(vecfieldRect, GUIContent.none, value);
             // Apply
             if (EditorGUI.EndChangeCheck())
             {
@@ -65,7 +65,7 @@ namespace BXFW.ScriptEditor
         {
             if (isDrawingOnInvalidType)
             {
-                EditorGUI.HelpBox(position, $"ShowAsVector2 on invalid field {prop.displayName}. Please use vector fields only.", MessageType.Warning);
+                EditorGUI.HelpBox(position, $"ShowAsVector3 on invalid field {prop.displayName}. Please use vector fields only.", MessageType.Warning);
                 return;
             }
 
@@ -78,10 +78,10 @@ namespace BXFW.ScriptEditor
             // Get the current given area and subtract from it
             float labelWidth = position.width * .40f; // 40% of the given area, unity does it like this
             Rect labelRect = new Rect(position.x, position.y, labelWidth, position.height);
-            Rect vec2fieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
+            Rect vecfieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
 
             EditorGUI.LabelField(labelRect, label);
-            Vector3 matValue = EditorGUI.Vector3Field(vec2fieldRect, GUIContent.none, value);
+            Vector3 matValue = EditorGUI.Vector3Field(vecfieldRect, GUIContent.none, value);
 
             if (EditorGUI.EndChangeCheck())
             {

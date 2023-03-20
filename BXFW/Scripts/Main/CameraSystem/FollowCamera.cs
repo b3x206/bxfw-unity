@@ -80,6 +80,9 @@ namespace BXFW
         /// </summary>
         protected virtual void FixedUpdate()
         {
+            if (!CanFollow)
+                return;
+
             var followPos = (FollowTransform == null || UseFollowVecInstead) ? FollowVector3 : FollowTransform.position;
             var lerpPos = CurrentCameraOffset.UseCameraPosClamp ? new Vector3(
                 Mathf.Clamp(followPos.x + CurrentCameraOffset.Position.x, CurrentCameraOffset.CameraPosXClamp.x, CurrentCameraOffset.CameraPosXClamp.y),
@@ -92,34 +95,31 @@ namespace BXFW
                         CurrentCameraOffset.EulerRotation.y,
                         CurrentCameraOffset.EulerRotation.z);
 
-            if (CanFollow)
-            {
-                transform.SetPositionAndRotation(
-                    // Position
-                    Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
-                    // Rotation
-                    Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
-                );
-            }
+            transform.SetPositionAndRotation(
+                // Position
+                Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
+                // Rotation
+                Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
+            );
         }
         #endregion
 
 #if UNITY_EDITOR
         private static Color[] CacheColor;
+        // Generate persistent unique colors. (dumb method, we should use the editor script instead).
+        private static Color GetRandColor()
+        {
+            return new Color(
+                Random.Range(0.5f, 1f),
+                Random.Range(0.5f, 1f),
+                Random.Range(0.5f, 1f));
+        }
         /// <summary>
         /// Draw gizmos on selection. This draws the camera positions in <see cref="CameraOffsetTargets"/>.
         /// <br>Always call this method when you override it.</br>
         /// </summary>
         protected virtual void OnDrawGizmosSelected()
         {
-            // Generate persistent unique colors. (dumb method, we should use the editor script instead).
-            static Color GetRandColor()
-            {
-                return new Color(
-                    Random.Range(0.5f, 1f),
-                    Random.Range(0.5f, 1f),
-                    Random.Range(0.5f, 1f));
-            }
             if (CacheColor == null)
             {
                 CacheColor = new Color[CameraOffsetTargets.Length + 1];

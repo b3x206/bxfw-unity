@@ -9,7 +9,7 @@
     {
         /// <summary>
         /// Target object of the tween.
-        /// <br>It is <c>recommended</c> for this to be assigned to a valid object.</br>
+        /// <br>It is <i>recommended</i> for this to be assigned to a valid object.</br>
         /// </summary>
         UnityEngine.Object TargetObject { get; }
 

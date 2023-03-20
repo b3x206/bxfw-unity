@@ -27,7 +27,7 @@ namespace BXFW
 
             if (interactionInput)
             {
-                Collider[] Player_EnvInteract =
+                Collider[] playerEnvInteractables =
                     Physics.OverlapBox(
                         center: transform.InverseTransformPoint(InteractionPoint),
                         halfExtents: interactionBoxSize,
@@ -36,9 +36,9 @@ namespace BXFW
                         QueryTriggerInteraction.Collide
                     );
 
-                for (int i = 0; i < Player_EnvInteract.Length; i++)
+                for (int i = 0; i < playerEnvInteractables.Length; i++)
                 {
-                    if (Player_EnvInteract[i].TryGetComponent(out IPlayerInteractable pInteract))
+                    if (playerEnvInteractables[i].TryGetComponent(out IPlayerInteractable pInteract))
                     {
                         if (pInteract.AllowPlayerInteraction)
                         {
