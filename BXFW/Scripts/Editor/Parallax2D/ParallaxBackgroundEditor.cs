@@ -134,33 +134,6 @@ namespace BXFW
                 return;
             }
 
-            // This has to be called after an area is created.
-            EditorAdditionals.MakeDroppableAreaGUI(() =>
-            {
-                List<Sprite> listSprite = new List<Sprite>(DragAndDrop.paths.Length);
-
-                foreach (var path in DragAndDrop.paths)
-                {
-                    var spriteAddList = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                    if (spriteAddList == null)
-                        continue;
-
-                    listSprite.Add(spriteAddList);
-                }
-
-                var PrevLength = ParallaxBGArray.Length;
-                Array.Resize(ref ParallaxBGArray, PrevLength + listSprite.Count);
-
-                int i = Mathf.Max(0, PrevLength - 1);
-                foreach (var sprite in listSprite)
-                {
-                    ParallaxBGArray[i] = new ValuePair<float, Sprite>(0f, sprite);
-                    i++;
-                }
-
-                OrderParallaxFloatsOnArray();
-            });
-
             // Scroll
             ScrollPos = GUILayout.BeginScrollView(ScrollPos);
 
@@ -189,6 +162,34 @@ namespace BXFW
             switch (CurrentToolbarIndex)
             {
                 case 0:
+                    // This has to be called after an area is created.
+                    // This call makes other fields undroppable, so only do this in page 0
+                    EditorAdditionals.MakeDroppableAreaGUI(() =>
+                    {
+                        List<Sprite> listSprite = new List<Sprite>(DragAndDrop.paths.Length);
+
+                        foreach (var path in DragAndDrop.paths)
+                        {
+                            var spriteAddList = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                            if (spriteAddList == null)
+                                continue;
+
+                            listSprite.Add(spriteAddList);
+                        }
+
+                        var PrevLength = ParallaxBGArray.Length;
+                        Array.Resize(ref ParallaxBGArray, PrevLength + listSprite.Count);
+
+                        int i = Mathf.Max(0, PrevLength - 1);
+                        foreach (var sprite in listSprite)
+                        {
+                            ParallaxBGArray[i] = new ValuePair<float, Sprite>(0f, sprite);
+                            i++;
+                        }
+
+                        OrderParallaxFloatsOnArray();
+                    }, new Rect(Vector2.zero, position.size));
+
                     EditorGUILayout.LabelField("| Sprites To Create |", EditorStyles.boldLabel);
 
                     EditorAdditionals.UnityArrayGUICustom(true, ref ParallaxBGArray,
