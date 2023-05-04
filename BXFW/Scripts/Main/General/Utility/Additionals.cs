@@ -795,20 +795,20 @@ namespace BXFW
         /// <summary>
         /// Get a random enum from enum type <typeparamref name="T"/>.
         /// </summary>
-        /// <param name="EnumToIgnore">Enum list of values to ignore from.</param>
+        /// <param name="EnumToIgnore">Enum list of values to ignore from. Duplicate values are ignored.</param>
         /// <returns>Randomly selected enum.</returns>
-        /// <exception cref="Exception">Thrown when the type isn't enum. (<see cref="Type.IsEnum"/> is false)</exception>
+        /// <exception cref="InvalidCastException">Thrown when the type isn't enum. (<see cref="Type.IsEnum"/> is false)</exception>
         public static T GetRandomEnum<T>(T[] EnumToIgnore = null)
         {
             if (!typeof(T).IsEnum)
-                throw new Exception(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+                throw new InvalidCastException(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 
             Array values = Enum.GetValues(typeof(T));
             List<T> ListValues = new List<T>();
 
             if (EnumToIgnore.Length >= values.Length)
             {
-                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning null. Bool : {0} >= {1}", EnumToIgnore.Length, values.Length));
+                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning 'default'. Bool : {0} >= {1}", EnumToIgnore.Length, values.Length));
                 return default;
             }
 
@@ -820,7 +820,6 @@ namespace BXFW
                 // This isn't very important, but makes the removing cleaner.
                 if (ListValues.Contains(value))
                 {
-                    // Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] Multiple enum value '{0}' passed in array. Ignoring.", value));
                     continue;
                 }
 
@@ -830,7 +829,9 @@ namespace BXFW
             if (EnumToIgnore != null)
             {
                 foreach (T rmEnum in EnumToIgnore)
-                { ListValues.Remove(rmEnum); }
+                {
+                    ListValues.Remove(rmEnum);
+                }
             }
 
             return ListValues[UnityEngine.Random.Range(0, values.Length)];
@@ -897,7 +898,7 @@ namespace BXFW
         /// <typeparam name="TResult">Target type to cast into.</typeparam>
         /// <typeparam name="TParam">Gathered parameter type.</typeparam>
         /// <param name="enumerable">Enumerable itself. (usually an array)</param>
-        /// <param name="converter">Converter delegate. (throws <see cref="NullReferenceException"/> if null)</param>
+        /// <param name="converter">Converter delegate. (method throws <see cref="NullReferenceException"/> if null)</param>
         public static IEnumerable<TResult> Cast<TResult, TParam>(this IEnumerable<TParam> enumerable, Func<TParam, TResult> converter)
         {
             if (converter == null)
@@ -1154,8 +1155,9 @@ namespace BXFW
         #endregion
 
         #region Binary Serializer
-        // === This is required to guarantee a fixed serialization assembly name, which Unity likes to randomize on each compile
-        // Do not change this
+        /// <summary>
+        /// This is required to guarantee a fixed serialization assembly name, which Unity likes to randomize on each compile.
+        /// </summary>
         public sealed class VersionDeserializationBinder : SerializationBinder
         {
             public override Type BindToType(string assemblyName, string typeName)
@@ -1243,7 +1245,9 @@ namespace BXFW
                         }
                     }
                     else
-                    { FileName = splitLast_Extension[0]; }
+                    { 
+                        FileName = splitLast_Extension[0];
+                    }
 
                     // Cutting everything after the last slash
                     int IndexOfFilePath = filePath.LastIndexOf('\\');
@@ -1321,8 +1325,8 @@ namespace BXFW
 
             byte[] fileContentData = new byte[fileContents.Length];
             for (int i = 0; i < fileContents.Length; i++)
-            { 
-                fileContentData[i] = Convert.ToByte(fileContents[i]); 
+            {
+                fileContentData[i] = Convert.ToByte(fileContents[i]);
             }
 
             return BLoad<ExpectT>(fileContentData);
@@ -1353,7 +1357,7 @@ namespace BXFW
                 ms.Position = 0;
                 DSerObj = (ExpectT)bformatter.Deserialize(ms);
             }
-            
+
             return DSerObj;
         }
 
