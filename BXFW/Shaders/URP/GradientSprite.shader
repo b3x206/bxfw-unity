@@ -7,6 +7,7 @@ Shader "Custom/SpriteGradient"
         [MainColor] _Color("Tint", Color) = (1,1,1,1)
         [MaterialToggle] PixelSnap("Pixel snap", Float) = 0
         [Enum(FromTo,0, Center,1, Circle,2)] _GradientType("Gradient type", Float) = 0
+        _Rotation("Rotation", Range(0.0, 3.0)) = 0
 
         [Space]
         _GradientFromColor("Gradient From", Color) = (1,1,1,1)
@@ -51,6 +52,7 @@ Shader "Custom/SpriteGradient"
                 float2 texcoord  : TEXCOORD0;
             };
 
+            fixed _Rotation;
             fixed4 _Color;
             fixed4 _GradientFromColor;
             fixed4 _GradientToColor;
@@ -86,6 +88,19 @@ Shader "Custom/SpriteGradient"
 
                 return color;
             }
+            float2 rotateUV(float2 uv, float rotation)
+            {
+                if (rotation <= 0.1)
+                {
+                    return uv;
+                }
+    
+                float mid = 0.5;
+                return float2(
+                    cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+                    cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+                );
+            }
 
             fixed4 frag(v2f IN) : SV_Target
             {
@@ -96,19 +111,22 @@ Shader "Custom/SpriteGradient"
                 {
                     // Apply gradient (depending on where we are)
                     // UV 'y' is reverse
-                    c *= lerp(_GradientToColor, _GradientFromColor, IN.texcoord.y + (_GradientCenter - 0.5));
+                    // rotate UV 'y' by given angle
+                    float2 rotFragment = rotateUV(IN.texcoord, _Rotation);
+                    c *= lerp(_GradientToColor, _GradientFromColor, rotFragment.y + (_GradientCenter - 0.5));
                 }
                 if (_GradientType == 1)
                 {
-                    float2 texc = IN.texcoord + (_GradientCenter - 1);
+                    float2 rotFragment = rotateUV(IN.texcoord, _Rotation);
+                    float2 texc = rotFragment + (_GradientCenter - 1);
 
-                    if (IN.texcoord.y < _GradientCenter)
+                    if (rotFragment.y < _GradientCenter)
                     {
-                        c *= lerp(_GradientToColor, _GradientFromColor, (IN.texcoord.y + (_GradientCenter - 0.5)) * 2);
+                        c *= lerp(_GradientToColor, _GradientFromColor, (rotFragment.y + (_GradientCenter - 0.5)) * 2);
                     }
                     else
                     {
-                        c *= lerp(_GradientFromColor, _GradientToColor, (IN.texcoord.y + (_GradientCenter - 0.5) - 0.5) * 2);
+                        c *= lerp(_GradientFromColor, _GradientToColor, (rotFragment.y + (_GradientCenter - 0.5) - 0.5) * 2);
                     }
                 }
                 if (_GradientType == 2)

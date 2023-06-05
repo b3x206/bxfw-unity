@@ -551,6 +551,10 @@ namespace BXFW.Tools.Editor
             obj.ApplyModifiedProperties();
             return EditorGUI.EndChangeCheck();
         }
+        /// <summary>
+        /// Omit action for <see cref="DrawCustomDefaultInspector(SerializedObject, Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}})"/>.
+        /// </summary>
+        public static readonly KeyValuePair<MatchGUIActionOrder, Action> OmitAction = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null);
 
         /// <summary>
         /// Returns whether if this 'SerializedObject' is disposed.

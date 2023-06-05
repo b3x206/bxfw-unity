@@ -173,6 +173,7 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+        public abstract ITweenCTX IContext { get; }
 
         public abstract void UpdateProperty();
     }
@@ -215,6 +216,8 @@ namespace BXFW.Tweening
         /// Returns whether if the given type of this property is valid.
         /// </summary>
         public bool IsValidContextType => IsTweenableType(typeof(T));
+
+        public override ITweenCTX IContext => TwContext;
 
         // ---- Private ---- //
         private BXTweenSetMethod<T> _Setter;

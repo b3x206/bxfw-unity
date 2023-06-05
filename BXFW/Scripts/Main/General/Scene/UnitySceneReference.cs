@@ -12,6 +12,7 @@ namespace BXFW.SceneManagement
     public sealed class UnitySceneReference
     {
         // Serialize the GUID as it never changes (unless the scene was deleted, etc.)
+        // TODO : The GUID does not serialize in a ScriptableObject singleton
         [SerializeField] private SerializableGUID sceneGUID;
         [SerializeField] private int sceneIndex = -1;
 

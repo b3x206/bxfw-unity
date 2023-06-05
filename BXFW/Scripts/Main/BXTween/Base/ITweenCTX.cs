@@ -1,5 +1,6 @@
 ﻿namespace BXFW.Tweening
 {
+    /// TODO : Make this interface similar to 'IList' in terms of method variety.
     /// <summary>
     /// Generic tween interface. Used for storing tweens in a generic agnostic way.
     /// <br>When the tween is done (on stop), the tween is removed from the list of the stored tweens.</br>
@@ -14,13 +15,13 @@
         UnityEngine.Object TargetObject { get; }
 
         /// <summary>
-        /// Start the tween that is under this context.
-        /// </summary>
-        void StartTween();
-
-        /// <summary>
         /// Stop the tween that is under this context.
         /// </summary>
         void StopTween();
+
+        /// <summary>
+        /// Start the tween that is under this context.
+        /// </summary>
+        void StartTween();
     }
 }

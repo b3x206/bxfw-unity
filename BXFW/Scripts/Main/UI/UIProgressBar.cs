@@ -89,6 +89,9 @@ namespace BXFW.UI
             {
                 // bad solution, but the designer should provide their own image.
                 // because to be an image to be filled, we need an explicitly existing sprite, not the placeholder that the unity puts out.
+
+                // TODO : Use a scale/size based solution, like the slider.
+                // With that way, 9 patch rect images will become possible to use and you won't have to use a 'Rect Mask'
                 m_ProgressBarImg.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), Vector2.zero);
                 m_ProgressBarImg.sprite.name = "GenSprite";
                 m_ProgressBarImg.type = Image.Type.Filled;
@@ -157,6 +160,8 @@ namespace BXFW.UI
             // Set the 'PBarImage' as the target image
             PBar.m_ProgressBarImg = PBarImage;
             PBar.Initilaze(); // Call initilaze for setting up the image.
+
+            UnityEditor.Undo.RegisterCreatedObjectUndo(PBar.gameObject, "create progress bar");
         }
 #endif
     }

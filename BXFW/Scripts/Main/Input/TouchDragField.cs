@@ -8,6 +8,7 @@ namespace BXFW
 {
     /// <summary>
     /// Touch field with movement delta.
+    /// <br>(basically acts like a trackpad)</br>
     /// </summary>
     public class TouchDragField : Selectable, IDragHandler
     {
