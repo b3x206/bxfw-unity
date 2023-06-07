@@ -20,18 +20,18 @@ namespace BXFW
         where T : ScriptableObject
     {
         /// <summary>
-        /// Return the given GUI height.
-        /// <br>Param In 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
-        /// <br>Should return : Intended GUI height.</br>
+        /// Return the given GUI height. Similar to <see cref="PropertyDrawer.GetPropertyHeight(SerializedProperty, GUIContent)"/>.
+        /// <br><c>Param1 [In]  : </c> Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br><c>Return [out] : </c> Intended GUI height.</br>
         /// <br/>
-        /// <br>If this method is left blank, it is be ignored and height is assumed as 0.</br>
+        /// <br>If this method is left blank, it is to be ignored and height is assumed as 0.</br>
         /// </summary>
         public Func<T, float> GetGUIHeight;
         /// <summary>
         /// Create the GUI in this delegate.
-        /// <br>Parameter 1 : Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
-        /// <br>Parameter 2 : When this 'DrawGUI' call was made. This event can be called twice with all order flags set.</br>
-        /// <br>Parameter 3 : Allocated rectangle for the given GUI.</br>
+        /// <br><c>Param 1 [In] : </c> Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br><c>Param 2 [In] : </c> When this 'DrawGUI' call was made. This event can be called twice with all order flags set.</br>
+        /// <br><c>Param 3 [In] : </c> Allocated rectangle for the given GUI.</br>
         /// </summary>
         public Action<T, MatchGUIActionOrder, Rect> DrawGUI;
     }
@@ -44,7 +44,7 @@ namespace BXFW
         where T : ScriptableObject
     {
         // TODO (bit higher but still low priority) :
-        // 1. Fix Inspector being unable to draw custom fields
+        // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
         // 2. AdvancedDropdown implementation for null field selector on UnityEditor.IMGUI.Controls
@@ -332,7 +332,8 @@ namespace BXFW
                                     {
                                         // Apply value
                                         SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
-                                        // Dispose tempoary vars
+                                        // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
+                                        // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
                                         copySO.Dispose();
                                         copyProp.Dispose();
                                     }

@@ -14,7 +14,6 @@ namespace BXFW.ScriptEditor
     /// <summary>
     /// Creates a new file with all of the scenes listed.
     /// <br>These scenes can be referenced strongly with dragging and dropping a Unity <see cref="SceneAsset"/>, with the index changing correctly on <see cref="UnitySceneReference"/>.</br>
-    /// <br>However, the scenes cannot handle being it's location changed (or name changed), and that's when it loses it's reference.</br>
     /// </summary>
     internal class UnitySceneReferenceBuildCallback : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
@@ -70,8 +69,13 @@ namespace BXFW.ScriptEditor
         }
         private void SetSceneGUIDValue(SerializedProperty property, SerializableGUID value)
         {
-            var targetInfoPair = sceneGUID.GetTarget();
-            targetInfoPair.Key.SetValue(property.GetTarget().Value, value);
+            // Passed 'property' param is the parent. (UnitySceneReference)
+            var guidFieldInfo = sceneGUID.GetTarget(); // This is the field info we need to set
+
+            // Serialize the stuff we do (otherwise it doesn't serialize, as we use a EditorGUI.ObjectField)
+            // Can record entire parent object, as it's probably just the script.
+            Undo.RecordObject(property.serializedObject.targetObject, "set scene");
+            guidFieldInfo.Key.SetValue(property.GetTarget().Value, value);
         }
         private SerializedProperty sceneIndex;
 
@@ -150,12 +154,15 @@ namespace BXFW.ScriptEditor
             string scenePath = AssetDatabase.GetAssetPath(sceneAsset);
             GUID sceneGUID = AssetDatabase.GUIDFromAssetPath(scenePath);
             // Register the 'SceneAsset'
-            if (sceneAsset != null && SceneGUIDValue != sceneGUID)
+            if (SceneGUIDValue != sceneGUID)
             {
                 // First plan was to modify runtime scenes and add the given reference
                 // But unity says it can load scenes from the editor soo
                 // But it can't be loaded as well, so yeah.
-                SetSceneGUIDValue(property, new SerializableGUID(sceneGUID));
+
+                // Set parent record undos so that we can undo what we did
+                // (check whether if the given GUID is empty, otherwise don't call the intensive conversion constructor which does reflections)
+                SetSceneGUIDValue(property, sceneGUID.Empty() ? default : new SerializableGUID(sceneGUID));
             }
 
             if (ShowOtherGUI)
