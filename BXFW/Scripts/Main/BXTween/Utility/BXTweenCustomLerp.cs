@@ -35,6 +35,34 @@ namespace BXFW.Tweening
         }
 
         /// <summary>
+        /// Utility method to get the "world/local spaced in canvas" rect of the <see cref="RectTransform"/>.
+        /// <br>The returned rect from the <see cref="RectTransform.rect"/> has incorrect position, this fixes that.</br>
+        /// <br>NOTE : Pivot of this rect is the top-right corner. To get the center from given rect use <see cref="Rect.center"/>.</br>
+        /// </summary>
+        /// <param name="target">Target rect transform.</param>
+        public static Rect GetCanvasRect(this RectTransform target, Space space = Space.Self)
+        {
+            float xPos;
+            float yPos;
+
+            switch (space)
+            {
+                default:
+                case Space.Self:
+                    xPos = target.localPosition.x - (target.rect.width / 2f);
+                    yPos = target.localPosition.y - (target.rect.height / 2f);
+                    break;
+
+                case Space.World:
+                    xPos = target.position.x - (target.rect.width / 2f);
+                    yPos = target.position.y - (target.rect.height / 2f);
+                    break;
+            }
+
+            return new Rect(xPos, yPos, target.rect.width, target.rect.height);
+        }
+
+        /// <summary>
         /// <br>Interpolates a rect transform from <paramref name="start"/> to <paramref name="end"/>.</br>
         /// <br>(parameter <paramref name="time"/> is clamped between 0-1)</br>
         /// </summary>
