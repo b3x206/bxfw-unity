@@ -82,9 +82,9 @@ namespace BXFW.Tools.Editor
         /// <br><b>NOTE</b> : Make sure '<paramref name="prefabReferenceTarget"/>' is an prefab!</br>
         /// </summary>
         /// <param name="prefabReferenceTarget">The prefab target. Make sure this is an prefab.</param>
-        /// <param name="path">Creation path. If left null the current folder will be selected.</param>
+        /// <param name="path">Creation path. If left null the <see cref="Selection.activeObject"/> or the root "Assets" folder will be selected. (depending on which one is null)</param>
         /// <param name="onRenameEnd">Called when object is renamed. The <see cref="int"/> parameter is the InstanceID of the object.</param>
-        // Use <see cref="EditorUtility"/> & <see cref="AssetDatabase"/>'s utility functions to make meaning out of it.
+        // Use <see cref="EditorUtility"/> & <see cref="AssetDatabase"/>'s utility functions to make meaning out of this method. The 'how to use' was found from the U2D stuff.
         public static void CopyPrefabReferenceAndRename(GameObject prefabReferenceTarget, string path = null, Action<int> onRenameEnd = null)
         {
             // Create at the selected directory
@@ -93,49 +93,40 @@ namespace BXFW.Tools.Editor
 
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), path)))
             {
-                Debug.LogError(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Directory '{0}' does not exist.", path));
-                return;
+                throw new DirectoryNotFoundException(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Directory '{0}' does not exist. This method does not create directories.", path));
             }
             if (PrefabUtility.GetCorrespondingObjectFromSource(prefabReferenceTarget) == null)
             {
-                Debug.LogError(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Prefab to copy is invalid (not a prefab). prefabTarget was = '{0}'", prefabReferenceTarget));
-                return;
+                throw new MissingReferenceException(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Prefab to copy is invalid (not a prefab). prefabTarget was = '{0}'", prefabReferenceTarget));
             }
 
-            if (!string.IsNullOrWhiteSpace(path))
+            // Get path & target prefab to copy
+            GameObject targetPrefabInst = prefabReferenceTarget;
+            path = AssetDatabase.GenerateUniqueAssetPath($"{Path.Combine(path, targetPrefabInst.name)}.prefab"); // we are copying prefabs anyway
+
+            // Register 'OnFileNamingEnd' function.
+            var assetEndNameAction = ScriptableObject.CreateInstance<CreateAssetEndNameEditAction>();
+            assetEndNameAction.OnRenameEnd += (int instanceIDSaved) =>
             {
-                // Get path & target prefab to copy
-                GameObject targetPrefabInst = prefabReferenceTarget;
-                path = AssetDatabase.GenerateUniqueAssetPath($"{Path.Combine(path, targetPrefabInst.name)}.prefab"); // we are copying prefabs anyway
+                var createdObject = EditorUtility.InstanceIDToObject(instanceIDSaved);
+                Selection.activeObject = createdObject; // Select renamed object
 
-                // Register 'OnFileNamingEnd' function.
-                var assetEndNameAction = ScriptableObject.CreateInstance<CreateAssetEndNameEditAction>();
-                assetEndNameAction.OnRenameEnd += (int instanceIDSaved) =>
-                {
-                    var createdObject = EditorUtility.InstanceIDToObject(instanceIDSaved);
+                onRenameEnd?.Invoke(instanceIDSaved);   // Call custom event
+            };
 
-                    Selection.activeObject = createdObject; // Select renamed object
-                };
-                assetEndNameAction.OnRenameEnd += onRenameEnd;
+            // wow very obvious, this is where you get the proper icon otherwise the entire 'StartNameEditing...' function crashes unity (unity api moment)
+            Texture2D icon = AssetPreview.GetMiniThumbnail(targetPrefabInst); // Get the thumbnail from the target prefab
 
-                // wow very obvious (unity api moment)
-                Texture2D icon = AssetPreview.GetMiniThumbnail(targetPrefabInst); // Get the thumbnail from the target prefab
+            // Since this method is 'very well documented' here's what i found =>
+            // instanceID   = Target instance ID to edit (this is handled in the file rename callback ending)
+            //      (if it exists it will also edit that file alongside, we will create our own asset path so we pass invalid value, otherwise the object will be cloned.)
+            // pathName     = Directory to file of the destination asset
+            // resourceName = Directory to file of the source asset
+            // icon         = Asset icon, not very necessary (can be null)
 
-                // Since this method is 'very well documented' here's what i found =>
-                // instanceID   = Target instance ID to edit (this is handled in the file rename callback ending)
-                //      (if it exists it will also edit that file alongside, we will create our own asset path so we pass invalid value, otherwise the object will be cloned.)
-                // pathName     = Directory to file of the destination asset
-                // resourceName = Directory to file of the source asset
-                // icon         = Asset icon, not very necessary (can be null)
-
-                // THIS. IS. SO. DUMB. (that even unity's asset developers wrote a wrapper function for this method lol)
-                // Note : Pass invalid 'Instance ID' for editing an new object
-                ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int.MaxValue - 1, assetEndNameAction, path, icon, AssetDatabase.GetAssetPath(targetPrefabInst.GetInstanceID()));
-            }
-            else
-            {
-                Debug.LogWarning($"[ShopItemPreviewEditor::CopyPrefabInstanceAndRename] Path received for creating prefab '{path}' is not a path.");
-            }
+            // THIS. IS. SO. DUMB. (that even unity's asset developers wrote a wrapper function for this method lol)
+            // Note : Pass invalid 'Instance ID' for editing an new object
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int.MaxValue - 1, assetEndNameAction, path, icon, AssetDatabase.GetAssetPath(targetPrefabInst.GetInstanceID()));
         }
         // TODO : Add method to also copy from already existing instance id (overwrite method?)
         #endregion
@@ -158,7 +149,8 @@ namespace BXFW.Tools.Editor
         /// </br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
+        /// <exception cref="NullReferenceException"/>
+        /// <exception cref="InvalidCastException"/> 
         public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
         {
             if (prop == null)
@@ -175,7 +167,8 @@ namespace BXFW.Tools.Editor
         /// you can use that instead of the bundled field info.</br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="Exception"/> <exception cref="NullReferenceException"/>
+        /// <exception cref="NullReferenceException"/>
+        /// <exception cref="InvalidCastException"/>
         public static KeyValuePair<FieldInfo, object> GetParentOfTargetField(this SerializedProperty prop, int parentDepth = 1)
         {
             int lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.');
@@ -202,11 +195,11 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Internal method to get parent from these given parameters.
-        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and with the help of <paramref name="propertyPath"/>.</br>
+        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and finds the target field info + object ref in <paramref name="propertyPath"/>.</br>
         /// </summary>
         /// <param name="propertyRootParent">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
         /// <param name="propertyPath">Path of the property. Pass <see cref="SerializedProperty.propertyPath"/>.</param>
-        /// <exception cref="Exception"/>
+        /// <exception cref="InvalidCastException"/>
         private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object propertyRootParent, string propertyPath)
         {
             object target = propertyRootParent; // This is kinda required
@@ -237,7 +230,7 @@ namespace BXFW.Tools.Editor
                         var arrayIndex = int.Parse(m.Groups[1].Value);
 
                         if (!(target is IEnumerable targetAsArray))
-                            throw new Exception(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
+                            throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
 
                         // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors).
@@ -247,10 +240,10 @@ namespace BXFW.Tools.Editor
                         {
                             if (cntIndex == arrayIndex)
                             {
-                                // Update FieldInfo
+                                // Update FieldInfo that will be returned
 
                                 // oh wait, that's impossible, riiight.
-                                // basically FieldInfo can't point into a c# array element member, only the target as it's just the object
+                                // basically FieldInfo can't point into a c# array element member, only the parent array container as it's just the object
                                 // Because it isn't an actual field.
                                 // could use some unsafe {} but that doesn't put a guarantee of whether if will solve it.
                                 // (which it most likely won't because our result data is in ''safe'' FieldInfo type)
@@ -353,7 +346,7 @@ namespace BXFW.Tools.Editor
 
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
         }
-        
+
         /// <summary>
         /// Get the property drawer for the field type that you are inspecting.
         /// <br>Very useful for <c>Attribute</c> targeting PropertyDrawers.</br>
@@ -656,7 +649,7 @@ namespace BXFW.Tools.Editor
             if (!showListLabel || list.isExpanded)
             {
                 if (showListSize)
-                { 
+                {
                     EditorGUILayout.PropertyField(list.FindPropertyRelative("Array.size"));
                     if (showListLabel)
                     {
@@ -733,6 +726,7 @@ namespace BXFW.Tools.Editor
         {
             List<T> copyArray = new List<T>(array); // Allocate tempoary resizable array
             bool toggleStatus = UnityArrayCustomGUIInternal(toggle, label, copyArray.Count, (int sz) => { copyArray.Resize(sz); }, onArrayFieldDrawn);
+            // This only works for resize, we also have to get a 'ref array' for this to be doable.
             if (copyArray.Count != array.Length)
             {
                 array = copyArray.ToArray();        // Set the tempoary array to the ref array
