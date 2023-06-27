@@ -220,7 +220,7 @@ namespace BXFW
                     }
                     if (GUILayout.Button("Reverse Parallax Sprites", customButton, GUILayout.Width(200f), GUILayout.Height(45f)))
                     {
-                        System.Array.Reverse(ParallaxBGArray);
+                        Array.Reverse(ParallaxBGArray);
                     }
                     if (GUILayout.Button("Create", customButton, GUILayout.Width(200f), GUILayout.Height(45f)))
                     {
@@ -448,7 +448,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Create the 'global settings' part. Also sets up the scroll bar.
+        /// Create the 'global settings' part. Also ends the scroll bar.
         /// </summary>
         private void DrawLayerOrderElemenets(SerializedObject so)
         {

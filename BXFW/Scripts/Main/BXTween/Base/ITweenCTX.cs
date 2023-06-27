@@ -1,6 +1,7 @@
 ﻿namespace BXFW.Tweening
 {
     /// TODO : Make this interface similar to 'IList' in terms of method variety.
+    /// So that there's more things to interact within a non-generic interface, which does not require us to define a generic type.
     /// <summary>
     /// Generic tween interface. Used for storing tweens in a generic agnostic way.
     /// <br>When the tween is done (on stop), the tween is removed from the list of the stored tweens.</br>

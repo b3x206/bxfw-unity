@@ -254,7 +254,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
         public static readonly string Warn_BXTwPropertyTwNull =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenContext]", true),
-                LogRich("The tween property is null. Make sure you assign all fields in your inspector / code. If you did that, it's probably an internal error."));
+                LogRich("The tween property is null. Make sure you assign all fields in your inspector / code and call 'SetupProperty'. If you did that, it's probably an internal error."));
         public static readonly string Warn_BXTwCTXTimeCurveNull =
             string.Format("{0} {1}",
                 WarnRich("[BXTweenCTX::SetCustomCurve]", true),

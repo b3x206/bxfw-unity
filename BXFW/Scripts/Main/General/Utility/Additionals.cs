@@ -89,7 +89,7 @@ namespace BXFW
     public static class Additionals
     {
         #region Unity Functions
-        // -- GameObject
+        // -- GameObject / Transform
         /// <summary>
         /// Get the path of the gameobject.
         /// </summary>
@@ -114,6 +114,46 @@ namespace BXFW
                 return string.Format("/{0}", target.name);
 
             return string.Format("{0}/{1}", target.parent.GetPath(), target.name);
+        }
+        /// <summary>
+        /// Scales a transform <paramref name="target"/> around <paramref name="pivot"/>, using the given <paramref name="scale"/> and <paramref name="pivotSpace"/>.
+        /// <br>Note : May put your transform into a floating point number heaven. (<see cref="float.PositiveInfinity"/> or <see cref="float.NaN"/>)</br>
+        /// <br>Use with caution as there's no clamping present. </br>
+        /// </summary>
+        /// <param name="pivotSpace">
+        /// Space of the pivot. 
+        /// <br>When this is set to 'World', the <paramref name="pivot"/> is untouched.</br>
+        /// <br>
+        /// When this is set to 'Self', the <paramref name="pivot"/> is converted to a transform point using <see cref="Transform.InverseTransformPoint(Vector3)"/>.
+        /// This gets affected by stuff like rotation of <paramref name="target"/> and stuff etc.
+        /// </br>
+        /// <br>To use a consistent point as pivot, use the given <c>transform's position + constant pivot point you want</c> with the parameter <paramref name="pivot"/>.</br>
+        /// </param>
+        public static void ScaleAroundPivot(this Transform target, Vector3 pivot, Vector3 scale, Space pivotSpace = Space.World)
+        {
+            // Necessary points
+            Vector3 targetPoint = target.localPosition;
+            Vector3 pivotPoint;
+            switch (pivotSpace)
+            {
+                default:
+                case Space.World:
+                    pivotPoint = pivot;
+                    break;
+                case Space.Self:
+                    pivotPoint = target.InverseTransformPoint(pivot);
+                    break;
+            }
+            Vector3 diff = targetPoint - pivotPoint;
+
+            // Scale relative to previous one (TODO : Make relativity calculation more accurate, this will do for uniform scales)
+            float relativeScale = scale.x / target.transform.localScale.x;
+            // damn operator precedence, please put paranthesis correctly before going insane for an hour
+            // Move the relative scale amount from pivot point (as we assume the pivot is the given 'pivotPoint')
+            Vector3 finalPos = pivotPoint + (diff * relativeScale);
+
+            target.localScale = scale;
+            target.localPosition = finalPos;
         }
 
         // -- Rigidbody

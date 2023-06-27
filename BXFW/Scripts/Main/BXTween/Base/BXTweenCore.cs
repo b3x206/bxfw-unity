@@ -228,6 +228,9 @@ namespace BXFW.Tweening
                     }
 
                     Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
+
+                    // TODO : Add useFixedTime for BXTweenCTX?
+                    // yield return new WaitForFixedUpdate();
                     yield return null;
                 }
                 try

@@ -185,21 +185,33 @@ namespace BXFW
         /// Draws an arrow in <see cref="Debug"/> context.
         /// <br>Draw color by default is <see cref="Color.white"/>.</br>
         /// </summary>
-        public static void DrawArrow(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrow(Vector3 pos, Vector3 direction)
         {
-            DrawArrow(pos, direction, Color.white, arrowHeadLength, arrowHeadAngle);
+            DrawArrow(pos, direction, Color.white, 0f, 0.25f, 20.0f);
         }
         /// <summary>
-        /// Draws an arrow in <see cref="Debug"/> context again, but with changeable color (a revolutionary function).
+        /// Draws an arrow in <see cref="Debug"/> context.
+        /// <br>Draw duration is 0.</br>
         /// </summary>
-        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color)
         {
-            Debug.DrawRay(pos, direction, color);
+            DrawArrow(pos, direction, color, 0f, 0.25f, 20.0f);
+        }
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float duration)
+        {
+            DrawArrow(pos, direction, color, duration, 0.25f, 20.0f);
+        }
+        /// <summary>
+        /// Draws an arrow in <see cref="Debug"/> context.
+        /// </summary>
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float duration, float arrowHeadLength, float arrowHeadAngle)
+        {
+            Debug.DrawRay(pos, direction, color, duration);
 
             Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
             Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Debug.DrawRay(pos + direction, right * arrowHeadLength, color);
-            Debug.DrawRay(pos + direction, left * arrowHeadLength, color);
+            Debug.DrawRay(pos + direction, right * arrowHeadLength, color, duration);
+            Debug.DrawRay(pos + direction, left * arrowHeadLength, color, duration);
         }
     }
 }

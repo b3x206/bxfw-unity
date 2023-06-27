@@ -8,9 +8,10 @@ namespace BXFW.ScriptEditor
     {
         public override void OnInspectorGUI()
         {
+            var gEnabled = GUI.enabled;
             GUI.enabled = false;
             base.OnInspectorGUI();
-            GUI.enabled = true;
+            GUI.enabled = gEnabled;
         }
     }
 }

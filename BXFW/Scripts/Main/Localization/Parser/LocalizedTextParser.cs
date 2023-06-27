@@ -14,6 +14,7 @@ namespace BXFW.Data
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
+    /// ; Lines starting with ';' are completely ignored. NOTE : This only applies if lines start with ';'. You can't put ';' to comment out parts of the locale file.
     /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this file is probs ansi.
     /// TEXT_ID => en="Text Content", tr="Yazi icerik"
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"

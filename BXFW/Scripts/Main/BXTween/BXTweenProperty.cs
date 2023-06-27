@@ -27,6 +27,9 @@ namespace BXFW.Tweening
         /// <see cref="BXTweenCTX{T}.StopTween"/> is called explicitly (without being called by the coroutine end)
         /// </summary>
         public bool InvokeEventOnManualStop = false;
+        /// <summary>
+        /// An assignable tween field, called when the <c>TwContext</c> (on the inherting generic property class) ends.
+        /// </summary>
         public BXTweenUnityEvent OnEndAction;
 
         /// <summary>
@@ -186,7 +189,10 @@ namespace BXFW.Tweening
     /// (you are exactly reading the description of the class that you should not create inspector properties of)
     /// </br>
     /// <br>Instead inherit from types that have defined the '<typeparamref name="T"/>'. (otherwise unity doesn't serialize it)</br>
-    /// <br>If unity finally supports this feature, you can ignore the previous message.</br>
+    /// <br>BXTween contains types with <see cref="SerializableAttribute"/> for <typeparamref name="T"/> as follows;</br>
+    /// <br><see cref="BXTweenPropertyFloat"/>, <see cref="BXTweenPropertyVector2"/>, <see cref="BXTweenPropertyVector3"/> and <see cref="BXTweenPropertyColor"/>.</br>
+    /// <br>Other types that <see cref="BXTween"/>'s "To" methods supported can be created by defining a class for those types.</br>
+    /// <br>If unity finally supports this feature (serializing generic classes that isn't only "List&lt;T&gt;"), you can ignore the previous message.</br>
     /// </summary>
     [Serializable]
     public class BXTweenProperty<T> : BXTweenPropertyBase
@@ -337,7 +343,7 @@ namespace BXFW.Tweening
             // This class is essentially a settings wrapper.
             TwContext.SetDelay(_Delay).SetDuration(_Duration).
                 SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).SetEase(_TweenEase).
-                SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType).SetTargetObject(TargetObject);
+                SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType).SetTargetObject(_TargetObject);
 
             // -- Null checks (for the ending actions, we still check null while invoking those)
             if (OnEndAction != null)
@@ -353,43 +359,62 @@ namespace BXFW.Tweening
                 TwContext.SetSetter(_Setter);
             }
         }
-
-        public void StartTween(T StartValue, T EndValue, BXTweenSetMethod<T> Setter = null)
+        /// <summary>
+        /// Starts the property's tween.
+        /// <br>If <see cref="SetupProperty(BXTweenSetMethod{T})"/> was not called before this method, you must specify a setter, otherwise it will error out.</br>
+        /// </summary>
+        /// <param name="StartValue">Starting value of the tween. Overrides the previous values set to the <see cref="TwContext"/>.</param>
+        /// <param name="EndValue">Ending value of the tween. Overrides the previous values set to the <see cref="TwContext"/>.</param>
+        /// <param name="Setter">
+        /// The setter value of the <see cref="TwContext"/>. If left blank, <see cref="SetupProperty(BXTweenSetMethod{T})"/> is assumed to be called.
+        /// <br/>
+        /// <br>If it is not left blank and there is already a valid setter (i.e <see cref="SetupProperty(BXTweenSetMethod{T})"/> is called), the <see cref="TwContext"/>'s setter will be overriden with what you specified.</br>
+        /// </param>
+        /// <returns><see langword="true"/> if the tween was started successfully.</returns>
+        public bool StartTween(T StartValue, T EndValue, BXTweenSetMethod<T> Setter = null)
         {
             if (!IsSetup)
             {
                 if (Setter == null)
                 {
                     Debug.LogError(BXTweenStrings.Err_SetterFnNull);
-                    return;
+                    return false;
                 }
 
-                // Setup not setup property if the setter isn't null.
+                // Caller did not call SetupProperty if the setter isn't null.
+                // Do it kindly for the caller implicitly.
                 SetupProperty(StartValue, EndValue, Setter);
             }
-            else if (Setter != null)
+            else
             {
-                // Already setup, but wanting to change the setter.
-                _Setter = Setter;
+                if (Setter != null)
+                {
+                    // Already setup, but wanting to change the setter.
+                    _Setter = Setter;
+                }
+
+                // Set these values as they are not changed (not calling SetupProperty) when it is already setup
+                TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
             }
 
-            // Make sure to set these values
-            TwContext.SetStartValue(StartValue).SetEndValue(EndValue);
-
             // Update the 'TwContext' because the 'TwContext' may be modified externally and it may not have matching settings with this context.
+            // (also sets the _Setter into a valid value)
             UpdateProperty();
 
-            StartTween();
+            return StartTween();
         }
-
-        public void StartTween()
+        /// <summary>
+        /// Starts the tween without any parameters.
+        /// </summary>
+        /// <returns><see langword="true"/> if the tween was started successfully.</returns>
+        public bool StartTween()
         {
             // ** Parameterless 'StartTween()'
             // This takes the parameters from the tween Context.
             if (_TwContext == null)
             {
                 Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
-                return;
+                return false;
             }
 
             // Stop tween under control 
@@ -400,10 +425,14 @@ namespace BXFW.Tweening
             TwContext.SetInvokeEventsOnStop(invokeEventOnStop);
 
             TwContext.StartTween();
+            return true;
         }
-
+        /// <summary>
+        /// Stops the tween. Calling this without <see cref="SetupProperty(BXTweenSetMethod{T})"/> will just print a warning.
+        /// </summary>
         public void StopTween()
         {
+            // Not a complete fail state, just specifies that the tween was not init.
             if (_TwContext == null)
             {
                 Debug.LogWarning(BXTweenStrings.Warn_BXTwPropertyTwNull);
