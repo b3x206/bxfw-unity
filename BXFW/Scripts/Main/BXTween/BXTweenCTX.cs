@@ -121,7 +121,7 @@ namespace BXFW.Tweening
         /// </summary>
         public AnimationCurve CustomTimeCurve { get; private set; } = null;
         /// <summary>
-        /// Boolean to whether to use 
+        /// Boolean to whether to use a custom time curve for custom easings.
         /// </summary>
         public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
         // -- Setter (subpart of Interpolation)

@@ -45,7 +45,7 @@ namespace BXFW
             if (parentPath == null)
             {
                 Debug.LogWarning("[BezierPath] Tried to get bezier path count without parent. Please assign into a parent.");
-                return 0;
+                return -1;
             }
 
             return parentPath.ControlPoints.IndexOf(this);
@@ -60,7 +60,7 @@ namespace BXFW
             if (parentPath == null)
             {
                 Debug.LogWarning("[BezierPath] Tried to get bezier path count without parent. Please assign into a parent.");
-                return 0;
+                return -1;
             }
 
             return parentPath.ControlPoints.Count - (Index() + 1);
