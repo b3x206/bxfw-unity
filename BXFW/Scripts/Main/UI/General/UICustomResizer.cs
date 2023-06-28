@@ -21,20 +21,23 @@ namespace BXFW.UI
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;
 
         /// <summary>
-        /// Should this gameobject hide itself?
-        /// </summary>
-        protected virtual bool ShouldDisable { get; }
-        /// <summary>
-        /// Return the target object here.
+        /// The target object to be resized.
         /// </summary>
         protected abstract RectTransform ObjectTarget { get; }
         /// <summary>
         /// Return the preferred size here.
-        /// <br>The padding is done on the base class.</br>
+        /// <br>The padding is done on the base class, and added into <see cref="CurrentTargetValues"/>.</br>
         /// </summary>
         protected abstract Vector2 GetTargetSize();
 
+        /// <summary>
+        /// Previously sized values.
+        /// <br>The RectTransform is resized only when the 'CurrentTargetValues' are different to the 'prevTargetValues'.</br>
+        /// </summary>
         private Vector2 prevTargetValues;
+        /// <summary>
+        /// Given target values with padding.
+        /// </summary>
         public Vector2 CurrentTargetValues
         {
             get
@@ -46,6 +49,9 @@ namespace BXFW.UI
             }
         }
         private RectTransform _rectTransform;
+        /// <summary>
+        /// Rect transform attached to this <see cref="Component.gameObject"/>.
+        /// </summary>
         public RectTransform RectTransform
         {
             get
@@ -57,41 +63,54 @@ namespace BXFW.UI
             }
         }
 
+        private Coroutine currentRoutine;
         // Manage
         protected override void Awake()
         {
             base.Awake();
 
-            StartCoroutine(UpdateCoroutine());
+            currentRoutine = StartCoroutine(UpdateCoroutine());
         }
         protected override void OnEnable()
         {
             base.OnEnable();
 
+            if (currentRoutine == null)
+            {
+                currentRoutine = StartCoroutine(UpdateCoroutine());
+            }
+
             UpdateRectTransform();
         }
-        protected override void OnDestroy()
+        protected override void OnDisable()
         {
-            base.OnDestroy();
+            base.OnDisable();
 
+            currentRoutine = null;
+            // Coroutine is stopped when the entire gameobject is disabled anyways
+            // But just the behaviour disabling will keep the routine running
+            // We don't want that.
+            // (note : this may not set the entire coroutine stopping as this is probably called when the behaviour disables so we just stop the coroutines here)
             StopAllCoroutines();
         }
         /// <summary>
-        /// An update method that guarantees the parameters.
+        /// An update method that is called with the coroutine.
+        /// <br>This is run on the end of this frame (<see cref="WaitForEndOfFrame"/>).</br>
+        /// <br>It does not run if the current object is destroyed or disabled, it will be re-run when it gets enabled or created again.</br>
         /// </summary>
         protected virtual void OnCoroutineUpdate() { }
 
         // Update
-#if UNITY_EDITOR
         // -- Editor Update
         protected virtual void Update()
         {
+#if UNITY_EDITOR
             if (!Application.isPlaying)
             {
                 UpdateRectTransform();
             }
-        }
 #endif
+        }
         protected bool ShouldUpdate()
         {
             // Check target
@@ -114,11 +133,20 @@ namespace BXFW.UI
         {
             for (;;)
             {
+                // Coroutine will be broken / disabled when the
+                // A : GameObject is destroy/kil
+                // B : GameObject is disable
+                // no.
+                // It won't stop when the behaviour is disabled but we intercept 'OnDisable' to disable the routine
+                // This coroutine waits until end of frame for 'RectTransform' calculations to be done
+                // TODO : Maybe use 'LateUpdate'?
                 yield return new WaitForEndOfFrame();
-                
+
                 if (ObjectTarget != null)
                 {
+                    // Disabling the 'gameObject' does kill the coroutine, so use a coroutine dispatcher.
                     // Disable object if the target is disabled too.
+                    
                     if (!ObjectTarget.gameObject.activeInHierarchy && 
                         disableIfTargetIs)
                     {
@@ -131,7 +159,6 @@ namespace BXFW.UI
                 }
 
                 UpdateRectTransform();
-
                 OnCoroutineUpdate();
             }
         }

@@ -19,6 +19,7 @@ namespace BXFW.UI
             get
             {
                 // If you don't return null if target is null it throw error
+                // (because we try to refer the target's rectTransform)
                 if (target == null)
                     return null; 
 
