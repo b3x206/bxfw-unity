@@ -467,7 +467,7 @@ namespace BXFW.Tweening
         public BXTweenCTX(BXTweenCTX<T> copyFrom)
         {
             // we want to make clone, so deep copy
-            // shallow copy makes most variables pointer to parent, which is not good (for general tween copying purposes)
+            // shallow copy makes most variables pointers point to 'copyFrom', which is not good (for general tween copying purposes)
 
             // Structs can be copied like this.
             StartValue = copyFrom.StartValue;
