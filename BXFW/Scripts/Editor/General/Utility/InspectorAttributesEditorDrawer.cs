@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 using BXFW.Tools.Editor;
 
@@ -197,7 +198,9 @@ namespace BXFW.ScriptEditor
         {
             float addHeight = 0f;
 
-            if (property.propertyType != SerializedPropertyType.Integer && property.propertyType != SerializedPropertyType.Float)
+            if (property.propertyType != SerializedPropertyType.Vector2 && 
+                property.propertyType != SerializedPropertyType.Vector3 && 
+                property.propertyType != SerializedPropertyType.Vector4)
             {
                 addHeight += warnHelpBoxRectHeight;
             }

@@ -815,6 +815,66 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Returns whether if the <paramref name="typeName"/> has an integral name.
+        /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
+        /// </summary>
+        public static bool IsTypeNameIntegral(string typeName)
+        {
+            return typeName == typeof(byte).Name ||
+                typeName == typeof(sbyte).Name ||
+                typeName == typeof(short).Name ||
+                typeName == typeof(ushort).Name ||
+                typeName == typeof(int).Name ||
+                typeName == typeof(uint).Name ||
+                typeName == typeof(long).Name ||
+                typeName == typeof(ulong).Name ||
+                typeName == typeof(IntPtr).Name ||
+                typeName == typeof(UIntPtr).Name;
+        }
+        /// <summary>
+        /// Returns whether if the <paramref name="typeName"/> has a numerical name.
+        /// <br>The difference between <see cref="IsTypeNameIntegral(string)"/> is that the type name is also compared against <see cref="float"/> and <see cref="double"/>.</br>
+        /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
+        /// </summary>
+        public static bool IsTypeNameNumerical(string typeName)
+        {
+            return IsTypeNameIntegral(typeName) ||
+                typeName == typeof(float).Name ||
+                typeName == typeof(double).Name;
+        }
+
+        /// <summary>
+        /// Returns whether if <paramref name="type"/> is an integral type.
+        /// </summary>
+        public static bool IsTypeIntegral(Type type)
+        {
+            return IsTypeNameIntegral(type.Name);
+        }
+        /// <summary>
+        /// Returns whether if <typeparamref name="T"/> is an integral type.
+        /// </summary>
+        public static bool IsTypeIntegral<T>()
+        {
+            return IsTypeIntegral(typeof(T));
+        }
+        /// <summary>
+        /// Returns whether if <paramref name="type"/> is an numerical type.
+        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeIntegral(Type)"/></br>
+        /// </summary>
+        public static bool IsTypeNumerical(Type type)
+        {
+            return IsTypeNameNumerical(type.Name);
+        }
+        /// <summary>
+        /// Returns whether if <typeparamref name="T"/> is an numerical type.
+        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeIntegral{T}()"/></br>
+        /// </summary>
+        public static bool IsTypeNumerical<T>()
+        {
+            return IsTypeNumerical(typeof(T));
+        }
+
+        /// <summary>
         /// Mapped lerp.
         /// </summary>
         /// <param name="from">Returned value start.</param>
@@ -913,6 +973,64 @@ namespace BXFW
         {
             return Assembly.GetAssembly(typeof(T)).GetTypes()
                 .Where((Type myType) => { return myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)); });
+        }
+
+        /// <summary>
+        /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.
+        /// </summary>
+        public static T MinOrDefault<T>(this IEnumerable<T> collection) where T : IComparable<T>
+        {
+            return MinOrDefault(collection, default);
+        }
+        /// <summary>
+        /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.
+        /// </summary>
+        /// <param name="defaultValue">The default value to return if the array is empty.</param>
+        public static T MinOrDefault<T>(this IEnumerable<T> collection, T defaultValue) where T : IComparable<T>
+        {
+            T min = defaultValue;
+            if (collection != null)
+            {
+                foreach (T elem in collection)
+                {
+                    // Smaller
+                    if (elem.CompareTo(min) < 0)
+                    {
+                        min = elem;
+                    }
+                }
+            }
+
+            return min;
+        }
+
+        /// <summary>
+        /// Returns the maximum value in collection, but does not throw exceptions if the array is empty.
+        /// </summary>
+        public static T MaxOrDefault<T>(this IEnumerable<T> collection) where T : IComparable<T>
+        {
+            return MaxOrDefault(collection, default);
+        }
+        /// <summary>
+        /// Returns the maximum value in collection, but does not throw exceptions if the array is empty.
+        /// </summary>
+        /// <param name="defaultValue">The default value to return if the array is empty.</param>
+        public static T MaxOrDefault<T>(this IEnumerable<T> collection, T defaultValue) where T : IComparable<T>
+        {
+            T max = defaultValue;
+            if (collection != null)
+            {
+                foreach (T elem in collection)
+                {
+                    // Larger
+                    if (elem.CompareTo(max) > 0)
+                    {
+                        max = elem;
+                    }
+                }
+            }
+
+            return max;
         }
 
         /// <summary>Replaces multiple chars in a string built by <paramref name="builder"/>.</summary>
