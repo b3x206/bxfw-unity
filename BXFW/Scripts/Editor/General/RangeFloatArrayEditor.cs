@@ -129,6 +129,7 @@ namespace BXFW.ScriptEditor
             // TODO list 
             // 1 : make sliders slide on normal positioning
             // 2 : make clicks more reliable
+            // 3 : add undo for array stuffs
             
             // top/bottom paddings
             position.height -= DR_PADDING;
