@@ -40,6 +40,21 @@ namespace BXFW
         }
 
         public RangeFloatArray() { }
+        /// <summary>
+        /// Creates a 'RangeFloatArray' without any elements
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        public RangeFloatArray(float min, float max) 
+        {
+            Min = min;
+            Max = max;
+        }
+        /// <summary>
+        /// Constructor for the 'RangeFloatArray'.
+        /// <br>Removes duplicate values from <paramref name="collection"/> and sets min/max depending on the collection's size.</br>
+        /// </summary>
+        /// <param name="collection"></param>
         public RangeFloatArray(IEnumerable<float> collection) : this(0f, 0f, collection) { }
         /// <summary>
         /// Constructor for the 'RangeFloatArray'.
@@ -112,7 +127,7 @@ namespace BXFW
                 // because that is a weird array.
                 if (sign * EXISTING_OFFSET > Max)
                 {
-                    throw new InvalidOperationException(string.Format("[RangeFloatArray::ClampOffsettable] There is no existing value to offset into. Passed value is '{0}', array length is '{1}' (wtf)", value, array.Count));
+                    throw new InvalidOperationException(string.Format("[RangeFloatArray::ClampOffsettable] There is no existing value to offset into. Passed value is '{0}', array length is '{1}'.\nSet the Min and Max values appopriately.", value, array.Count));
                 }
             }
             return clamped;

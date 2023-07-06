@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.InteropServices;
 
 namespace BXFW
 {
@@ -875,13 +876,14 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Mapped lerp.
+        /// A clamped mapped linear interpolation.
+        /// <br>Can be used to interpolate values according to other values.</br>
         /// </summary>
-        /// <param name="from">Returned value start.</param>
-        /// <param name="to">Returned value end.</param>
-        /// <param name="from2">Range value start.</param>
-        /// <param name="to2">Range value end.</param>
-        /// <param name="value">Value mapped.</param>
+        /// <param name="from">Returned value start. This is the value you will get if <paramref name="value"/> is equal to <paramref name="from2"/>.</param>
+        /// <param name="to">Returned value end. This is the value you will get if <paramref name="value"/> is equal to <paramref name="to2"/>.</param>
+        /// <param name="from2">Mapping Range value start. The <paramref name="value"/> is assumed to be started from here.</param>
+        /// <param name="to2">Mapping Range value end. The <paramref name="value"/> is assumed to be ending in here.</param>
+        /// <param name="value">The value that is the 'time' parameter. Goes between <paramref name="to"/>-&gt;<paramref name="to2"/>.</param>
         public static float Map(float from, float to, float from2, float to2, float value)
         {
             if (value <= from2)
@@ -889,7 +891,8 @@ namespace BXFW
             else if (value >= to2)
                 return to;
 
-            return ((to - from) * ((value - from2) / (to2 - from2))) + from;
+            // a + ((b - a) * t) but goofy
+            return from + ((to - from) * ((value - from2) / (to2 - from2)));
         }
 
         /// <summary>
@@ -1171,6 +1174,50 @@ namespace BXFW
             {
                 return PlayerPrefs.GetInt(SaveKey) >= 1;
             }
+        }
+        public static void SetDouble(string SaveKey, double Value)
+        {
+            // this is not very nice, but c# doesn't have reinterpret_cast or some other stuff
+            // how 2 reinterpret_cast c# very tutorial (!)
+            if (string.IsNullOrEmpty(SaveKey))
+            {
+                Debug.LogError(string.Format("[Additionals::SetDouble] Couldn't set the savekey because it is null. Key={0}", SaveKey));
+                return;
+            }
+
+            // Split the double with pointers
+            IntPtr ptrDouble = Marshal.AllocHGlobal(sizeof(double));
+            Marshal.StructureToPtr(Value, ptrDouble, false); // 'fDeleteOld' is deleted by GC anyways
+            // double : 8 bytes | int : 4 bytes
+            int lower32 = Marshal.ReadInt32(ptrDouble), upper32 = Marshal.ReadInt32(ptrDouble, sizeof(int));
+            // Serialize 2 ints
+            PlayerPrefs.SetInt(string.Format("{0}_l32double", SaveKey), lower32);
+            PlayerPrefs.SetInt(string.Format("{0}_u32double", SaveKey), upper32);
+            // Clear pointer
+            Marshal.FreeHGlobal(ptrDouble);
+        }
+        public static double GetDouble(string SaveKey)
+        {
+            // same applies here
+            // it works in first try, hmmm
+            if (string.IsNullOrEmpty(SaveKey))
+            {
+                Debug.LogWarning(string.Format("[Additionals::GetDouble] The key is null. It will return false. Key={0}", SaveKey));
+                return 0.0d;
+            }
+            // new double();
+            IntPtr retValuePtr = Marshal.AllocHGlobal(sizeof(double));
+            // Get values
+            int lower32 = PlayerPrefs.GetInt(string.Format("{0}_l32double", SaveKey)), upper32 = PlayerPrefs.GetInt(string.Format("{0}_u32double", SaveKey));
+            // Write it to allocated pointer
+            Marshal.WriteInt32(retValuePtr, 0, lower32);
+            Marshal.WriteInt32(retValuePtr, sizeof(int), upper32);
+            // reinterpret_cast
+            double valueInterpret = Marshal.PtrToStructure<double>(retValuePtr);
+            // delete retValuePtr;
+            Marshal.FreeHGlobal(retValuePtr);
+
+            return valueInterpret;
         }
         public static void SetVector2(string SaveKey, Vector2 Value)
         {

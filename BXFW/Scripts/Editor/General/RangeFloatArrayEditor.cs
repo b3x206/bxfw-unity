@@ -10,15 +10,15 @@ namespace BXFW.ScriptEditor
     internal class BasicDropdown : EditorWindow
     {
         private static readonly Type popupLocationType = typeof(EditorWindow).Assembly.GetType("UnityEditor.PopupLocation");
-
+        private static readonly Type popupLocationArrayType = popupLocationType.MakeArrayType();
         // Enum type should be 'PopupLocation'.
-        private static object[] GetPopupLocations()
+        private static Array GetPopupLocations()
         {
-            return new object[2]
-            {
-                /* PopupLocation.Below,  */ Enum.ToObject(popupLocationType, 0),
-                /* PopupLocation.Overlay */ Enum.ToObject(popupLocationType, 4)
-            };
+            Array retValue = (Array)Activator.CreateInstance(popupLocationArrayType, args: 2);
+            retValue.SetValue(Enum.ToObject(popupLocationType, 0), 0); /* PopupLocation.Below,  */
+            retValue.SetValue(Enum.ToObject(popupLocationType, 4), 1); /* PopupLocation.Overlay */
+            
+            return retValue;
         }
 
         private static BasicDropdown Instance;
@@ -39,13 +39,13 @@ namespace BXFW.ScriptEditor
             // void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)
             MethodInfo showDropdown = typeof(EditorWindow).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Single(f => f.Name == "ShowAsDropDown" && f.GetParameters().Length == 3);
             //MethodInfo showDropdown = typeof(EditorWindow).GetMethod("ShowAsDropDown", BindingFlags.Instance | BindingFlags.NonPublic);
-            showDropdown.Invoke(Instance, new object[] { parentRect, size, null });
+            showDropdown.Invoke(Instance, new object[] { parentRect, size, GetPopupLocations() });
         }
         public static void HideDropdown()
         {
             if (Instance != null)
             {
-                DestroyImmediate(Instance);
+                Instance.Close();
             }
         }
         public static void SetPosition(Rect screenPosition)
@@ -122,15 +122,25 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private const float PropNameWidthPercent = .3f;
 
+        private Rect previousRepaintRect;
         private int dragIndex = -1;
         private int modifyIndex = -1;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             // TODO list 
-            // 1 : make sliders slide on normal positioning
-            // 2 : make clicks more reliable
-            // 3 : add undo for array stuffs
-            
+            // 1 : add undo for array stuffs
+
+            Event e = Event.current;
+            // e.type == Layout gives incorrect positioning
+            if (e.type == EventType.Repaint)
+            {
+                previousRepaintRect = position;
+            }
+            if (e.type == EventType.Layout && previousRepaintRect != Rect.zero)
+            {
+                position = previousRepaintRect;
+            }
+
             // top/bottom paddings
             position.height -= DR_PADDING;
             position.y += DR_PADDING / 2f;
@@ -166,14 +176,14 @@ namespace BXFW.ScriptEditor
                 minTextWidth,
                 position.height
             );
-            float minValue = EditorGUI.FloatField(minValueFieldRect, target.Min);
+            float minValue = EditorGUI.FloatField(minValueFieldRect, new GUIContent(string.Empty, "Minimum value allowed."), target.Min);
             Rect maxValueFieldRect = new Rect(
                 position.x + minTextWidth + dragAreaBoxRect.width + ElemPadding,
                 position.y,
                 maxTextWidth,
                 position.height
             );
-            float maxValue = EditorGUI.FloatField(maxValueFieldRect, target.Max);
+            float maxValue = EditorGUI.FloatField(maxValueFieldRect, new GUIContent(string.Empty, "Maximum value allowed."), target.Max);
 
             // Draw the 'increment/decrement array elements'
             int arrayLength = target.Count;
@@ -218,24 +228,22 @@ namespace BXFW.ScriptEditor
                             return;
                         }
 
-                        GUILayout.Label(new GUIContent($"Modify Index={modifyIndex}"), new GUIStyle(GUI.skin.box) { fontSize = 8, alignment = TextAnchor.UpperLeft });
-                        target[modifyIndex] = EditorGUILayout.FloatField(target[modifyIndex]);
+                        GUIStyle smallTextStyle = new GUIStyle(GUI.skin.box) { fontSize = 8, alignment = TextAnchor.UpperLeft };
+                        smallTextStyle.normal.textColor = Color.white;
+                        EditorGUI.BeginChangeCheck();
+                        GUILayout.Label(new GUIContent($"Modify Index={modifyIndex}"), smallTextStyle);
+                        float modified = EditorGUILayout.FloatField(target[modifyIndex]);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
+                            target[modifyIndex] = modified;
+                        }
                     });
                 }
                 else if (Event.current.type != EventType.Layout)
                 {
                     BasicDropdown.SetPosition(GUIUtility.GUIToScreenRect(modifyValueRect));
                 }
-
-                //int pDepth = GUI.depth;
-                // does not work
-                //GUI.BeginClip(modifyValueRect);
-                // same thing
-                //GUI.depth += 10;
-                //GUI.Box(modifyValueRect, new GUIContent($"Modify Index={modifyIndex}"), new GUIStyle(GUI.skin.box) { fontSize = 8, alignment = TextAnchor.UpperLeft });
-                //target[modifyIndex] = EditorGUI.FloatField(new Rect(modifyValueRect) { y = modifyValueRect.y + 15f, height = DraggableBoxModifyValueHeight - 15f }, target[modifyIndex]);
-                //GUI.depth = pDepth;
-                //GUI.EndClip();
             }
             else
             {
@@ -255,13 +263,16 @@ namespace BXFW.ScriptEditor
                 switch (Event.current.type)
                 {
                     case EventType.MouseDown:
-                        // Right click, show the modify UI
-                        Event.current.Use();
-                        if (Event.current.button == 1)
+                        // Dragging
+                        if (Event.current.button == 0 && dragIndex < 0)
                         {
-                            // Intercept the context menu
+                            dragIndex = draggableRect.Contains(Event.current.mousePosition) ? i : -1;
+                        }
+
+                        // Right click, show the modify UI
+                        if (Event.current.button == 1 && modifyIndex < 0)
+                        {
                             modifyIndex = draggableRect.Contains(Event.current.mousePosition) ? i : -1;
-                            break;
                         }
                         // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
                         else if (!modifyValueRect.Contains(Event.current.mousePosition))
@@ -269,31 +280,35 @@ namespace BXFW.ScriptEditor
                             modifyIndex = -1;
                         }
 
-                        if (dragIndex < 0)
+                        if (dragIndex >= 0 || modifyIndex >= 0)
                         {
-                            dragIndex = draggableRect.Contains(Event.current.mousePosition) ? i : -1;
+                            Event.current.Use();
                         }
                         break;
                     case EventType.MouseUp:
-                        Event.current.Use();
+                        if (dragIndex >= 0)
+                        {
+                            Event.current.Use();
+                        }
                         dragIndex = -1;
                         break;
 
                     case EventType.Repaint:
                     case EventType.MouseMove:
                     case EventType.MouseDrag:
-                        if (Event.current.type != EventType.Repaint)
-                        {
-                            // Use the event to make dragging smooth
-                            // Otherwise it's a jittery mess
-                            Event.current.Use();
-                        }
                         if (dragIndex >= 0)
                         {
-                            xPosition = Mathf.Clamp(Event.current.mousePosition.x, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth);
-                            // Calculate value from position (since position increases, invert the lerp)
-                            // Using Mathf.InverseLerp never works fine so just swapped the from-to variables
-                            target[dragIndex] = Mathf.Lerp(target.Max, target.Min, (dragAreaBoxRect.x + dragAreaWidth - xPosition) / dragAreaBoxRect.x);
+                            if (Event.current.type != EventType.Repaint)
+                            {
+                                // Use the event to make dragging smooth
+                                // Otherwise it's a jittery mess
+                                Event.current.Use();
+                            }
+
+                            // Get position + center
+                            xPosition = Mathf.Clamp(Event.current.mousePosition.x, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth) - (draggableRect.width);
+                            // Map the dragging position correctly
+                            target[dragIndex] = Additionals.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
                         }
                         break;
 
@@ -304,7 +319,7 @@ namespace BXFW.ScriptEditor
 
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(property.serializedObject.targetObject, "set rangefloat value");
+                Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
                 target.Min = minValue;
                 target.Max = maxValue;
 
