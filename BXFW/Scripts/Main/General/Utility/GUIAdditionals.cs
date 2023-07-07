@@ -132,7 +132,7 @@ namespace BXFW
 
         /// <summary>
         /// Draws a ui line and returns the padded position rect.
-        /// <br>For angled / rotated lines, use the  method.</br>
+        /// <br>For angled / rotated lines, use the <see cref="DrawLine(Vector2, Vector2, int)"/> method. (uses GUI position)</br>
         /// </summary>
         /// <param name="parentRect">Parent rect to draw relative to.</param>
         /// <param name="color">Color of the line.</param>

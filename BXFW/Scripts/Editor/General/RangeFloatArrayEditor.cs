@@ -54,6 +54,11 @@ namespace BXFW.ScriptEditor
         }
         private void OnGUI()
         {
+            if (onGUICall == null || Instance == null)
+            {
+                Close();
+            }
+
             onGUICall(this);
         }
     }
@@ -105,7 +110,8 @@ namespace BXFW.ScriptEditor
         /// Minimum value between the value slidables.
         /// <br>The slidables will clip if the mouse position and the slidable distance is greater than this value * 2f.</br>
         /// </summary>
-        private const float MinDistBetweenValueSlidables = 3f;
+        // Not used as RangeFloatArray.EXISTING_OFFSET works fine.
+        // private const float MinDistBetweenValueSlidables = 3f;
 
         /// <summary>
         /// Initial width of the min/max value displays.
@@ -122,23 +128,34 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private const float PropNameWidthPercent = .3f;
 
-        private Rect previousRepaintRect;
-        private int dragIndex = -1;
-        private int modifyIndex = -1;
+        private Rect previousRepaintRect; // hack for getting the correct rect in repaint but not in layout
+                                          // Setting the 'position' parameter during the EventType.Layout does not seem to break stuff
+        private int dragIndex = -1;       // Index that is being dragged in the fake slider
+        private int modifyIndex = -1;     // Index that is being modified by the SimpleDropdown
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            // TODO list 
-            // 1 : add undo for array stuffs
-
+        {            
+            var target = GetTarget(property);
             Event e = Event.current;
             // e.type == Layout gives incorrect positioning
+            // This makes the popup window jitter.
             if (e.type == EventType.Repaint)
             {
                 previousRepaintRect = position;
             }
-            if (e.type == EventType.Layout && previousRepaintRect != Rect.zero)
+            if (e.type == EventType.Layout)
             {
                 position = previousRepaintRect;
+            }
+
+            // Check if the xIndex thing's indices actually exist
+            // Otherwise set them to -1 to avoid errors
+            if (dragIndex >= target.Count)
+            {
+                dragIndex = -1;
+            }
+            if (modifyIndex >= target.Count)
+            {
+                modifyIndex = -1;
             }
 
             // top/bottom paddings
@@ -152,8 +169,6 @@ namespace BXFW.ScriptEditor
             // modify main rect
             position.x += position.width * PropNameWidthPercent;
             position.width = setRemainingWidth;
-
-            var target = GetTarget(property);
 
             // | -> content => tooltip = [value]
             // val1 --|--|--|-- val2 [+][-]
@@ -176,14 +191,15 @@ namespace BXFW.ScriptEditor
                 minTextWidth,
                 position.height
             );
-            float minValue = EditorGUI.FloatField(minValueFieldRect, new GUIContent(string.Empty, "Minimum value allowed."), target.Min);
+            float minValue = EditorGUI.FloatField(minValueFieldRect, target.Min);
             Rect maxValueFieldRect = new Rect(
                 position.x + minTextWidth + dragAreaBoxRect.width + ElemPadding,
                 position.y,
                 maxTextWidth,
                 position.height
             );
-            float maxValue = EditorGUI.FloatField(maxValueFieldRect, new GUIContent(string.Empty, "Maximum value allowed."), target.Max);
+            float maxValue = EditorGUI.FloatField(maxValueFieldRect, target.Max);
+            Debug.Log($"min: {minTextWidth}, max: {maxTextWidth} | minR : {minValueFieldRect}, maxR : {maxValueFieldRect} | e: {e.type}");
 
             // Draw the 'increment/decrement array elements'
             int arrayLength = target.Count;
@@ -211,7 +227,7 @@ namespace BXFW.ScriptEditor
             // Modify UI
             float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (ElemPadding * 2f)); // The corrected drag area width. !! correction needed !!
             Rect modifyValueRect = modifyIndex >= 0 ? new Rect(
-                Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, target[modifyIndex] / (target.Max - target.Min)) - (DraggableBoxModifyValueWidth / 2f),
+                Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, Additionals.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
                 position.y + (DraggableBoxModifyValueHeight / 2f),
                 DraggableBoxModifyValueWidth,
                 DraggableBoxModifyValueHeight
@@ -240,7 +256,7 @@ namespace BXFW.ScriptEditor
                         }
                     });
                 }
-                else if (Event.current.type != EventType.Layout)
+                else if (e.type != EventType.Layout)
                 {
                     BasicDropdown.SetPosition(GUIUtility.GUIToScreenRect(modifyValueRect));
                 }
@@ -250,45 +266,57 @@ namespace BXFW.ScriptEditor
                 BasicDropdown.HideDropdown();
             }
 
+            // Change checks for the 'Min/Max' values
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
+                target.Min = minValue;
+                target.Max = maxValue;
+
+                arrayLength = Mathf.Clamp(arrayLength, 0, int.MaxValue);
+                target.Resize(arrayLength);
+            }
+
             // Draw buttons with the draggable 'circle' buttons
             // (like the RangeAttribute thing, clamped between 2 values)
             // Ensure the button values can't be the same
             for (int i = 0; i < target.Count; i++)
             {
-                float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, target[i] / (target.Max - target.Min));
+                float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, Additionals.Map(0f, 1f, target.Min, target.Max, target[i]));
                 Rect draggableRect = new Rect(xPosition, position.y + position.height / 5f, DraggableBoxWidth, position.height);
                 // Draw a GUI seperately
                 GUI.Box(draggableRect, new GUIContent(string.Empty, $"value={target[i]}\nindex={i}"), GUI.skin.horizontalSliderThumb);
                 // Intercept events manually
-                switch (Event.current.type)
+                switch (e.type)
                 {
                     case EventType.MouseDown:
                         // Dragging
-                        if (Event.current.button == 0 && dragIndex < 0)
+                        if (e.button == 0 && dragIndex < 0)
                         {
-                            dragIndex = draggableRect.Contains(Event.current.mousePosition) ? i : -1;
+                            dragIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
+                            Undo.RecordObject(property.serializedObject.targetObject, "drag set range float");
                         }
 
                         // Right click, show the modify UI
-                        if (Event.current.button == 1 && modifyIndex < 0)
+                        if (e.button == 1 && modifyIndex < 0)
                         {
-                            modifyIndex = draggableRect.Contains(Event.current.mousePosition) ? i : -1;
+                            modifyIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
                         }
                         // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
-                        else if (!modifyValueRect.Contains(Event.current.mousePosition))
+                        else if (!modifyValueRect.Contains(e.mousePosition))
                         {
                             modifyIndex = -1;
                         }
 
                         if (dragIndex >= 0 || modifyIndex >= 0)
                         {
-                            Event.current.Use();
+                            e.Use();
                         }
                         break;
                     case EventType.MouseUp:
                         if (dragIndex >= 0)
                         {
-                            Event.current.Use();
+                            e.Use();
                         }
                         dragIndex = -1;
                         break;
@@ -298,15 +326,18 @@ namespace BXFW.ScriptEditor
                     case EventType.MouseDrag:
                         if (dragIndex >= 0)
                         {
-                            if (Event.current.type != EventType.Repaint)
+                            if (e.type != EventType.Repaint)
                             {
                                 // Use the event to make dragging smooth
                                 // Otherwise it's a jittery mess
-                                Event.current.Use();
+                                e.Use();
                             }
 
                             // Get position + center
-                            xPosition = Mathf.Clamp(Event.current.mousePosition.x, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth) - (draggableRect.width);
+                            xPosition = Mathf.Clamp(e.mousePosition.x, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth) - (draggableRect.width);
+                            GUI.Box(new Rect(dragAreaBoxRect.x, position.y, 50f, 20f), "from");
+                            GUI.Box(new Rect(dragAreaBoxRect.x + dragAreaWidth, position.y, 50f, 20f), "to");
+
                             // Map the dragging position correctly
                             target[dragIndex] = Additionals.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
                         }
@@ -315,16 +346,6 @@ namespace BXFW.ScriptEditor
                     default:
                         break;
                 }
-            }
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
-                target.Min = minValue;
-                target.Max = maxValue;
-
-                arrayLength = Mathf.Clamp(arrayLength, 0, int.MaxValue);
-                target.Resize(arrayLength);
             }
         }
     }
