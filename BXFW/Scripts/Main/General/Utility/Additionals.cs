@@ -1175,49 +1175,47 @@ namespace BXFW
                 return PlayerPrefs.GetInt(SaveKey) >= 1;
             }
         }
-        public static void SetDouble(string SaveKey, double Value)
+        private static void SetLongInternal(string SaveKey, long Value, string SavePrefix)
         {
-            // this is not very nice, but c# doesn't have reinterpret_cast or some other stuff
-            // how 2 reinterpret_cast c# very tutorial (!)
             if (string.IsNullOrEmpty(SaveKey))
             {
-                Debug.LogError(string.Format("[Additionals::SetDouble] Couldn't set the savekey because it is null. Key={0}", SaveKey));
+                Debug.LogError(string.Format("[Additionals::Set{0}] Couldn't set the savekey because it is null. Key={1}", SavePrefix, SaveKey));
                 return;
             }
 
-            // Split the double with pointers
-            IntPtr ptrDouble = Marshal.AllocHGlobal(sizeof(double));
-            Marshal.StructureToPtr(Value, ptrDouble, false); // 'fDeleteOld' is deleted by GC anyways
-            // double : 8 bytes | int : 4 bytes
-            int lower32 = Marshal.ReadInt32(ptrDouble), upper32 = Marshal.ReadInt32(ptrDouble, sizeof(int));
-            // Serialize 2 ints
-            PlayerPrefs.SetInt(string.Format("{0}_l32double", SaveKey), lower32);
-            PlayerPrefs.SetInt(string.Format("{0}_u32double", SaveKey), upper32);
-            // Clear pointer
-            Marshal.FreeHGlobal(ptrDouble);
+            uint lower32 = (uint)(Value & uint.MaxValue); // The lower bytes (0 to 2**32)
+            uint upper32 = (uint)(Value >> 32);           // This does not depend on endianness, i guess? (put upper bytes where the lower bytes would be)
+            PlayerPrefs.SetInt(string.Format("{0}_l32{1}", SaveKey, SavePrefix), (int)lower32);
+            PlayerPrefs.SetInt(string.Format("{0}_u32{1}", SaveKey, SavePrefix), (int)upper32);
+        }
+        private static long GetLongInternal(string SaveKey, string SavePrefix)
+        {
+            if (string.IsNullOrEmpty(SaveKey))
+            {
+                Debug.LogWarning(string.Format("[Additionals::Get{0}] The key is null. It will return 0. Key={1}", SavePrefix, SaveKey));
+                return 0;
+            }
+
+            uint lower32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_l32{1}", SaveKey, SavePrefix)), upper32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_u32{1}", SaveKey, SavePrefix));
+            long result = lower32 | ((long)upper32 << 32);
+            return result;
+        }
+        public static void SetLong(string SaveKey, long Value)
+        {
+            SetLongInternal(SaveKey, Value, "Long");
+        }
+        public static long GetLong(string SaveKey)
+        {
+            return GetLongInternal(SaveKey, "Long");
+        }
+        public static void SetDouble(string SaveKey, double Value)
+        {
+            // apparently c# has reinterpret cast, bruh (but, only for 32 and 64 bit values)
+            SetLongInternal(SaveKey, BitConverter.DoubleToInt64Bits(Value), "Double");
         }
         public static double GetDouble(string SaveKey)
         {
-            // same applies here
-            // it works in first try, hmmm
-            if (string.IsNullOrEmpty(SaveKey))
-            {
-                Debug.LogWarning(string.Format("[Additionals::GetDouble] The key is null. It will return false. Key={0}", SaveKey));
-                return 0.0d;
-            }
-            // new double();
-            IntPtr retValuePtr = Marshal.AllocHGlobal(sizeof(double));
-            // Get values
-            int lower32 = PlayerPrefs.GetInt(string.Format("{0}_l32double", SaveKey)), upper32 = PlayerPrefs.GetInt(string.Format("{0}_u32double", SaveKey));
-            // Write it to allocated pointer
-            Marshal.WriteInt32(retValuePtr, 0, lower32);
-            Marshal.WriteInt32(retValuePtr, sizeof(int), upper32);
-            // reinterpret_cast
-            double valueInterpret = Marshal.PtrToStructure<double>(retValuePtr);
-            // delete retValuePtr;
-            Marshal.FreeHGlobal(retValuePtr);
-
-            return valueInterpret;
+            return BitConverter.Int64BitsToDouble(GetLongInternal(SaveKey, "Double"));
         }
         public static void SetVector2(string SaveKey, Vector2 Value)
         {

@@ -90,13 +90,26 @@ namespace BXFW
         protected virtual float HEIGHT_PADDING => 2;
         /// <summary>
         /// Reserved height for the <see cref="currentCustomInspector"/>.
+        /// <br>
+        /// This can't be gathered directly as unlike <see cref="CustomPropertyDrawer"/>'s,
+        /// they don't report height information and expect a scrollable gui area.
+        /// </br>
         /// </summary>
         protected virtual float ReservedHeightCustomEditor => 300;
         /// <summary>
         /// Allows to change the scriptable object <see cref="UnityEngine.Object.name"/> directly using a input field.
         /// </summary>
         protected virtual bool DisplayObjectNameEditor => false;
-
+        /// <summary>
+        /// If the name editor is being displayed (<see cref="DisplayObjectNameEditor"/> is true),
+        /// overriding this as true will set the name into GetType().Name instead of setting it empty.
+        /// <br>
+        /// This does not enforce different names on an array, so 2 objects with same names can coexist.
+        /// (but depending on <see cref="MakeDrawnScriptableObjectsUnique"/>, those will be cloned)
+        /// </br>
+        /// </summary>
+        protected virtual bool NameEditorEnforceNonNullName => false;
+        
         /// <summary>
         /// Currently drawn list of the scriptable objects.
         /// </summary> 
@@ -560,8 +573,9 @@ namespace BXFW
             T target = propTarget as T;
 
             // Parent settings. If any of these are true, the following happens:
-            // Unity's unmodifiable serializer decides that 'inline serialization' is too good and just serializes by fileid.
-            // So, if any of these are true
+            // Unity's unmodifiable serializer decides that 'inline ScriptableObject serialization' is too good and just serializes by fileid.
+            // So, if any of these (next 2 vars) are true, the user may have a chance to lose all of their data! (exciting, i know)
+            // Kindly offer them a button to make it actually exist on the project so they don't lose their tempoary data.
             bool targetParentIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
             bool targetParentHasAssetPath = !string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
             // Dynamic 'ShowOnProject' button + make unique is disabled if the prefab actually exists in project
@@ -671,12 +685,30 @@ namespace BXFW
                 // Make 'read-only' if the file actually exists in project
                 // Having Object.name and the file name different, unity doesn't like.
                 EditorGUI.BeginChangeCheck();
-                string tName = EditorGUI.TextField(rInspectorInfo, target.name);
 
-                if (EditorGUI.EndChangeCheck() && !targetHasAssetPath)
+                // Display a 'placeholder colored text' that is actually the name, if enforcing non-null names
+                GUIStyle tNameFieldStyle = new GUIStyle(GUI.skin.textField);
+                if (target.name == target.GetType().Name && NameEditorEnforceNonNullName)
+                    tNameFieldStyle.normal.textColor = Color.gray;
+
+                string tName = EditorGUI.TextField(rInspectorInfo, target.name, tNameFieldStyle);
+
+                // Object name is only mutable through the 'Project' window changing file name if the target has an asset path
+                if (!targetHasAssetPath)
                 {
-                    Undo.RecordObject(target, "set name");
-                    target.name = tName;
+                    // Enforcing non-null
+                    if (NameEditorEnforceNonNullName && string.IsNullOrEmpty(tName))
+                    {
+                        // SetDirty for this, so that it's an automated thing
+                        EditorUtility.SetDirty(target);
+                        target.name = target.GetType().Name;
+                    }
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(target, "set name");
+                        target.name = tName;
+                    }
                 }
                 rInspectorInfo.x -= previousWidth * BTN_FOLDOUT_MIN_WIDTH;
 
