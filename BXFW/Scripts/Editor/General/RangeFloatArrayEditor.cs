@@ -1,9 +1,11 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEditor;
 using BXFW.Tools.Editor;
 using System;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
@@ -17,7 +19,7 @@ namespace BXFW.ScriptEditor
             Array retValue = (Array)Activator.CreateInstance(popupLocationArrayType, args: 2);
             retValue.SetValue(Enum.ToObject(popupLocationType, 0), 0); /* PopupLocation.Below,  */
             retValue.SetValue(Enum.ToObject(popupLocationType, 4), 1); /* PopupLocation.Overlay */
-            
+
             return retValue;
         }
 
@@ -54,9 +56,10 @@ namespace BXFW.ScriptEditor
         }
         private void OnGUI()
         {
-            if (onGUICall == null || Instance == null)
+            if (onGUICall == null)
             {
                 Close();
+                return;
             }
 
             onGUICall(this);
@@ -71,7 +74,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(RangeFloatArray))]
     internal class RangeArrayDrawer : PropertyDrawer
     {
-        private RangeFloatArray GetTarget(SerializedProperty targetProperty)
+        private static RangeFloatArray GetTarget(SerializedProperty targetProperty)
         {
             return (RangeFloatArray)targetProperty.GetTarget().Value;
         }
@@ -116,7 +119,7 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Initial width of the min/max value displays.
         /// </summary>
-        private const float TextValueInitialWidth = 12f;
+        private const float TextValueInitialWidth = 40f;
         /// <summary>
         /// Size of the shown text value(s), calculated per character.
         /// <br>Yes, the default unity editor font is not monospace, but idc, as i will use <see cref="TextAlignment.Center"/> for GUI purposes.</br>
@@ -128,13 +131,53 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private const float PropNameWidthPercent = .3f;
 
+        /// <summary>
+        /// Contains an identification of a SerializedProperty.
+        /// <br>Uses <see cref="SerializedProperty.serializedObject"/>.targetObject.name :: <see cref="SerializedProperty.propertyPath"/></br>
+        /// </summary>
+        private class PropertyID : IEquatable<PropertyID>, IEquatable<SerializedProperty>
+        {
+            /// <summary>
+            /// Prefix for the '<see cref="propPath"/>'.
+            /// </summary>
+            private const string PROP_PARENT_PREFIX = "::";
+
+            public readonly string propPath;  // Drawn property path (won't use the actual SerializedProperty as it gets disposed)
+
+            public PropertyID(SerializedProperty prop)
+            {
+                propPath = string.Format("{0}{1}{2}", prop.serializedObject.targetObject.name, PROP_PARENT_PREFIX, prop.propertyPath);
+
+            }
+            //public PropertyID(SerializedProperty prop, RangeFloatArray target)
+            //{
+            //    propPath = string.Format("{0}{1}{2}", prop.serializedObject.targetObject.name, PROP_PARENT_PREFIX, prop.propertyPath);
+            //    this.target = target;
+            //}
+
+            public bool Equals(PropertyID other)
+            {
+                return propPath == other.propPath;
+            }
+
+            public bool Equals(SerializedProperty other)
+            {
+                string[] splitPath = propPath.Split(PROP_PARENT_PREFIX, StringSplitOptions.None);
+                // Should have the size of 2
+                Assert.IsTrue(splitPath.Length == 2, string.Format("[RangeArrayDrawer::PropertyValues::Equals(SerializedProperty)] Length of 'splitPath' is not 2. propPath is '{0}'.", propPath));
+                return splitPath[0] == other.serializedObject.targetObject.name && splitPath[1] == other.propertyPath;
+            }
+        }
+
+        private PropertyID currentInteractedProperty; // Property that has it's events listened, if this is null all are listened else only this matching is listened.
         private Rect previousRepaintRect; // hack for getting the correct rect in repaint but not in layout
                                           // Setting the 'position' parameter during the EventType.Layout does not seem to break stuff
         private int dragIndex = -1;       // Index that is being dragged in the fake slider
         private int modifyIndex = -1;     // Index that is being modified by the SimpleDropdown
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {            
-            var target = GetTarget(property);
+        {
+            RangeFloatArray target = GetTarget(property);
+
             Event e = Event.current;
             // e.type == Layout gives incorrect positioning
             // This makes the popup window jitter.
@@ -142,20 +185,9 @@ namespace BXFW.ScriptEditor
             {
                 previousRepaintRect = position;
             }
-            if (e.type == EventType.Layout)
+            if (e.type == EventType.Layout || e.type == EventType.Used)
             {
                 position = previousRepaintRect;
-            }
-
-            // Check if the xIndex thing's indices actually exist
-            // Otherwise set them to -1 to avoid errors
-            if (dragIndex >= target.Count)
-            {
-                dragIndex = -1;
-            }
-            if (modifyIndex >= target.Count)
-            {
-                modifyIndex = -1;
             }
 
             // top/bottom paddings
@@ -171,7 +203,7 @@ namespace BXFW.ScriptEditor
             position.width = setRemainingWidth;
 
             // | -> content => tooltip = [value]
-            // val1 --|--|--|-- val2 [+][-]
+            // {val1} --o--o--o-- {val2} [+][-]
 
             // Draw the sized box
             float minTextWidth = TextValueInitialWidth + (NumberRepresentationLength(target.Min) * TextValueCharWidth);
@@ -199,7 +231,6 @@ namespace BXFW.ScriptEditor
                 position.height
             );
             float maxValue = EditorGUI.FloatField(maxValueFieldRect, target.Max);
-            Debug.Log($"min: {minTextWidth}, max: {maxTextWidth} | minR : {minValueFieldRect}, maxR : {maxValueFieldRect} | e: {e.type}");
 
             // Draw the 'increment/decrement array elements'
             int arrayLength = target.Count;
@@ -224,10 +255,27 @@ namespace BXFW.ScriptEditor
                 arrayLength--;
             }
 
-            // Modify UI
+            // Check if the xIndex thing's indices actually exist
+            // Otherwise set them to -1 to avoid errors
+            if ((currentInteractedProperty?.Equals(property) ?? false))
+            {
+                if (dragIndex >= target.Count)
+                {
+                    dragIndex = -1;
+                }
+                if (modifyIndex >= target.Count)
+                {
+                    modifyIndex = -1;
+                }
+            }
+
+            // Modify Dropdown UI
             float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (ElemPadding * 2f)); // The corrected drag area width. !! correction needed !!
-            Rect modifyValueRect = modifyIndex >= 0 ? new Rect(
-                Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, Additionals.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
+            // Use the last interacted's states.
+            Rect modifyValueRect = modifyIndex >= 0 && (currentInteractedProperty?.Equals(property) ?? false) ? new Rect(
+                Mathf.Lerp(
+                    dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth,
+                    Additionals.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
                 position.y + (DraggableBoxModifyValueHeight / 2f),
                 DraggableBoxModifyValueWidth,
                 DraggableBoxModifyValueHeight
@@ -237,10 +285,12 @@ namespace BXFW.ScriptEditor
                 // works slightly better
                 if (!BasicDropdown.IsBeingShown())
                 {
-                    BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(modifyValueRect), modifyValueRect.size, (BasicDropdown _) =>
+                    BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(modifyValueRect), modifyValueRect.size, (BasicDropdown dropdown) =>
                     {
                         if (modifyIndex < 0)
                         {
+                            dropdown.Close();
+                            currentInteractedProperty = null;
                             return;
                         }
 
@@ -256,12 +306,12 @@ namespace BXFW.ScriptEditor
                         }
                     });
                 }
-                else if (e.type != EventType.Layout)
+                else if (e.type == EventType.Repaint)
                 {
                     BasicDropdown.SetPosition(GUIUtility.GUIToScreenRect(modifyValueRect));
                 }
             }
-            else
+            else if ((currentInteractedProperty?.Equals(property) ?? false))
             {
                 BasicDropdown.HideDropdown();
             }
@@ -280,71 +330,119 @@ namespace BXFW.ScriptEditor
             // Draw buttons with the draggable 'circle' buttons
             // (like the RangeAttribute thing, clamped between 2 values)
             // Ensure the button values can't be the same
+            bool usedEvent = false;
             for (int i = 0; i < target.Count; i++)
             {
+                // Draw actual target's values
                 float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, Additionals.Map(0f, 1f, target.Min, target.Max, target[i]));
-                Rect draggableRect = new Rect(xPosition, position.y + position.height / 5f, DraggableBoxWidth, position.height);
+                Rect draggableRect = new Rect(xPosition, position.y + (position.height / 5f), DraggableBoxWidth, position.height);
                 // Draw a GUI seperately
                 GUI.Box(draggableRect, new GUIContent(string.Empty, $"value={target[i]}\nindex={i}"), GUI.skin.horizontalSliderThumb);
-                // Intercept events manually
-                switch (e.type)
+
+                // Only call/check event(s) for single used GUI knob element
+                // This fixes the jankiness partially
+                if (!usedEvent && (currentInteractedProperty?.Equals(property) ?? true))
                 {
-                    case EventType.MouseDown:
-                        // Dragging
-                        if (e.button == 0 && dragIndex < 0)
-                        {
-                            dragIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
-                            Undo.RecordObject(property.serializedObject.targetObject, "drag set range float");
-                        }
-
-                        // Right click, show the modify UI
-                        if (e.button == 1 && modifyIndex < 0)
-                        {
-                            modifyIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
-                        }
-                        // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
-                        else if (!modifyValueRect.Contains(e.mousePosition))
-                        {
-                            modifyIndex = -1;
-                        }
-
-                        if (dragIndex >= 0 || modifyIndex >= 0)
-                        {
-                            e.Use();
-                        }
-                        break;
-                    case EventType.MouseUp:
-                        if (dragIndex >= 0)
-                        {
-                            e.Use();
-                        }
-                        dragIndex = -1;
-                        break;
-
-                    case EventType.Repaint:
-                    case EventType.MouseMove:
-                    case EventType.MouseDrag:
-                        if (dragIndex >= 0)
-                        {
-                            if (e.type != EventType.Repaint)
+                    // Intercept events manually
+                    switch (e.type)
+                    {
+                        // This is called when the mouse button goes up, which is not what we want
+                        // So just use the ContextClick event only for showing the box
+                        // MouseDown is used to hide instead
+                        case EventType.ContextClick:
+                            // Right context click, show the modify UI
+                            if (e.button == 1 && modifyIndex < 0)
                             {
-                                // Use the event to make dragging smooth
-                                // Otherwise it's a jittery mess
+                                modifyIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
+                            }
+                            // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
+                            //else if (!modifyValueRect.Contains(e.mousePosition))
+                            //{
+                            //    modifyIndex = -1;
+                            //}
+
+                            if (position.Contains(e.mousePosition))
+                            {
+                                // Hide context menu
                                 e.Use();
+                                usedEvent = true;
+                            }
+                            if (modifyIndex >= 0)
+                            {
+                                // Set handle here also
+                                currentInteractedProperty = new PropertyID(property);
+                            }
+                            break;
+                        case EventType.MouseDown:
+                            // Dragging
+                            if (e.button == 0 && dragIndex < 0)
+                            {
+                                dragIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
+                                Undo.RecordObject(property.serializedObject.targetObject, "drag set range float");
+                            }
+                            else
+                            {
+                                dragIndex = -1;
                             }
 
-                            // Get position + center
-                            xPosition = Mathf.Clamp(e.mousePosition.x, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth) - (draggableRect.width);
-                            GUI.Box(new Rect(dragAreaBoxRect.x, position.y, 50f, 20f), "from");
-                            GUI.Box(new Rect(dragAreaBoxRect.x + dragAreaWidth, position.y, 50f, 20f), "to");
+                            // Right click, show the modify UI
+                            if (e.button == 1 && modifyIndex < 0)
+                            {
+                                modifyIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
+                            }
+                            // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
+                            else if (!modifyValueRect.Contains(e.mousePosition))
+                            {
+                                modifyIndex = -1;
+                            }
 
-                            // Map the dragging position correctly
-                            target[dragIndex] = Additionals.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
-                        }
-                        break;
+                            if (dragIndex >= 0 || modifyIndex >= 0)
+                            {
+                                e.Use();
+                                // Set loop state
+                                usedEvent = true;
+                                // Set handle (to ignore other properties)
+                                currentInteractedProperty = new PropertyID(property);
+                            }
+                            break;
+                        case EventType.MouseUp:
+                            if (dragIndex >= 0)
+                            {
+                                e.Use();
+                                // clear handle (interaction is done, stop ignoring)
+                                currentInteractedProperty = null;
+                                dragIndex = -1;
+                                usedEvent = true;
+                            }
+                            break;
 
-                    default:
-                        break;
+                        case EventType.Repaint:
+                        case EventType.MouseMove:
+                        case EventType.MouseDrag:
+                            if (dragIndex >= 0)
+                            {
+                                if (e.type != EventType.Repaint)
+                                {
+                                    // Use the event to make dragging smooth
+                                    // Otherwise it's a jittery mess
+                                    e.Use();
+                                    usedEvent = true;
+                                }
+
+                                // Set an handle for other properties to not invoke this.
+                                currentInteractedProperty ??= new PropertyID(property);
+
+                                // Get position + center
+                                xPosition = Mathf.Clamp(e.mousePosition.x - draggableRect.width, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth);
+
+                                // Map the dragging position correctly
+                                target[dragIndex] = Additionals.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
             }
         }

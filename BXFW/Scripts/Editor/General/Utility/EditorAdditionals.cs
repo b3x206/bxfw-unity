@@ -350,7 +350,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Get the property drawer for the field type that you are inspecting.
         /// <br>Very useful for <c>Attribute</c> targeting PropertyDrawers.</br>
-        /// <br>Will throw <see cref="InvalidOperationException"/> if called from a property drawer that's target is an actual class.</br>
+        /// <br>Will throw <see cref="InvalidOperationException"/> if called from a property drawer that's target is an actual non-attribute class.</br>
         /// </summary>
         /// TODO : Maybe create a new 'PropertyDrawer' class named 'AttributePropertyDrawer' with better enforcement?
         public static PropertyDrawer GetTargetPropertyDrawer(PropertyDrawer requester)

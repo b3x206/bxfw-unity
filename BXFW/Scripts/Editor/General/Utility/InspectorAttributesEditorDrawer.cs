@@ -122,6 +122,7 @@ namespace BXFW.ScriptEditor
             if (UseCustomDrawer)
             {
                 // yeah, it will display 'No GUI implemented'. definitely.
+                // Use this to not default into the defualt property drawer.
                 targetTypeCustomDrawer.OnGUI(position, property, label);
             }
             else
