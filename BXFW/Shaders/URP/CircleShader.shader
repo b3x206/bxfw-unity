@@ -45,7 +45,6 @@
             #pragma multi_compile_particles
             
             #include "UnityCG.cginc"
-            #include "ShaderUtils.cginc"
 
             struct appdata_t
             {
@@ -65,9 +64,6 @@
                 // Usable with the fragment shader
                 fixed4 vertParticleColor : COLOR;
             };
-
-            float _border;
-            float _dbg;
 
             fixed4 _Color;
             fixed4 _StrokeColor;
@@ -98,20 +94,6 @@
                 float radius = _CircleSize / 200;
                 float outlineRadius = (_CircleSize * (1 + (_StrokeThickness / 4))) / 200;
 
-                // This 'TODO' only applies to the following code (which makes circle using actual math)
-                // TODO : Keep size of the stroke & circle consistent when the camera is 
-                // further away from this object that is rendered by this shader.
-                // Outer ring
-                //float ring = 0;
-                //if (_StrokeColor.a > 0 && _StrokeThickness > 0)
-                //{
-                //    float fdist = length(float2(ddx(dist), ddy(dist))) * _StrokeThickness; // ddx and ddy read previous data and proceed to do black magic
-                //    ring = smoothstep(fdist * 3.0, fdist, abs(dist - radius)); // abs(dist - radius) to fit circle in
-                //}
-                //float4 stroke = _StrokeColor * ring;
-
-                // this is a dumb & naive implementation of a circle, but it works so i don't care. (uses if statement, you should use actual math instead)
-                // What is bad about this shader is that it's solely dependant on the uv of the object we are rendering on.
                 // Main circle
                 float circle = 0; 
                 if (_Color.a > 0)

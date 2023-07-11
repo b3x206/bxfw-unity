@@ -436,6 +436,19 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Material">
+        public static BXTweenCTX<float> BXTwShaderFloatProperty(this Material target, float LastValue, float Duration, string PropertyName)
+        {
+            if (target == null)
+            {
+                Debug.LogError(BXTweenStrings.Err_TargetNull);
+                return null;
+            }
+
+            var Context = To(target.GetColor(PropertyName).a, LastValue, Duration,
+                (float f) => { target.SetFloat(PropertyName, f); }, target);
+
+            return Context;
+        }
         public static BXTweenCTX<Color> BXTwColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
@@ -466,6 +479,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+
 
         /// <see cref="SpriteRenderer"/>
         public static BXTweenCTX<Color> BXTwColor(this SpriteRenderer target, Color LastValue, float Duration)
