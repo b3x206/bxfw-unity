@@ -27,7 +27,7 @@ namespace BXFW.UI
                 if (m_ProgressBarImg == null)
                     return;
 
-                ChangeProgress(m_ProgressValue);
+                SetProgress(m_ProgressValue);
             }
         }
         /// <summary>
@@ -44,7 +44,7 @@ namespace BXFW.UI
                 if (m_ProgressBarImg == null)
                     return;
 
-                ChangeProgress(m_ProgressValue);
+                SetProgress(m_ProgressValue);
             }
         }
         private RectTransform m_rectTransform;
@@ -84,7 +84,7 @@ namespace BXFW.UI
         // -- Public
         /// <summary>
         /// Progress bar tweened move interpolation.
-        /// <br>Only works when <see cref="ChangeProgress(float, bool)"/> is called with UseTween = true.</br>
+        /// <br>Only works when <see cref="SetProgress(float, bool)"/> is called with UseTween = true.</br>
         /// </summary>
         public BXTweenPropertyFloat ProgressInterp = new BXTweenPropertyFloat(.1f);
 
@@ -125,9 +125,9 @@ namespace BXFW.UI
         // Progress
         private void OnValidate()
         {
-            ChangeProgress(m_ProgressValue);
+            SetProgress(m_ProgressValue);
         }
-        public void ChangeProgress(float ProgressSet, bool UseTween = false)
+        public void SetProgress(float ProgressSet, bool UseTween = false)
         {
             if (m_ProgressBarImg == null)
                 return; // Image is null, don't put any error, as it fills the console because of the 'OnValidate' call.
