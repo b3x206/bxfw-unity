@@ -19,6 +19,7 @@ namespace BXFW.Data
     public class LocalizedTextData : IEnumerable<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
     {
         /// TODO : Put <see cref="DefaultLocale"/> to a different place.
+        /// TODO 2 : <see cref="UnityEditor.CustomPropertyDrawer"/> for this
         public static string DefaultLocale = "en";
         public static string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         public string TextID;
@@ -141,6 +142,13 @@ namespace BXFW.Data
         public override bool Equals(object obj)
         {
             return base.Equals(obj);
+        }
+        /// <summary>
+        /// Returns a debug display with the text id and the current locale string.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"ID={TextID}, CurrentLocale={GetCurrentLocaleString()}";
         }
 
         public static bool operator ==(LocalizedTextData lhs, LocalizedTextData rhs)

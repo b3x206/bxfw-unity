@@ -24,7 +24,9 @@ namespace BXFW.UI
             {
                 m_ProgressBarImg = value;
 
-                if (m_ProgressBarImg == null) return;
+                if (m_ProgressBarImg == null)
+                    return;
+
                 ChangeProgress(m_ProgressValue);
             }
         }
@@ -39,11 +41,13 @@ namespace BXFW.UI
             {
                 m_ProgressValue = Mathf.Clamp01(value);
 
-                if (m_ProgressBarImg == null) return;
+                if (m_ProgressBarImg == null)
+                    return;
+
                 ChangeProgress(m_ProgressValue);
             }
         }
-        private RectTransform _rectTransform;
+        private RectTransform m_rectTransform;
         /// <summary>
         /// The <see cref="UnityEngine.RectTransform"/> of this Image.
         /// </summary>
@@ -51,11 +55,30 @@ namespace BXFW.UI
         { 
             get
             {
-                if (_rectTransform == null)
-                    _rectTransform = GetComponent<RectTransform>();
+                if (m_rectTransform == null)
+                    m_rectTransform = GetComponent<RectTransform>();
 
-                return _rectTransform;
+                return m_rectTransform;
             } 
+        }
+        [SerializeField] private Image m_background;
+        /// <summary>
+        /// Background image attached to this progress bar.
+        /// <br>Does not have to be a valid value.</br>
+        /// </summary>
+        public Image Background
+        {
+            get
+            {
+                if (m_background == null)
+                    TryGetComponent(out m_background);
+
+                return m_background;
+            }
+            set
+            {
+                m_background = value;
+            }
         }
 
         // -- Public

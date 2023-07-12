@@ -26,6 +26,21 @@ namespace BXFW.SceneManagement
         [SerializeField] private uint m_Value2;
         [SerializeField] private uint m_Value3;
 
+        /// <summary>
+        /// Returns a <see cref="uint"/> array, containing the values sequentially.
+        /// <br>The length is always 4, allocates (tiny) garbage.</br>
+        /// </summary>
+        public uint[] ToUintArray()
+        {
+            uint[] array = new uint[4];
+            array[0] = m_Value0;
+            array[1] = m_Value1;
+            array[2] = m_Value2;
+            array[3] = m_Value3;
+
+            return array;
+        }
+
         public override int GetHashCode()
         {
             unchecked

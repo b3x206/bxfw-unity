@@ -6,7 +6,7 @@ namespace BXFW
 {
     /// <summary>
     /// A queue that only holds unique items.
-    /// <br>Memory usage may be higher because it uses a <see cref="HashSet{T}"/> to check whether the Enqueue'd element is unique or not.</br>
+    /// <br>Memory usage is higher because it uses a <see cref="HashSet{T}"/> to check whether the Enqueue'd element is unique or not.</br>
     /// </summary>
     public class UniqueQueue<T> : IEnumerable<T>, IEnumerable, IReadOnlyCollection<T>, ICollection
     {
@@ -42,21 +42,7 @@ namespace BXFW
             m_hashSet = new HashSet<T>(collection); // Create the hashSet with unique values first
             m_queue = new Queue<T>(m_hashSet);      // Use the hashSet to create the queue.
         }
-        /// <summary>
-        /// Clears the array.
-        /// </summary>
-        public void Clear()
-        {
-            m_queue.Clear();
-            m_hashSet.Clear();
-        }
-        /// <summary>
-        /// Returns whether if the queue contains the element.
-        /// </summary>
-        public bool Contains(T item) 
-        {
-            return m_hashSet.Contains(item);
-        }
+
         /// <summary>
         /// Dequeues the first element as an out parameter named <paramref name="result"/>.
         /// </summary>
@@ -105,11 +91,34 @@ namespace BXFW
             }
         }
         /// <summary>
+        /// Returns the first element without removing it.
+        /// </summary>
+        public bool TryPeek(out T result)
+        {
+            return m_queue.TryPeek(out result);
+        }
+        /// <summary>
         /// Returns the first element in the queue without removing it.
         /// </summary>
         public T Peek() 
         {
             return m_queue.Peek();
+        }
+
+        /// <summary>
+        /// Clears the array.
+        /// </summary>
+        public void Clear()
+        {
+            m_queue.Clear();
+            m_hashSet.Clear();
+        }
+        /// <summary>
+        /// Returns whether if the queue contains the element.
+        /// </summary>
+        public bool Contains(T item)
+        {
+            return m_hashSet.Contains(item);
         }
         /// <summary>
         /// Converts the <see cref="UniqueQueue{T}"/> into a typed array.
@@ -124,14 +133,6 @@ namespace BXFW
         public void TrimExcess() 
         {
             m_queue.TrimExcess();
-        }
-
-        /// <summary>
-        /// Returns the first element without removing it.
-        /// </summary>
-        public bool TryPeek(out T result)
-        {
-            return m_queue.TryPeek(out result);
         }
         /// <summary>
         /// Copies the queue into an array.
