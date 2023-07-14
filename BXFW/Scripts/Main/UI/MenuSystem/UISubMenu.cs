@@ -46,12 +46,12 @@ namespace BXFW.UI
         protected virtual void Awake()
         {
             // If the object is already inactive, it's not visible and closed.
-            if (gameObject.activeInHierarchy)
+            if (gameObject.activeInHierarchy && IsClosedOnAwake)
             {
-                // Call the activation events if the object is active.
+                // Close the menu if the thing is active.
                 // NOTE : This only applies for the sub menu.
-                UISubMenuEventSimple?.Invoke(!IsClosedOnAwake);
-                UISubMenuEvent?.Invoke(this, !IsClosedOnAwake);
+                UISubMenuEventSimple?.Invoke(false);
+                UISubMenuEvent?.Invoke(this, false);
             }
         }
 

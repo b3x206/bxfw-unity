@@ -1330,6 +1330,7 @@ namespace BXFW
             if (string.IsNullOrEmpty(SaveKey))
                 return false;
 
+            // type system abuse
             Type tType = typeof(T);
             if (tType == typeof(Vector2))
             {
@@ -1347,6 +1348,14 @@ namespace BXFW
             if (tType == typeof(bool))
             {
                 return PlayerPrefs.HasKey(SaveKey);
+            }
+            if (tType == typeof(long))
+            {
+                return PlayerPrefs.HasKey(string.Format("{0}_l32Long", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_u32Long", SaveKey));
+            }
+            if (tType == typeof(double))
+            {
+                return PlayerPrefs.HasKey(string.Format("{0}_l32Double", SaveKey)) && PlayerPrefs.HasKey(string.Format("{0}_u32Double", SaveKey));
             }
             if (tType.IsEnum)
             {

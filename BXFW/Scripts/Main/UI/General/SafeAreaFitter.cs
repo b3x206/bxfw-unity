@@ -24,8 +24,11 @@ namespace BXFW.UI
 
         private void Update()
         {
-            if (!AllowResize) return; // Size can be modified after initial calculation. 
+            if (!AllowResize)
+                return; // Size can be modified after initial calculation. 
 
+            // I have no idea why i added this
+            // FIXME :  The 'SafeAreaFitter' should not constantly size itself (?)
             if (transform.hasChanged)
                 Resize();
         }

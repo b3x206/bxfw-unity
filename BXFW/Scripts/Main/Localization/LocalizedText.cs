@@ -217,6 +217,14 @@ namespace BXFW
             }
 
             LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID == textID);
+            bool replaceInvalidChars = false;
+            {
+                // unity doesn't compile 'out string v'
+                string v = string.Empty;
+                // will throw an exception if the pragma value is invalid.
+                if (data?.PragmaDefinitions.TryGetValue(PRAGMA_REPLACE_TMP_CHARS, out v) ?? false)
+                    replaceInvalidChars = bool.Parse(v);
+            }
 
             if (data == null)
             {
@@ -234,6 +242,8 @@ namespace BXFW
 #else
             setData = data.GetCurrentLocaleString();
 #endif
+            if (replaceInvalidChars)
+                setData = RemoveDiacritics(setData, (char c) => target.font.HasCharacter(c));
 
             setData = string.Format(setData, formatArgs);
             target.SetText(setData);
