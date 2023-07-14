@@ -138,12 +138,12 @@ namespace BXFW
             localeTextData = LocalizedTextParser.Parse(localeData.text);
         }
 
-        public void Apply(bool setText = true, bool logErrors = true)
+        private void ApplyInternal(bool setText, bool logErrors, params object[] fmt)
         {
             if (target == null)
             {
                 if (logErrors)
-                    Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} doesn't have target.", this.GetPath()));
+                    Debug.LogError(string.Format("[LocalizedText::Apply] Text on {0} doesn't have target.", this.GetPath()));
 
                 return;
             }
@@ -155,14 +155,16 @@ namespace BXFW
                 else
                 {
                     if (logErrors)
-                        Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field with text on it assigned.", this.GetPath()));
+                        Debug.LogWarning(string.Format("[LocalizedText::Apply] Text on {0} doesn't have a 'localeData' field with text on it assigned.", this.GetPath()));
+                
                     return;
                 }
             }
             else
             {
                 if (logErrors)
-                    Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
+                    Debug.LogWarning(string.Format("[LocalizedText::Apply] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
+
                 return;
             }
 
@@ -179,7 +181,8 @@ namespace BXFW
             if (data == null)
             {
                 if (logErrors)
-                    Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
+                    Debug.LogError(string.Format("[LocalizedText::Apply] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
+
                 return;
             }
 
@@ -197,56 +200,22 @@ namespace BXFW
                 if (replaceInvalidChars)
                     setData = RemoveDiacritics(setData, (char c) => target.font.HasCharacter(c));
 
+                if (fmt.Length > 0)
+                { 
+                    setData = string.Format(setData, fmt);
+                }
+
                 target.SetText(setData);
             }
         }
+
+        public void Apply(bool setText = true, bool logErrors = true)
+        {
+            ApplyInternal(setText, logErrors);
+        }
         public void ApplyFormatted(params object[] formatArgs)
         {
-            if (target == null)
-            {
-                Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} doesn't have target.", this.GetPath()));
-                return;
-            }
-
-            if (localeData != null)
-                localeTextData ??= LocalizedTextParser.Parse(localeData.text);
-            else
-            {
-                Debug.LogWarning(string.Format("[LocalizedText::Awake] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
-                return;
-            }
-
-            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID == textID);
-            bool replaceInvalidChars = false;
-            {
-                // unity doesn't compile 'out string v'
-                string v = string.Empty;
-                // will throw an exception if the pragma value is invalid.
-                if (data?.PragmaDefinitions.TryGetValue(PRAGMA_REPLACE_TMP_CHARS, out v) ?? false)
-                    replaceInvalidChars = bool.Parse(v);
-            }
-
-            if (data == null)
-            {
-                Debug.LogError(string.Format("[LocalizedText::Awake] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
-                return;
-            }
-
-            string setData = string.Empty;
-
-#if UNITY_EDITOR
-            if (data.ContainsLocale(spoofLocale))
-                setData = data[spoofLocale];
-            else
-                setData = data.GetCurrentLocaleString();
-#else
-            setData = data.GetCurrentLocaleString();
-#endif
-            if (replaceInvalidChars)
-                setData = RemoveDiacritics(setData, (char c) => target.font.HasCharacter(c));
-
-            setData = string.Format(setData, formatArgs);
-            target.SetText(setData);
+            ApplyInternal(true, true, formatArgs);
         }
     }
 }
