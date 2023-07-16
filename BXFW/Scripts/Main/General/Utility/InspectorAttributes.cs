@@ -58,6 +58,23 @@ namespace BXFW
     public class ReadOnlyViewAttribute : PropertyAttribute { }
 
     /// <summary>
+    /// Attribute to assert a sorted array drawer. Can be only applied to array values that have <see cref="System.IComparable{T}"/>, otherwise it will draw a warning box.
+    /// <br/>
+    /// <br>For non-numerical types that have <see cref="System.IComparable{T}"/>, the array values will be switched. (<see cref="System.Array.Sort(System.Array)"/> will be called)</br>
+    /// <br>For numerical types the first and the last value can be changed freely while other values will be clamped between it's previous and next.</br>
+    /// <br>Other types that don't have <see cref="System.IComparable{T}"/> or the attribute parent is not an array, the attribute will display a warning.</br>
+    /// </summary>
+    public class SortedArrayAttribute : PropertyAttribute
+    {
+        /// <summary>
+        /// If this is true, the array will be asserted to be sorted in reverse.
+        /// </summary>
+        public bool Reverse { get; set; }
+        public SortedArrayAttribute()
+        { }
+    }
+
+    /// <summary>
     /// Attribute to draw clamped integers and floats in fields.
     /// </summary>
     public class ClampAttribute : PropertyAttribute

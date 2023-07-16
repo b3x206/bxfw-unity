@@ -145,10 +145,17 @@ namespace BXFW
         }
 
         #region IList (with clamps)
+        /// <summary>
+        /// Sets the index to a value, then calls <see cref="List{T}.Sort"/> for <see cref="array"/>.
+        /// </summary>
         public float this[int index]
         {
             get { return array[index]; }
-            set { array[index] = ClampOffsettableIgnoredIndex(value, index); }
+            set 
+            {
+                array[index] = ClampOffsettableIgnoredIndex(value, index);
+                array.Sort();
+            }
         }
 
         public int Count => array.Count;
@@ -160,7 +167,20 @@ namespace BXFW
         /// </summary>
         public void Add(float item)
         {
-            array.Add(ClampOffsettable(item));
+            float value = ClampOffsettable(item);
+            // Insert value to make the array sorted
+            int i;
+            for (i = 0; i < Count; i++)
+            {
+                if (value > array[i])
+                {
+                    continue;
+                }
+
+                break;
+            }
+
+            array.Insert(i, value);
         }
 
         public void Clear()
@@ -188,6 +208,9 @@ namespace BXFW
             return array.IndexOf(item);
         }
 
+        /// <summary>
+        /// Inserts at index, but may cause the array to be unsorted!
+        /// </summary>
         public void Insert(int index, float item)
         {
             array.Insert(index, ClampOffsettable(item));

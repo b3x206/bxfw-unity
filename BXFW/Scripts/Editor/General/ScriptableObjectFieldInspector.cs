@@ -329,7 +329,7 @@ namespace BXFW
                     {
                         if (type.IsClass)
                         {
-                            if (type.IsSubclassOf(typeof(T)) && type != typeof(T))
+                            if (type.IsSubclassOf(typeof(T)) && type != typeof(T) && !type.IsAbstract)
                             {
                                 T elem = ScriptableObject.CreateInstance(type) as T;
 

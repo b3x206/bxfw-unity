@@ -163,7 +163,7 @@ namespace BXFW.Tools.Editor
         /// <br>Important NOTE : The instance object that gets returned with this method may be null (or not).
         /// In these cases use the return (the FieldInfo)</br>
         /// <br/>
-        /// <br>If you are using this for <see cref="CustomPropertyDrawer"/>, this class has an <see cref="FieldInfo"/> property named <c>fieldInfo</c>, 
+        /// <br>If you are using this for <see cref="CustomPropertyDrawer"/> (that is on an array otherwise this note is invalid), this class has an <see cref="FieldInfo"/> property named <c>fieldInfo</c>, 
         /// you can use that instead of the bundled field info.</br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
@@ -186,7 +186,6 @@ namespace BXFW.Tools.Editor
 
             // lastPropertyName is buggy, it usually most likely assumes the invalid depth?
             string propertyNamesExceptLast = prop.propertyPath.Substring(0, lastIndexOfPeriod);
-
             var pair = GetTarget(prop.serializedObject.targetObject, propertyNamesExceptLast);
 
             //return new KeyValuePair<FieldInfo, object>(pair.Key.FieldType.GetField(lastPropertyName), pair.Value);
@@ -303,7 +302,7 @@ namespace BXFW.Tools.Editor
             return property.GetTarget().Key.FieldType;
         }
         /// <summary>
-        /// Returns the (last) index of this property in the array.
+        /// Returns the (last array) index of this property in the array.
         /// <br>Returns <c>-1</c> if not in an array.</br>
         /// </summary>
         public static int GetPropertyArrayIndex(this SerializedProperty property)

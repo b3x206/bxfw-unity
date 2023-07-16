@@ -71,7 +71,10 @@ namespace BXFW.Data
                 return value;
             }
         }
-
+        /// <summary>
+        /// Returns <see langword="true"/> if the language <paramref name="key"/> is contained in the values.
+        /// </summary>
+        /// <param name="key">2-letter iso identifier for the language.</param>
         public bool ContainsLocale(string key)
         {
             return LocalizedValues.ContainsKey(key);

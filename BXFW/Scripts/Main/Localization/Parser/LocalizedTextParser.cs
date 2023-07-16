@@ -382,7 +382,7 @@ namespace BXFW.Data
                         // yes, inferred string (whatever the '$' thing before "" is called) is indeed nicer to work with
                         string.Format("{0}{1}{2}{3}{2}{4} ",
                             textWLocaleKey, LocaleDefChar, SurroundChar,        // Definition Char
-                            textWLocaleValue.ConvertToParseableString(),          // Content
+                            textWLocaleValue.ConvertToParseableString(),        // Content
                             i != assets.Count - 1 ? LocaleDefSeperateChar : ' ' // Seperation comma (parse)
                         )
                     );
