@@ -28,9 +28,9 @@ namespace BXFW.Data
         /// Contains the definitions that start with #pragma.
         /// <br>An optional extension way of defining variables.</br>
         /// </summary>
-        public readonly Dictionary<string, string> PragmaDefinitions = new Dictionary<string, string>();
+        public readonly SerializableDictionary<string, string> PragmaDefinitions = new SerializableDictionary<string, string>();
         // TODO : Use the BXFW.SerializableDictionary class (no need for ISerializationCallbackReceiver)
-        private readonly Dictionary<string, string> LocalizedValues = new Dictionary<string, string>();
+        private readonly SerializableDictionary<string, string> LocalizedValues = new SerializableDictionary<string, string>();
         public IDictionary<string, string> Data
         {
             get
@@ -108,19 +108,46 @@ namespace BXFW.Data
         public LocalizedTextData()
         { }
         /// <summary>
+        /// Creates a LocalizedTextData using a <see cref="Dictionary{TKey, TValue}"/>.
+        /// <br>(without id, use for code based locale)</br>
+        /// </summary>
+        public LocalizedTextData(Dictionary<string, string> values) 
+            : this(new SerializableDictionary<string, string>(values))
+        { }
+        /// <summary>
+        /// Creates the 'LocalizedTextData' with the <see cref="Dictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
+        /// </summary>
+        /// <param name="TextID">ID of the text.</param>
+        /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
+        public LocalizedTextData(string TextID, Dictionary<string, string> values) 
+            : this(TextID, new SerializableDictionary<string, string>(values))
+        { }
+        /// <summary>
+        /// Creates the 'LocalizedTextData' with the <see cref="Dictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
+        /// </summary>
+        /// <param name="TextID">ID of the text.</param>
+        /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
+        /// <param name="pragmaDefs">Pragma definitions for the data.</param>
+        public LocalizedTextData(string TextID, Dictionary<string, string> values, Dictionary<string, string> pragmaDefs) 
+            : this(TextID, new SerializableDictionary<string, string>(values), new SerializableDictionary<string, string>(pragmaDefs))
+        { }
+
+        /// <summary>
         /// Creates an new <see cref="LocalizedTextData"/> object. (without an id, use for inline localization)
         /// </summary>
         /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(Dictionary<string, string> values) : this(string.Empty, values)
+        public LocalizedTextData(SerializableDictionary<string, string> values) 
+            : this(string.Empty, values)
         { }
         /// <summary>
-        /// Creates an new <see cref="LocalizedTextData"/> object.
+        /// Creates an new <see cref="LocalizedTextData"/> object without pragma options. (pragma options are completely optional)
         /// </summary>
         /// <param name="TextID">ID of the localized text.</param>
-        /// <param name="values">Dictionary Data => Locale = Key | Content = Value</param>
-        public LocalizedTextData(string TextID, Dictionary<string, string> values) : this(TextID, values, null)
+        /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
+        public LocalizedTextData(string TextID, SerializableDictionary<string, string> values) 
+            : this(TextID, values, null)
         { }
-        public LocalizedTextData(string textID, Dictionary<string, string> values, Dictionary<string, string> pragmaDefs)
+        public LocalizedTextData(string textID, SerializableDictionary<string, string> values, SerializableDictionary<string, string> pragmaDefs)
         {
             TextID              = textID;
             LocalizedValues     = values;

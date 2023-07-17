@@ -7,14 +7,15 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Serializable dictionary.
+    /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
+    /// Uses the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on code, 
+    /// but on editor a <see cref="UnityEditor.PropertyDrawer"/> is needed (TODO)
     /// <br/>
     /// <br>NOTE : Array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable 
     /// in <typeparamref name="TKey"/> or <typeparamref name="TValue"/> (by unity). Wrap them with array container class.</br>
     /// </summary>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
-        where TValue : new()
     {
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
@@ -22,13 +23,13 @@ namespace BXFW
         // Save the dictionary to lists
         public void OnBeforeSerialize()
         {
-            // The 'keys' and 'values' are already serialized, just add them 
+            // The 'keys' and 'values' are already serialized, just add them to the actual lists that unity will serialize.
 
             // If a key is removed
             if (keys.Count != values.Count)
             {
                 // Removing or adding keys, set to defualt value
-                values.Resize(keys.Count);
+                values.Resize(keys.Count, default);
             }
 
             // Directly adding to dictionary (from c#, not from editor)
@@ -53,7 +54,7 @@ namespace BXFW
 
             if (keys.Count != values.Count)
             {
-                values.Resize(keys.Count);
+                values.Resize(keys.Count, default);
 
                 // Unity moment
                 if (keys.Count != values.Count)
@@ -83,5 +84,11 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
                 Add(keys[i], values[i]);
             }
         }
+
+        // Convert to-from dictionary
+        public SerializableDictionary() : base()
+        { }
+        public SerializableDictionary(Dictionary<TKey, TValue> dict) : base(dict)
+        { }
     }
 }

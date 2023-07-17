@@ -111,7 +111,7 @@ namespace BXFW
         protected virtual bool NameEditorEnforceNonNullName => false;
         
         /// <summary>
-        /// Currently drawn list of the scriptable objects.
+        /// Currently drawn list of the scriptable objects. (or also known as a editor memory leak)
         /// </summary> 
         /// The plan is that we control the parent of the drawn scriptable objects and if the parents of the scriptable object match we create a clone
         /// By doing this there's no duplicate scriptable objects on an array, so there's no problems.
