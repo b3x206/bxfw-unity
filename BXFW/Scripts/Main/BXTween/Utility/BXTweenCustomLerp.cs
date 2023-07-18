@@ -79,18 +79,18 @@ namespace BXFW.Tweening
             switch (posSpace)
             {
                 case Space.World:
-                    target.position = Vector2.Lerp(start.center, end.center, time);
+                    target.position = Vector2.LerpUnclamped(start.center, end.center, time);
                     break;
                 case Space.Self:
-                    target.localPosition = Vector2.Lerp(start.center, end.center, time);
+                    target.localPosition = Vector2.LerpUnclamped(start.center, end.center, time);
                     break;
 
                 default:
                     throw new System.ArgumentException(string.Format("Invalid space {0}.", posSpace));
             }
 
-            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Lerp(start.width, end.width, time));
-            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Lerp(start.height, end.height, time));
+            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.LerpUnclamped(start.width, end.width, time));
+            target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.LerpUnclamped(start.height, end.height, time));
         }
 
         /// <summary>
