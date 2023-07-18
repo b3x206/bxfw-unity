@@ -166,7 +166,7 @@ namespace BXFW
         {
             if (property.IsDisposed() || property.serializedObject.IsDisposed())
             {
-                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed 'SerializedProperty' is <b>disposed</b>. This most likely happened because this method was called from a delegate.");
+                throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed 'SerializedProperty' is <b>disposed</b>. This most likely happened because this method was called from a delegate.\nTry refreshing the current window to try again.");
             }
 
             UnityEngine.Object dirtyTargetObject = property.serializedObject.targetObject;

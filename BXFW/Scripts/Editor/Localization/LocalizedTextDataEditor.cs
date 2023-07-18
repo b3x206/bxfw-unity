@@ -1,11 +1,10 @@
 using UnityEngine;
 using UnityEditor;
 using BXFW.Data;
+using BXFW.Tools.Editor;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
-using BXFW.Tools.Editor;
-using System.Reflection;
 
 namespace BXFW.ScriptEditor
 {
@@ -105,7 +104,8 @@ namespace BXFW.ScriptEditor
             Rect dropdownRect = GetPropertyRect(position);
             if (EditorGUI.DropdownButton(new Rect(dropdownRect) { width = dropdownRect.width - 35 }, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
             {
-                List<CultureInfo> addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
+                var addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
+                addableLanguageList.Sort((CultureInfo x, CultureInfo y) => { return x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName); });
                 GenericMenu menu = new GenericMenu();
 
                 menu.AddItem(new GUIContent("Cancel"), false, () => { });
@@ -122,6 +122,8 @@ namespace BXFW.ScriptEditor
                             // Switch the currently edited locale.
                             editedLocales[GetPropertyKey(property)] = idValuePair.Key;
                             editedLocaleValue = idValuePair.Key;
+                            EditorAdditionals.RepaintAll();
+                            EditorGUIUtility.editingTextField = false;
                         });
                     }
                 }
@@ -137,6 +139,8 @@ namespace BXFW.ScriptEditor
                         Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
                         editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
                         target.Data.Add(info.TwoLetterISOLanguageName, string.Empty);
+                        EditorAdditionals.RepaintAll();
+                        EditorGUIUtility.editingTextField = false;
                     });
                 }
 
@@ -160,7 +164,7 @@ namespace BXFW.ScriptEditor
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
             Rect txtEditAreaRect = GetPropertyRect(position, HEIGHT);
-            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.Data[editedLocaleValue]);
+            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.Data[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
             {
