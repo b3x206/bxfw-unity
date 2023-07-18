@@ -20,8 +20,8 @@ namespace BXFW.Data
     {
         /// TODO : Put <see cref="DefaultLocale"/> to a different place.
         /// TODO 2 : <see cref="UnityEditor.CustomPropertyDrawer"/> for this
-        public static string DefaultLocale = "en";
-        public static string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+        public static readonly string DefaultLocale = "en";
+        public static readonly string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         public string TextID;
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace BXFW.Data
         /// </summary>
         public readonly SerializableDictionary<string, string> PragmaDefinitions = new SerializableDictionary<string, string>();
         // TODO : Use the BXFW.SerializableDictionary class (no need for ISerializationCallbackReceiver)
-        private readonly SerializableDictionary<string, string> LocalizedValues = new SerializableDictionary<string, string>();
+        [SerializeField] private SerializableDictionary<string, string> LocalizedValues = new SerializableDictionary<string, string>();
         public IDictionary<string, string> Data
         {
             get
@@ -99,6 +99,20 @@ namespace BXFW.Data
             // Return the first in values
             Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
             return LocalizedValues.Values.ToArray()[0];
+        }
+        /// <summary>
+        /// Sets a value for the current locale for this data.
+        /// <br>Creates a key in <see cref="Data"/> if the value for current locale does not exist.</br>
+        /// </summary>
+        public void SetCurrentLocaleString(string value)
+        {
+            if (!ContainsLocale(value))
+            {
+                LocalizedValues.Add(ISOCurrentLocale, value);
+                return;
+            }
+
+            LocalizedValues[ISOCurrentLocale] = value;
         }
 
         // -- Operator / Class

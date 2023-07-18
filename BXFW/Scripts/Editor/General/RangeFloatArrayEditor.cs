@@ -3,76 +3,16 @@ using UnityEngine.Assertions;
 using UnityEditor;
 using BXFW.Tools.Editor;
 using System;
-using System.Linq;
-using System.Reflection;
-using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
-    internal class BasicDropdown : EditorWindow
-    {
-        private static readonly Type popupLocationType = typeof(EditorWindow).Assembly.GetType("UnityEditor.PopupLocation");
-        private static readonly Type popupLocationArrayType = popupLocationType.MakeArrayType();
-        // Enum type should be 'PopupLocation'.
-        private static Array GetPopupLocations()
-        {
-            Array retValue = (Array)Activator.CreateInstance(popupLocationArrayType, args: 2);
-            retValue.SetValue(Enum.ToObject(popupLocationType, 0), 0); /* PopupLocation.Below,  */
-            retValue.SetValue(Enum.ToObject(popupLocationType, 4), 1); /* PopupLocation.Overlay */
-
-            return retValue;
-        }
-
-        private static BasicDropdown Instance;
-        private Action<BasicDropdown> onGUICall;
-        public static bool IsBeingShown()
-        {
-            return Instance != null;
-        }
-        public static void ShowDropdown(Rect parentRect, Vector2 size, Action<BasicDropdown> onGUICall)
-        {
-            if (Instance == null)
-            {
-                Instance = CreateInstance<BasicDropdown>();
-            }
-
-            Instance.position = new Rect(Instance.position) { x = parentRect.xMin, y = parentRect.yMax, size = size };
-            Instance.onGUICall = onGUICall;
-            // void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)
-            MethodInfo showDropdown = typeof(EditorWindow).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Single(f => f.Name == "ShowAsDropDown" && f.GetParameters().Length == 3);
-            //MethodInfo showDropdown = typeof(EditorWindow).GetMethod("ShowAsDropDown", BindingFlags.Instance | BindingFlags.NonPublic);
-            showDropdown.Invoke(Instance, new object[] { parentRect, size, GetPopupLocations() });
-        }
-        public static void HideDropdown()
-        {
-            if (Instance != null)
-            {
-                Instance.Close();
-            }
-        }
-        public static void SetPosition(Rect screenPosition)
-        {
-            Instance.position = screenPosition;
-        }
-        private void OnGUI()
-        {
-            if (onGUICall == null)
-            {
-                Close();
-                return;
-            }
-
-            onGUICall(this);
-        }
-    }
-
     // H moment : 
     // https://discussions.unity.com/t/how-to-edit-array-list-property-with-custom-propertydrawer/218416/2
     // You can’t make a PropertyDrawer for arrays or generic lists themselves. […] On the plus side, elements inside arrays and lists do work with PropertyDrawers.
     // This was meant to be an PropertyDrawer for an array, but i will just create a custom class.
 
     [CustomPropertyDrawer(typeof(RangeFloatArray))]
-    internal class RangeArrayDrawer : PropertyDrawer
+    internal class RangeFloatArrayDrawer : PropertyDrawer
     {
         private static RangeFloatArray GetTarget(SerializedProperty targetProperty)
         {

@@ -20,11 +20,14 @@ namespace BXFW
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
 
-        // Save the dictionary to lists
+        // Save the base class Dictionary to serialized lists
         public void OnBeforeSerialize()
         {
             // The 'keys' and 'values' are already serialized, just add them to the actual lists that unity will serialize.
+            // -- These used to only account for removing + adding keys and values
+            // - Check for array sequence changes also (the SequenceEqual's)
 
+            // - Check for removal + adding
             // If a key is removed
             if (keys.Count != values.Count)
             {
@@ -34,7 +37,7 @@ namespace BXFW
 
             // Directly adding to dictionary (from c#, not from editor)
             // --Only useful if we directly add to the dictionary, then serialize
-            if (keys.Count < Keys.Count) // If the actual dictionary is more up to date.
+            if (!Enumerable.SequenceEqual(keys, Keys) || !Enumerable.SequenceEqual(values, Values) || keys.Count < Keys.Count) // If the actual dictionary is more up to date.
             {
                 keys.Clear();
                 values.Clear();
@@ -47,9 +50,10 @@ namespace BXFW
             }
         }
 
-        // load dictionary from lists
+        // load base class Dictionary from lists
         public void OnAfterDeserialize()
         {
+            // 
             Clear();
 
             if (keys.Count != values.Count)
