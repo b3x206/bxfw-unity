@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.InteropServices;
 
 namespace BXFW
 {
@@ -178,7 +177,7 @@ namespace BXFW
         /// <summary>
         /// Adds an explosion to rigidbody.
         /// </summary>
-        public static void AddExplosionForce(this Rigidbody2D rb, float explosionForce, Vector2 explosionPosition, float explosionRadius, float upwardsModifier = 0.0F, ForceMode2D mode = ForceMode2D.Force)
+        public static void AddExplosionForce(this Rigidbody2D rb, float explosionForce, Vector2 explosionPosition, float explosionRadius, float upwardsModifier = 0.0f, ForceMode2D mode = ForceMode2D.Force)
         {
             Vector2 explosionDir = rb.position - explosionPosition;
             float explosionDistance = (explosionDir.magnitude / explosionRadius);
@@ -295,32 +294,25 @@ namespace BXFW
         public static Vector3[] WorldVertsToLocalSpace(this MeshFilter filter, Vector3[] worldV)
         {
             if (filter == null)
-            {
-                Debug.LogWarning("[Additionals::WorldVertsToLocalSpace] The mesh filter reference is null.");
-                return new Vector3[0];
-            }
+                throw new ArgumentNullException(nameof(filter), "[Additionals::WorldVertsToLocalSpace] Passed 'filter' argument is null.");
 
             Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
+
             if (vertsMesh == null)
-            {
-                Debug.LogWarning("[Additionals::WorldVertsToLocalSpace] The mesh filter mesh is null.");
-                return new Vector3[0];
-            }
+                throw new ArgumentException("[Additionals::WorldVertsToLocalSpace] Passed 'filter's mesh value is null.", nameof(filter.mesh));
+
             if (vertsMesh.vertexCount != worldV.Length)
-            {
-                Debug.LogError("[Additionals::WorldVertsToLocalSpace] The vertex amount is not equal.");
-                return new Vector3[0];
-            }
+                throw new ArgumentException("[Additionals::WorldVertsToLocalSpace] The vertex count of passed array is not equal with mesh's vertex count.", nameof(worldV));
 
             Matrix4x4 worldToLocal = filter.transform.worldToLocalMatrix;
-            Vector3[] local_v = new Vector3[worldV.Length];
+            Vector3[] localV = new Vector3[worldV.Length];
 
             for (int i = 0; i < worldV.Length; i++)
             {
-                local_v[i] = worldToLocal.MultiplyPoint3x4(worldV[i]);
+                localV[i] = worldToLocal.MultiplyPoint3x4(worldV[i]);
             }
 
-            return local_v;
+            return localV;
         }
 
         // -- Math

@@ -12,10 +12,6 @@ namespace BXFW
     [RequireComponent(typeof(MeshFilter))]
     public class MBVertSnappableTransform : MonoBehaviour
     {
-        // 'SIsSetup' is not set properly 
-        // Because of this, the mesh vertices were always generated when we wanted to get 'VertPoints'
-        // And that allocates a lotta garbo (it's mesh related but the array that we create also has it's issues.
-
         /// <summary>
         /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
         /// </summary>
@@ -45,7 +41,9 @@ namespace BXFW
         {
             get
             {
-                //if (transform.hasChanged || !SIsSetup)
+                // S was never used to be setup
+                // So because of this, even though the transform never changed we always update it's snap points
+                // (oh and also the transform can move during gameplay so i made a no-alloc method to avoid gc.alloc)
                 if (transform.localToWorldMatrix != PrevTrsMatrix ||
                     !SIsSetup)
                 {
@@ -57,45 +55,28 @@ namespace BXFW
             }
         }
 
-        /// <summary>Helper method for getting the world position of the vertices.</summary>
-        public Vector3[] VerticesToWorldPos(MeshFilter filter)
-        {
-            Mesh mesh;
-#if UNITY_EDITOR
-            mesh = !Application.isPlaying ? filter.sharedMesh : filter.mesh;
-#else
-            mesh = filter.mesh;
-#endif
-            if (mesh == null)
-            {
-                Debug.LogError(string.Format("[MBVertSnappableTransform::VerticesToWorldPos] Mesh on MeshFilter '{0}' is null!", filter.GetPath()));
-                return null;
-            }
-
-            Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
-            Vector3[] vertPos = new Vector3[mesh.vertices.Length];
-
-            for (int i = 0; i < mesh.vertices.Length; i++)
-            {
-                vertPos[i] = localToWorld.MultiplyPoint3x4(mesh.vertices[i]);
-            }
-
-            return vertPos;
-        }
-
+        /// <summary>
+        /// Tempoarily allocated mesh list.
+        /// <br>Used as a persistent array for no GC.Alloc.</br>
+        /// </summary>
         private List<Vector3> meshVertsList;
         /// <summary>Updates the snap points.</summary>
         public void UpdateSnapPoints()
         {
-#if UNITY_EDITOR
-            if ((Application.isPlaying && CurrentMeshFilter.mesh == null) || CurrentMeshFilter.sharedMesh == null)
-                return;
-#else
-            if (CurrentMeshFilter.mesh == null)
-                return;
-#endif
+            Mesh mesh;
 
-            meshVertsList ??= new List<Vector3>(CurrentMeshFilter.mesh.vertexCount);
+#if UNITY_EDITOR
+            mesh = Application.isPlaying ? CurrentMeshFilter.mesh : CurrentMeshFilter.sharedMesh;
+#else
+            mesh = CurrentMeshFilter.mesh;
+#endif
+            if (mesh == null)
+                return;
+
+            // This method could also load the mesh vertices every frame.
+            // Doing 'VerticesToWorldSpace' manually causes the transform to act goofy (even though i am doing the same thing)
+            // So this will do. It works and it's not particularly efficient but it is wayyyy better than the previous thing.
+            meshVertsList ??= new List<Vector3>(mesh.vertexCount);
             CurrentMeshFilter.VerticesToWorldSpaceNoAlloc(meshVertsList); // Generate verts without allocating garbage
 
             m_VertPoints ??= new List<Vector3>(meshVertsList.Count / 3);  // There are always 2 excess verts.
@@ -133,7 +114,8 @@ namespace BXFW
         public bool SnapTransform(MBVertSnappableTransform transformTarget, int pointThis, int pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+                return false;
 
             // there is no better way to check whether the scale is valid for snapping.
             if (transformTarget.transform.localScale.x == 0f || transformTarget.transform.localScale.y == 0f || transformTarget.transform.localScale.z == 0f ||
@@ -189,7 +171,8 @@ namespace BXFW
         public bool SnapTransform(MBCubeSnappableTransform transformTarget, int pointThis, SnapPoint pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+                return false;
 
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
@@ -241,7 +224,8 @@ namespace BXFW
         public bool SnapTransform(Transform transformTarget, int pointThis, Vector3 transformTargetPosOffset = default)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+                return false;
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));
