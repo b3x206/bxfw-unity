@@ -199,35 +199,65 @@ namespace BXFW
             rb.AddForce(Mathf.Lerp(0, explosionForce, (1 - explosionDistance)) * explosionDir, mode);
         }
 
-        // -- Mesh + Transform (TODO : Convert these methods to take a transform matrix and a mesh.
+        // -- Mesh + Transform
+        /// <summary>
+        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
+        /// <br>Values are assigned into the 'vertsArray', the 'vertsArray' will be overwritten by <see cref="Mesh.GetVertices(List{Vector3})"/>.</br>
+        /// </summary>
+        public static void VerticesToMatrixSpaceNoAlloc(Mesh mesh, Matrix4x4 matrixSpace, List<Vector3> vertsArray)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh), "[Additionals::VerticesToWorldSpaceNoAlloc] Passed 'mesh' argument is null.");
+
+            // This method throws anyway if the 'vertsArray' is null, no need to check.
+            mesh.GetVertices(vertsArray);
+
+            // Modify all elements
+            for (int i = 0; i < vertsArray.Count; i++)
+            {
+                vertsArray[i] = matrixSpace.MultiplyPoint3x4(vertsArray[i]);
+            }
+        }
+        /// <summary>
+        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
+        /// <br>Allocates a new <see cref="List{T}"/> every time it's called.</br>
+        /// </summary>
+        public static List<Vector3> VerticesToMatrixSpace(Mesh mesh, Matrix4x4 matrixSpace)
+        {
+            List<Vector3> array = new List<Vector3>(mesh.vertexCount);
+            VerticesToMatrixSpaceNoAlloc(mesh, matrixSpace, array);
+            return array;
+        }
+
+        public static void VerticesToWorldSpaceNoAlloc(this MeshFilter filter, List<Vector3> vertsArray)
+        {
+            if (filter == null)
+                throw new ArgumentNullException(nameof(filter), "[Additionals::VerticesToWorldSpaceNoAlloc] Passed 'filter' argument is null.");
+
+            Mesh mesh;
+#if UNITY_EDITOR
+            mesh = !Application.isPlaying ? filter.sharedMesh : filter.mesh;
+#else
+            mesh = filter.mesh;
+#endif
+            VerticesToMatrixSpaceNoAlloc(mesh, filter.transform.localToWorldMatrix, vertsArray);
+        }
         /// <summary>
         /// Converts vertex position to world position on the mesh.
         /// <br>Applies matrix transformations of <paramref name="filter"/>.transform, so rotations / scale / other stuff are also calculated.</br>
         /// </summary>
-        public static Vector3[] VerticesToWorldSpace(this MeshFilter filter)
+        public static List<Vector3> VerticesToWorldSpace(this MeshFilter filter)
         {
             if (filter == null)
-            {
-                Debug.LogWarning("[Additionals::VerticesToWorldSpace] The mesh filter reference is null.");
-                return new Vector3[0];
-            }
+                throw new ArgumentNullException(nameof(filter), "[Additionals::VerticesToWorldSpace] Passed 'filter' argument is null.");
 
-            Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
-            if (vertsMesh == null)
-            {
-                Debug.LogWarning("[Additionals::VerticesToWorldSpace] The mesh filter mesh is null.");
-                return new Vector3[0];
-            }
-
-            Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
-            Vector3[] world_v = new Vector3[vertsMesh.vertices.Length];
-
-            for (int i = 0; i < vertsMesh.vertices.Length; i++)
-            {
-                world_v[i] = localToWorld.MultiplyPoint3x4(vertsMesh.vertices[i]);
-            }
-
-            return world_v;
+            Mesh mesh;
+#if UNITY_EDITOR
+            mesh = !Application.isPlaying ? filter.sharedMesh : filter.mesh;
+#else
+            mesh = filter.mesh;
+#endif
+            return VerticesToMatrixSpace(filter.mesh, filter.transform.localToWorldMatrix);
         }
         /// <summary>
         /// Converts vertex position to world position on the mesh.
@@ -237,8 +267,7 @@ namespace BXFW
         {
             if (coll == null)
             {
-                Debug.LogWarning("[Additionals::VerticesToWorldSpace] The collider reference is null.");
-                return new Vector3[0];
+                throw new ArgumentNullException(nameof(coll), "[Additionals::VerticesToWorldSpace] Passed 'coll' argument is null.");
             }
 
             Vector3[] vertices = new Vector3[8];
@@ -1457,7 +1486,7 @@ namespace BXFW
                         }
                     }
                     else
-                    { 
+                    {
                         FileName = splitLast_Extension[0];
                     }
 

@@ -125,13 +125,14 @@ namespace BXFW
     {
         /// <summary>
         /// List of the generated path points.
+        /// <br>Can iterate and interpolate between for path following.</br>
         /// </summary>
         [HideInInspector] public List<Vector3> PathPoints = new List<Vector3>();
         /// <summary>
         /// Target list of the generated path points.
         /// <br>Pass the positions of the objects for bezier here.</br>
         /// </summary>
-        [SerializeField] private List<BezierPoint> mControlPoints = new List<BezierPoint>();
+        [SerializeField] private List<BezierPoint> m_ControlPoints = new List<BezierPoint>();
         /// <summary>
         /// Target list of the generated path points.
         /// <br>Pass the positions of the objects for bezier here.</br>
@@ -142,11 +143,11 @@ namespace BXFW
             {
                 // Initialize generation path points
                 // (becuase delegates / events are not serialized)
-                if (mControlPoints != null)
+                if (m_ControlPoints != null)
                 {
-                    for (int i = 0; i < mControlPoints.Count; i++)
+                    for (int i = 0; i < m_ControlPoints.Count; i++)
                     {
-                        mControlPoints[i].parentPath = this;
+                        m_ControlPoints[i].parentPath = this;
                     }
 
                     // UpdateCurve();
@@ -155,18 +156,18 @@ namespace BXFW
                     //mControlPoints.Updated += UpdateCurve;
                 }
 
-                return mControlPoints;
+                return m_ControlPoints;
             }
             private set
             {
-                mControlPoints = value;
+                m_ControlPoints = value;
 
                 // Initialize generation path points
-                if (mControlPoints != null)
+                if (m_ControlPoints != null)
                 {
-                    for (int i = 0; i < mControlPoints.Count; i++)
+                    for (int i = 0; i < m_ControlPoints.Count; i++)
                     {
-                        mControlPoints[i].parentPath = this;
+                        m_ControlPoints[i].parentPath = this;
                     }
 
                     //mControlPoints.Changed += (int i, BezierPoint prev, BezierPoint set) => { if (prev != set) { UpdateCurve(); } };
@@ -343,7 +344,7 @@ namespace BXFW
             if (other is null)
                 return false;
 
-            return mControlPoints.SequenceEqual(other);
+            return m_ControlPoints.SequenceEqual(other);
         }
 
         /// <summary>

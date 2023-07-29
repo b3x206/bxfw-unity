@@ -321,7 +321,7 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
         public static readonly string Err_SetterFnNull =
             string.Format("{0} {1}",
                 ErrRich("[BXTween(General Error)]->", true),
-                LogRich("The given setter function is null or broken. This can happen in these classes : 'BXTweenCTX<T>', 'BXTween(To Methods)' or 'BXTweenProperty<T>'."));
+                LogRich("The given setter function is null or broken. This can happen in these classes : 'BXTweenCTX<T>', 'BXTween(To Methods)' or 'BXTweenProperty<T>'.\nEnsure that you setup the tween first."));
         public static readonly string Err_TargetNull =
             string.Format("{0} {1}",
                 ErrRich("[BXTween::To(Error, Extension Method)]->", true),

@@ -12,10 +12,15 @@ namespace BXFW
     [RequireComponent(typeof(MeshFilter))]
     public class MBVertSnappableTransform : MonoBehaviour
     {
+        // 'SIsSetup' is not set properly 
+        // Because of this, the mesh vertices were always generated when we wanted to get 'VertPoints'
+        // And that allocates a lotta garbo (it's mesh related but the array that we create also has it's issues.
+
         /// <summary>
         /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
         /// </summary>
         public bool SIsSetup { get; private set; } = false;
+        protected Matrix4x4 PrevTrsMatrix { get; private set; } = Matrix4x4.zero;
 
         [SerializeField, HideInInspector] private MeshFilter m_CurrentMeshFilter;
         /// <summary>Current mesh filter on this object that the script is attached to.</summary>
@@ -32,7 +37,7 @@ namespace BXFW
             }
         }
 
-        private List<Vector3> m_VertPoints;
+        private List<Vector3> m_VertPoints = new List<Vector3>(32);
         /// <summary>
         /// Initilazed vertice points on the mesh filter.
         /// </summary>
@@ -40,9 +45,12 @@ namespace BXFW
         {
             get
             {
-                if (transform.hasChanged || !SIsSetup)
+                //if (transform.hasChanged || !SIsSetup)
+                if (transform.localToWorldMatrix != PrevTrsMatrix ||
+                    !SIsSetup)
                 {
                     UpdateSnapPoints();
+                    PrevTrsMatrix = transform.localToWorldMatrix;
                 }
 
                 return m_VertPoints;
@@ -58,7 +66,6 @@ namespace BXFW
 #else
             mesh = filter.mesh;
 #endif
-
             if (mesh == null)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::VerticesToWorldPos] Mesh on MeshFilter '{0}' is null!", filter.GetPath()));
@@ -76,37 +83,39 @@ namespace BXFW
             return vertPos;
         }
 
+        private List<Vector3> meshVertsList;
         /// <summary>Updates the snap points.</summary>
-        /// TODO : This probably runs terrible on certain occasions.
         public void UpdateSnapPoints()
         {
-            var verts = VerticesToWorldPos(CurrentMeshFilter);
-
-            if (verts == null)
-            {
-                Debug.LogError("[MBVertSnappableTransform::UpdateSnapPoints] Given verts from local method 'VerticesToWorldPos' is null. Make sure the mesh filter's mesh isn't null.");
+#if UNITY_EDITOR
+            if ((Application.isPlaying && CurrentMeshFilter.mesh == null) || CurrentMeshFilter.sharedMesh == null)
                 return;
-            }
+#else
+            if (CurrentMeshFilter.mesh == null)
+                return;
+#endif
 
-            if (m_VertPoints == null)
-            {
-                m_VertPoints = new List<Vector3>();
-            }
+            meshVertsList ??= new List<Vector3>(CurrentMeshFilter.mesh.vertexCount);
+            CurrentMeshFilter.VerticesToWorldSpaceNoAlloc(meshVertsList); // Generate verts without allocating garbage
+
+            m_VertPoints ??= new List<Vector3>(meshVertsList.Count / 3);  // There are always 2 excess verts.
             m_VertPoints.Clear();
 
-            var listDrawnVerts = new List<Vector3>(verts.Length / 3); // There are always 2 excess verts.
-
-            for (int i = 0; i < verts.Length; i++)
+            for (int i = 0; i < meshVertsList.Count; i++)
             {
-                var currentVert = verts[i];
-                bool duplicateVert = listDrawnVerts.Contains(currentVert);
+                Vector3 currentVert = meshVertsList[i];
+                bool isDuplicateVert = m_VertPoints.Contains(currentVert);
+                
+                // Do not add if it exists in the array.
+                if (isDuplicateVert)
+                { 
+                    continue;
+                }
 
-                if (duplicateVert)
-                { continue; }
-
-                listDrawnVerts.Add(currentVert);
                 m_VertPoints.Add(currentVert);
             }
+
+            SIsSetup = true;
         }
 
         protected Action OnSnapTransformCall;

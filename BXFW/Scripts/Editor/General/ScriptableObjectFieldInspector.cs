@@ -626,6 +626,8 @@ namespace BXFW
                 GUI.Label(position, label);
                 position.x += previousWidth * .4f;
 
+                GUI.enabled = !targetParentIsPrefab;
+
                 position.width = previousWidth * .45f;
                 if (GUI.Button(position, new GUIContent(
                     targetParentIsPrefab || targetParentHasAssetPath ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
@@ -643,8 +645,6 @@ namespace BXFW
                 }
                 position.x += previousWidth * .46f;
 
-                GUI.enabled = !targetParentIsPrefab;
-
                 position.width = previousWidth * .14f; // 1 - (.46f + .4f)
                 if (GUI.Button(position, "Refresh"))
                 {
@@ -657,7 +657,7 @@ namespace BXFW
             }
 
             // why am i allowed to write GUI code? this is an abomination
-            // well, atleast this is easily fixable, unlike my life xDDxDXDXD
+            // well, atleast this is 'fixable', unlike my life xDDxDXDXD
             // buut, it works (and it has suprisingly ok performance) so why touch it?
 
             // -- Property label

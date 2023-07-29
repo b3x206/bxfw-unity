@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace BXFW
 {
@@ -6,6 +7,7 @@ namespace BXFW
     /// Attribute to draw <see cref="Sprite"/> fields as a big preview.
     /// <br>Limitations -> Doesn't support scene objects.</br>
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class BigSpriteFieldAttribute : PropertyAttribute
     {
 #if UNITY_EDITOR
@@ -25,6 +27,7 @@ namespace BXFW
     /// <summary>
     /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class InspectorLineAttribute : PropertyAttribute
     {
 #if UNITY_EDITOR
@@ -55,15 +58,17 @@ namespace BXFW
     /// <summary>
     /// Attribute to disable gui on fields.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ReadOnlyViewAttribute : PropertyAttribute { }
 
     /// <summary>
-    /// Attribute to assert a sorted array drawer. Can be only applied to array values that have <see cref="System.IComparable{T}"/>, otherwise it will draw a warning box.
+    /// Attribute to assert a sorted array drawer. Can be only applied to array values that have <see cref="IComparable{T}"/>, otherwise it will draw a warning box.
     /// <br/>
-    /// <br>For non-numerical types that have <see cref="System.IComparable{T}"/>, the array values will be switched. (<see cref="System.Array.Sort(System.Array)"/> will be called)</br>
+    /// <br>For non-numerical types that have <see cref="IComparable{T}"/>, the array values will be switched. (<see cref="Array.Sort(Array)"/> will be called)</br>
     /// <br>For numerical types the first and the last value can be changed freely while other values will be clamped between it's previous and next.</br>
-    /// <br>Other types that don't have <see cref="System.IComparable{T}"/> or the attribute parent is not an array, the attribute will display a warning.</br>
+    /// <br>Other types that don't have <see cref="IComparable{T}"/> or the attribute parent is not an array, the attribute will display a warning.</br>
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class SortedArrayAttribute : PropertyAttribute
     {
         /// <summary>
@@ -77,27 +82,40 @@ namespace BXFW
     /// <summary>
     /// Attribute to draw clamped integers and floats in fields.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ClampAttribute : PropertyAttribute
     {
+#if UNITY_EDITOR
         public readonly double min;
         public readonly double max;
+#endif
 
-        public ClampAttribute(double min, double max) { this.min = min; this.max = max; }
+        public ClampAttribute(double min, double max) 
+        {
+#if UNITY_EDITOR
+            this.min = min; 
+            this.max = max;
+#endif
+        }
     }
 
     /// <summary>
     /// Attribute to draw clamped vector of any type (except for custom classes) in fields.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ClampVectorAttribute : PropertyAttribute
     {
+#if UNITY_EDITOR
         public readonly double minX, minY, minZ, minW;
         public readonly double maxX, maxY, maxZ, maxW;
+#endif
 
         public ClampVectorAttribute(
             double minX, double minY, double minZ, double minW,
             double maxX, double maxY, double maxZ, double maxW
         )
         {
+#if UNITY_EDITOR
             this.minX = minX;
             this.minY = minY;
             this.minZ = minZ;
@@ -107,6 +125,7 @@ namespace BXFW
             this.maxY = maxY;
             this.maxZ = maxZ;
             this.maxW = maxW;
+#endif
         }
         public ClampVectorAttribute(
             double minX, double minY, double minZ,
