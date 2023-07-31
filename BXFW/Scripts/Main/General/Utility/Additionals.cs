@@ -256,7 +256,7 @@ namespace BXFW
 #else
             mesh = filter.mesh;
 #endif
-            return VerticesToMatrixSpace(filter.mesh, filter.transform.localToWorldMatrix);
+            return VerticesToMatrixSpace(mesh, filter.transform.localToWorldMatrix);
         }
         /// <summary>
         /// Converts vertex position to world position on the mesh.

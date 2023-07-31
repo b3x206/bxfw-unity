@@ -39,10 +39,11 @@ namespace BXFW
         /// </summary>
         public float MaxFPS { get; private set; } = -1f;
 
+        /// <summary>
+        /// Timer value used for custom refresh rates.
+        /// </summary>
         private float FPSTimer;
         private float PrevTimeElapsed = -1f;
-        // Smooth delta time starts to fade into the current Time.deltaTime when it's getting more constant
-        // So just use a Mathf.MoveToward thing (smoothDeltaTime's n value is (time - prevTime) * 0.5f)
 
         /// <summary>
         /// Updates the FPS counter.
@@ -56,6 +57,8 @@ namespace BXFW
             if (PrevTimeElapsed == TimeElapsed)
                 return;
 
+            // Smooth delta time starts to fade into the current Time.deltaTime when it's getting more constant
+            // So just use a Mathf.MoveToward thing (smoothDeltaTime's n value is (time - prevTime) * 0.5f)
             // Smooth out the elapsed time (if a previous reference point exists)
             if (PrevTimeElapsed > 0f)
                 TimeElapsed = Mathf.MoveTowards(PrevTimeElapsed, TimeElapsed, Mathf.Abs(TimeElapsed - PrevTimeElapsed) * 0.5f);
