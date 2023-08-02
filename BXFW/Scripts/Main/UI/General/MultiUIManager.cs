@@ -43,6 +43,18 @@ namespace BXFW.UI
                 return uiElements;
             }
         }
+        /// <summary>
+        /// Index accessor for multi ui.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        /// <returns>Element on the given index.</returns>
+        public TElement this[int index]
+        {
+            get
+            {
+                return uiElements[index];
+            }
+        }
 
         protected MultiUIManager()
         { }
