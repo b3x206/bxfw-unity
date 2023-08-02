@@ -48,6 +48,7 @@ namespace BXFW.UI
                 int prevValue = _TabButtonAmount;
                 // The weird value is because that the 'TabButtonAmount' will kill your pc if not clampped.
                 _TabButtonAmount = Mathf.Clamp(value, 0, ushort.MaxValue);
+
                 if (prevValue != value) // Generate if value is changed
                     GenerateTabs(prevValue);
             }
@@ -218,7 +219,7 @@ namespace BXFW.UI
                 {
                     firstTBtn.gameObject.SetActive(false);
 
-                    // Clean the buttons as that's necessary. (otherwise there's stray buttons)
+                    // Clean all buttons except the first one as that's necessary. (otherwise there's stray buttons)
                     for (int i = 1; i < tabButtons.Count; i++)
                     {
                         if (Application.isPlaying)
@@ -252,7 +253,7 @@ namespace BXFW.UI
                 }
                 // In this case of this if statement, it's not necessary as the button amount is already 0.
             }
-            else if (TabButtonAmount == 1 && prevIndex <= 0)
+            else if (TabButtonAmount >= 1 && prevIndex <= 0)
             {
                 // Make sure the first tab button exists as we need to call 'GenerateTabs' for first spawn.
                 if (firstTBtn != null)

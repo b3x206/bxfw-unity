@@ -153,7 +153,7 @@ namespace BXFW.ScriptEditor
                 }
                 else if (enumerableType.IsGenericType && enumerableType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 {
-                    // Create the typed array.
+                    // Create the typed array. (has IEnumerable with type)
                     array = Array.CreateInstance(enumerableType.GetGenericArguments()[0], Count);
                 }
                 else
@@ -187,7 +187,6 @@ namespace BXFW.ScriptEditor
             propertyTypeValid = propertyParentTypeArray && property.GetPropertyType().GetInterfaces()
                 .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>)) ||
                 property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
-            //propertyTypeValid = false;
 
             // Since we can't intercept the 'OnGUI' of the parent array (this PropertyDrawer will be shown per element, we will just get the parent array)
             // Just give the 'GetPropertyHeight'
@@ -205,7 +204,10 @@ namespace BXFW.ScriptEditor
             return addHeight;
         }
 
-        private bool IsSorted(List<object> list, bool reverse)
+        /// <summary>
+        /// Returns whether if the array is sorted.
+        /// </summary>
+        private static bool IsSorted(List<object> list, bool reverse)
         {
             // Assume that this method can only be called if the list has a 'IComparable'
             // But i will just use 'Comparer.Default'
