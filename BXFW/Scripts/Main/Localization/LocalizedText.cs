@@ -64,7 +64,7 @@ namespace BXFW
 
             Apply(false, false);
         }
-        private void Awake()
+        private void Start()
         {
             Apply();
         }

@@ -57,10 +57,21 @@ namespace BXFW.ScriptEditor
         }
         /// <summary>
         /// The currently edited locale for that <see cref="SerializedProperty"/>.
+        /// TODO : A persistent way of binding custom datas to <see cref="SerializedProperty"/>ies.
+        /// <br/>
+        /// <br>BXFW.Tools.Editor.SerializedPropertyCustomData[SerializedProperty prop].Get&lt;TObject&gt;(string dataName)?</br>
+        /// <br>Use a json-alike thing (not very much type safe or we could bind type names to bind data to ensure?)</br>
         /// </summary>
         private readonly Dictionary<string, string> editedLocales = new Dictionary<string, string>();
+        private static GUIStyle placeholderStyle;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            if (placeholderStyle == null)
+            {
+                placeholderStyle = new GUIStyle(GUI.skin.label);
+                placeholderStyle.normal.textColor = Color.gray;
+            }
+
             position.height -= PADDING;
             position.y += PADDING / 2f;
             currentPropY = -1f;
@@ -99,6 +110,18 @@ namespace BXFW.ScriptEditor
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
                 target.Data.Add(editedLocaleValue, string.Empty);
             }
+
+            // LocalizedTextData.TextID (could be useful for classifying in an array with linq commands)
+            Rect txtIDAreaRect = GetPropertyRect(position);
+            string tIDValue = EditorGUI.TextField(txtIDAreaRect, "Text ID", target.TextID);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(property.serializedObject.targetObject, "set TextID value");
+                target.TextID = tIDValue;
+            }
+
+            // Get a empty property rect for nice spacing (yes this is a solution, i am expert at solving)
+            GetPropertyRect(position, PADDING * 2f);
 
             // Show the locale selector
             Rect dropdownRect = GetPropertyRect(position);
@@ -168,9 +191,6 @@ namespace BXFW.ScriptEditor
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
             {
-                GUIStyle placeholderStyle = new GUIStyle(GUI.skin.label);
-                placeholderStyle.normal.textColor = Color.gray;
-
                 EditorGUI.LabelField(new Rect(txtEditAreaRect) 
                 {
                     x = txtEditAreaRect.x + 2f, 

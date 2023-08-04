@@ -29,7 +29,10 @@ namespace BXFW.UI
         
         protected override void OnCoroutineUpdate()
         {
-            if (TryGetComponent(out Graphic g) && target != null)
+            // there can be only 1 graphic anyways
+            // though it would have been better if i cached it
+            // (but also there's no performance diff because unity made comparing with null intensive so lol)
+            if (target != null && TryGetComponent(out Graphic g))
                 g.enabled = !string.IsNullOrWhiteSpace(target.text);
         }
 
