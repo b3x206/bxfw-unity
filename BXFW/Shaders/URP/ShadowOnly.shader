@@ -27,7 +27,7 @@ Shader "Custom/Unlit/ShadowOnly"
             struct v2f 
             {
                 V2F_SHADOW_CASTER;
-                float2  uv : TEXCOORD1;
+                float2 uv : TEXCOORD1;
             };
 
             uniform float4 _MainTex_ST;

@@ -22,8 +22,10 @@ namespace BXFW
         public void SetupCalculateMesh()
         {
             // Check whether re-calculation is necessary.
-            if (currentCalcScale == transform.localScale) return;
-            if (CheckForDefaultSize()) return;
+            if (currentCalcScale == transform.localScale)
+                return;
+            if (CheckForDefaultSize())
+                return;
 
             // Get the mesh filter.
             var filter = GetComponent<MeshFilter>();
@@ -140,20 +142,31 @@ namespace BXFW
         }
         /// <summary>
         /// Creates a reference cube to check this object's size.
+        /// <br>If the object is scaled to be <see cref="Vector3.one"/>, it will replace it's mesh with the unity default resources one.</br>
         /// </summary>
         /// <returns>Whether we have a default object.</returns>
         private bool CheckForDefaultSize()
         {
-            if (currentCalcScale != Vector3.one) return false;
+            if (currentCalcScale != Vector3.one)
+                return false;
 
+            // ... This probably could be replaced with Resources.GetBuiltinResource<Mesh>("Cube.fbx") and setting the sharedMesh null then setting it this value ...
+            // ... but whatever it works ...
+            // > This script is goofy because it's one of the older ones.
+            // Create a primitive cube and get it's mesh.
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-            DestroyImmediate(GetComponent<MeshFilter>());
-            gameObject.AddComponent<MeshFilter>();
-            GetComponent<MeshFilter>().sharedMesh = cube.GetComponent<MeshFilter>().sharedMesh;
-
+            // Set the 'MeshFilter' mesh null instead of destroying a component that we can reuse?
+            // DestroyImmediate(GetComponent<MeshFilter>());
+            if (!TryGetComponent(out MeshFilter filter))
+            {
+                filter = gameObject.AddComponent<MeshFilter>();
+            }
+            filter.sharedMesh = null; // Remove mesh to avoid manipulation of immutable asset (otherwise setting a 'sharedMesh' will set the existing mesh data)
+            filter.sharedMesh = cube.GetComponent<MeshFilter>().sharedMesh;
             DestroyImmediate(cube);
 
+            // Object is now default size.
             return true;
         }
         #endregion

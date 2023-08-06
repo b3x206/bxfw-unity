@@ -37,6 +37,7 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
                 float4 col      : COLOR;
                 float2 uv       : TEXCOORD0;
                 float4 spos     : TEXCOORD1;
+                float3 normal : TEXCOORD2;
             };
 
             v2f vert(appdata_base v)
@@ -47,8 +48,12 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
                 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
-
-                float4 norm = mul(unity_ObjectToWorld, v.normal);
+    
+                // This crap vertexlit bruhh lmaooo
+                // This would have looked okay, if it was 1998 or something
+                // TODO : Do the lit in fragment.
+                // norm = mul(unity_ObjectToWorld, v.normal);
+                float3 norm = UnityObjectToWorldNormal(v.normal);
                 float3 normalDirection = normalize(norm.xyz);
                 float4 AmbientLight = UNITY_LIGHTMODEL_AMBIENT;
                 float4 LightDirection = normalize(_WorldSpaceLightPos0);
@@ -56,14 +61,14 @@ Shader "Custom/Diffuse/Dithered Transparent/Dithered"
                 float4 DiffuseLight = saturate(dot(LightDirection, normalDirection)) * _LightColor0;
                 o.col = float4(AmbientLight + DiffuseLight);
                 o.spos = ComputeScreenPos(o.pos);
-
+                o.normal = UnityObjectToWorldNormal(v.normal);
+                
                 return o;
             }
 
             float4 frag(v2f i) : COLOR
             {
                 //UNITY_SETUP_INSTANCE_ID(i);
-
                 float4 col = UNITY_ACCESS_INSTANCED_PROP(Props, _Color) * tex2D(_MainTex, i.uv);
                 ditherClip(i.spos.xy / i.spos.w, col.a, _DitherResolution);
 
