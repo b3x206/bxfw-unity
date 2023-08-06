@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 
 // Serialization
@@ -999,6 +1000,45 @@ namespace BXFW
                 .Where((Type myType) => { return myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)); });
         }
 
+        /// <summary>
+        /// Returns a random value from an array.
+        /// </summary>
+        public static T GetRandom<T>(this IEnumerable<T> values)
+        {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+            }
+
+            int valuesSize = values.Count();
+            if (valuesSize <= 0)
+                return default;
+
+            int rngValue = UnityEngine.Random.Range(0, valuesSize);
+            int current = 0;
+
+            using (IEnumerator<T> enumerator = values.GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    if (current == rngValue)
+                        return enumerator.Current;
+
+                    current++;
+                }
+            }
+
+            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+        }
+
+        /// <summary>
+        /// Returns a random value from an array.
+        /// </summary>
+        public static T GetRandom<T>(this IList<T> values)
+        {
+            int randValue = UnityEngine.Random.Range(0, values.Count);
+            return values[randValue];
+        }
         /// <summary>
         /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.
         /// </summary>
