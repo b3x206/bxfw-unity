@@ -349,7 +349,10 @@ namespace BXFW.ScriptEditor
         {
             float addHeight = 0f;
 
-            if (property.propertyType != SerializedPropertyType.Integer && property.propertyType != SerializedPropertyType.Float)
+            if (property.propertyType != SerializedPropertyType.Integer && 
+                property.propertyType != SerializedPropertyType.Float &&
+                // Supported by self types
+                property.type != typeof(MinMaxValue).Name && property.type != typeof(MinMaxValueInt).Name)
             {
                 addHeight += warnHelpBoxRectHeight;
             }
@@ -361,6 +364,7 @@ namespace BXFW.ScriptEditor
             return addHeight;
         }
 
+        private PropertyDrawer targetTypeCustomDrawer;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             position.height -= DR_PADDING;
@@ -385,6 +389,14 @@ namespace BXFW.ScriptEditor
                     Undo.RecordObject(property.serializedObject.targetObject, "set clamped int");
                     property.intValue = v;
                 }
+            }
+            // Check if property is a valid type
+            // Currently supported (by the PropertyDrawer) are
+            // > MinMaxValue, MinMaxValueInt
+            else if(property.type == typeof(MinMaxValue).Name || property.type == typeof(MinMaxValueInt).Name)
+            {
+                targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
+                targetTypeCustomDrawer.OnGUI(position, property, label);
             }
             else
             {

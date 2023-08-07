@@ -138,6 +138,53 @@ namespace BXFW.Tools.Editor
         // No, not really that is for getting the array object? idk this works good so no touchy unless it breaks
         private static readonly Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
 
+        // TODO : Create a custom struct (SerializedPropertyTarget) that contains the following
+        // > FieldInfo, Target itself (typeless), Parent of the Target
+        // TODO 2 : Create a 'GetParentsOfTargets' method.
+
+        /// <summary>
+        /// Returns the c# object targets.
+        /// <br>
+        /// It is heavily suggested that you use <see cref="GetTargetsNoAlloc(SerializedProperty, List{KeyValuePair{FieldInfo, object}})"/> 
+        /// instead for much better performance and most likely less memory leaks.<br/>(this method calls that method internally with a newly allocated array anyways)
+        /// </br>
+        /// </summary>
+        public static List<KeyValuePair<FieldInfo, object>> GetTargets(this SerializedProperty prop)
+        {
+            var list = new List<KeyValuePair<FieldInfo, object>>();
+            GetTargetsNoAlloc(prop, list);
+            return list;
+        }
+        /// <summary>
+        /// Returns the c# object targets (without allocating new arrays).
+        /// <br>
+        /// Useful for cases when the "<see cref="SerializedProperty.serializedObject"/>.isEditingMultipleObjects" is true 
+        /// (or for adding multi edit support for a property drawer), this will return all the object targets.
+        /// </br>
+        /// </summary>
+        /// <param name="prop">Target property.</param>
+        /// <param name="targetPairs">Array to write the properties into. The array is cleared then written into.</param>
+        /// <exception cref="ArgumentNullException"/>
+        public static void GetTargetsNoAlloc(this SerializedProperty prop, List<KeyValuePair<FieldInfo, object>> targetPairs)
+        {
+            if (prop == null)
+                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTargets] Parameter 'prop' is null.");
+            if (targetPairs == null)
+                throw new ArgumentNullException(nameof(targetPairs), "[EditorAdditionals::GetTargets] Array Parameter 'targetPairs' is null.");
+
+            targetPairs.Clear();
+            targetPairs.Capacity = prop.serializedObject.targetObjects.Length;
+
+            for (int i = 0; i < prop.serializedObject.targetObjects.Length; i++)
+            {
+                UnityEngine.Object targetedObject = prop.serializedObject.targetObjects[i];
+                if (targetedObject == null)
+                    continue;
+
+                targetPairs.Add(GetTarget(targetedObject, prop.propertyPath));
+            }
+        }
+
         /// <summary>
         /// Returns the c# object's fieldInfo and the instance object it comes with.
         /// <br>Important NOTE : The instance object that gets returned with this method may be null.</br>
@@ -149,12 +196,12 @@ namespace BXFW.Tools.Editor
         /// </br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="NullReferenceException"/>
+        /// <exception cref="ArgumentNullException"/>
         /// <exception cref="InvalidCastException"/> 
         public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
         {
             if (prop == null)
-                throw new NullReferenceException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
+                throw new ArgumentNullException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
 
             return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
         }

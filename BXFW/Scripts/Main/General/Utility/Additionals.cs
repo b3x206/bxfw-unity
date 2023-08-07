@@ -920,46 +920,26 @@ namespace BXFW
         /// <summary>
         /// Get a random enum from enum type <typeparamref name="T"/>.
         /// </summary>
-        /// <param name="EnumToIgnore">Enum list of values to ignore from. Duplicate values are ignored.</param>
+        /// <param name="enumExceptionList">Enum list of values to ignore from. Duplicate values are ignored.</param>
         /// <returns>Randomly selected enum.</returns>
         /// <exception cref="InvalidCastException">Thrown when the type isn't enum. (<see cref="Type.IsEnum"/> is false)</exception>
-        public static T GetRandomEnum<T>(T[] EnumToIgnore = null)
+        public static T GetRandomEnum<T>(T[] enumExceptionList = null)
         {
             if (!typeof(T).IsEnum)
                 throw new InvalidCastException(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 
-            Array values = Enum.GetValues(typeof(T));
-            List<T> ListValues = new List<T>();
-
-            if (EnumToIgnore.Length >= values.Length)
+            List<T> enumList = new List<T>(Enum.GetValues(typeof(T)).Cast<T>());
+            if (enumExceptionList.Length >= enumList.Count)
             {
-                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning 'default'. Bool : {0} >= {1}", EnumToIgnore.Length, values.Length));
+                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning 'default'. Bool : {0} >= {1}", enumExceptionList.Length, enumList.Count));
                 return default;
             }
 
-            for (int i = 0; i < values.Length; i++)
-            {
-                T value = (T)values.GetValue(i);
+            // Convert 'enumExceptionList' to something binary searchable or fast
+            HashSet<T> exceptionedEnums = new HashSet<T>(enumExceptionList);
+            enumList.RemoveAll(e => exceptionedEnums.Contains(e));
 
-                // Ignore duplicate values.
-                // This isn't very important, but makes the removing cleaner.
-                if (ListValues.Contains(value))
-                {
-                    continue;
-                }
-
-                ListValues.Add(value);
-            }
-
-            if (EnumToIgnore != null)
-            {
-                foreach (T rmEnum in EnumToIgnore)
-                {
-                    ListValues.Remove(rmEnum);
-                }
-            }
-
-            return ListValues[UnityEngine.Random.Range(0, values.Length)];
+            return enumList[UnityEngine.Random.Range(0, enumList.Count)];
         }
         /// <summary>
         /// Get an iterator of the base types of <paramref name="type"/>.
@@ -974,18 +954,18 @@ namespace BXFW
                              .Concat(type.GetInterfaces().SelectMany(GetBaseTypes))
                              .Concat(type.BaseType.GetBaseTypes());
         }
-        /// <summary>Get types that has the <paramref name="AttributeType"/> attribute from <see cref="Assembly"/> <paramref name="AttributeAssem"/>.</summary>
-        /// <returns>The types with the attribute <paramref name="AttributeType"/>.</returns>
-        public static IEnumerable<Type> GetTypesWithAttribute(Type AttributeType, Assembly AttributeAssem = null)
+        /// <summary>Get types that has the <paramref name="attributeType"/> attribute from <see cref="Assembly"/> <paramref name="attbAsm"/>.</summary>
+        /// <returns>The types with the attribute <paramref name="attributeType"/>.</returns>
+        public static IEnumerable<Type> GetTypesWithAttribute(Type attributeType, Assembly attbAsm = null)
         {
-            if (AttributeAssem == null)
+            if (attbAsm == null)
             {
-                AttributeAssem = AttributeType.Assembly;
+                attbAsm = attributeType.Assembly;
             }
 
-            foreach (Type type in AttributeAssem.GetTypes())
+            foreach (Type type in attbAsm.GetTypes())
             {
-                if (type.GetCustomAttributes(AttributeType, true).Length > 0)
+                if (type.GetCustomAttributes(attributeType, true).Length > 0)
                 {
                     yield return type;
                 }
@@ -1010,15 +990,41 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
             }
 
-            int valuesSize = values.Count();
-            if (valuesSize <= 0)
-                return default;
+            // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal.
+            int valuesSize = -1;
 
-            int rngValue = UnityEngine.Random.Range(0, valuesSize);
-            int current = 0;
+            if (values is ICollection<T> collection)
+                valuesSize = collection.Count;
+            if (values is ICollection collection1)
+                valuesSize = collection1.Count;
 
+            // Get size + check
             using (IEnumerator<T> enumerator = values.GetEnumerator())
             {
+                if (valuesSize <= 0)
+                {
+                    // Count manually
+                    checked
+                    {
+                        while (enumerator.MoveNext())
+                        {
+                            valuesSize++;
+                        }
+                    }
+
+                    // Reset
+                    enumerator.Reset();
+                }
+
+                // Still zero? do nothing as there's no size.
+                if (valuesSize <= 0)
+                    return default;
+
+                // Get rng value (according to size)
+                int rngValue = UnityEngine.Random.Range(0, valuesSize);
+                int current = 0;
+
+                // Move the iterator manually
                 while (enumerator.MoveNext())
                 {
                     if (current == rngValue)
@@ -1026,13 +1032,13 @@ namespace BXFW
 
                     current++;
                 }
-            }
 
-            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+                throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+            }
         }
 
         /// <summary>
-        /// Returns a random value from an array.
+        /// Returns a random value from an array. (faster)
         /// </summary>
         public static T GetRandom<T>(this IList<T> values)
         {
