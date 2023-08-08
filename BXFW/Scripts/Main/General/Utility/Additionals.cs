@@ -981,16 +981,80 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Returns a random value from an array.
+        /// Get a random value from a created IEnumerator.
+        /// </summary>
+        /// <param name="moveNextSize">Maximum times that the <see cref="IEnumerator.MoveNext"/> can be called. (array size basically)</param>
+        /// <param name="enumerator">The iterable enumerator itself.</param>
+        private static T GetRandomEnumeratorInternal<T>(int moveNextSize, IEnumerator<T> enumerator)
+        {
+            // Get size + check            
+            if (moveNextSize <= 0)
+            {
+                // Count manually
+                checked
+                {
+                    while (enumerator.MoveNext())
+                    {
+                        moveNextSize++;
+                    }
+                }
+
+                // Reset
+                enumerator.Reset();
+            }
+
+            // Still zero? do nothing as there's no size.
+            if (moveNextSize <= 0)
+                return default;
+
+            // Get rng value (according to size)
+            int rngValue = UnityEngine.Random.Range(0, moveNextSize);
+            int current = 0;
+
+            // Move the iterator manually
+            while (enumerator.MoveNext())
+            {
+                if (current == rngValue)
+                    return enumerator.Current;
+
+                current++;
+            }
+
+            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+        }
+        /// <summary>
+        /// Returns a random value from an IEnumerable.
+        /// <br>Also allows filtering using a predicate.</br>
+        /// </summary>
+        public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
+        {
+            if (values == null)
+                throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate), "[Additionals::GetRandom] Failed to get random.");
+
+            IEnumerable<T> GetValuesFiltered()
+            {
+                foreach (T elem in values)
+                {
+                    if (!predicate(elem))
+                        continue;
+
+                    yield return elem;
+                }
+            }
+
+            return GetRandom(GetValuesFiltered());
+        }
+        /// <summary>
+        /// Returns a random value from an IEnumerable.
         /// </summary>
         public static T GetRandom<T>(this IEnumerable<T> values)
         {
             if (values == null)
-            {
                 throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
-            }
 
-            // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal.
+            // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
             int valuesSize = -1;
 
             if (values is ICollection<T> collection)
@@ -1001,42 +1065,9 @@ namespace BXFW
             // Get size + check
             using (IEnumerator<T> enumerator = values.GetEnumerator())
             {
-                if (valuesSize <= 0)
-                {
-                    // Count manually
-                    checked
-                    {
-                        while (enumerator.MoveNext())
-                        {
-                            valuesSize++;
-                        }
-                    }
-
-                    // Reset
-                    enumerator.Reset();
-                }
-
-                // Still zero? do nothing as there's no size.
-                if (valuesSize <= 0)
-                    return default;
-
-                // Get rng value (according to size)
-                int rngValue = UnityEngine.Random.Range(0, valuesSize);
-                int current = 0;
-
-                // Move the iterator manually
-                while (enumerator.MoveNext())
-                {
-                    if (current == rngValue)
-                        return enumerator.Current;
-
-                    current++;
-                }
-
-                throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+                return GetRandomEnumeratorInternal(valuesSize, enumerator);
             }
         }
-
         /// <summary>
         /// Returns a random value from an array. (faster)
         /// </summary>
@@ -1045,6 +1076,19 @@ namespace BXFW
             int randValue = UnityEngine.Random.Range(0, values.Count);
             return values[randValue];
         }
+        /// <summary>
+        /// Returns a random value from an array.
+        /// </summary>
+        public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate)
+        {
+            // Create a filtered List?
+            // .. this will GC.Alloc ..
+            List<T> valuesCopy = new List<T>(values);
+            valuesCopy.RemoveAll(predicate);
+
+            return GetRandom(valuesCopy);
+        }
+
         /// <summary>
         /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.
         /// </summary>

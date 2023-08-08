@@ -6,6 +6,8 @@ namespace BXFW
     /// <summary>
     /// Contains a minimum/maximum value.
     /// <br><see cref="Min"/> cannot be larger than <see cref="Max"/> and the other way around.</br>
+    /// <br/>
+    /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
     /// </summary>
     [Serializable]
     public struct MinMaxValue : IEquatable<MinMaxValue>, IEquatable<MinMaxValueInt>
@@ -42,6 +44,14 @@ namespace BXFW
 
             m_Min = min;
             m_Max = max;
+        }
+
+        /// <summary>
+        /// Returns a random value between min and max.
+        /// </summary>
+        public float GetRandomBetween()
+        {
+            return UnityEngine.Random.Range(Min, Max);
         }
 
         public static implicit operator Vector2(MinMaxValue value)
@@ -99,6 +109,8 @@ namespace BXFW
 
     /// <summary>
     /// Same as <see cref="MinMaxValue"/>, but integers.
+    /// <br/>
+    /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
     /// </summary>
     [Serializable]
     public struct MinMaxValueInt : IEquatable<MinMaxValueInt>, IEquatable<MinMaxValue>
@@ -134,6 +146,14 @@ namespace BXFW
 
             m_Min = min;
             m_Max = max;
+        }
+
+        /// <summary>
+        /// Returns a random value between min and max.
+        /// </summary>
+        public int GetRandomBetween()
+        {
+            return UnityEngine.Random.Range(Min, Max);
         }
 
         public static implicit operator Vector2(MinMaxValueInt value)

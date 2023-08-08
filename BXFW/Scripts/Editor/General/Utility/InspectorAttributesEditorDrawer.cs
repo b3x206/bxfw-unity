@@ -247,7 +247,7 @@ namespace BXFW.ScriptEditor
                     {
                         // Calling 'GetGenericTypeDefinition' makes the type open.
                         bool breakOnType = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>) || type == typeof(IEnumerable);
-                        
+
                         // Get the type for 'GetEnumerator'ing manually
                         if (breakOnType)
                         {
@@ -278,6 +278,12 @@ namespace BXFW.ScriptEditor
                 if (!IsSorted(parentArrayList, SAttribute.Reverse))
                 {
                     parentArrayList.Sort(Comparer<object>.Default);
+                    if (SAttribute.Reverse)
+                    {
+                        // Reverse the sorting (if reverse attribute)
+                        parentArrayList.Reverse();
+                    }
+
                     EditorUtility.SetDirty(property.serializedObject.targetObject); // undoless 'something changed'
                     parentArrayPair.Key.SetValue(parentObject, parentArrayList.ToIEnumerableType(arrayEnumerableType));
                 }
@@ -349,7 +355,7 @@ namespace BXFW.ScriptEditor
         {
             float addHeight = 0f;
 
-            if (property.propertyType != SerializedPropertyType.Integer && 
+            if (property.propertyType != SerializedPropertyType.Integer &&
                 property.propertyType != SerializedPropertyType.Float &&
                 // Supported by self types
                 property.type != typeof(MinMaxValue).Name && property.type != typeof(MinMaxValueInt).Name)
@@ -393,7 +399,7 @@ namespace BXFW.ScriptEditor
             // Check if property is a valid type
             // Currently supported (by the PropertyDrawer) are
             // > MinMaxValue, MinMaxValueInt
-            else if(property.type == typeof(MinMaxValue).Name || property.type == typeof(MinMaxValueInt).Name)
+            else if (property.type == typeof(MinMaxValue).Name || property.type == typeof(MinMaxValueInt).Name)
             {
                 targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
                 targetTypeCustomDrawer.OnGUI(position, property, label);

@@ -43,7 +43,7 @@ namespace BXFW.ScriptEditor
                 for (int i = 0; i < targetPairs.Count; i++)
                 {
                     var pair = targetPairs[i];
-                    var parent = property.serializedObject.targetObjects[i];
+                    var parent = property.GetParentOfTargetField().Value;
                     Vector2 setValue = v;
 
                     // Check supported attributes
@@ -56,7 +56,7 @@ namespace BXFW.ScriptEditor
                         );
                     }
 
-                    Undo.RecordObject(parent, string.Empty);
+                    Undo.RecordObject(property.serializedObject.targetObject, string.Empty);
                     pair.Key.SetValue(parent, (MinMaxValue)setValue);
                 }
 
@@ -98,7 +98,7 @@ namespace BXFW.ScriptEditor
                 for (int i = 0; i < targetPairs.Count; i++)
                 {
                     var pair = targetPairs[i];
-                    var parent = property.serializedObject.targetObjects[i];
+                    var parent = property.GetParentOfTargetField().Value;
                     Vector2Int setValue = v;
 
                     // Check supported attributes
@@ -111,7 +111,7 @@ namespace BXFW.ScriptEditor
                         );
                     }
 
-                    Undo.RecordObject(parent, string.Empty);
+                    Undo.RecordObject(property.serializedObject.targetObject, string.Empty);
                     pair.Key.SetValue(parent, (MinMaxValueInt)setValue);
                 }
 
