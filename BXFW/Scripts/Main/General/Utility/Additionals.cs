@@ -319,6 +319,7 @@ namespace BXFW
         // -- Math
         /// <summary>
         /// Returns the center of an virtual circle, between the <paramref name="cPoint0"/>, <paramref name="cPoint1"/> and <paramref name="cPoint2"/>.
+        /// <br>Normal of the circle is <paramref name="cPointNormal"/>.</br>
         /// </summary>
         public static Vector3 CircleCenter(Vector3 cPoint0, Vector3 cPoint1, Vector3 cPoint2, out Vector3 cPointNormal)
         {

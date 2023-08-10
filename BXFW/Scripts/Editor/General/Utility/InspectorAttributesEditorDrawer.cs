@@ -373,6 +373,7 @@ namespace BXFW.ScriptEditor
         private PropertyDrawer targetTypeCustomDrawer;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            label = EditorGUI.BeginProperty(position, label, property);
             position.height -= DR_PADDING;
             position.y += DR_PADDING / 2f;
 
@@ -408,6 +409,8 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either int or float.", MessageType.Warning);
             }
+
+            EditorGUI.EndProperty();
         }
     }
 
