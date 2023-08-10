@@ -30,14 +30,18 @@ namespace BXFW.UI
 
         public override void OnPointerDown(PointerEventData eventData)
         {
-            if (!IsInteractable()) return;
+            if (!IsInteractable())
+                return;
+
             base.OnPointerDown(eventData);
 
             isPointerDown = true;
         }
         public override void OnPointerUp(PointerEventData eventData)
         {
-            if (!IsInteractable()) return;
+            if (!IsInteractable())
+                return;
+
             base.OnPointerUp(eventData);
 
             isPointerDown = false;
@@ -55,7 +59,8 @@ namespace BXFW.UI
         // Tick hold timer
         private void Update()
         {
-            if (!Holdable) return;
+            if (!Holdable)
+                return;
 
             // Hold update
             if (!isPointerDown)
@@ -69,13 +74,11 @@ namespace BXFW.UI
             {
                 OnHoldEvent?.Invoke();
 
-                // Set these to end the hold state and make 'OnClick' not invoke
+                // Set these to end the hold state
                 isPointerDown = false;
                 isHoldEvent = true;
 
-                // This constructor sets everything to 'simulation' data
-                // Basically it's valid, but very defualt.
-                OnPointerUp(new PointerEventData(EventSystem.current)); // Simulate OnPointerUp
+                // Don't simulate 'OnPointerUp', it gets called when the pointer is actually up.
             }
         }
     }
