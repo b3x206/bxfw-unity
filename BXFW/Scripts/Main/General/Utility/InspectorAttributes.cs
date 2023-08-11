@@ -81,6 +81,7 @@ namespace BXFW
 
     /// <summary>
     /// Attribute to draw clamped integers and floats in fields.
+    /// <br>Supports <see cref="MinMaxValue"/> and it's integer counter part.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ClampAttribute : PropertyAttribute
@@ -100,7 +101,7 @@ namespace BXFW
     }
 
     /// <summary>
-    /// Attribute to draw clamped vector of any type (except for custom classes) in fields.
+    /// Attribute to draw clamped UnityEngine vector of most type (except for custom classes/structs) in fields.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ClampVectorAttribute : PropertyAttribute

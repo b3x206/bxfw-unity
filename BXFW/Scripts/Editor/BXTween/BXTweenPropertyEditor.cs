@@ -115,6 +115,10 @@ namespace BXFW.ScriptEditor
 
                 shouldUpdateProperty = EditorGUI.EndChangeCheck();
             }
+            if (shouldUpdateProperty)
+            {
+                property.serializedObject.ApplyModifiedProperties();
+            }
 
             EditorGUI.EndProperty();
         }

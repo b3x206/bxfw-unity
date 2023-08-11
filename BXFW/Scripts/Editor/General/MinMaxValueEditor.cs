@@ -1,9 +1,11 @@
-using BXFW.Tools.Editor;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
+
 using UnityEditor;
 using UnityEngine;
+
+using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
