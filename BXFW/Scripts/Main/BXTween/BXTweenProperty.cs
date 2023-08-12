@@ -20,7 +20,7 @@ namespace BXFW.Tweening
 
         [SerializeField] protected bool _UseTweenCurve = false;
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
-        [SerializeField] protected AnimationCurve _TweenCurve = DEFAULT_TWCURVE_VALUE;
+        [SerializeField] protected AnimationCurve _TweenCurve;
         [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
         /// <summary>
         /// When this option is <see langword="true"/>, the <see cref="BXTweenCTX{T}.OnEndAction"/> is invoked when 
@@ -127,7 +127,11 @@ namespace BXFW.Tweening
             }
             set
             {
-                if (value == null) return;
+                if (value == null)
+                {
+                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                    return;
+                }
 
                 _TweenCurve = value;
 
