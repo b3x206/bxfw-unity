@@ -15,13 +15,13 @@ namespace BXFW
     [Serializable]
     public abstract class ObservedListBase<T> : IList<T>
     {
-        [SerializeField] protected List<T> _list = new List<T>();
+        [SerializeField] protected List<T> m_list = new List<T>();
 
         protected ObservedListBase() { }
 
         public IEnumerator<T> GetEnumerator()
         {
-            return _list.GetEnumerator();
+            return m_list.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -31,50 +31,50 @@ namespace BXFW
 
         public void Add(T item)
         {
-            _list.Add(item);
+            m_list.Add(item);
 
-            OnArrayAdded(_list.Count - 1, item);
+            OnArrayAdded(m_list.Count - 1, item);
             OnArrayUpdated();
         }
 
         public void Clear()
         {
-            OnArrayRemovedRange(0, _list);
-            _list.Clear();
+            OnArrayRemovedRange(0, m_list);
+            m_list.Clear();
 
             OnArrayUpdated();
         }
 
         public bool Contains(T item)
         {
-            return _list.Contains(item);
+            return m_list.Contains(item);
         }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            _list.CopyTo(array, arrayIndex);
+            m_list.CopyTo(array, arrayIndex);
         }
 
         public bool Remove(T item)
         {
-            OnArrayRemoved(_list.FindIndex(i => EqualityComparer<T>.Default.Equals(i, item)), item);
-            bool output = _list.Remove(item);
+            OnArrayRemoved(m_list.FindIndex(i => EqualityComparer<T>.Default.Equals(i, item)), item);
+            bool output = m_list.Remove(item);
 
             OnArrayUpdated();
             return output;
         }
 
-        public int Count => _list.Count;
+        public int Count => m_list.Count;
         public bool IsReadOnly => false;
 
         public int IndexOf(T item)
         {
-            return _list.IndexOf(item);
+            return m_list.IndexOf(item);
         }
 
         public void Insert(int index, T item)
         {
-            _list.Insert(index, item);
+            m_list.Insert(index, item);
 
             OnArrayAdded(index, item);
             OnArrayUpdated();
@@ -84,28 +84,28 @@ namespace BXFW
         {
             OnArrayUpdated();
 
-            _list.RemoveAt(index);
+            m_list.RemoveAt(index);
         }
 
         public void AddRange(IEnumerable<T> collection)
         {
-            _list.AddRange(collection);
+            m_list.AddRange(collection);
 
-            OnArrayAddedRange(_list.Count - (collection.Count() + 1), collection);
+            OnArrayAddedRange(m_list.Count - (collection.Count() + 1), collection);
             OnArrayUpdated();
         }
 
         public void RemoveAll(Predicate<T> predicate)
         {
-            OnArrayRemovedRange(0, _list.FindAll(predicate));
-            _list.RemoveAll(predicate);
+            OnArrayRemovedRange(0, m_list.FindAll(predicate));
+            m_list.RemoveAll(predicate);
 
             OnArrayUpdated();
         }
 
         public void InsertRange(int index, IEnumerable<T> collection)
         {
-            _list.InsertRange(index, collection);
+            m_list.InsertRange(index, collection);
 
             OnArrayAddedRange(index, collection);
             OnArrayUpdated();
@@ -113,9 +113,9 @@ namespace BXFW
 
         public void RemoveRange(int index, int count)
         {
-            OnArrayRemovedRange(index, _list.GetRange(index, count));
+            OnArrayRemovedRange(index, m_list.GetRange(index, count));
 
-            _list.RemoveRange(index, count);
+            m_list.RemoveRange(index, count);
             OnArrayUpdated();
         }
 
@@ -128,11 +128,11 @@ namespace BXFW
 
         public T this[int index]
         {
-            get { return _list[index]; }
+            get { return m_list[index]; }
             set
             {
-                T oldValue = _list[index];
-                _list[index] = value;
+                T oldValue = m_list[index];
+                m_list[index] = value;
 
                 OnArrayChanged(index, oldValue, value);
             }
@@ -144,7 +144,7 @@ namespace BXFW
         /// </summary>
         public static explicit operator List<T>(ObservedListBase<T> list)
         {
-            return list._list;
+            return list.m_list;
         }
     }
 
@@ -190,11 +190,11 @@ namespace BXFW
         public ObservedList() { }
         public ObservedList(List<T> list)
         {
-            _list = list;
+            m_list = list;
         }
         public ObservedList(IEnumerable<T> list)
         {
-            _list = new List<T>(list);
+            m_list = new List<T>(list);
         }
 
         protected override void OnArrayUpdated()
@@ -247,11 +247,11 @@ namespace BXFW
         public ObservedUnityEventList() { }
         public ObservedUnityEventList(List<T> list)
         {
-            _list = list;
+            m_list = list;
         }
         public ObservedUnityEventList(IEnumerable<T> list)
         {
-            _list = new List<T>(list);
+            m_list = new List<T>(list);
         }
 
         protected override void OnArrayUpdated()

@@ -662,7 +662,7 @@ namespace BXFW.Tools.Editor
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
                         break;
 
-                    // Use '.Copy' for making 'Linq ToArray' work
+                    // Use '.Copy' for making 'Enumerable.ToArray' work
                     using var ret = currentProperty.Copy();
                     yield return ret;
                 }
