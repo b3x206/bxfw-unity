@@ -380,21 +380,34 @@ namespace BXFW.ScriptEditor
             if (property.propertyType == SerializedPropertyType.Float)
             {
                 EditorGUI.BeginChangeCheck();
-                float v = Mathf.Clamp(EditorGUI.FloatField(position, label, property.floatValue), (float)CAttribute.min, (float)CAttribute.max);
-                if (EditorGUI.EndChangeCheck())
+                // Can't just cast float to double because reasons
+                if (property.type == typeof(float).Name)
                 {
-                    Undo.RecordObject(property.serializedObject.targetObject, "set clamped float");
-                    property.floatValue = v;
+                    float v = Mathf.Clamp(EditorGUI.FloatField(position, label, property.floatValue), (float)CAttribute.min, (float)CAttribute.max);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(property.serializedObject.targetObject, "set clamped float");
+                        property.doubleValue = v;
+                    }
+                }
+                else // Assume it's a double
+                {
+                    double v = Math.Clamp(EditorGUI.DoubleField(position, label, property.doubleValue), CAttribute.min, CAttribute.max);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(property.serializedObject.targetObject, "set clamped double");
+                        property.doubleValue = v;
+                    }
                 }
             }
             else if (property.propertyType == SerializedPropertyType.Integer)
             {
                 EditorGUI.BeginChangeCheck();
-                int v = Mathf.Clamp(EditorGUI.IntField(position, label, property.intValue), (int)CAttribute.min, (int)CAttribute.max);
+                long v = Math.Clamp(EditorGUI.LongField(position, label, property.intValue), (long)CAttribute.min, (long)CAttribute.max);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(property.serializedObject.targetObject, "set clamped int");
-                    property.intValue = v;
+                    property.longValue = v;
                 }
             }
             // Check if property is a valid type

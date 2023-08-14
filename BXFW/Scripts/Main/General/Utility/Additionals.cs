@@ -842,7 +842,7 @@ namespace BXFW
         /// Returns whether if the <paramref name="typeName"/> has an integral name.
         /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
         /// </summary>
-        public static bool IsTypeNameIntegral(string typeName)
+        public static bool IsTypeNameInteger(string typeName)
         {
             return typeName == typeof(byte).Name ||
                 typeName == typeof(sbyte).Name ||
@@ -856,34 +856,57 @@ namespace BXFW
                 typeName == typeof(UIntPtr).Name;
         }
         /// <summary>
+        /// Returns whether if the type name is a floating point number type.
+        /// <br>Compares <paramref name="typeName"/> to <see cref="float"/>, <see cref="double"/> or <see cref="decimal"/>.</br>
+        /// </summary>
+        public static bool IsTypeNameFloat(string typeName)
+        {
+            return typeName == typeof(float).Name ||
+                typeName == typeof(double).Name ||
+                typeName == typeof(decimal).Name;
+        }
+        /// <summary>
         /// Returns whether if the <paramref name="typeName"/> has a numerical name.
-        /// <br>The difference between <see cref="IsTypeNameIntegral(string)"/> is that the type name is also compared against <see cref="float"/> and <see cref="double"/>.</br>
+        /// <br>The difference between <see cref="IsTypeNameInteger(string)"/> is that the type name is also compared against <see cref="float"/> and <see cref="double"/>.</br>
         /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
         /// </summary>
         public static bool IsTypeNameNumerical(string typeName)
         {
-            return IsTypeNameIntegral(typeName) ||
-                typeName == typeof(float).Name ||
-                typeName == typeof(double).Name;
+            return IsTypeNameInteger(typeName) ||
+                IsTypeNameFloat(typeName);
         }
 
         /// <summary>
-        /// Returns whether if <paramref name="type"/> is an integral type.
+        /// Returns whether if <paramref name="type"/> is a built-in c# integer type.
         /// </summary>
-        public static bool IsTypeIntegral(Type type)
+        public static bool IsTypeInteger(Type type)
         {
-            return IsTypeNameIntegral(type.Name);
+            return IsTypeNameInteger(type.Name);
         }
         /// <summary>
-        /// Returns whether if <typeparamref name="T"/> is an integral type.
+        /// Returns whether if <typeparamref name="T"/> is a built-in c# integer type.
         /// </summary>
-        public static bool IsTypeIntegral<T>()
+        public static bool IsTypeInteger<T>()
         {
-            return IsTypeIntegral(typeof(T));
+            return IsTypeInteger(typeof(T));
+        }
+        /// <summary>
+        /// Returns whether if <paramref name="type"/> is a built-in c# floating point number type.
+        /// </summary>
+        public static bool IsTypeFloat(Type type)
+        {
+            return IsTypeNameFloat(type.Name);
+        }
+        /// <summary>
+        /// Returns whether if <typeparamref name="T"/> is a built-in c# floating point number type.
+        /// </summary>
+        public static bool IsTypeFloat<T>()
+        {
+            return IsTypeFloat(typeof(T));
         }
         /// <summary>
         /// Returns whether if <paramref name="type"/> is an numerical type.
-        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeIntegral(Type)"/></br>
+        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeInteger(Type)"/></br>
         /// </summary>
         public static bool IsTypeNumerical(Type type)
         {
@@ -891,7 +914,7 @@ namespace BXFW
         }
         /// <summary>
         /// Returns whether if <typeparamref name="T"/> is an numerical type.
-        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeIntegral{T}()"/></br>
+        /// <br>Checks type name against <see cref="float"/> and <see cref="double"/> also, unlike <see cref="IsTypeInteger{T}()"/></br>
         /// </summary>
         public static bool IsTypeNumerical<T>()
         {
