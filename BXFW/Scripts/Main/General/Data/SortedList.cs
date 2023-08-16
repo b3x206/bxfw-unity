@@ -334,6 +334,7 @@ namespace BXFW
             return m_list.GetEnumerator();
         }
         #endregion
+
         #region List Extensions
         public void RemoveRange(int startIndex, int count)
         {

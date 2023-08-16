@@ -10,7 +10,7 @@ namespace BXFW.SceneManagement
 {
     /// <summary>
     /// A <see cref="GUID"/> that can be serialized and used in the game.
-    /// <br>However, the data has to be gathered from editor apis.</br>
+    /// <br>However, the data for GUID has to be gathered from editor apis.</br>
     /// </summary>
     [Serializable]
     public struct SerializableGUID : 
@@ -113,7 +113,7 @@ namespace BXFW.SceneManagement
         }
         public static implicit operator GUID(SerializableGUID sGUID)
         {
-            object v = new GUID(); // ... this should be object because structs are passed by copy
+            object v = new GUID(); // ... this should be inferred as object type because structs are passed by copy
             // and these functions need reference ...
             typeof(GUID).GetField(nameof(m_Value0), BindingFlags.NonPublic | BindingFlags.Instance).SetValue(v, sGUID.m_Value0);
             typeof(GUID).GetField(nameof(m_Value1), BindingFlags.NonPublic | BindingFlags.Instance).SetValue(v, sGUID.m_Value1);
