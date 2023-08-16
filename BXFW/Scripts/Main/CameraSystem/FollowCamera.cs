@@ -3,6 +3,24 @@
 namespace BXFW
 {
     /// <summary>
+    /// This determines how the BXFW camera's movement updates.
+    /// <br><see cref="FixedUpdate"/> = Updates in MonoBehaviour.FixedUpdate</br>
+    /// <br><see cref="Update"/>      = Updates in MonoBehaviour.Update     </br>
+    /// <br><see cref="LateUpdate"/>  = Updates in MonoBehaviour.LateUpdate </br>
+    /// <br/>
+    /// <br>This setting enumeration on camera scripts depends on how your target is moving.</br>
+    /// <br>For example, if you are following a transform with <see cref="Rigidbody"/> class on it, use <see cref="FixedUpdate"/> mode.</br>
+    /// <br>If you are following a transform that is being tweened or just moves with the MonoBehaviour.Update() method,
+    /// you can use <see cref="Update"/> or <see cref="LateUpdate"/> mode.</br>
+    /// <br>Basically at it's core, this depends on which method the target is being updates.
+    /// This value matching with the target's update method will minimize jittery movement + following.</br>
+    /// </summary>
+    public enum CameraUpdateMode
+    {
+        FixedUpdate, Update, LateUpdate
+    }
+
+    /// <summary>
     /// Following camera.
     /// <br>Tracks the <see cref="FollowTransform"/> smoothly.</br>
     /// </summary>
@@ -12,6 +30,7 @@ namespace BXFW
         // ** Variables (Inspector)
         [Header("Camera Fading Object Settings")]
         public bool CanFollow = true;
+        public CameraUpdateMode UpdateMode = CameraUpdateMode.FixedUpdate;
 
         [Header("Camera Follow Settings")]
         public bool UseFollowVecInstead = false;
@@ -75,14 +94,11 @@ namespace BXFW
 
         #region Camera Mechanics
         /// <summary>
-        /// The camera movement method.
-        /// <br>Always call this method when you override it.</br>
+        /// Called on the selected update mode when the camera is going to be moved.
+        /// <br>Respects the <see cref="CanFollow"/> setting as it's being called by an update type.</br>
         /// </summary>
-        protected virtual void FixedUpdate()
+        protected virtual void MoveCamera()
         {
-            if (!CanFollow)
-                return;
-
             var followPos = (FollowTransform == null || UseFollowVecInstead) ? FollowVector3 : FollowTransform.position;
             var lerpPos = CurrentCameraOffset.UseCameraPosClamp ? new Vector3(
                 Mathf.Clamp(followPos.x + CurrentCameraOffset.Position.x, CurrentCameraOffset.CameraPosXClamp.x, CurrentCameraOffset.CameraPosXClamp.y),
@@ -101,6 +117,42 @@ namespace BXFW
                 // Rotation
                 Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
             );
+        }
+
+        /// <summary>
+        /// The camera Update method.
+        /// <br>Always call this method (like <see langword="base"/>.<see cref="Update"/>) when you override it.</br>
+        /// </summary>
+        protected virtual void Update()
+        {
+            if (!CanFollow || UpdateMode != CameraUpdateMode.Update)
+                return;
+
+            MoveCamera();
+        }
+
+        /// <summary>
+        /// The camera FixedUpdate method.
+        /// <br>Always call this method (like <see langword="base"/>.<see cref="FixedUpdate"/>) when you override it.</br>
+        /// </summary>
+        protected virtual void FixedUpdate()
+        {
+            if (!CanFollow || UpdateMode != CameraUpdateMode.FixedUpdate)
+                return;
+
+            MoveCamera();
+        }
+
+        /// <summary>
+        /// The camera LateUpdate method.
+        /// <br>Always call this method (like <see langword="base"/>.<see cref="LateUpdate"/>) when you override it.</br>
+        /// </summary>
+        protected virtual void LateUpdate()
+        {
+            if (!CanFollow || UpdateMode != CameraUpdateMode.LateUpdate)
+                return;
+
+            MoveCamera();
         }
         #endregion
 

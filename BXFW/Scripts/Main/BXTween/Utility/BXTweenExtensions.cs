@@ -83,7 +83,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
-        public static BXTweenCTX<float> BXTwInterpFill(this Image target, float LastValue, float Duration)
+        public static BXTweenCTX<float> BXTwFillAmount(this Image target, float LastValue, float Duration)
         {
             if (target == null)
             {

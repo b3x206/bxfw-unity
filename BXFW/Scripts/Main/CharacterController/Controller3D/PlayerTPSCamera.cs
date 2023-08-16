@@ -12,6 +12,8 @@ namespace BXFW
         [Header("Camera Reference")]
         public Transform playerTransform;
         private Vector3 followTargetPos;
+        public CameraUpdateMode updateMode = CameraUpdateMode.Update;
+        public CameraUpdateMode moveMode = CameraUpdateMode.FixedUpdate;
 
         [Header("Camera Settings")] // Input settings
         [SerializeField] private bool rawMouseLook = true;
@@ -19,10 +21,6 @@ namespace BXFW
         [SerializeField] private float sensitivityMouse = 100f;
         public float SensitivityMouseCamera { get => sensitivityMouse; set => sensitivityMouse = value; }
         [Space] // In-game settings
-        [Tooltip("Uses FixedUpdate() tick method to update the camera position.\nUseful when following objects moving in FixedUpdate().")]
-        public bool moveInFixedUpdate = true;
-        [Tooltip("Uses FixedUpdate() tick method to update the camera rotation.\nUseful when the game is locked / has lower than FixedUpdate() fps.")]
-        public bool lookInFixedUpdate = false;
 
         [Tooltip("Camera rotation axes. X only makes horizontal rotate and Y does vertical.")]
         public InputAxis currentAxes = InputAxis.MouseX | InputAxis.MouseY;
@@ -43,25 +41,25 @@ namespace BXFW
 
         private void Update()
         {
-            if (!lookInFixedUpdate)
+            if (updateMode != CameraUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.deltaTime);
 
-            if (!moveInFixedUpdate)
+            if (moveMode != CameraUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.deltaTime);
         }
         private void FixedUpdate()
         {
-            if (lookInFixedUpdate)
+            if (updateMode == CameraUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.fixedDeltaTime);
 
-            if (moveInFixedUpdate)
+            if (moveMode == CameraUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.fixedDeltaTime);
         }
 
         /// <summary>
         /// Update camera position into required rotation + position
         /// </summary>
-        private void CameraLookUpdate(float deltaTime)
+        protected void CameraLookUpdate(float deltaTime)
         {
             // Place camera into the same position as 'fake origin that follows PlayerTransform'
             transform.position = followTargetPos;
@@ -97,11 +95,11 @@ namespace BXFW
 
             transform.Translate(0f, 0f, -distanceFromTarget, Space.Self);
         }
-        
+
         /// <summary>
         /// Updates the follow position of the camera.
         /// </summary>
-        private void CameraMoveUpdate(float deltaTime)
+        protected void CameraMoveUpdate(float deltaTime)
         {
             // Offseted position
             Vector3 offsetPos = playerTransform.position + (transform.TransformPoint(playerTransformPositionOffset) - transform.position);
