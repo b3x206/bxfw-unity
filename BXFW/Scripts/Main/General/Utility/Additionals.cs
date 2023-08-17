@@ -200,6 +200,72 @@ namespace BXFW
         }
 
         // -- Mesh + Transform
+#if !UNITY_2021_2_OR_NEWER
+        /// <summary>
+        /// Returns the transformation values from the matrix. (Position)
+        /// </summary>
+        public static Vector3 GetPosition(this Matrix4x4 matrix)
+        {
+            return new Vector3(x: matrix.m03, y: matrix.m13, z: matrix.m23);
+        }
+#endif
+        /// <summary>
+        /// Returns the rotation values from the matrix.
+        /// </summary>
+        public static Quaternion GetRotation(this Matrix4x4 matrix)
+        {
+            Vector3 forward = new Vector3(matrix.m02, matrix.m12, matrix.m22);
+            if (forward == Vector3.zero)
+                return Quaternion.identity; // Get identity rotation without logging message to the console
+            Vector3 upwards = new Vector3(matrix.m01, matrix.m11, matrix.m21);
+
+            return Quaternion.LookRotation(forward, upwards);
+        }
+        /// <summary>
+        /// Returns the scaling values from the matrix.
+        /// </summary>
+        public static Vector3 GetScale(this Matrix4x4 matrix)
+        {
+            Vector3 scale;
+            scale.x = matrix.GetColumn(0).magnitude;
+            scale.y = matrix.GetColumn(1).magnitude;
+            scale.z = matrix.GetColumn(2).magnitude;
+            return scale;
+        }
+        public static void Deconstruct(this Matrix4x4 matrix, out Vector3 position, out Quaternion rotation, out Vector3 scale)
+        {
+            position = matrix.GetPosition();
+            rotation = matrix.GetRotation();
+            scale = matrix.GetScale();
+        }
+        public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.Self)
+        {
+            matrix.Deconstruct(out Vector3 position, out Quaternion rotation, out Vector3 scale);
+
+            switch (space)
+            {
+                case Space.World:
+                    transform.SetPositionAndRotation(position, rotation);
+                    Vector3 parentLossyScale = Vector3.one;
+                    if (transform.parent != null)
+                        parentLossyScale = transform.parent.lossyScale;
+
+                    transform.localScale = Vector3.Scale(scale, Vector3.one);
+                    break;
+                case Space.Self:
+#if UNITY_2021_3_OR_NEWER
+                    transform.SetLocalPositionAndRotation(position, rotation);
+#else
+                    transform.localPosition = position;
+                    transform.localRotation = rotation;
+#endif
+                    transform.localScale = scale;
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("[Additionals::SetMatrix] Failed setting matrix : Parameter 'space={0}' is invalid.", space));
+            }
+        }
+
         /// <summary>
         /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
         /// <br>Values are assigned into the 'vertsArray', the 'vertsArray' will be overwritten by <see cref="Mesh.GetVertices(List{Vector3})"/>.</br>
@@ -712,7 +778,7 @@ namespace BXFW
             return height >= Display.main.systemHeight ? 0 : height;
 #endif
         }
-        #endregion
+#endregion
 
         #region Helper Functions
         // -- Random Utils
