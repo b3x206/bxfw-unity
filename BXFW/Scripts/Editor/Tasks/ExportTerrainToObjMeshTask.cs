@@ -9,93 +9,93 @@ using UnityEngine;
 
 namespace BXFW.Tools.Editor
 {
+    /// <summary>
+    /// Save format for the terrain.
+    /// </summary>
     public enum SaveFormat { Triangles, Quads }
+    /// <summary>
+    /// Resolution for saving the terrain data.
+    /// <br>Higher resolutions mean more detailed '.obj' terrain meshes at the cost of performance and export speed.</br>
+    /// </summary>
     public enum SaveResolution { Full, Half, Quarter, Eighth, Sixteenth }
-    
-    // TODO :
-    // 1 : Import materials too (if possible, .obj doesn't have mats but we can import them seperately or use an different format)
-    /// <summary> Converts terrain to obj. </summary>
-    public class Terrain2Obj : EditorWindow
+
+    /// <summary>
+    /// A <see cref="EditorTask"/> for exporting a unity <see cref="Terrain"/>'s data into a standard mesh with '.obj' format.
+    /// </summary>
+    public class ExportTerrainToObjMeshTask : EditorTask
     {
-        private SaveFormat _saveFormat = SaveFormat.Triangles;
-        private SaveResolution _saveResolution = SaveResolution.Half;
+        public SaveFormat saveFormat = SaveFormat.Triangles;
+        public SaveResolution saveResolution = SaveResolution.Half;
 
-        private static TerrainData _terrain;
-        private static Vector3 _terrainPos;
+        public TerrainData targetTerrain;
+        private Vector3 targetObjectPosition;
+        private string fileName;
 
-        private int _tCount;
-        private int _counter;
-        private int _totalCount;
-        private const int ProgressUpdateInterval = 10000;
+        private int tCount;
+        private int counter;
+        private int totalCount;
+        private const int PROGRESS_UPDATE_INTERVAL = 8192;
 
-        [MenuItem("Tools/Terrain/Export To .obj")]
-        private static void Init()
+        /// <summary>
+        /// Assigns <see cref="targetTerrain"/> if it's <see langword="null"/>.
+        /// <br>Returns whether if <see cref="targetTerrain"/> is still null.</br>
+        /// </summary>
+        private bool Init()
         {
-            _terrain = null;
-            var terrainObject = Selection.activeObject as Terrain;
-            if (terrainObject == null)
+            if (targetTerrain == null)
             {
-                terrainObject = Terrain.activeTerrain;
+                var terrainObject = Selection.activeObject as Terrain;
+                if (terrainObject == null)
+                {
+                    terrainObject = Terrain.activeTerrain;
+                }
+
+                // don't throw null reference exception if the terrain is still null.
+                if (terrainObject != null)
+                {
+                    targetTerrain = terrainObject.terrainData;
+                    targetObjectPosition = terrainObject.transform.position;
+                }
             }
 
-            // don't throw null reference exception if the terrain is still null.
-            if (terrainObject != null)
-            {
-                _terrain = terrainObject.terrainData;
-                _terrainPos = terrainObject.transform.position;
-            }
-
-            var window = GetWindow<Terrain2Obj>(true, "Terrain -> '.obj' File");
-            window.Show();
+            return targetTerrain != null;
         }
 
-        private void OnGUI()
+        private void OnEnable()
         {
-            if (_terrain == null)
-            {
-                GUILayout.Label("- No terrain found.");
+            // Call this for good measure + pre-assigned terrain
+            Init();
+        }
 
-                // Create a terrain field.
-                Terrain tCurrent = null;
-                tCurrent = EditorGUILayout.ObjectField("Terrain to convert : ", tCurrent, typeof(Terrain), true) as Terrain;
-
-                if (tCurrent != null)
-                {
-                    _terrain = tCurrent.terrainData;
-                    _terrainPos = tCurrent.transform.position;
-                }
-
-                if (GUILayout.Button("Exit"))
-                {
-                    GetWindow<Terrain2Obj>().Close();
-                }
-
-                return;
-            }
-
-            EditorGUILayout.LabelField("Note : To change terrains after selection, select another terrain.", EditorStyles.miniBoldLabel);
-            _saveFormat = (SaveFormat)EditorGUILayout.EnumPopup("Export Format", _saveFormat);
-            _saveResolution = (SaveResolution)EditorGUILayout.EnumPopup("Resolution", _saveResolution);
-
-            if (GUILayout.Button("Export"))
-            {
-                Export();
-            }
+        /// <summary>
+        /// Shows the file select dialog.
+        /// <br>If no file is selected this task will return 'not acknowledged' (false).</br>
+        /// </summary>
+        public override bool GetWarning()
+        {
+            fileName = EditorUtility.SaveFilePanel("[ExportTerrainToObj] Export .obj file into", string.Empty, "Terrain", "obj");
+            return !string.IsNullOrWhiteSpace(fileName);
         }
 
         /// <summary>
         /// Exports the terrain data to an .obj file.
         /// </summary>
-        private void Export()
+        public override void Run()
         {
-            var fileName = EditorUtility.SaveFilePanel("Export .obj file", string.Empty, "Terrain", "obj");
-            var w = _terrain.heightmapResolution;
-            var h = _terrain.heightmapResolution;
-            var meshScale = _terrain.size;
-            var tRes = (int)Mathf.Pow(2, (int)_saveResolution);
+            // Don't run if target is null
+            if (!Init())
+            {
+                return;
+            }
+
+            var w = targetTerrain.heightmapResolution;
+            var h = targetTerrain.heightmapResolution;
+
+            var meshScale = targetTerrain.size;
+            var tRes = (int)Mathf.Pow(2, (int)saveResolution);
             meshScale = new Vector3(meshScale.x / (w - 1) * tRes, meshScale.y, meshScale.z / (h - 1) * tRes);
             var uvScale = new Vector2(1.0f / (w - 1), 1.0f / (h - 1));
-            var tData = _terrain.GetHeights(0, 0, w, h);
+            var tData = targetTerrain.GetHeights(0, 0, w, h);
 
             w = ((w - 1) / tRes) + 1;
             h = ((h - 1) / tRes) + 1;
@@ -104,20 +104,20 @@ namespace BXFW.Tools.Editor
 
             int[] tPolys;
 
-            tPolys = _saveFormat == SaveFormat.Triangles ? new int[(w - 1) * (h - 1) * 6] : new int[(w - 1) * (h - 1) * 4];
+            tPolys = saveFormat == SaveFormat.Triangles ? new int[(w - 1) * (h - 1) * 6] : new int[(w - 1) * (h - 1) * 4];
 
             // Build vertices and UVs
             for (var y = 0; y < h; y++)
             {
                 for (var x = 0; x < w; x++)
                 {
-                    tVertices[(y * w) + x] = Vector3.Scale(meshScale, new Vector3(-y, tData[x * tRes, y * tRes], x)) + _terrainPos;
+                    tVertices[(y * w) + x] = Vector3.Scale(meshScale, new Vector3(-y, tData[x * tRes, y * tRes], x)) + targetObjectPosition;
                     tUV[(y * w) + x] = Vector2.Scale(new Vector2(x * tRes, y * tRes), uvScale);
                 }
             }
 
             var index = 0;
-            if (_saveFormat == SaveFormat.Triangles)
+            if (saveFormat == SaveFormat.Triangles)
             {
                 // Build triangle indices: 3 indices into vertex array for each triangle
                 for (var y = 0; y < h - 1; y++)
@@ -161,8 +161,8 @@ namespace BXFW.Tools.Editor
 
                 // Write vertices
                 Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-                _counter = _tCount = 0;
-                _totalCount = ((tVertices.Length * 2) + (_saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / ProgressUpdateInterval;
+                counter = tCount = 0;
+                totalCount = ((tVertices.Length * 2) + (saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / PROGRESS_UPDATE_INTERVAL;
                 for (var i = 0; i < tVertices.Length; i++)
                 {
                     UpdateProgress();
@@ -183,7 +183,8 @@ namespace BXFW.Tools.Editor
                        Append(tUV[i].y.ToString());
                     sw.WriteLine(sb);
                 }
-                if (_saveFormat == SaveFormat.Triangles)
+
+                if (saveFormat == SaveFormat.Triangles)
                 {
                     // Write triangles
                     for (int i = 0; i < tPolys.Length; i += 3)
@@ -217,20 +218,19 @@ namespace BXFW.Tools.Editor
             }
 
             sw.Close();
-            _terrain = null;
+            targetTerrain = null;
             Thread.CurrentThread.CurrentCulture = prevCulture;
 
             EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving file to disc.", "This might take a while...", 1f);
-            GetWindow<Terrain2Obj>().Close();
             EditorUtility.ClearProgressBar();
         }
-
         private void UpdateProgress()
         {
-            if (_counter++ != ProgressUpdateInterval) return;
-            _counter = 0;
+            if (counter++ != PROGRESS_UPDATE_INTERVAL)
+                return;
 
-            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving...", "", Mathf.InverseLerp(0, _totalCount, ++_tCount));
+            counter = 0;
+            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving...", "", Mathf.InverseLerp(0, totalCount, ++tCount));
         }
     }
 }
