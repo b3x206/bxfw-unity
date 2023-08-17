@@ -206,7 +206,7 @@ namespace BXFW
         /// </summary>
         public static Vector3 GetPosition(this Matrix4x4 matrix)
         {
-            return new Vector3(x: matrix.m03, y: matrix.m13, z: matrix.m23);
+            return new Vector3(matrix.m03, matrix.m13, matrix.m23);
         }
 #endif
         /// <summary>
@@ -250,7 +250,7 @@ namespace BXFW
                     if (transform.parent != null)
                         parentLossyScale = transform.parent.lossyScale;
 
-                    transform.localScale = Vector3.Scale(scale, Vector3.one);
+                    transform.localScale = Vector3.Scale(parentLossyScale, Vector3.one);
                     break;
                 case Space.Self:
 #if UNITY_2021_3_OR_NEWER
