@@ -117,6 +117,27 @@ namespace BXFW.ScriptEditor
                 GUILayout.EndHorizontal();
             }));
 
+            // Other things for the other BXFW classes
+            // Yes, this is a bad way of adding other stuff but unity doesn't match open generic types for editors
+            // As it doesn't serialize c# generic classes
+            dict.Add("interactable", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
+            {
+                using SerializedProperty targetInteractable = serializedObject.FindProperty("interactable");
+
+                // We have to set 'Interactable' property instead of the 'SerializedProperty'
+                // But fortunately the only callback this does is that 'UpdateElementsAppearance' which exists on the base
+                // The only thing that we have to do (probably) is to call that. (which will update interactability accordingly)
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(targetInteractable);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    foreach (var target in targets)
+                    {
+                        target.UpdateElementsAppearance();
+                    }
+                }
+            }));
+
             serializedObject.DrawCustomDefaultInspector(dict);
         }
     }

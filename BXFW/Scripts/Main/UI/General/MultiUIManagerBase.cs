@@ -4,7 +4,8 @@ using UnityEngine.EventSystems;
 namespace BXFW.UI
 {
     /// This class solely exists for making an editor for the <see cref="MultiUIManager{TElement}"/>.
-    /// (it could also have been an interface but i wanted to limit the type that the MultiUIManager will inherit)
+    /// (it could also have been an interface but i wanted to limit the type
+    /// that the MultiUIManager will inherit + custom property drawers don't like interfaces)
     /// <summary>
     /// Contains the base variables for multi UI management.
     /// </summary>
@@ -12,7 +13,7 @@ namespace BXFW.UI
     {
         /// <summary>
         /// The element count that does not call <see cref="GenerateElements"/> when you set it.
-        /// <br>Does not do <see cref="MaxElementCount"/> checking.</br>
+        /// <br>Setting this value does not do <see cref="MaxElementCount"/> checking.</br>
         /// </summary>
         [SerializeField, ReadOnlyView] protected int m_ElementCount = 0;
         /// <summary>

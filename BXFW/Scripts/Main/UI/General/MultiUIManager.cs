@@ -23,6 +23,12 @@ namespace BXFW.UI
         public class OnCreateEvent : UnityEvent<int, TElement> { }
 
         /// <summary>
+        /// Event type for events that involve the <typeparamref name="TElement"/> only.
+        /// </summary>
+        [Serializable]
+        public class ElementEvent : UnityEvent<TElement> { }
+
+        /// <summary>
         /// Called when an element is created through <see cref="CreateUIElement"/>.
         /// </summary>
         public OnCreateEvent OnCreateElementEvent;
@@ -87,7 +93,7 @@ namespace BXFW.UI
             // Add to list + events
             uiElements.Add(element);
             OnCreateElementEvent?.Invoke(createIndex, element);
-            // Transform stuff
+            // Transform stuff (because the child will be scaled weirdly)
             element.transform.SetParent(transform);
             element.transform.localScale = Vector3.one;
             // Check name and truncate the '(Clone)' from them
@@ -134,22 +140,9 @@ namespace BXFW.UI
                     // We need to use DestroyImmediate here as there's no need for the reference
                     // Otherwise the script gets stuck at an infinite loop and dies.
                     GameObject destroyObject = uiElements[uiElements.Count - 1].gameObject;
-#if UNITY_EDITOR
-                    DestroyImmediate(destroyObject);
-                    
+
                     // We record the 'Undo' on the editor script anyways
-                    //if (Application.isPlaying)
-                    //{
-                    //    DestroyImmediate(destroyObject);
-                    //}
-                    //else
-                    //{
-                    //    // Destroy with undo?
-                    //    UnityEditor.Undo.DestroyObjectImmediate(destroyObject);
-                    //}
-#else
                     DestroyImmediate(destroyObject);
-#endif
                 }
                 else // Null elements exist on the list, cleanup
                 {
@@ -198,11 +191,13 @@ namespace BXFW.UI
             {
                 GameObject destroyObject = uiElements[0].gameObject;
 #if UNITY_EDITOR
+                // Playing check
                 if (Application.isPlaying)
                     Destroy(destroyObject);
                 else
                     DestroyImmediate(destroyObject);
 #else
+                // No need for that on built games
                 Destroy(destroyObject);
 #endif
             }

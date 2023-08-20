@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using Codice.CM.Common.Tree;
 
 namespace BXFW
 {
@@ -904,6 +905,8 @@ namespace BXFW
             return tgt;
         }
 
+        // In c# 11 or above, don't use these methods (maybe mark them obsolete if the user has c# 11?)
+        // Instead use the Generic Math Support interfaces (https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-11#generic-math-support)
         /// <summary>
         /// Returns whether if the <paramref name="typeName"/> has an integral name.
         /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
@@ -1167,16 +1170,34 @@ namespace BXFW
             return values[randValue];
         }
         /// <summary>
-        /// Returns a random value from an array.
+        /// Returns a random value from an array matching the predicate <paramref name="predicate"/>.
         /// </summary>
-        public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate)
+        public static T GetRandom<T>(this IList<T> values, Func<T, bool> predicate)
         {
             // Create a filtered List?
             // .. this will GC.Alloc ..
-            List<T> valuesCopy = new List<T>(values);
-            valuesCopy.RemoveAll(predicate);
-
+            List<T> valuesCopy = new List<T>(values.Where(predicate));
             return GetRandom(valuesCopy);
+        }
+
+        /// <summary>
+        /// Returns the index of <paramref name="value"/>, using <paramref name="predicate"/>.
+        /// </summary>
+        public static int IndexOf<T>(this IEnumerable<T> values, Predicate<T> predicate)
+        {
+            int i = 0;
+            foreach (T cValue in values)
+            {
+                if (predicate(cValue))
+                {
+                    return i;
+                }
+
+                i++;
+            }
+
+            // Nothing found
+            return -1;
         }
 
         /// <summary>

@@ -15,6 +15,7 @@ namespace BXFW.UI
         public class ButtonEvent : UnityEvent { }
 
         [Header(":: Settings")]
+        public bool Clickable = true;
         public bool Holdable = true;
         public float HoldTime = .3f;
         [Tooltip("Whether if the holding should ignore Time.timeScale. (Use Time.unscaledDeltaTime)")]
@@ -24,9 +25,9 @@ namespace BXFW.UI
         public ButtonEvent OnClickEvent;
         public ButtonEvent OnHoldEvent;
 
-        private float holdTimer = 0f; // Timer for hold.
+        private float holdTimer = 0f;       // Timer for hold.
         private bool isPointerDown = false; // Status variable for whether if holding.
-        private bool isHoldEvent = false; // Status variable for not invoking click event on hold event.
+        private bool isHoldEvent = false;   // Status variable for not invoking click event on hold event.
 
         public override void OnPointerDown(PointerEventData eventData)
         {
@@ -48,7 +49,10 @@ namespace BXFW.UI
 
             if (!isHoldEvent)
             {
-                OnClickEvent?.Invoke();
+                if (Clickable)
+                {
+                    OnClickEvent?.Invoke();
+                }
             }
             else
             {
