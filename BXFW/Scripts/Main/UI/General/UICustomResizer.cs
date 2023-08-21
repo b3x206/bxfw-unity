@@ -75,6 +75,7 @@ namespace BXFW.UI
         {
             base.OnEnable();
 
+            // Restart routine as the object/behaviour is re-enabled.
             if (currentRoutine == null)
             {
                 currentRoutine = StartCoroutine(UpdateCoroutine());

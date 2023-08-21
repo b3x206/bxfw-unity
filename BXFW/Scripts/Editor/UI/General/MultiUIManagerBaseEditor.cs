@@ -8,14 +8,26 @@ using UnityEngine;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// The multi UI manager editor.
+    /// <br>Override from this class to be able to edit stuff properly.</br>
+    /// </summary>
     [CustomEditor(typeof(MultiUIManagerBase), true), CanEditMultipleObjects]
     public class MultiUIManagerBaseEditor : Editor
     {
-        public override void OnInspectorGUI()
-        {
-            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
-            var targets = base.targets.Cast<MultiUIManagerBase>().ToArray();
+        /// <summary>
+        /// Omits the drawn value in the dictionary.
+        /// </summary>
+        protected static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null); 
 
+        /// <summary>
+        /// Get the values for the dictionary.
+        /// <br>Don't forget to call this method as <see langword="base"/>.<see cref="GetCustomPropertyDrawerDictionary(in Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, MultiUIManagerBase[])"/></br>
+        /// </summary>
+        /// <param name="dict">The given dictionary for the property names and the behaviour to run on those.</param>
+        /// <param name="targets">Array of targets for the <see cref="CanEditMultipleObjects"/> attribute editor.</param>
+        protected virtual void GetCustomPropertyDrawerDictionary(in Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
+        {
             dict.Add("m_ElementCount", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
             {
                 // Check targets, show mixed value
@@ -26,7 +38,10 @@ namespace BXFW.ScriptEditor
                 // Set value (CanEditMultipleObjects)
                 EditorGUI.BeginChangeCheck();
                 GUILayout.BeginHorizontal();
-                int elemCountFieldValue = EditorGUILayout.IntField("Element Count", firstElemCount);
+                int elemCountFieldValue = EditorGUILayout.IntField(
+                    new GUIContent("Element Count", "The count of the current elements in this MultiUIManager.\nChanging this will spawn in more elements."),
+                    firstElemCount
+                );
                 if (GUILayout.Button("+", GUILayout.Width(20f)))
                 {
                     elemCountFieldValue++;
@@ -61,7 +76,10 @@ namespace BXFW.ScriptEditor
                 // Set value (CanEditMultipleObjects)
                 EditorGUI.BeginChangeCheck();
                 GUILayout.BeginHorizontal();
-                int refElemIndexValue = EditorGUILayout.IntField("Reference Element Index", firstRefElemIndex);
+                int refElemIndexValue = EditorGUILayout.IntField(
+                    new GUIContent("Reference Element Index", "The index of the element to spawn/instantiate in when the 'Element Count' is changed."),
+                    firstRefElemIndex
+                );
                 GUILayout.EndHorizontal();
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -120,6 +138,12 @@ namespace BXFW.ScriptEditor
             // Other things for the other BXFW classes
             // Yes, this is a bad way of adding other stuff but unity doesn't match open generic types for editors
             // As it doesn't serialize c# generic classes
+
+            // MultiUIManager<TElement>
+            // (for the time being don't draw this array)
+            dict.Add("uiElements", OMIT_ACTION);
+
+            // InteractableMultiUIManager<TElement>
             dict.Add("interactable", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
             {
                 using SerializedProperty targetInteractable = serializedObject.FindProperty("interactable");
@@ -131,12 +155,21 @@ namespace BXFW.ScriptEditor
                 EditorGUILayout.PropertyField(targetInteractable);
                 if (EditorGUI.EndChangeCheck())
                 {
+                    // Call this as the bool value is not up to date
+                    targetInteractable.serializedObject.ApplyModifiedProperties();
                     foreach (var target in targets)
                     {
                         target.UpdateElementsAppearance();
                     }
                 }
             }));
+        }
+
+        public override void OnInspectorGUI()
+        {
+            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
+            var targets = base.targets.Cast<MultiUIManagerBase>().ToArray();
+            GetCustomPropertyDrawerDictionary(dict, targets);
 
             serializedObject.DrawCustomDefaultInspector(dict);
         }

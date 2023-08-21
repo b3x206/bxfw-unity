@@ -102,7 +102,7 @@ namespace BXFW.ScriptEditor
             targetAttribute ??= (InspectorLineAttribute)attribute;
 
             position.y += targetAttribute.GetYPosHeightOffset() / 2f;
-            GUIAdditionals.DrawUILine(position, targetAttribute.LineColor, targetAttribute.LineThickness, targetAttribute.LinePadding);
+            GUIAdditionals.DrawUILine(position, targetAttribute.Color, targetAttribute.LineThickness, targetAttribute.LinePadding);
         }
     }
 

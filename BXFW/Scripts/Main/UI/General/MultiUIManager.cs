@@ -20,7 +20,7 @@ namespace BXFW.UI
         /// <br><c>Param1 : <see cref="int"/> = index</c>, <c>Param2 : <typeparamref name="TElement"/> = created.</c></br>
         /// </summary>
         [Serializable]
-        public class OnCreateEvent : UnityEvent<int, TElement> { }
+        public class IndexedElementEvent : UnityEvent<int, TElement> { }
 
         /// <summary>
         /// Event type for events that involve the <typeparamref name="TElement"/> only.
@@ -31,7 +31,7 @@ namespace BXFW.UI
         /// <summary>
         /// Called when an element is created through <see cref="CreateUIElement"/>.
         /// </summary>
-        public OnCreateEvent OnCreateElementEvent;
+        public IndexedElementEvent onCreateElementEvent;
 
         /// <summary>
         /// List of the contained elements.
@@ -83,7 +83,7 @@ namespace BXFW.UI
         /// </summary>
         /// <param name="useReferenceElement">
         /// Whether to use a reference element that already exists.
-        /// <br>To change the element that is being referred, use the </br>
+        /// <br>To change the element that is being referred, use the <see cref="MultiUIManagerBase.ReferenceElementIndex"/>.</br>
         /// </param>
         public TElement CreateUIElement(bool useReferenceElement = true)
         {
@@ -92,7 +92,7 @@ namespace BXFW.UI
             
             // Add to list + events
             uiElements.Add(element);
-            OnCreateElementEvent?.Invoke(createIndex, element);
+            onCreateElementEvent?.Invoke(createIndex, element);
             // Transform stuff (because the child will be scaled weirdly)
             element.transform.SetParent(transform);
             element.transform.localScale = Vector3.one;
@@ -168,6 +168,19 @@ namespace BXFW.UI
                 }
 
                 CreateUIElement();
+            }
+            // Check if the element count is 1, enable the 'uiElements[0]' from here
+            // This is because the 'Add loop' doesn't work when the previous 'ElementCount' is zero.
+            // (first element is always in 'uiElements' unless you call ResetElements)
+            if (uiElements.Count == 1)
+            {
+                if (uiElements[0] == null)
+                {
+                    CleanupElementsList();
+                    CreateUIElement();
+                }
+                
+                uiElements[0].gameObject.SetActive(ElementCount > 0);
             }
         }
         /// <summary>
