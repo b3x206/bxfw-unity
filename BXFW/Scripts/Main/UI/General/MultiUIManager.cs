@@ -16,11 +16,17 @@ namespace BXFW.UI
         where TElement : Component
     {
         /// <summary>
-        /// Called when an element is created.
-        /// <br><c>Param1 : <see cref="int"/> = index</c>, <c>Param2 : <typeparamref name="TElement"/> = created.</c></br>
+        /// Event type for a indexed element.
+        /// <br><c>Param1 : <see cref="int"/> = index</c>, <c>Param2 : <typeparamref name="TElement"/> = created/reference.</c></br>
         /// </summary>
         [Serializable]
         public class IndexedElementEvent : UnityEvent<int, TElement> { }
+
+        /// <summary>
+        /// A unity event that takes a integer.
+        /// </summary>
+        [Serializable]
+        public class IndexEvent : UnityEvent<int> { }
 
         /// <summary>
         /// Event type for events that involve the <typeparamref name="TElement"/> only.

@@ -10,7 +10,7 @@ namespace BXFW.ScriptEditor
 {
     /// <summary>
     /// The multi UI manager editor.
-    /// <br>Override from this class to be able to edit stuff properly.</br>
+    /// <br>Override from this class to be able to edit <see cref="MultiUIManager{TElement}"/>s properly.</br>
     /// </summary>
     [CustomEditor(typeof(MultiUIManagerBase), true), CanEditMultipleObjects]
     public class MultiUIManagerBaseEditor : Editor
