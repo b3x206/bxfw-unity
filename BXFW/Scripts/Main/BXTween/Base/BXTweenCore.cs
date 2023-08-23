@@ -57,6 +57,10 @@ using static BXFW.Tweening.BXTween;
 ///     In fact quarter (yes quarter now we are doing REAL oop) of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
 /// 
 /// </remarks>
+/// TODO??? : 
+/// Uh, replace this with a BXSimpleTween that is similar to this, but less features, more control over the update method and get rid of coroutines (lower gc.alloc)?
+/// Basically just have delegates that do the most of the stuff.
+/// Because this is not really a complete tweening solution, so go with the simpler tweening option.
 
 namespace BXFW.Tweening
 {
@@ -182,55 +186,71 @@ namespace BXFW.Tweening
                 float Elapsed = ctx.CurrentElapsed;
                 bool UseCustom = ctx.CustomTimeCurve != null;
                 bool TargetObjectOptional = ctx.TargetObjectIsOptional; // Don't constantly get this as it can be true when the TargetObject is null.
+
                 while (Elapsed <= 1f)
                 {
+                    bool canTick = true;
+
                     // We added option to ignore the timescale, so this is standard procedure.
                     if (!CurrentSettings.ignoreTimeScale)
                     {
                         // Check if the timescale is tampered with
                         // if it's below zero, just skip the frame
                         if (Time.timeScale <= 0f)
-                            yield return null;
+                            canTick = false;
+                    }
+                    // Tick cond check (should be true to tick)
+                    if (ctx.TickTweenConditionFunction != null)
+                    {
+                        if (!ctx.TickTweenConditionFunction())
+                        {
+                            canTick = false;
+                        }
                     }
 
-                    // Target object
-                    if (!TargetObjectOptional && ctx.TargetObject == null)
+                    // yield returning null on the top methods didn't respect the ticking condition
+                    // These issues wouldn't have happened if i was smart enough to not use coroutines
+                    if (canTick)
                     {
-                        if (CurrentSettings.diagnosticMode)
+                        // Target object
+                        if (!TargetObjectOptional && ctx.TargetObject == null)
                         {
-                            Debug.Log(BXTweenStrings.DLog_BXTwTargetObjectInvalid);
+                            if (CurrentSettings.diagnosticMode)
+                            {
+                                Debug.Log(BXTweenStrings.DLog_BXTwTargetObjectInvalid);
+                            }
+
+                            ctx.StopTween();
+                            yield break;
                         }
 
-                        ctx.StopTween();
-                        yield break;
-                    }
+                        // Set lerp
+                        // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
 
-                    // Set lerp
-                    // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
+                        T SetValue = lerpMethod(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                        ctx.CurrentElapsed = Elapsed;
 
-                    T SetValue = lerpMethod(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
-                    ctx.CurrentElapsed = Elapsed;
-
-                    try
-                    {
-                        ctx.SetterFunction(SetValue);
-                    }
-                    catch (Exception e)
-                    {
-                        // Exception occured, ignore (unless it's diagnostic mode or we are in editor, don't ignore if in editor.)
-                        if (CurrentSettings.diagnosticMode || Application.isEditor)
+                        try
                         {
-                            Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                            ctx.SetterFunction(SetValue);
+                        }
+                        catch (Exception e)
+                        {
+                            // Exception occured, ignore (unless it's diagnostic mode or we are in editor, don't ignore if in editor.)
+                            if (CurrentSettings.diagnosticMode || Application.isEditor)
+                            {
+                                Debug.LogWarning(BXTweenStrings.DLog_BXTwWarnExceptOnCoroutine(e));
+                            }
+
+                            ctx.StopTween();
+                            yield break;
                         }
 
-                        ctx.StopTween();
-                        yield break;
+                        Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
+                        // TODO : Add useFixedTime for BXTweenCTX?
+                        // yield return new WaitForFixedUpdate();
                     }
-
-                    Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
-
-                    // TODO : Add useFixedTime for BXTweenCTX?
-                    // yield return new WaitForFixedUpdate();
+                    
                     yield return null;
                 }
                 try

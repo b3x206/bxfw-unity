@@ -134,6 +134,7 @@ namespace BXFW.Tweening
         public BXTweenMethod OnEndAction { get; private set; }
         public BXTweenMethod PersistentOnEndAction { get; private set; }
         public BXTweenUnityEvent OnEndActionUnityEvent { get; private set; }
+        public Func<bool> TickTweenConditionFunction { get; private set; }
 
         // --- Private Fields
         // Coroutine / Iterator 
@@ -348,6 +349,15 @@ namespace BXFW.Tweening
             // -- Set Setter
             SetterFunction = setter; // Subtract this as we are going to reuse the pause setter delegate.
             SetterFunction += (T sValue) => { CurrentValue = sValue; };
+            return this;
+        }
+        /// <summary>
+        /// Sets a ticking condition.
+        /// <br>This will run the tween if it's not null and returns true.</br>
+        /// </summary>
+        public BXTweenCTX<T> SetTickCondition(Func<bool> condition)
+        {
+            TickTweenConditionFunction = condition;
             return this;
         }
         /// <summary>
