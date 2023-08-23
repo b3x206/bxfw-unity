@@ -47,11 +47,20 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Returns a random value between min and max.
+        /// Returns a random value between <see cref="Min"/> and <see cref="Max"/>.
         /// </summary>
         public float GetRandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
+        }
+        /// <summary>
+        /// Clamps given value between <see cref="Min"/> and <see cref="Max"/>.
+        /// </summary>
+        /// <param name="value">Target value to call <see cref="Mathf.Clamp(float, float, float)"/> on.</param>
+        /// <returns>Clamped value.</returns>
+        public float ClampBetween(float value)
+        {
+            return Mathf.Clamp(value, Min, Max);
         }
 
         public static implicit operator Vector2(MinMaxValue value)
@@ -154,6 +163,15 @@ namespace BXFW
         public int GetRandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
+        }
+        /// <summary>
+        /// Clamps given value between <see cref="Min"/> and <see cref="Max"/>.
+        /// </summary>
+        /// <param name="value">Target value to call <see cref="Mathf.Clamp(int, int, int)"/> on.</param>
+        /// <returns>Clamped value.</returns>
+        public int ClampBetween(int value)
+        {
+            return Mathf.Clamp(value, Min, Max);
         }
 
         public static implicit operator Vector2(MinMaxValueInt value)

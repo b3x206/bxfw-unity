@@ -376,6 +376,8 @@ namespace BXFW.Tools.Editor
                 targetType = target.GetType();
             }
 
+            // This won't work for struct childs because GetField does the normal c# behaviour
+            // (and it's because c# structs are stackalloc)
             FieldInfo fi = targetType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
             // If the field info is present.

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace BXFW
 {
@@ -44,11 +45,12 @@ namespace BXFW
                 return CameraOffsetTargets[CurrentCameraOffsetIndex];
             }
         }
-        [Range(.05f, 50f)] public float Rotation_Damp = 2f;
-        [Range(.05f, 50f)] public float Move_Damp = 2f;
+        [Range(.05f, 50f), FormerlySerializedAs("Rotation_Damp")] public float RotationDamp = 2f;
+        [Range(.05f, 50f), FormerlySerializedAs("Move_Damp")] public float MoveDamp = 2f;
 
         /// <summary>
         /// An offset for the camera following.
+        /// <br>Can also clamp the camera position.</br>
         /// </summary>
         [System.Serializable]
         public struct CameraOffset
@@ -59,15 +61,19 @@ namespace BXFW
 
             // -- Clamp
             public bool UseCameraPosClamp;
-            public Vector2 CameraPosXClamp;
-            public Vector2 CameraPosYClamp;
-            public Vector2 CameraPosZClamp;
+            public MinMaxValue CameraPosXClamp;
+            public MinMaxValue CameraPosYClamp;
+            public MinMaxValue CameraPosZClamp;
 
             public override string ToString() { return string.Format("[CameraOffset] Pos={0}, Rot={1}", Position, EulerRotation); }
         }
         [Header("State Positions Camera")]
         public CameraOffset[] CameraOffsetTargets = new CameraOffset[1];
         [SerializeField, HideInInspector] private int _CurrentCameraOffsetIndex = 0;
+        /// <summary>
+        /// The <see cref="CameraOffsetTargets"/> that is being used by this FollowCamera.
+        /// <br>Index is clamped for this value.</br>
+        /// </summary>
         public int CurrentCameraOffsetIndex
         {
             get { return _CurrentCameraOffsetIndex; }
@@ -80,15 +86,18 @@ namespace BXFW
         { CurrentCameraOffsetIndex = Offset; }
 
         // ** Variables (Hidden)
-        private Camera _camComponent;
+        private Camera _CamComponent;
+        /// <summary>
+        /// Camera component attached to this 'FollowCamera'.
+        /// </summary>
         public Camera CameraComponent
         {
             get
             {
-                if (_camComponent == null)
-                    _camComponent = GetComponent<Camera>();
+                if (_CamComponent == null)
+                    _CamComponent = GetComponent<Camera>();
 
-                return _camComponent;
+                return _CamComponent;
             }
         }
 
@@ -96,26 +105,33 @@ namespace BXFW
         /// <summary>
         /// Called on the selected update mode when the camera is going to be moved.
         /// <br>Respects the <see cref="CanFollow"/> setting as it's being called by an update type.</br>
+        /// <br>To not respect the <see cref="CanFollow"/>, use the Update, FixedUpdate or LateUpdate overrides.</br>
         /// </summary>
-        protected virtual void MoveCamera()
+        protected virtual void MoveCamera(float deltaTime)
         {
+            // Get Position
             var followPos = (FollowTransform == null || UseFollowVecInstead) ? FollowVector3 : FollowTransform.position;
             var lerpPos = CurrentCameraOffset.UseCameraPosClamp ? new Vector3(
-                Mathf.Clamp(followPos.x + CurrentCameraOffset.Position.x, CurrentCameraOffset.CameraPosXClamp.x, CurrentCameraOffset.CameraPosXClamp.y),
-                Mathf.Clamp(followPos.y + CurrentCameraOffset.Position.y, CurrentCameraOffset.CameraPosYClamp.x, CurrentCameraOffset.CameraPosYClamp.y),
-                Mathf.Clamp(followPos.z + CurrentCameraOffset.Position.z, CurrentCameraOffset.CameraPosZClamp.x, CurrentCameraOffset.CameraPosZClamp.y))
-                : new Vector3(followPos.x + CurrentCameraOffset.Position.x,
-                        followPos.y + CurrentCameraOffset.Position.y,
-                        followPos.z + CurrentCameraOffset.Position.z);
-            var rotatePos = Quaternion.Euler(CurrentCameraOffset.EulerRotation.x,
-                        CurrentCameraOffset.EulerRotation.y,
-                        CurrentCameraOffset.EulerRotation.z);
-
+                CurrentCameraOffset.CameraPosXClamp.ClampBetween(followPos.x + CurrentCameraOffset.Position.x),
+                CurrentCameraOffset.CameraPosYClamp.ClampBetween(followPos.y + CurrentCameraOffset.Position.y),
+                CurrentCameraOffset.CameraPosZClamp.ClampBetween(followPos.z + CurrentCameraOffset.Position.z)
+            ) : new Vector3(
+                followPos.x + CurrentCameraOffset.Position.x,
+                followPos.y + CurrentCameraOffset.Position.y,
+                followPos.z + CurrentCameraOffset.Position.z
+            );
+            // Get Rotation
+            var rotatePos = Quaternion.Euler(
+                CurrentCameraOffset.EulerRotation.x,
+                CurrentCameraOffset.EulerRotation.y,
+                CurrentCameraOffset.EulerRotation.z
+            );
+            // Apply (with interpolation, using Mathf.MoveTowards doesn't work nice and smooth here)
             transform.SetPositionAndRotation(
                 // Position
-                Vector3.Lerp(transform.position, lerpPos, Time.fixedDeltaTime * Move_Damp),
+                Vector3.Lerp(transform.position, lerpPos, deltaTime * MoveDamp),
                 // Rotation
-                Quaternion.Slerp(transform.rotation, rotatePos, Time.fixedDeltaTime * Rotation_Damp)
+                Quaternion.Slerp(transform.rotation, rotatePos, deltaTime * RotationDamp)
             );
         }
 
@@ -128,7 +144,7 @@ namespace BXFW
             if (!CanFollow || UpdateMode != CameraUpdateMode.Update)
                 return;
 
-            MoveCamera();
+            MoveCamera(Time.deltaTime);
         }
 
         /// <summary>
@@ -140,7 +156,7 @@ namespace BXFW
             if (!CanFollow || UpdateMode != CameraUpdateMode.FixedUpdate)
                 return;
 
-            MoveCamera();
+            MoveCamera(Time.fixedDeltaTime);
         }
 
         /// <summary>
@@ -152,19 +168,21 @@ namespace BXFW
             if (!CanFollow || UpdateMode != CameraUpdateMode.LateUpdate)
                 return;
 
-            MoveCamera();
+            MoveCamera(Time.deltaTime);
         }
         #endregion
 
 #if UNITY_EDITOR
         private static Color[] CacheColor;
         // Generate persistent unique colors. (dumb method, we should use the editor script instead).
-        private static Color GetRandColor()
+        private static Color GetRandColor(float alpha = 1f)
         {
             return new Color(
                 Random.Range(0.5f, 1f),
                 Random.Range(0.5f, 1f),
-                Random.Range(0.5f, 1f));
+                Random.Range(0.5f, 1f),
+                alpha
+            );
         }
         /// <summary>
         /// Draw gizmos on selection. This draws the camera positions in <see cref="CameraOffsetTargets"/>.
@@ -178,7 +196,7 @@ namespace BXFW
 
                 for (int i = 0; i < CacheColor.Length; i++)
                 {
-                    CacheColor[i] = GetRandColor();
+                    CacheColor[i] = GetRandColor(.6f);
                 }
             }
             else if (CacheColor.Length != CameraOffsetTargets.Length + 1)
@@ -187,7 +205,7 @@ namespace BXFW
 
                 for (int i = 0; i < CacheColor.Length; i++)
                 {
-                    CacheColor[i] = GetRandColor();
+                    CacheColor[i] = GetRandColor(.6f);
                 }
             }
 
