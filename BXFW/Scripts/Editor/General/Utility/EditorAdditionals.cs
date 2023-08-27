@@ -613,35 +613,37 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
-        /// Returns the children of the SerializedProperty.
+        /// Returns the children (regardless of visibility) of the SerializedProperty.
+        /// <br/>
+        /// <br>This method won't work with Linq methods that cast this <see cref="IEnumerable{T}"/> 
+        /// to arrays because it doesn't 'Copy()' the returned element. You will need a custom delegate to convert each element to a copied one.</br>
         /// </summary>
         public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)
         {
             property = property.Copy();
-            var nextElement = property.Copy();
+            SerializedProperty nextElement = property.Copy();
+            
             bool hasNextElement = nextElement.NextVisible(false);
             if (!hasNextElement)
             {
                 nextElement = null;
             }
 
+            // Get next child
             property.NextVisible(true);
 
-            while (true)
+            do
             {
+                // Skipped to the next element
                 if (SerializedProperty.EqualContents(property, nextElement))
                 {
                     yield break;
                 }
 
+                // yield return the current gathered child property.
                 yield return property;
-
-                bool hasNext = property.NextVisible(false);
-                if (!hasNext)
-                {
-                    break;
-                }
             }
+            while (property.NextVisible(false));
         }
 
         /// <summary>
@@ -651,22 +653,28 @@ namespace BXFW.Tools.Editor
         /// <returns>Collection of '<see cref="SerializedProperty"/>' children.</returns>
         public static IEnumerable<SerializedProperty> GetVisibleChildren(this SerializedProperty serializedProperty)
         {
-            SerializedProperty currentProperty = serializedProperty.Copy();
-            SerializedProperty nextSiblingProperty = serializedProperty.Copy();
+            SerializedProperty currentProperty = serializedProperty.Copy();     // Children iterating property
+            SerializedProperty nextSiblingProperty = serializedProperty.Copy(); // Non-children property
             {
+                // Move to the initial non-children visible in the next invisible sibling property
                 nextSiblingProperty.NextVisible(false);
             }
 
+            // Check initial visibility with children
             if (currentProperty.NextVisible(true))
             {
                 do
                 {
+                    // Check if the 'currentProperty' is now equal to a 'non-children' property
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
                         break;
 
                     // Use '.Copy' for making 'Enumerable.ToArray' work
-                    using var ret = currentProperty.Copy();
-                    yield return ret;
+                    // This is due to yield return'd value will be always be the same 'currentProperty' if we don't copy it
+                    // But for a linear read of this IEnumerable without laying it out to an array, it will be fine
+                    // tl;dr : basically copy the value to make it different
+                    using SerializedProperty copyProp = currentProperty.Copy();
+                    yield return copyProp;
                 }
                 while (currentProperty.NextVisible(false));
             }
@@ -780,7 +788,8 @@ namespace BXFW.Tools.Editor
                 array = copyArray.ToArray();        // Set the tempoary array to the ref array
             }
 
-            // While this will cause a ton of garbage, unless we have lower level control of c# doubt i can do better while avoiding boilerplate.
+            // While this will cause a ton of garbage, unless we have lower level control of c# 
+            // (SerializedProperty.m_NativePropertyPtr with documentation or something similar) doubt i can do better while avoiding boilerplate.
             // The original plan was to pass the ref into a delegate and use Array.Resize but ref parameters on delegates are no-no :/
             return toggleStatus;
         }

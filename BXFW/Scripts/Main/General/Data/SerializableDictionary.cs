@@ -50,14 +50,15 @@ namespace BXFW
             }
         }
 
-        // load base class Dictionary from lists
+        // Load base class Dictionary from the serialized lists
         public void OnAfterDeserialize()
         {
-            // 
+            // Clear the base dictionary in case of garbage data
             Clear();
 
             if (keys.Count != values.Count)
             {
+                // Resize the values if the keys are more or less
                 values.Resize(keys.Count, default);
 
                 // Unity moment
@@ -68,6 +69,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
                 }
             }
 
+            // Append the serialized values into the base dictionary class
             for (int i = 0; i < keys.Count; i++)
             {
                 if (Keys.Contains(keys[i]))

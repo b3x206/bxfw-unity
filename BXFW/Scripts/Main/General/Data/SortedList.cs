@@ -8,7 +8,7 @@ namespace BXFW
 {
     /// <summary>
     /// Class used to specify the base for the '<see cref="SortedList{T}"/>'.
-    /// <br>Does nothing other than providing a class match for <c>SortedListFieldEditor</c>.</br>
+    /// <br>Does nothing special other than providing a class match for <c>SortedListFieldEditor</c> and some sanity check requirements.</br>
     /// </summary>
     public abstract class SortedListBase
     {
@@ -21,36 +21,6 @@ namespace BXFW
         /// Type of an element in the list.
         /// </summary>
         public abstract Type ElementType { get; }
-
-        /// <summary>
-        /// Returns a IComparable implementing value.
-        /// <br>
-        /// NOTE : Only the IComparable is required to be implemented generically, 
-        /// you may need reflection or casting to get the actual comparison or use the <see cref="Comparer{T}"/> class.
-        /// </br>
-        /// </summary>
-        public abstract object GetValue(int index);
-        /// <summary>
-        /// Set a value. (type-unsafe)
-        /// <br>Use the array getter-setter if you have your generic type.</br>
-        /// </summary>
-        public abstract bool TrySetValue(int index, object value);
-        /// <summary>
-        /// Sets a value in the array (exceptions included with your setting).
-        /// </summary>
-        public void SetValue(int index, object value)
-        {
-            if (index < 0 || index >= Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "[SortedList::SetValue] Failed to set value because argument 'index' was out of range.\nValue can't be negative or more than 'Count' property.");
-            }
-
-            if (!TrySetValue(index, value))
-            {
-                // Setting usually fails because of argument problems.
-                throw new ArgumentException("[SortedList::SetValue] Failed to set value because object type could be incorrect.", nameof(value));
-            }
-        }
 
         /// <summary>
         /// Checks if the array is sorted.
@@ -82,7 +52,7 @@ namespace BXFW
         [SerializeField] private List<T> m_list;
         private IComparer<T> m_comparer = Comparer<T>.Default;
         /// <summary>
-        /// The current comparer for this list.
+        /// The current comparer for this sorted list.
         /// </summary>
         public IComparer<T> Comparer
         {
@@ -213,8 +183,10 @@ namespace BXFW
 
                 return m_list[index];
             }
-            set 
+            set
             {
+                // FIXME : Maybe remove this because it's a bad idea?
+                // -------
                 // Previous index value for the value that is being set.
                 int prevIndex = index;
 
@@ -245,30 +217,6 @@ namespace BXFW
                 // Can alternatively also be this :
                 // (m_list[prevIndex], m_list[index]) = (value, m_list[index]);
             }
-        }
-        public override object GetValue(int index)
-        {
-            return this[index];
-        }
-        public override bool TrySetValue(int index, object value)
-        {
-            // Check index
-            if (index < 0 || index >= Count)
-            {
-                return false;
-            }
-
-            // Check 'object' value
-            if (value is T setValue)
-            {
-                this[index] = setValue;
-            }
-            else
-            {
-                return false;
-            }
-
-            return true;
         }
 
         public override int Count => m_list.Count;

@@ -19,7 +19,6 @@ namespace BXFW.Data
     public class LocalizedTextData : IEnumerable<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
     {
         /// TODO : Put <see cref="DefaultLocale"/> to a different place.
-        /// TODO 2 : <see cref="UnityEditor.CustomPropertyDrawer"/> for this
         public static readonly string DefaultLocale = "en";
         public static readonly string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         public string TextID;
@@ -29,7 +28,6 @@ namespace BXFW.Data
         /// <br>An optional extension way of defining variables.</br>
         /// </summary>
         public readonly SerializableDictionary<string, string> PragmaDefinitions = new SerializableDictionary<string, string>();
-        // TODO : Use the BXFW.SerializableDictionary class (no need for ISerializationCallbackReceiver)
         [SerializeField] private SerializableDictionary<string, string> LocalizedValues = new SerializableDictionary<string, string>();
         public IDictionary<string, string> Data
         {
@@ -114,6 +112,18 @@ namespace BXFW.Data
 
             LocalizedValues[ISOCurrentLocale] = value;
         }
+        /// <summary>
+        /// <c><see langword="get"/> : </c> <see cref="GetCurrentLocaleString"/>
+        /// <br/>-&gt; <inheritdoc cref="GetCurrentLocaleString"/>
+        /// <br/>
+        /// <br><c><see langword="set"/> : </c> <see cref="SetCurrentLocaleString(string)"/></br>
+        /// <br/>-&gt; <inheritdoc cref="SetCurrentLocaleString(string)"/>
+        /// </summary>
+        public string CurrentLocaleString
+        {
+            get { return GetCurrentLocaleString(); }
+            set { SetCurrentLocaleString(value); }
+        }
 
         // -- Operator / Class
         /// <summary>
@@ -161,6 +171,13 @@ namespace BXFW.Data
         public LocalizedTextData(string TextID, SerializableDictionary<string, string> values) 
             : this(TextID, values, null)
         { }
+        /// <summary>
+        /// Creates the full fat <see cref="LocalizedTextData"/> with every variable settable as is.
+        /// <br>This is mostly used for <see cref="LocalizedText"/>s on the scene that import a 'LocalizedTextAsset', which require an ID appended into it.</br>
+        /// </summary>
+        /// <param name="textID">ID appended to this <see cref="LocalizedTextData"/>. This is not needed unless you are thinking of filtering out a list of LocalizedTextData.</param>
+        /// <param name="values">The values added to the data. (Key=Two[or three] Letter ISO identifier for the language, Value=The value to use when matched)</param>
+        /// <param name="pragmaDefs">Pragmatic additional definitions for other classes to use. Basically a settings dictionary. Only used in <see cref="LocalizedText"/> for the time being.</param>
         public LocalizedTextData(string textID, SerializableDictionary<string, string> values, SerializableDictionary<string, string> pragmaDefs)
         {
             TextID              = textID;
@@ -217,7 +234,9 @@ namespace BXFW.Data
             if (other == null)
                 return false;
 
-            return LocalizedValues == other.LocalizedValues && TextID == other.TextID;
+            // Pragma settings can be different, idc.
+            return TextID.Equals(other.TextID, StringComparison.Ordinal) && 
+                LocalizedValues.SequenceEqual(other.LocalizedValues);
         }
 
         public override int GetHashCode()

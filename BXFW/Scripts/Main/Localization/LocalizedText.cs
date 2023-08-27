@@ -70,7 +70,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Utility method to remove diacritics from the string.
+        /// Utility method to remove diacritics (sans some non-ascii non-diacritic characters) from the string.
         /// </summary>
         /// <param name="str">Target string.</param>
         /// <param name="predMustKeep">
@@ -114,6 +114,8 @@ namespace BXFW
                                 // Debug.LogWarning(string.Format("[LocalizedText::RemoveDiacritics] Failed to convert fail match char '{0}' into ascii. Appending normalized as is.", cDefault));
                                 break;
 
+                            // This is actually diacriticifying (the thing that is called a 'diacritic' is the points on top the letters
+                            // This is more like 'ascii-ifying' the text.
                             // Only latin case is this. this will do for now.
                             case 'ı':
                                 cNorm = 'i';
@@ -168,7 +170,8 @@ namespace BXFW
                 return;
             }
 
-            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID == textID);
+            // Compare TextID as ordinally, we just need an exact string match.
+            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID.Equals(textID, StringComparison.Ordinal));
             bool replaceInvalidChars = false;
             {
                 // unity doesn't compile 'out string v'
