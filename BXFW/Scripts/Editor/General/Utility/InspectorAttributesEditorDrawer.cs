@@ -19,7 +19,7 @@ namespace BXFW.ScriptEditor
     /// <br>Limitations -> Doesn't support scene objects.</br>
     /// </summary>
     [CustomPropertyDrawer(typeof(BigSpriteFieldAttribute))]
-    internal class BigSpriteFieldDrawer : PropertyDrawer
+    public class BigSpriteFieldDrawer : PropertyDrawer
     {
         private const float warnHelpBoxRectHeight = 22f;
         private float targetBoxRectHeight
@@ -86,7 +86,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomPropertyDrawer(typeof(InspectorLineAttribute))]
-    internal class InspectorLineDrawer : DecoratorDrawer
+    public class InspectorLineDrawer : DecoratorDrawer
     {
         private InspectorLineAttribute targetAttribute;
 
@@ -106,8 +106,94 @@ namespace BXFW.ScriptEditor
         }
     }
 
+    /// <summary>
+    /// Draws the property affected by the <see cref="ConditionalDrawAttribute"/>.
+    /// </summary>
+    [CustomPropertyDrawer(typeof(ConditionalDrawAttribute))]
+    public class ConditionalAttributeDrawer : PropertyDrawer
+    {
+        private PropertyDrawer targetTypeCustomDrawer;
+        private bool UseCustomDrawer => targetTypeCustomDrawer != null;
+        /// <summary>
+        /// The target boolean value.
+        /// </summary>
+        private bool drawField = true;
+        /// <summary>
+        /// Is true if the target field is incorrect.
+        /// </summary>
+        private bool drawWarning = false;
+        private ConditionalDrawAttribute Attribute => (ConditionalDrawAttribute)attribute;
+
+        private const float WARN_BOX_HEIGHT = 32f;
+        private const BindingFlags TARGET_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            // First called method before OnGUI
+            // This also resets 'drawField'
+            var parentPair = property.GetParentOfTargetField();
+            // Try getting the FieldInfo
+            FieldInfo targetBoolFieldInfo = fieldInfo.DeclaringType.GetField(Attribute.BoolFieldName, TARGET_FLAGS);
+            if (targetBoolFieldInfo == null)
+            {
+                // Try getting the PropertyInfo
+                PropertyInfo targetBoolPropertyInfo = fieldInfo.DeclaringType.GetProperty(Attribute.BoolFieldName, TARGET_FLAGS);
+
+                if (targetBoolPropertyInfo == null)
+                {
+                    // Both failed, return the height
+                    drawWarning = true;
+                    return WARN_BOX_HEIGHT;
+                }
+                else
+                {
+                    drawField = (bool)targetBoolPropertyInfo.GetValue(parentPair.Value);
+                }
+            }
+            else
+            {
+                drawField = (bool)targetBoolFieldInfo.GetValue(parentPair.Value);
+            }
+
+            // A no fail condition
+            drawWarning = false;
+
+            if (!drawField)
+                return 0f;
+
+            targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
+            return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            // Warning
+            if (drawWarning)
+            {
+                label = EditorGUI.BeginProperty(position, label, property);
+                EditorGUI.HelpBox(position, string.Format("[ConditionalDrawAttribute] Attribute has incorrect target '{0}' for value '{1}'.", Attribute.BoolFieldName, label.text), MessageType.Warning);
+                EditorGUI.EndProperty();
+                return;
+            }
+
+            // No draw
+            if (!drawField)
+                return;
+
+            // Draw (with CustomDrawer)
+            if (UseCustomDrawer)
+            {
+                targetTypeCustomDrawer.OnGUI(position, property, label);
+            }
+            else
+            {
+                EditorGUI.PropertyField(position, property, label, true);
+            }
+        }
+    }
+
     [CustomPropertyDrawer(typeof(ReadOnlyViewAttribute))]
-    internal class ReadOnlyDrawer : PropertyDrawer
+    public class ReadOnlyDrawer : PropertyDrawer
     {
         private PropertyDrawer targetTypeCustomDrawer;
         private bool UseCustomDrawer => targetTypeCustomDrawer != null;
@@ -139,7 +225,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomPropertyDrawer(typeof(SortedArrayAttribute))]
-    internal class SortedArrayDrawer : PropertyDrawer
+    public class SortedArrayDrawer : PropertyDrawer
     {
         private class ConvertibleObjectList : List<object>
         {
@@ -345,7 +431,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomPropertyDrawer(typeof(ClampAttribute))]
-    internal class ClampDrawer : PropertyDrawer
+    public class ClampDrawer : PropertyDrawer
     {
         private const float warnHelpBoxRectHeight = 22f;
         private ClampAttribute CAttribute => attribute as ClampAttribute;
@@ -428,7 +514,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomPropertyDrawer(typeof(ClampVectorAttribute))]
-    internal class ClampVectorDrawer : PropertyDrawer
+    public class ClampVectorDrawer : PropertyDrawer
     {
         private const float warnHelpBoxRectHeight = 22f;
         private ClampVectorAttribute CAttribute => attribute as ClampVectorAttribute;

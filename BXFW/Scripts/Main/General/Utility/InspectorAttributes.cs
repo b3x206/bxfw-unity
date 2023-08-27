@@ -116,6 +116,33 @@ namespace BXFW
     public class ReadOnlyViewAttribute : PropertyAttribute { }
 
     /// <summary>
+    /// Attribute to draw a field conditionally.
+    /// <br>Only expects absolute bool field names! (but properties that take things and are safe to call in a constructor should work too)</br>
+    /// <br>If you want a 'NoDraw' attribute, try using <see cref="HideInInspector"/> attribute.</br>
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public class ConditionalDrawAttribute : PropertyAttribute
+    {
+#if UNITY_EDITOR
+        /// <summary>
+        /// Name of the field assigned into.
+        /// </summary>
+        public readonly string BoolFieldName;
+#endif
+        /// <summary>
+        /// A bool to whether to invert the draw condition field or not.
+        /// </summary>
+        public bool ConditionInverted { get; set; } = false;
+
+        public ConditionalDrawAttribute(string boolFieldName)
+        {
+#if UNITY_EDITOR
+            BoolFieldName = boolFieldName;
+#endif
+        }
+    }
+
+    /// <summary>
     /// Attribute to assert a sorted array drawer. Can be only applied to array values that have <see cref="IComparable{T}"/>, otherwise it will draw a warning box.
     /// <br/>
     /// <br>For non-numerical types that have <see cref="IComparable{T}"/>, the array values will be switched. (<see cref="Array.Sort(Array)"/> will be called)</br>
