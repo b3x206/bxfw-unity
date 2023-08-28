@@ -51,8 +51,8 @@ namespace BXFW
                 pollTime = Time.time;
             }
         }
-        private KeyCode   pollCurrentKey;
-        private float     pollTime;
+        private KeyCode pollCurrentKey;
+        private float   pollTime;
 
         /// <summary>
         /// Polls event.

@@ -1083,6 +1083,9 @@ namespace BXFW
             // Get size + check            
             if (moveNextSize <= 0)
             {
+                // Reset value (it could be less than 0)
+                moveNextSize = 0;
+
                 // Count manually
                 checked
                 {
@@ -1113,7 +1116,7 @@ namespace BXFW
                 current++;
             }
 
-            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was never equal to array size '{1}'.", rngValue, current));
+            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was not in range of array sized '{1}'.", rngValue, current));
         }
         /// <summary>
         /// Returns a random value from an IEnumerable.

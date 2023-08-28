@@ -85,7 +85,7 @@ namespace BXFW
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            throw new NotImplementedException("Please use the 'GetEnumerator' with the bezier points.");
+            return GetEnumerator();
         }
 
         public override bool Equals(object obj)
@@ -237,7 +237,7 @@ namespace BXFW
         /// Returns a interpolation at time <paramref name="t"/>.
         /// <br>This is clamped between 0~1.</br>
         /// </summary>
-        public Vector3 Interpolated(float t)
+        public Vector3 Interpolate(float t)
         {
             // Clamp
             if (t <= 0f)
@@ -245,7 +245,7 @@ namespace BXFW
             if (t >= 1f)
             { return PathPoints[PathPoints.Count - 1]; }
 
-            // TODO proof of concept
+            // TODO : proof of concept
             // int targetControlSetIndex = Mathf.CeilToInt((3 / segments) * t) - 1;
             // 
             // Vector3 p0 = generatePathPoints[targetControlSetIndex];
@@ -256,7 +256,7 @@ namespace BXFW
             // Vector3 vTarget = BezierPathCalculation(p0, p1, p2, p3, t);
             // return vTarget;
 
-            // (meh, this will do for now, even though it's not ""particularly efficient"")
+            // (meh, this will do for now, even though it's not ""particularly efficient"" + normalized)
 
             // Lerp
             float targetIndexFloat = (t / 1f) * (PathPoints.Count - 1); // Subtract from actual path point count for full lerp
