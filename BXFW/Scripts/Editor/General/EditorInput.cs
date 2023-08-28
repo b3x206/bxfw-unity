@@ -17,7 +17,7 @@ namespace BXFW.Tools.Editor
         // 'GetKey' / Poll related inputs.
         private readonly HashSet<KeyCode> editorInputBuffer = new HashSet<KeyCode>();
      
-        private static string GetWarn_EventCurrentNull([CallerMemberName] string methodName = "\"null method\"")
+        private static string GetWarn_EventCurrentNull([CallerMemberName] string methodName = "<undefined_method>")
         {
             return string.Format("[EditorInput::{0}] Called method while the 'Event.current' is null. Only call this from input polled from 'OnGUI'.", methodName);
         }

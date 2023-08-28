@@ -201,6 +201,7 @@ namespace BXFW
 
         // -- Mesh + Transform
 #if !UNITY_2021_2_OR_NEWER
+        // This method exists since UNITY_2021_2
         /// <summary>
         /// Returns the transformation values from the matrix. (Position)
         /// </summary>
@@ -238,7 +239,7 @@ namespace BXFW
             rotation = matrix.GetRotation();
             scale = matrix.GetScale();
         }
-        public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.Self)
+        public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.World)
         {
             matrix.Deconstruct(out Vector3 position, out Quaternion rotation, out Vector3 scale);
 
