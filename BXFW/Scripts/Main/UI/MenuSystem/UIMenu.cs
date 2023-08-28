@@ -38,6 +38,22 @@ namespace BXFW.UI
                 return menuRectTransform;
             }
         }
+        [SerializeField, Tooltip("Optional canvas group for this menu.")]
+        private CanvasGroup menuCanvasGroup;
+        /// <summary>
+        /// The optional canvas group for this UIMenu.
+        /// <br>May not contain a canvas group at all.</br>
+        /// </summary>
+        public CanvasGroup CanvasGroup
+        {
+            get
+            {
+                if (menuCanvasGroup == null)
+                    TryGetComponent(out menuCanvasGroup);
+
+                return menuCanvasGroup;
+            }
+        }
 
         /// <summary>
         /// <para>Opens menu.</para>

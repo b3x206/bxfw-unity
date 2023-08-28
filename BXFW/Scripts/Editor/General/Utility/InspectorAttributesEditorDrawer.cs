@@ -156,6 +156,9 @@ namespace BXFW.ScriptEditor
             }
 
             // A no fail condition
+            if (Attribute.ConditionInverted)
+                drawField = !drawField;
+            
             drawWarning = false;
 
             if (!drawField)
