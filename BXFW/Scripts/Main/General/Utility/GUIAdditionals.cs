@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace BXFW
@@ -87,10 +89,70 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Returns a optionally effectable by <paramref name="options"/> Rect.
+        /// <br>Unfortunately, the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/> 
+        /// doesn't care about the <paramref name="options"/> parameter being overrides.</br>
+        /// <br>This method uses the <paramref name="options"/> as an override if the types match for the width+height.</br>
+        /// </summary>
+        /// <returns>Rect from the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/>.</returns>
+        public static Rect GetOptionalGUILayoutRect(float minWidth, float maxWidth, float minHeight, float maxHeight, params GUILayoutOption[] options)
+        {
+            FieldInfo guiOptionTypeField = typeof(GUILayoutOption).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo guiOptionValueField = typeof(GUILayoutOption).GetField("value", BindingFlags.Instance | BindingFlags.NonPublic);
+            
+            // -- Dynamic size options
+            GUILayoutOption minWidthOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.minWidth == 2
+                ((int)guiOptionTypeField.GetValue(o)) == 2
+            );
+            GUILayoutOption maxWidthOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.maxWidth == 3
+                ((int)guiOptionTypeField.GetValue(o)) == 3
+            );
+            if (minWidthOption != null)
+                minWidth = (float)guiOptionValueField.GetValue(minWidthOption);
+            if (maxWidthOption != null)
+                maxWidth = (float)guiOptionValueField.GetValue(maxWidthOption);
+
+            GUILayoutOption minHeightOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.minHeight == 4
+                ((int)guiOptionTypeField.GetValue(o)) == 4
+            );
+            GUILayoutOption maxHeightOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.maxHeight == 5
+                ((int)guiOptionTypeField.GetValue(o)) == 5
+            );
+            if (minHeightOption != null)
+                minHeight = (float)guiOptionValueField.GetValue(minHeightOption);
+            if (maxHeightOption != null)
+                maxHeight = (float)guiOptionValueField.GetValue(maxHeightOption);
+
+            // -- Fixed size options (override)
+            GUILayoutOption fixedWidthOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.fixedWidth == 0
+                ((int)guiOptionTypeField.GetValue(o)) == 0
+            );
+            GUILayoutOption fixedHeightOption = options.SingleOrDefault(o =>
+                // GUILayoutOption.Type.fixedHeight == 1
+                ((int)guiOptionTypeField.GetValue(o)) == 1
+            );
+            if (fixedWidthOption != null)
+            {
+                minWidth = maxWidth = ((float)guiOptionValueField.GetValue(fixedWidthOption));
+            }
+            if (fixedHeightOption != null)
+            {
+                minHeight = maxHeight = ((float)guiOptionValueField.GetValue(fixedHeightOption));
+            }
+
+            return GUILayoutUtility.GetRect(minWidth, maxWidth, minHeight, maxHeight, options);
+        }
+
+        /// <summary>
         /// Draws line.
         /// <br>Color defaults to <see cref="Color.white"/>.</br>
         /// </summary>
-        public static void DrawLine(Vector2 start, Vector2 end, int width)
+        public static void DrawLine(Vector2 start, Vector2 end, float width)
         {
             DrawLine(start, end, width, Color.white);
         }
@@ -98,7 +160,7 @@ namespace BXFW
         /// <summary>
         /// Draws line with color.
         /// </summary>
-        public static void DrawLine(Vector2 start, Vector2 end, int width, Color col)
+        public static void DrawLine(Vector2 start, Vector2 end, float width, Color col)
         {
             var gc = GUI.color;
             GUI.color = col;
@@ -110,12 +172,14 @@ namespace BXFW
         /// Draws line with texture.
         /// <br>The texture is not used for texture stuff, only for color if your line is not thick enough.</br>
         /// </summary>
-        public static void DrawLine(Vector2 start, Vector2 end, int width, Texture2D tex)
+        public static void DrawLine(Vector2 start, Vector2 end, float width, Texture2D tex)
         {
             var guiMat = GUI.matrix;
 
-            if (start == end) return;
-            if (width <= 0) return;
+            if (start == end)
+                return;
+            if (width <= 0)
+                return;
 
             Vector2 d = end - start;
             float a = Mathf.Rad2Deg * Mathf.Atan(d.y / d.x);
@@ -128,6 +192,184 @@ namespace BXFW
             GUI.DrawTexture(new Rect(start.x, start.y - width2, d.magnitude, width), tex);
 
             GUI.matrix = guiMat;
+        }
+
+        /// <summary>
+        /// Tiny value for <see cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>.
+        /// </summary>
+        private const float PLOT_EPSILON = .01f;
+        /// <summary>
+        /// Size of drawn label padding.
+        /// </summary>
+        private const float PLOT_TEXT_PADDING_X = 24f;
+        private const float PLOT_TEXT_PADDING_Y = 12f;
+        private const int PLOT_TEXT_FONT_SIZE = 9;
+        private static GUIStyle PlotSmallerFontStyle;
+        private static GUIStyle PlotSmallerFontAlignedRight;
+        /// <summary>
+        /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
+        /// <br>Plotting looks like this : </br>
+        /// <br/>
+        /// <br>Note : This calls <see cref="DrawLine(Vector2, Vector2, int)"/> lots of times instead of doing something optimized.</br>
+        /// <br>It is also very aliased. For drawing bezier curves (only) that look good, use the <see cref="UnityEditor.Handles"/> class. (editor only)</br>
+        /// </summary>
+        /// <param name="position">Rect positioning to draw the line.</param>
+        /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
+        /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
+        /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
+        /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, float from = 0f, float to = 1f, int segments = 20)
+        {
+            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE };
+
+            if (segments < 1)
+                segments = 2;
+            if ((from + PLOT_EPSILON) >= to)
+                from = to - PLOT_EPSILON;
+
+            // Draw dark box behind
+            var guiPrevColor = GUI.color;
+            GUI.color = new Color(.4f, .4f, .4f, .2f);
+            GUI.DrawTexture(
+                position, 
+                Texture2D.whiteTexture, ScaleMode.StretchToFill
+            );
+            GUI.color = guiPrevColor;
+
+            // very naive plotting for GUI, using approximation + stepping (sigma)
+            // If someone that is good at math saw this they would have a seizure
+            // Here's how to make it less naive
+            // A: More efficient
+            // ----
+            // Get local maximum value in the given range (because Y is calculated by min/max)
+            float localMaximum = float.MinValue; // Maximum text to draw
+            float localMinimum = float.MaxValue; // Minimum text to draw
+            bool allValuesZero = true; // Avoid NaN's (because a NaN explosion happens in that case)
+            for (int i = 0; i < segments; i++)
+            {
+                // i is always 1 less then segments
+                float currentSegmentElapsed = (float)i / (segments - 1);
+                float lerpValue = Mathf.Lerp(from, to, currentSegmentElapsed);
+
+                float plotValue = plotFunction(lerpValue);
+
+                if (!Mathf.Approximately(plotValue, 0f))
+                    allValuesZero = false;
+
+                if (plotValue > localMaximum)
+                    localMaximum = plotValue;
+                if (plotValue < localMinimum)
+                    localMinimum = plotValue;
+            }
+
+            // Labels have a reserved 'PLOT_TEXT_PADDING' width
+            // TODO : Add a 'showLabels' parameter
+
+            Rect plotPosition = new Rect
+            {
+                x = position.x + PLOT_TEXT_PADDING_X,
+                y = position.y,
+                width = position.width - PLOT_TEXT_PADDING_X,  // reserve for max/min
+                height = position.height - PLOT_TEXT_PADDING_Y // reserve "
+            };
+
+            // Draw from/to text (x, positioned bottom)
+            GUI.Label(
+                new Rect { x = position.x + PLOT_TEXT_PADDING_X, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                from.ToString("0.0#"), PlotSmallerFontStyle
+            );
+            PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
+            GUI.Label(
+                new Rect { x = position.xMax - 32f, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                to.ToString("0.0#"), PlotSmallerFontStyle
+            );
+            PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+            // Draw min/max text (y, positioned left)
+            GUI.Label(
+                new Rect { x = position.x, y = position.yMin, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                localMaximum.ToString("0.0#"), PlotSmallerFontStyle
+            );
+            GUI.Label(
+                new Rect { x = position.x, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y }, 
+                localMinimum.ToString("0.0#"), PlotSmallerFontStyle
+            );
+
+            // TODO : the line width as parameter
+            float lineWidth = 2.5f;
+
+            // This will throw a lot of errors, especially if the values are 0.
+            if (allValuesZero)
+            {
+                // As a fallback, draw a line that goes through lowest part of 'plotPosition'
+                DrawLine(new Vector2(plotPosition.x, plotPosition.yMax), new Vector2(plotPosition.xMax, plotPosition.yMax), lineWidth);
+                return;
+            }
+
+            // Draw the area divider (if suitable)
+            //     |
+            //     |
+            // ---------]-> i call this divider lmao
+            //     |
+            //     |
+            // Y divider
+            if (from < 0f && to > 0f)
+            {
+                // xMin is on the left
+                float yDividerXpos = plotPosition.xMin + (plotPosition.width * Mathf.InverseLerp(from, to, 0f));
+                DrawLine(new Vector2(yDividerXpos, plotPosition.yMin), new Vector2(yDividerXpos, plotPosition.yMax), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
+            }
+            // X divider
+            if (localMinimum < 0f && localMaximum > 0f)
+            {
+                // yMax is on the bottom
+                float xDividerYpos = plotPosition.yMax - (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, 0f));
+                DrawLine(new Vector2(plotPosition.xMin, xDividerYpos), new Vector2(plotPosition.xMax, xDividerYpos), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
+            }
+
+            Vector2 previousPosition = new Vector2(
+                plotPosition.xMin,
+                // Initial plot position
+                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, plotFunction(from)))
+            );
+            for (int i = 1; i < segments + 1; i++)
+            {
+                float currentSegmentElapsed = (float)i / segments;
+                float lerpValue = Mathf.Lerp(from, to, currentSegmentElapsed);
+                float plotValue = plotFunction(lerpValue);
+
+                float currentX = plotPosition.x + (currentSegmentElapsed * plotPosition.width);
+                // 'y' is inverted in GUI
+                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, plotValue));
+
+                DrawLine(previousPosition, new Vector2(currentX, currentY), lineWidth);
+
+                previousPosition = new Vector2(currentX, currentY);
+            }
+        }
+
+        public const float PLOT_LINE_LAYOUTED_HEIGHT = 48;
+        /// <summary>
+        /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>.
+        /// <br>Reserves a rectangle on the <see cref="GUILayout"/> with a height of <see cref="PLOT_LINE_LAYOUTED_HEIGHT"/>, can be overriden.</br>
+        /// <br/>
+        /// <br>Documentation for original 'PlotLine' : </br>
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>
+        /// </summary>
+        /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
+        /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
+        /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
+        /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
+        public static void PlotLineLayout(Func<float, float> plotFunction, float from = 0f, float to = 1f, int segments = 20, params GUILayoutOption[] options)
+        {
+            // get reserved rect
+            Rect reservedRect = GetOptionalGUILayoutRect(0f, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
+            // some padding
+            reservedRect.x += 4f; // Yes, this may create some gaps, need to be able to actually read GUILayoutOption, which i won't do.
+            reservedRect.width -= 2f;
+            reservedRect.height -= 4f;
+            reservedRect.y += 2f;
+
+            PlotLine(reservedRect, plotFunction, from, to, segments);
         }
 
         /// <summary>

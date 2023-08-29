@@ -7,6 +7,12 @@ namespace BXFW.UI
     /// <summary>
     /// The UI Menu.
     /// <br>Useful for easier management of full-panel canvas menus.</br>
+    /// <br/>
+    /// <br>Open/Close event invoke order is as following : </br>
+    /// <br><b>1: </b><c>'objAction'</c> parameter passed to any of <see cref="OpenMenu(Action)"/> or <see cref="CloseMenu(Action)"/>.</br>
+    /// <br><b>2: </b><see cref="OnUIMenuEvent(bool)"/></br>
+    /// <br><b>3: </b><see cref="ExtraUIEvents"/></br>
+    /// <br><b>4: </b><see cref="ExtraUIEvents_Simple"/></br>
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class UIMenu : MonoBehaviour
@@ -69,6 +75,8 @@ namespace BXFW.UI
             }
 
             objAction?.Invoke();
+
+            OnUIMenuEvent(true);
             ExtraUIEvents?.Invoke(this, true);
             ExtraUIEvents_Simple?.Invoke(true);
         }
@@ -87,8 +95,25 @@ namespace BXFW.UI
             }
 
             objAction?.Invoke();
+
+            OnUIMenuEvent(false);
             ExtraUIEvents?.Invoke(this, false);
             ExtraUIEvents_Simple?.Invoke(false);
         }
+
+        /// <summary>
+        /// A menu event that is called when any of the <see cref="OpenMenu(Action)"/> or <see cref="CloseMenu(Action)"/> is called with the appopriate parameters.
+        /// <br>
+        /// This way, there's no need to register to your own events from the editor or from <c>Awake()</c>, overriding this method should give you the <see cref="UIMenu"/>
+        /// parameter as <see langword="this"/> and <see cref="bool"/> parameter as the <paramref name="show"/> one.
+        /// </br>
+        /// <br>This method does nothing by default. It is an optional override.</br>
+        /// </summary>
+        /// <param name="show">
+        /// <br>if <see langword="true"/>, <see cref="OpenMenu(Action)"/> is called.</br>
+        /// <br>if <see langword="false"/>, <see cref="CloseMenu(Action)"/> is called.</br>
+        /// </param>
+        protected virtual void OnUIMenuEvent(bool show)
+        { }
     }
 }

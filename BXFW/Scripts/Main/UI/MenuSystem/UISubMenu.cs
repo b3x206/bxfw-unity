@@ -7,6 +7,8 @@ namespace BXFW.UI
     /// <summary>
     /// The sub ui menu. Good for popup windows, etc.
     /// <br>Restrictions that apply to <see cref="UIMenu"/> (in <see cref="UIMenuManager"/>) doesn't apply to this sub menu.</br>
+    /// <br/>
+    /// <br>Call order for the events is exactly the same as it is in <see cref="UIMenu"/>.</br>
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class UISubMenu : MonoBehaviour
@@ -69,6 +71,8 @@ namespace BXFW.UI
             }
 
             objAction?.Invoke();
+
+            OnUISubMenuEvent(true);
             UISubMenuEventSimple?.Invoke(true);
             UISubMenuEvent?.Invoke(this, true);
         }
@@ -87,8 +91,25 @@ namespace BXFW.UI
             }
 
             objAction?.Invoke();
+
+            OnUISubMenuEvent(false);
             UISubMenuEventSimple?.Invoke(false);
             UISubMenuEvent?.Invoke(this, false);
         }
+
+        /// <summary>
+        /// A menu event that is called when any of the <see cref="OpenMenu(Action)"/> or <see cref="CloseMenu(Action)"/> is called with the appopriate parameters.
+        /// <br>
+        /// This way, there's no need to register to your own events from the editor or from <c>Awake()</c>, overriding this method should give you the <see cref="UIMenu"/>
+        /// parameter as <see langword="this"/> and <see cref="bool"/> parameter as the <paramref name="show"/> one.
+        /// </br>
+        /// <br>This method does nothing by default. It is an optional override.</br>
+        /// </summary>
+        /// <param name="show">
+        /// <br>if <see langword="true"/>, <see cref="OpenMenu(Action)"/> is called.</br>
+        /// <br>if <see langword="false"/>, <see cref="CloseMenu(Action)"/> is called.</br>
+        /// </param>
+        protected virtual void OnUISubMenuEvent(bool show)
+        { }
     }
 }

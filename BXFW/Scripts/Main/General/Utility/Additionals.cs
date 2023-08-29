@@ -784,7 +784,7 @@ namespace BXFW
         #region Helper Functions
         // -- Random Utils
         /// <summary>Returns a random boolean.</summary>
-        public static bool RandBool()
+        public static bool RandomBool()
         {
             // Using floats here is faster and more random.
             // (for some reason, maybe the System.Convert.ToBoolean method takes more time than float comparison?)
