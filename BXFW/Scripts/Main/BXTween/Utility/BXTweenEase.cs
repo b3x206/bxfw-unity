@@ -113,7 +113,8 @@ namespace BXFW.Tweening
         }
         private static float CubicOut(float t)
         {
-            var tVal = ((t - 1f) * t * t) + 1f;
+            var tSub = 1f - t;
+            var tVal = 1f - (tSub * tSub * tSub);
             return tVal;
         }
         private static float CubicInOut(float t)

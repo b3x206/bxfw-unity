@@ -205,10 +205,8 @@ namespace BXFW
         private const float PLOT_TEXT_PADDING_Y = 12f;
         private const int PLOT_TEXT_FONT_SIZE = 9;
         private static GUIStyle PlotSmallerFontStyle;
-        private static GUIStyle PlotSmallerFontAlignedRight;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
-        /// <br>Plotting looks like this : </br>
         /// <br/>
         /// <br>Note : This calls <see cref="DrawLine(Vector2, Vector2, int)"/> lots of times instead of doing something optimized.</br>
         /// <br>It is also very aliased. For drawing bezier curves (only) that look good, use the <see cref="UnityEditor.Handles"/> class. (editor only)</br>
@@ -218,7 +216,7 @@ namespace BXFW
         /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLine(Rect position, Func<float, float> plotFunction, float from = 0f, float to = 1f, int segments = 20)
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20)
         {
             PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE };
 
@@ -242,8 +240,8 @@ namespace BXFW
             // A: More efficient
             // ----
             // Get local maximum value in the given range (because Y is calculated by min/max)
-            float localMaximum = float.MinValue; // Maximum text to draw
             float localMinimum = float.MaxValue; // Minimum text to draw
+            float localMaximum = float.MinValue; // Maximum text to draw
             bool allValuesZero = true; // Avoid NaN's (because a NaN explosion happens in that case)
             for (int i = 0; i < segments; i++)
             {
@@ -294,9 +292,6 @@ namespace BXFW
                 localMinimum.ToString("0.0#"), PlotSmallerFontStyle
             );
 
-            // TODO : the line width as parameter
-            float lineWidth = 2.5f;
-
             // This will throw a lot of errors, especially if the values are 0.
             if (allValuesZero)
             {
@@ -329,7 +324,7 @@ namespace BXFW
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
                 // Initial plot position
-                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, plotFunction(from)))
+                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotFunction(from)))
             );
             for (int i = 1; i < segments + 1; i++)
             {
@@ -339,9 +334,10 @@ namespace BXFW
 
                 float currentX = plotPosition.x + (currentSegmentElapsed * plotPosition.width);
                 // 'y' is inverted in GUI
-                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, plotValue));
+                // Closer to maximum, the less should be the added height
+                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotValue));
 
-                DrawLine(previousPosition, new Vector2(currentX, currentY), lineWidth);
+                DrawLine(previousPosition, new Vector2(currentX, currentY), lineWidth, GUI.color);
 
                 previousPosition = new Vector2(currentX, currentY);
             }
@@ -359,7 +355,7 @@ namespace BXFW
         /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLineLayout(Func<float, float> plotFunction, float from = 0f, float to = 1f, int segments = 20, params GUILayoutOption[] options)
+        public static void PlotLineLayout(Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
             Rect reservedRect = GetOptionalGUILayoutRect(0f, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
@@ -369,7 +365,7 @@ namespace BXFW
             reservedRect.height -= 4f;
             reservedRect.y += 2f;
 
-            PlotLine(reservedRect, plotFunction, from, to, segments);
+            PlotLine(reservedRect, plotFunction, from, to, lineWidth, segments);
         }
 
         /// <summary>
