@@ -160,7 +160,7 @@ namespace BXFW.Tweening
 
                 // Delay (don't do delay if the context was paused, which is checked with CurrentElapsed)
                 // Also respect the tween setting for invoking delay on tween restart
-                if (ctx.StartDelay > 0f && ctx.CurrentElapsed <= float.Epsilon)
+                if (ctx.Delay > 0f && ctx.CurrentElapsed <= float.Epsilon)
                 {
                     // Kind of boilerplatey boolean logic, but as long as it works and nobody sees it, there's no problem :)
                     if (isOnRepeat)
@@ -168,17 +168,17 @@ namespace BXFW.Tweening
                         if (ctx.InvokeDelayOnRepeat)
                         {
                             if (!CurrentSettings.ignoreTimeScale)
-                                yield return new WaitForSeconds(ctx.StartDelay);
+                                yield return new WaitForSeconds(ctx.Delay);
                             else
-                                yield return new WaitForSecondsRealtime(ctx.StartDelay);
+                                yield return new WaitForSecondsRealtime(ctx.Delay);
                         }
                     }
                     else
                     {
                         if (!CurrentSettings.ignoreTimeScale)
-                            yield return new WaitForSeconds(ctx.StartDelay);
+                            yield return new WaitForSeconds(ctx.Delay);
                         else
-                            yield return new WaitForSecondsRealtime(ctx.StartDelay);
+                            yield return new WaitForSecondsRealtime(ctx.Delay);
                     }
                 }
 

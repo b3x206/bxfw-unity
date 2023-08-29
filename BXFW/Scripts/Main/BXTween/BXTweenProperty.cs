@@ -251,7 +251,7 @@ namespace BXFW.Tweening
 
             // ** Gather values from context.
             _Duration = ctx.Duration;
-            _Delay = ctx.StartDelay;
+            _Delay = ctx.Delay;
             _TweenCurve = ctx.CustomTimeCurve;
             _Setter = ctx.SetterFunction;
             // ** Set the other options from the property.

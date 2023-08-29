@@ -97,52 +97,55 @@ namespace BXFW
         /// <returns>Rect from the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/>.</returns>
         public static Rect GetOptionalGUILayoutRect(float minWidth, float maxWidth, float minHeight, float maxHeight, params GUILayoutOption[] options)
         {
-            FieldInfo guiOptionTypeField = typeof(GUILayoutOption).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic);
-            FieldInfo guiOptionValueField = typeof(GUILayoutOption).GetField("value", BindingFlags.Instance | BindingFlags.NonPublic);
-            
-            // -- Dynamic size options
-            GUILayoutOption minWidthOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.minWidth == 2
-                ((int)guiOptionTypeField.GetValue(o)) == 2
-            );
-            GUILayoutOption maxWidthOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.maxWidth == 3
-                ((int)guiOptionTypeField.GetValue(o)) == 3
-            );
-            if (minWidthOption != null)
-                minWidth = (float)guiOptionValueField.GetValue(minWidthOption);
-            if (maxWidthOption != null)
-                maxWidth = (float)guiOptionValueField.GetValue(maxWidthOption);
-
-            GUILayoutOption minHeightOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.minHeight == 4
-                ((int)guiOptionTypeField.GetValue(o)) == 4
-            );
-            GUILayoutOption maxHeightOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.maxHeight == 5
-                ((int)guiOptionTypeField.GetValue(o)) == 5
-            );
-            if (minHeightOption != null)
-                minHeight = (float)guiOptionValueField.GetValue(minHeightOption);
-            if (maxHeightOption != null)
-                maxHeight = (float)guiOptionValueField.GetValue(maxHeightOption);
-
-            // -- Fixed size options (override)
-            GUILayoutOption fixedWidthOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.fixedWidth == 0
-                ((int)guiOptionTypeField.GetValue(o)) == 0
-            );
-            GUILayoutOption fixedHeightOption = options.SingleOrDefault(o =>
-                // GUILayoutOption.Type.fixedHeight == 1
-                ((int)guiOptionTypeField.GetValue(o)) == 1
-            );
-            if (fixedWidthOption != null)
+            if (options.Length > 0)
             {
-                minWidth = maxWidth = ((float)guiOptionValueField.GetValue(fixedWidthOption));
-            }
-            if (fixedHeightOption != null)
-            {
-                minHeight = maxHeight = ((float)guiOptionValueField.GetValue(fixedHeightOption));
+                FieldInfo guiOptionTypeField = typeof(GUILayoutOption).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo guiOptionValueField = typeof(GUILayoutOption).GetField("value", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                // -- Dynamic size options
+                GUILayoutOption minWidthOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.minWidth == 2
+                    ((int)guiOptionTypeField.GetValue(o)) == 2
+                );
+                GUILayoutOption maxWidthOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.maxWidth == 3
+                    ((int)guiOptionTypeField.GetValue(o)) == 3
+                );
+                if (minWidthOption != null)
+                    minWidth = (float)guiOptionValueField.GetValue(minWidthOption);
+                if (maxWidthOption != null)
+                    maxWidth = (float)guiOptionValueField.GetValue(maxWidthOption);
+
+                GUILayoutOption minHeightOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.minHeight == 4
+                    ((int)guiOptionTypeField.GetValue(o)) == 4
+                );
+                GUILayoutOption maxHeightOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.maxHeight == 5
+                    ((int)guiOptionTypeField.GetValue(o)) == 5
+                );
+                if (minHeightOption != null)
+                    minHeight = (float)guiOptionValueField.GetValue(minHeightOption);
+                if (maxHeightOption != null)
+                    maxHeight = (float)guiOptionValueField.GetValue(maxHeightOption);
+
+                // -- Fixed size options (override)
+                GUILayoutOption fixedWidthOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.fixedWidth == 0
+                    ((int)guiOptionTypeField.GetValue(o)) == 0
+                );
+                GUILayoutOption fixedHeightOption = options.SingleOrDefault(o =>
+                    // GUILayoutOption.Type.fixedHeight == 1
+                    ((int)guiOptionTypeField.GetValue(o)) == 1
+                );
+                if (fixedWidthOption != null)
+                {
+                    minWidth = maxWidth = ((float)guiOptionValueField.GetValue(fixedWidthOption));
+                }
+                if (fixedHeightOption != null)
+                {
+                    minHeight = maxHeight = ((float)guiOptionValueField.GetValue(fixedHeightOption));
+                }
             }
 
             return GUILayoutUtility.GetRect(minWidth, maxWidth, minHeight, maxHeight, options);
@@ -207,9 +210,11 @@ namespace BXFW
         private static GUIStyle PlotSmallerFontStyle;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
+        /// <br>The plotting is not accurate and does ignores some of the characteristics of certain functions
+        /// (i.e <see cref="Mathf.Tan(float)"/>), but it looks good enough for a rough approximation.</br>
         /// <br/>
-        /// <br>Note : This calls <see cref="DrawLine(Vector2, Vector2, int)"/> lots of times instead of doing something optimized.</br>
-        /// <br>It is also very aliased. For drawing bezier curves (only) that look good, use the <see cref="UnityEditor.Handles"/> class. (editor only)</br>
+        /// <br>Note : This calls <see cref="DrawLine(Vector2, Vector2, float)"/> lots of times instead of doing something optimized.</br>
+        /// <br>It is also very aliased. For drawing (only) bezier curves that look good, use the <see cref="UnityEditor.Handles"/> class. (editor only)</br>
         /// </summary>
         /// <param name="position">Rect positioning to draw the line.</param>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
@@ -288,7 +293,8 @@ namespace BXFW
                 localMaximum.ToString("0.0#"), PlotSmallerFontStyle
             );
             GUI.Label(
-                new Rect { x = position.x, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y }, 
+                // multiply the offset by 2 to make it look better
+                new Rect { x = position.x, y = position.yMax - (PLOT_TEXT_PADDING_Y * 2f), width = 32f, height = PLOT_TEXT_PADDING_Y }, 
                 localMinimum.ToString("0.0#"), PlotSmallerFontStyle
             );
 
@@ -343,13 +349,14 @@ namespace BXFW
             }
         }
 
-        public const float PLOT_LINE_LAYOUTED_HEIGHT = 48;
+        private const float PLOT_LINE_LAYOUTED_HEIGHT = 48;
+        private const float PLOT_LINE_LAYOUTED_MIN_WIDTH = 60;
         /// <summary>
-        /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>.
+        /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
         /// <br>Reserves a rectangle on the <see cref="GUILayout"/> with a height of <see cref="PLOT_LINE_LAYOUTED_HEIGHT"/>, can be overriden.</br>
         /// <br/>
         /// <br>Documentation for original 'PlotLine' : </br>
-        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>
         /// </summary>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
         /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
@@ -358,7 +365,7 @@ namespace BXFW
         public static void PlotLineLayout(Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
-            Rect reservedRect = GetOptionalGUILayoutRect(0f, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
+            Rect reservedRect = GetOptionalGUILayoutRect(PLOT_LINE_LAYOUTED_MIN_WIDTH, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
             // some padding
             reservedRect.x += 4f; // Yes, this may create some gaps, need to be able to actually read GUILayoutOption, which i won't do.
             reservedRect.width -= 2f;

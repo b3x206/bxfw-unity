@@ -99,8 +99,14 @@ namespace BXFW.Tweening.Editor
             var wColor = EditorGUILayout.ColorField("Warning Color", CurrentSettings.WarnColor);
             var errColor = EditorGUILayout.ColorField("Error Color", CurrentSettings.ErrColor);
 
-            EditorGUILayout.LabelField(new GUIContent(":: Default Settings (For BXTweenCTX<T>)"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(new GUIContent(":: Default Settings"), EditorStyles.boldLabel);
+            GUILayout.BeginHorizontal();
             var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
+            GUIAdditionals.PlotLineLayout(
+                (v) => BXTweenEase.EaseMethods[dEaseType](v), 
+                0f, 1f, 2.5f, 20, GUILayout.Width(80f), GUILayout.Height(50f)
+            );
+            GUILayout.EndHorizontal();
             var dRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
 
             EditorGUILayout.LabelField(new GUIContent(":: Debug"), EditorStyles.boldLabel);

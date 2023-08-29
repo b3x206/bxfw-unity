@@ -50,7 +50,7 @@ namespace BXFW.Tweening
         /// </summary>
         public bool InvokeEventOnStop { get; private set; } = true;
         public float Duration { get; private set; } = 0f;
-        public float StartDelay { get; private set; } = 0f;
+        public float Delay { get; private set; } = 0f;
         public bool InvokeDelayOnRepeat { get; private set; } = false;
         public int RepeatAmount { get; private set; } = 0;
         public RepeatType RepeatType { get; private set; } = CurrentSettings.DefaultRepeatType;
@@ -132,6 +132,11 @@ namespace BXFW.Tweening
         public BXTweenEaseSetMethod TimeSetLerp { get; private set; }
         public BXTweenSetMethod<T> SetterFunction { get; private set; }
         public BXTweenMethod OnEndAction { get; private set; }
+        /// <summary>
+        /// Called when the tween is completed.
+        /// <br>(same as <see cref="OnEndAction"/>, just for the <see cref="ITweenCTX"/> interface)</br>
+        /// </summary>
+        public event BXTweenMethod TweenCompleteAction;
         public BXTweenMethod PersistentOnEndAction { get; private set; }
         public BXTweenUnityEvent OnEndActionUnityEvent { get; private set; }
         public Func<bool> TickTweenConditionFunction { get; private set; }
@@ -146,8 +151,13 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> ClearEndingEvents()
         {
             OnEndAction = null;
+            ClearCompleteAction();
 
             return this;
+        }
+        public void ClearCompleteAction()
+        {
+            TweenCompleteAction = null;
         }
         /// <summary>
         /// Sets an event to be occured in end.
@@ -202,7 +212,7 @@ namespace BXFW.Tweening
         /// <param name="delay">The delay for tween to wait.</param>
         public BXTweenCTX<T> SetDelay(float delay)
         {
-            StartDelay = delay;
+            Delay = delay;
 
             return this;
         }
@@ -484,7 +494,7 @@ namespace BXFW.Tweening
             EndValue = copyFrom.EndValue;
             InvokeEventOnStop = copyFrom.InvokeEventOnStop;
             Duration = copyFrom.Duration;
-            StartDelay = copyFrom.StartDelay;
+            Delay = copyFrom.Delay;
             RepeatAmount = copyFrom.RepeatAmount;
             RepeatType = copyFrom.RepeatType;
             InvokeEventOnRepeat = copyFrom.InvokeEventOnRepeat;
@@ -708,6 +718,8 @@ namespace BXFW.Tweening
                     OnEndAction.Invoke();
                 if (PersistentOnEndAction != null)
                     PersistentOnEndAction.Invoke();
+                if (TweenCompleteAction != null)
+                    TweenCompleteAction.Invoke();
                 if (OnEndActionUnityEvent != null)
                     OnEndActionUnityEvent.Invoke(this);
             }
