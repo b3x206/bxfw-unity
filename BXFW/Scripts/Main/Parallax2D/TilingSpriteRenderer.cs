@@ -326,20 +326,20 @@ namespace BXFW
         /// </summary>
         public void ClearGrid()
         {
-            if (correctScaledParent.childCount > 0)
+            if (CorrectScaledParent.childCount > 0)
             {
                 // transform.childCount updates when an object is destroyed
                 // keep in current state for the exact amount of children to be destroyed.
-                var childCount = correctScaledParent.childCount;
+                var childCount = CorrectScaledParent.childCount;
 
                 for (int i = 0; i < childCount; i++)
                 {
-                    var t = correctScaledParent.GetChild(0);
+                    var t = CorrectScaledParent.GetChild(0);
 
                     if (t == null)
                         continue;
 
-                    if (t == correctScaledParent)
+                    if (t == CorrectScaledParent)
                         continue;
 #if UNITY_EDITOR
                     if (Application.isEditor && !Application.isPlaying)
