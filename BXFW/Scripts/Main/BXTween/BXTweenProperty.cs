@@ -21,7 +21,7 @@ namespace BXFW.Tweening
         [SerializeField] protected bool _UseTweenCurve = false;
         [SerializeField] protected bool _AllowInterpolationEaseOvershoot = false;
         [SerializeField] protected AnimationCurve _TweenCurve;
-        [SerializeField] protected EaseType _TweenEase = EaseType.QuadInOut;
+        [SerializeField] protected EaseType _TweenEase = EaseType.QuadOut;
         /// <summary>
         /// When this option is <see langword="true"/>, the <see cref="BXTweenCTX{T}.OnEndAction"/> is invoked when 
         /// <see cref="BXTweenCTX{T}.StopTween"/> is called explicitly (without being called by the coroutine end)

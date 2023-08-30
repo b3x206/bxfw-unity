@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
@@ -8,7 +11,7 @@ namespace BXFW.ScriptEditor
     /// Property drawer for the <see cref="FollowCamera.CameraOffset"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(FollowCamera.CameraOffset), true)]
-    internal class FollowCameraOffsetEditor : PropertyDrawer
+    public class FollowCameraOffsetEditor : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -54,7 +57,7 @@ namespace BXFW.ScriptEditor
     }
 
     [CustomEditor(typeof(FollowCamera), true), CanEditMultipleObjects]
-    internal class FollowCameraEditor : Editor
+    public class FollowCameraEditor : Editor
     {
         public override void OnInspectorGUI()
         {
@@ -67,9 +70,14 @@ namespace BXFW.ScriptEditor
                 fontStyle = FontStyle.Bold
             };
             StyleLabel.normal.textColor = Color.white;
+            var inspectorDict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
+            if (targets.Any(cam => cam.UseFollowVecInstead))
+                inspectorDict.Add(nameof(FollowCamera.FollowTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            if (targets.Any(cam => cam.FollowTransform != null && !cam.UseFollowVecInstead))
+                inspectorDict.Add(nameof(FollowCamera.FollowVector3), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
 
             // Base Inspector
-            base.OnInspectorGUI();
+            serializedObject.DrawCustomDefaultInspector(inspectorDict);
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
             int currentCameraOffsetIndexTest = targets[0].CurrentCameraOffsetIndex;

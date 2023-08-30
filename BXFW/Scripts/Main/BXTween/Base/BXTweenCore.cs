@@ -57,10 +57,13 @@ using static BXFW.Tweening.BXTween;
 ///     In fact quarter (yes quarter now we are doing REAL oop) of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
 /// 
 /// </remarks>
-/// TODO??? : 
+/// TODO : 
 /// Uh, replace this with a BXSimpleTween that is similar to this, but less features, more control over the update method and get rid of coroutines (lower gc.alloc)?
 /// Basically just have delegates that do the most of the stuff.
 /// Because this is not really a complete tweening solution, so go with the simpler tweening option.
+/// TODO 2 :
+/// Oh and also, add a 'CompilationDefineConstraints' class for defining define constraints for things if the file exists
+/// (and it can disable BXTween with '#if' statement)
 
 namespace BXFW.Tweening
 {

@@ -469,50 +469,11 @@ namespace BXFW
 
             return target.x;
         }
-        /// <summary>
-        /// Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
-        /// </summary>
-        public static Vector3 SetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
-        {
-            Vector3 v = current;
-            switch (axisConstraint)
-            {
-                case TransformAxis.None:
-                    return Vector3.zero;
 
-                case TransformAxis.XAxis:
-                    v.x = setCurrent.x;
-                    break;
-                case TransformAxis.YAxis:
-                    v.y = setCurrent.y;
-                    break;
-                case TransformAxis.ZAxis:
-                    v.z = setCurrent.z;
-                    break;
-                case TransformAxis.XYAxis:
-                    v.x = setCurrent.x;
-                    v.y = setCurrent.y;
-                    break;
-                case TransformAxis.YZAxis:
-                    v.y = setCurrent.y;
-                    v.z = setCurrent.z;
-                    break;
-                case TransformAxis.XZAxis:
-                    v.x = setCurrent.x;
-                    v.z = setCurrent.z;
-                    break;
-
-                default:
-                case TransformAxis.XYZAxis:
-                    return setCurrent;
-            }
-
-            return v;
-        }
         /// <summary>
         /// Get the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector3 GetVectorUsingTransformAxis(this TransformAxis axisConstraint, Vector3 current)
+        public static Vector3 GetAxisVector(this TransformAxis axisConstraint, Vector3 current)
         {
             Vector3 v = current;
             switch (axisConstraint)
@@ -550,27 +511,41 @@ namespace BXFW
             return v;
         }
         /// <summary>
-        /// Sets or removes the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
+        /// Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector2 SetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
+        public static Vector3 SetAxisVector(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
         {
             Vector3 v = current;
             switch (axisConstraint)
             {
-                case TransformAxis2D.None:
-                    return Vector2.zero;
+                case TransformAxis.None:
+                    return Vector3.zero;
 
-                case TransformAxis2D.XAxis:
+                case TransformAxis.XAxis:
                     v.x = setCurrent.x;
                     break;
-                case TransformAxis2D.YAxis:
+                case TransformAxis.YAxis:
                     v.y = setCurrent.y;
                     break;
+                case TransformAxis.ZAxis:
+                    v.z = setCurrent.z;
+                    break;
+                case TransformAxis.XYAxis:
+                    v.x = setCurrent.x;
+                    v.y = setCurrent.y;
+                    break;
+                case TransformAxis.YZAxis:
+                    v.y = setCurrent.y;
+                    v.z = setCurrent.z;
+                    break;
+                case TransformAxis.XZAxis:
+                    v.x = setCurrent.x;
+                    v.z = setCurrent.z;
+                    break;
+
                 default:
-                case TransformAxis2D.XYAxis:
-                    v.x = setCurrent.x;
-                    v.y = setCurrent.y;
-                    break;
+                case TransformAxis.XYZAxis:
+                    return setCurrent;
             }
 
             return v;
@@ -578,7 +553,7 @@ namespace BXFW
         /// <summary>
         /// Get the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector2 GetVectorUsingTransformAxis(this TransformAxis2D axisConstraint, Vector2 current)
+        public static Vector2 GetAxisVector(this TransformAxis2D axisConstraint, Vector2 current)
         {
             Vector3 v = current;
             switch (axisConstraint)
@@ -600,6 +575,33 @@ namespace BXFW
 
             return v;
         }
+        /// <summary>
+        /// Sets or removes the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
+        /// </summary>
+        public static Vector2 SetAxisVector(this TransformAxis2D axisConstraint, Vector2 current, Vector2 value)
+        {
+            Vector3 v = current;
+            switch (axisConstraint)
+            {
+                case TransformAxis2D.None:
+                    return Vector2.zero;
+
+                case TransformAxis2D.XAxis:
+                    v.x = value.x;
+                    break;
+                case TransformAxis2D.YAxis:
+                    v.y = value.y;
+                    break;
+                default:
+                case TransformAxis2D.XYAxis:
+                    v.x = value.x;
+                    v.y = value.y;
+                    break;
+            }
+
+            return v;
+        }
+
         /// <summary>
         /// Converts <see cref="Vector2"/> to positive values.
         /// </summary>
@@ -1175,12 +1177,13 @@ namespace BXFW
         /// <summary>
         /// Returns a random value from an array matching the predicate <paramref name="predicate"/>.
         /// </summary>
-        public static T GetRandom<T>(this IList<T> values, Func<T, bool> predicate)
+        public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate)
         {
             // Create a filtered List?
             // .. this will GC.Alloc ..
-            List<T> valuesCopy = new List<T>(values.Where(predicate));
-            return GetRandom(valuesCopy);
+            // I take 'GetEnumerator' over 'new List' with undefined size.
+            // List<T> valuesCopy = new List<T>();
+            return GetRandom((IEnumerable<T>)values, predicate);
         }
 
         /// <summary>

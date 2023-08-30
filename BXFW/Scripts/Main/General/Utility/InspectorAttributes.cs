@@ -121,7 +121,7 @@ namespace BXFW
     /// <br>If you want a 'NoDraw' attribute, try using <see cref="HideInInspector"/> attribute.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
-    public class ConditionalDrawAttribute : PropertyAttribute
+    public class InspectorConditionalDrawAttribute : PropertyAttribute
     {
 #if UNITY_EDITOR
         /// <summary>
@@ -134,7 +134,7 @@ namespace BXFW
         /// </summary>
         public bool ConditionInverted { get; set; } = false;
 
-        public ConditionalDrawAttribute(string boolFieldName)
+        public InspectorConditionalDrawAttribute(string boolFieldName)
         {
 #if UNITY_EDITOR
             BoolFieldName = boolFieldName;

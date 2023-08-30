@@ -198,9 +198,9 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Tiny value for <see cref="PlotLine(Rect, Func{float, float}, float, float, int)"/>.
+        /// Tiny value for <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
         /// </summary>
-        private const float PLOT_EPSILON = .01f;
+        private const float PLOT_DRAW_EPSILON = .01f;
         /// <summary>
         /// Size of drawn label padding.
         /// </summary>
@@ -223,12 +223,12 @@ namespace BXFW
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20)
         {
-            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE };
+            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE, wordWrap = true };
 
             if (segments < 1)
                 segments = 2;
-            if ((from + PLOT_EPSILON) >= to)
-                from = to - PLOT_EPSILON;
+            if ((from + PLOT_DRAW_EPSILON) >= to)
+                from = to - PLOT_DRAW_EPSILON;
 
             // Draw dark box behind
             var guiPrevColor = GUI.color;
@@ -242,7 +242,9 @@ namespace BXFW
             // very naive plotting for GUI, using approximation + stepping (sigma)
             // If someone that is good at math saw this they would have a seizure
             // Here's how to make it less naive
-            // A: More efficient
+            // A : Make it more efficient
+            // B : A better drawing algorithm (perhaps use meshes? stepping is more different? idk.)
+
             // ----
             // Get local maximum value in the given range (because Y is calculated by min/max)
             float localMinimum = float.MaxValue; // Minimum text to draw
@@ -280,23 +282,24 @@ namespace BXFW
             GUI.Label(
                 new Rect { x = position.x + PLOT_TEXT_PADDING_X, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
                 from.ToString("0.0#"), PlotSmallerFontStyle
-            );
+            ); // left
             PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
             GUI.Label(
                 new Rect { x = position.xMax - 32f, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
                 to.ToString("0.0#"), PlotSmallerFontStyle
-            );
+            ); // right
             PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
-            // Draw min/max text (y, positioned left)
+
+            // Draw local min/max text (y, positioned left)
             GUI.Label(
                 new Rect { x = position.x, y = position.yMin, width = 32f, height = PLOT_TEXT_PADDING_Y },
                 localMaximum.ToString("0.0#"), PlotSmallerFontStyle
-            );
+            ); // up
             GUI.Label(
                 // multiply the offset by 2 to make it look better
                 new Rect { x = position.x, y = position.yMax - (PLOT_TEXT_PADDING_Y * 2f), width = 32f, height = PLOT_TEXT_PADDING_Y }, 
                 localMinimum.ToString("0.0#"), PlotSmallerFontStyle
-            );
+            ); // down
 
             // This will throw a lot of errors, especially if the values are 0.
             if (allValuesZero)
@@ -326,6 +329,10 @@ namespace BXFW
                 float xDividerYpos = plotPosition.yMax - (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, 0f));
                 DrawLine(new Vector2(plotPosition.xMin, xDividerYpos), new Vector2(plotPosition.xMax, xDividerYpos), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
             }
+
+            // Only do this plotting if we are actually drawing and not layouting
+            if (Event.current.type != EventType.Repaint)
+                return;
 
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
@@ -367,10 +374,10 @@ namespace BXFW
             // get reserved rect
             Rect reservedRect = GetOptionalGUILayoutRect(PLOT_LINE_LAYOUTED_MIN_WIDTH, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
             // some padding
-            reservedRect.x += 4f; // Yes, this may create some gaps, need to be able to actually read GUILayoutOption, which i won't do.
-            reservedRect.width -= 2f;
-            reservedRect.height -= 4f;
+            reservedRect.x += 2f;
+            reservedRect.width -= 4f;
             reservedRect.y += 2f;
+            reservedRect.height -= 4f;
 
             PlotLine(reservedRect, plotFunction, from, to, lineWidth, segments);
         }

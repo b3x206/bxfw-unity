@@ -37,9 +37,7 @@ namespace BXFW.UI
             get
             {
                 if (menuRectTransform == null)
-                {
                     menuRectTransform = GetComponent<RectTransform>();
-                }
 
                 return menuRectTransform;
             }
@@ -48,7 +46,7 @@ namespace BXFW.UI
         private CanvasGroup menuCanvasGroup;
         /// <summary>
         /// The optional canvas group for this UIMenu.
-        /// <br>May not contain a canvas group at all.</br>
+        /// <br>May not contain a canvas group.</br>
         /// </summary>
         public CanvasGroup CanvasGroup
         {
@@ -58,6 +56,10 @@ namespace BXFW.UI
                     TryGetComponent(out menuCanvasGroup);
 
                 return menuCanvasGroup;
+            }
+            set
+            {
+                menuCanvasGroup = value;
             }
         }
 

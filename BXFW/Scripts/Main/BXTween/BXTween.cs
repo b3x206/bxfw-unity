@@ -24,24 +24,24 @@ namespace BXFW.Tweening
     public static class BXTween
     {
         public static BXTweenCore Current;
-        private static readonly List<ITweenCTX> mCurrentRunningTweens = new List<ITweenCTX>();
+        private static readonly List<ITweenCTX> m_CurrentRunningTweens = new List<ITweenCTX>();
         public static List<ITweenCTX> CurrentRunningTweens
         {
             get
             {
-                if (mCurrentRunningTweens.Count >= CurrentSettings.maxTweens)
+                if (m_CurrentRunningTweens.Count >= CurrentSettings.maxTweens)
                 {
                     int setValue = CurrentSettings.maxTweens * 4;
                     Debug.LogWarning(BXTweenStrings.GetWarn_ExceededMaxTweens(CurrentSettings.maxTweens, setValue));
                     CurrentSettings.maxTweens = setValue;
                 }
 
-                if (mCurrentRunningTweens.Capacity != CurrentSettings.maxTweens)
+                if (m_CurrentRunningTweens.Capacity != CurrentSettings.maxTweens)
                 {
-                    mCurrentRunningTweens.Capacity = CurrentSettings.maxTweens;
+                    m_CurrentRunningTweens.Capacity = CurrentSettings.maxTweens;
                 }
 
-                return mCurrentRunningTweens;
+                return m_CurrentRunningTweens;
             }
         }
 
@@ -79,6 +79,22 @@ namespace BXFW.Tweening
         private static readonly MethodInfo[] BXTweenMethods = typeof(BXTween).GetMethods();
 
         #region Utility
+        /// <summary>
+        /// Stops all tweens and cleans <see cref="CurrentRunningTweens"/>.
+        /// </summary>
+        public static void StopAll()
+        {
+            foreach (var tween in m_CurrentRunningTweens)
+            {
+                if (tween == null)
+                    continue;
+
+                tween.StopTween();
+            }
+
+            m_CurrentRunningTweens.Clear();
+        }
+
         /// <summary>
         /// Checks if any tweens are running on given object <paramref name="cObject"/>.
         /// <br>This method only works if a target object was assigned to <see cref="BXTweenCTX{T}"/></br>

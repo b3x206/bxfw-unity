@@ -107,10 +107,10 @@ namespace BXFW.ScriptEditor
     }
 
     /// <summary>
-    /// Draws the property affected by the <see cref="ConditionalDrawAttribute"/>.
+    /// Draws the property affected by the <see cref="InspectorConditionalDrawAttribute"/>.
     /// </summary>
-    [CustomPropertyDrawer(typeof(ConditionalDrawAttribute))]
-    public class ConditionalAttributeDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(InspectorConditionalDrawAttribute))]
+    public class InspectorConditionalAttributeDrawer : PropertyDrawer
     {
         private PropertyDrawer targetTypeCustomDrawer;
         private bool UseCustomDrawer => targetTypeCustomDrawer != null;
@@ -122,7 +122,7 @@ namespace BXFW.ScriptEditor
         /// Is true if the target field is incorrect.
         /// </summary>
         private bool drawWarning = false;
-        private ConditionalDrawAttribute Attribute => (ConditionalDrawAttribute)attribute;
+        private InspectorConditionalDrawAttribute Attribute => (InspectorConditionalDrawAttribute)attribute;
 
         private const float WARN_BOX_HEIGHT = 32f;
         private const BindingFlags TARGET_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -273,9 +273,8 @@ namespace BXFW.ScriptEditor
 
             propertyParentTypeArray = property.GetParentOfTargetField().Key.FieldType.GetInterfaces().Any(i => i == typeof(IEnumerable) || i == typeof(IEnumerable<>));
             // (lol typeof(string).Assembly, they are in the same assembly so idc)
-            propertyTypeValid = propertyParentTypeArray && property.GetPropertyType().GetInterfaces()
-                .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>)) ||
-                property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
+            propertyTypeValid = (propertyParentTypeArray && property.GetPropertyType().GetInterfaces().Any(i => i == typeof(IComparable) || i == typeof(IComparable<>))) 
+                || property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
 
             // Since we can't intercept the 'OnGUI' of the parent array (this PropertyDrawer will be shown per element, we will just get the parent array)
             // Just give the 'GetPropertyHeight'

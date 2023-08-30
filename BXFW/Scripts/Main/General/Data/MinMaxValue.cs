@@ -72,6 +72,61 @@ namespace BXFW
             return new MinMaxValue(value.x, value.y);
         }
 
+        /// <summary>
+        /// Multiplies the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
+        /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
+        /// </summary>
+        public static MinMaxValue operator*(MinMaxValue lhs, float rhs)
+        {
+            lhs.m_Min *= rhs;
+            lhs.m_Max *= rhs;
+
+            if (lhs.m_Min > lhs.m_Max)
+            {
+                // Sign flipped
+                if (rhs < 0)
+                {
+                    float prevMin = lhs.m_Min;
+                    lhs.m_Min = lhs.m_Max;
+                    lhs.m_Max = prevMin;
+                }
+                // No sign flipping, clamp min
+                else
+                {
+                    lhs.m_Min = lhs.m_Max;
+                }
+            }
+
+            return lhs;
+        }
+        /// <summary>
+        /// Divides the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
+        /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
+        /// </summary>
+        public static MinMaxValue operator /(MinMaxValue lhs, float rhs)
+        {
+            lhs.m_Min /= rhs;
+            lhs.m_Max /= rhs;
+
+            if (lhs.m_Min > lhs.m_Max)
+            {
+                // Sign flipped
+                if (rhs < 0)
+                {
+                    float prevMin = lhs.m_Min;
+                    lhs.m_Min = lhs.m_Max;
+                    lhs.m_Max = prevMin;
+                }
+                // No sign flipping, clamp min
+                else
+                {
+                    lhs.m_Min = lhs.m_Max;
+                }
+            }
+
+            return lhs;
+        }
+
         public static bool operator==(MinMaxValue lhs, MinMaxValue rhs)
         {
             return lhs.Equals(rhs);
@@ -185,6 +240,61 @@ namespace BXFW
         public static implicit operator MinMaxValueInt(Vector2Int value)
         {
             return new MinMaxValueInt(value.x, value.y);
+        }
+
+        /// <summary>
+        /// Multiplies the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
+        /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
+        /// </summary>
+        public static MinMaxValueInt operator *(MinMaxValueInt lhs, int rhs)
+        {
+            lhs.m_Min *= rhs;
+            lhs.m_Max *= rhs;
+
+            if (lhs.m_Min > lhs.m_Max)
+            {
+                // Sign flipped
+                if (rhs < 0)
+                {
+                    int prevMin = lhs.m_Min;
+                    lhs.m_Min = lhs.m_Max;
+                    lhs.m_Max = prevMin;
+                }
+                // No sign flipping, clamp min
+                else
+                {
+                    lhs.m_Min = lhs.m_Max;
+                }
+            }
+
+            return lhs;
+        }
+        /// <summary>
+        /// Divides the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
+        /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
+        /// </summary>
+        public static MinMaxValueInt operator /(MinMaxValueInt lhs, int rhs)
+        {
+            lhs.m_Min /= rhs;
+            lhs.m_Max /= rhs;
+
+            if (lhs.m_Min > lhs.m_Max)
+            {
+                // Sign flipped
+                if (rhs < 0)
+                {
+                    int prevMin = lhs.m_Min;
+                    lhs.m_Min = lhs.m_Max;
+                    lhs.m_Max = prevMin;
+                }
+                // No sign flipping, clamp min
+                else
+                {
+                    lhs.m_Min = lhs.m_Max;
+                }
+            }
+
+            return lhs;
         }
 
         public static bool operator ==(MinMaxValueInt lhs, MinMaxValueInt rhs)

@@ -3,8 +3,8 @@ Shader "Custom/Unlit/UnlitTransparentColorShader"
 {
     Properties
     {
-        _Color("Main Color", Color) = (1,1,1,1)
-        _MainTex("Base (RGB) Trans (A)", 2D) = "white" {}
+        [MainColor] _Color("Main Color", Color) = (1,1,1,1)
+        [MainTexture] _MainTex("Base (RGB) Trans (A)", 2D) = "white" {}
     }
 
     SubShader
