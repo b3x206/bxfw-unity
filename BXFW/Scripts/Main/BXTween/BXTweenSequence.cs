@@ -1,11 +1,15 @@
-﻿using BXFW.Tweening.Events;
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.Collections;
+using BXFW.Tweening.Events;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace BXFW.Tweening
 {
+    /// Kinda suprised that this works.
+    /// This is a hack job of a sequencer and it does not integrate to the <see cref="BXTween"/> methods.
+    /// This will be fixed when the BXTween is refactored. (<see cref="BXTweenCore"/> notes on top)
     /// <summary>
     /// A list of tweens that can be run sequentially or programatically.
     /// </summary>
@@ -82,7 +86,7 @@ namespace BXFW.Tweening
         /// </summary>
         public float Duration
         {
-            get 
+            get
             {
                 float duration = 0f;
                 int checkPriority = 0;
@@ -133,6 +137,13 @@ namespace BXFW.Tweening
             if (ctx.IsRunning)
                 ctx.StopTween();
 
+            if (LastPriority <= -1)
+            {
+                Debug.LogWarning(string.Format("[BXTweenSequence::Join] Tried to join context {0} without any tweens appended. Appending first tween.", ctx));
+                Append(ctx);
+                return;
+            }
+
             m_Tweens.Add(new RunnableTweenContext(LastPriority, ctx));
         }
         /// <summary>
@@ -172,7 +183,7 @@ namespace BXFW.Tweening
         {
             if (ctx == null)
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::Prepend] Given context parameter is null.");
-            
+
             if (ctx.IsRunning)
                 ctx.StopTween();
 
@@ -188,7 +199,7 @@ namespace BXFW.Tweening
         /// Starts running the sequence.
         /// <br>Restarts running if the <see cref="IsRunning"/> is true.</br>
         /// </summary>
-        public void Run()
+        public void Play()
         {
             if (m_Tweens.Count <= 0)
             {
@@ -214,9 +225,9 @@ namespace BXFW.Tweening
             ITweenCTX longestDurationCtx = null;
             foreach (var runnable in m_Tweens.Where(rt => rt.priority == currentRunPriority))
             {
-                float longestDuration = longestDurationCtx != null ? 
+                float longestDuration = longestDurationCtx != null ?
                     (longestDurationCtx.Duration + longestDurationCtx.Delay) : float.NegativeInfinity;
-                
+
                 if ((runnable.tween.Duration + runnable.tween.Delay) > longestDuration)
                     longestDurationCtx = runnable.tween;
 
@@ -230,7 +241,7 @@ namespace BXFW.Tweening
             if (longestDurationCtx == null)
                 throw new NullReferenceException(string.Format("[BXTweenSequence::RunRecursive] Sequence id={0} does not have any tweens on it.", currentRunPriority));
 
-            longestDurationCtx.TweenCompleteAction += () => 
+            longestDurationCtx.TweenCompleteAction += () =>
             {
                 if (currentRunPriority <= LastPriority)
                 {
@@ -258,6 +269,31 @@ namespace BXFW.Tweening
             {
                 runnable.tween.ClearCompleteAction();
                 runnable.tween.StopTween();
+            }
+        }
+
+        /// <summary>
+        /// Creates a blank sequence.
+        /// </summary>
+        public BXTweenSequence() { }
+        /// <summary>
+        /// Reserves a capacity for the tweens.
+        /// </summary>
+        public BXTweenSequence(int capacity)
+        {
+            m_Tweens.Capacity = capacity;
+        }
+        /// <summary>
+        /// Adds the enumerable tweens to be run sequentially.
+        /// </summary>
+        public BXTweenSequence(IEnumerable<ITweenCTX> tweens)
+        {
+            int i = 0;
+            foreach (var ctx in tweens)
+            {
+                m_Tweens.Add(new RunnableTweenContext(i, ctx));
+
+                i++;
             }
         }
 
@@ -292,5 +328,13 @@ namespace BXFW.Tweening
         {
             return GetEnumerator();
         }
+        // idk what to make out of this method
+        // but this has a list soo
+        // maybe this may cause leaks if there's no references to the added tweens
+        // so also dispose those? or maybe get a weakref? idk man.
+        //public void Dispose()
+        //{
+        //    m_Tweens.Clear();
+        //}
     }
 }

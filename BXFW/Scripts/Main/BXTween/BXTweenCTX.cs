@@ -131,6 +131,11 @@ namespace BXFW.Tweening
         /// </summary>
         public BXTweenEaseSetMethod TimeSetLerp { get; private set; }
         public BXTweenSetMethod<T> SetterFunction { get; private set; }
+        /// <summary>
+        /// Called when the tween is run every time.
+        /// <br>It is also called in repeats.</br>
+        /// </summary>
+        public BXTweenMethod OnStartAction { get; private set; }
         public BXTweenMethod OnEndAction { get; private set; }
         /// <summary>
         /// Called when the tween is completed.
@@ -185,6 +190,27 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetEndingEvent(BXTweenUnityEvent Event)
         {
             OnEndActionUnityEvent = Event;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets an event to be called in start.
+        /// <br>This is called after the delay has been waited out.</br>
+        /// </summary>
+        public BXTweenCTX<T> SetStartingEvent(BXTweenMethod Event, VariableSetMode mode = VariableSetMode.Add)
+        {
+            switch (mode)
+            {
+                case VariableSetMode.Add:
+                    OnStartAction += Event;
+                    break;
+                case VariableSetMode.Equals:
+                    OnStartAction = Event;
+                    break;
+                case VariableSetMode.Subtract:
+                    OnStartAction -= Event;
+                    break;
+            }
 
             return this;
         }

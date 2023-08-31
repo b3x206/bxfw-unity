@@ -185,6 +185,9 @@ namespace BXFW.Tweening
                     }
                 }
 
+                if (ctx.OnStartAction != null)
+                    ctx.OnStartAction.Invoke();
+
                 // Main loop
                 float Elapsed = ctx.CurrentElapsed;
                 bool UseCustom = ctx.CustomTimeCurve != null;

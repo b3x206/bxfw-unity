@@ -26,6 +26,14 @@ namespace BXFW.Tweening
         /// </summary>
         public bool IsRunning { get; }
         /// <summary>
+        /// Type of the easing in this tween.
+        /// </summary>
+        public EaseType Easing { get; }
+        /// <summary>
+        /// The elapsed value of the tween context.
+        /// </summary>
+        public float CurrentElapsed { get; }
+        /// <summary>
         /// Called when the tween ends.
         /// </summary>
         public event BXTweenMethod TweenCompleteAction;
