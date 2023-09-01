@@ -218,17 +218,17 @@ namespace BXFW
         /// </summary>
         /// <param name="position">Rect positioning to draw the line.</param>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
-        /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
-        /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
+        /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
+        /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLine(Rect position, Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20)
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
             PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE, wordWrap = true };
 
             if (segments < 1)
                 segments = 2;
-            if ((from + PLOT_DRAW_EPSILON) >= to)
-                from = to - PLOT_DRAW_EPSILON;
+            if ((vFrom + PLOT_DRAW_EPSILON) >= vTo)
+                vFrom = vTo - PLOT_DRAW_EPSILON;
 
             // Draw dark box behind
             var guiPrevColor = GUI.color;
@@ -254,7 +254,7 @@ namespace BXFW
             {
                 // i is always 1 less then segments
                 float currentSegmentElapsed = (float)i / (segments - 1);
-                float lerpValue = Mathf.Lerp(from, to, currentSegmentElapsed);
+                float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
 
                 float plotValue = plotFunction(lerpValue);
 
@@ -281,12 +281,12 @@ namespace BXFW
             // Draw from/to text (x, positioned bottom)
             GUI.Label(
                 new Rect { x = position.x + PLOT_TEXT_PADDING_X, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
-                from.ToString("0.0#"), PlotSmallerFontStyle
+                vFrom.ToString("0.0#"), PlotSmallerFontStyle
             ); // left
             PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
             GUI.Label(
                 new Rect { x = position.xMax - 32f, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
-                to.ToString("0.0#"), PlotSmallerFontStyle
+                vTo.ToString("0.0#"), PlotSmallerFontStyle
             ); // right
             PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
 
@@ -316,10 +316,10 @@ namespace BXFW
             //     |
             //     |
             // Y divider
-            if (from < 0f && to > 0f)
+            if (vFrom < 0f && vTo > 0f)
             {
                 // xMin is on the left
-                float yDividerXpos = plotPosition.xMin + (plotPosition.width * Mathf.InverseLerp(from, to, 0f));
+                float yDividerXpos = plotPosition.xMin + (plotPosition.width * Mathf.InverseLerp(vFrom, vTo, 0f));
                 DrawLine(new Vector2(yDividerXpos, plotPosition.yMin), new Vector2(yDividerXpos, plotPosition.yMax), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
             }
             // X divider
@@ -337,12 +337,12 @@ namespace BXFW
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
                 // Initial plot position
-                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotFunction(from)))
+                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotFunction(vFrom)))
             );
             for (int i = 1; i < segments + 1; i++)
             {
                 float currentSegmentElapsed = (float)i / segments;
-                float lerpValue = Mathf.Lerp(from, to, currentSegmentElapsed);
+                float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
                 float plotValue = plotFunction(lerpValue);
 
                 float currentX = plotPosition.x + (currentSegmentElapsed * plotPosition.width);
@@ -366,10 +366,10 @@ namespace BXFW
         /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>
         /// </summary>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
-        /// <param name="from">The first value to feed the plot function while linearly interpolating.</param>
-        /// <param name="to">The last value to feed the plot function while linearly interpolating.</param>
+        /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
+        /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLineLayout(Func<float, float> plotFunction, float from = 0f, float to = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
+        public static void PlotLineLayout(Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
             Rect reservedRect = GetOptionalGUILayoutRect(PLOT_LINE_LAYOUTED_MIN_WIDTH, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
@@ -379,7 +379,7 @@ namespace BXFW
             reservedRect.y += 2f;
             reservedRect.height -= 4f;
 
-            PlotLine(reservedRect, plotFunction, from, to, lineWidth, segments);
+            PlotLine(reservedRect, plotFunction, vFrom, vTo, lineWidth, segments);
         }
 
         /// <summary>

@@ -1,10 +1,12 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace BXFW
 {
+    /// This camera component does not depend on any GameObject followings, so it can solely update in the 'Update' method.
     /// <summary>
     /// Camera that can freely move around the scene.
+    /// <br>The movement keys are WASD or arrow keys and the user can use the mouse to look around.</br>
     /// </summary>
     [RequireComponent(typeof(Transform))]
     public class FreeMoveCamera : MonoBehaviour
@@ -24,8 +26,8 @@ namespace BXFW
             }
         }
         [SerializeField] private bool isEnabled = true;
-        public bool CameraLookRawInput = true;
-        public float CameraLookSensitivity = 10f;
+        public bool LookRawInput = true;
+        public float LookSensitivity = 10f;
         public float CameraMoveSpeed = 10f;
         public float BoostedCameraMoveSpeedAdd = 10f;
         public Vector2 MinMaxXRotation = Vector2.zero;
@@ -44,20 +46,25 @@ namespace BXFW
         public CustomInputEvent InputMoveAscend         = new KeyCode[] { KeyCode.E };
         [InspectorLine(.4f, .4f, .4f)]
         public CustomInputEvent InputEventDisableEnable = new KeyCode[] { KeyCode.F8 };
-
-        public Transform TargetTransform { get; private set; }
-        private Quaternion originalRotation;
-        private bool isInit = false;
+        
+        /// <summary>
+        /// The target transform to move around.
+        /// </summary>
+        public Transform TargetTransform { get; protected set; }
+        protected Quaternion originalRotation;
+        protected bool isInit = false;
         private void Start()
         {
-            if (!IsEnabled) return;
+            if (!IsEnabled)
+                return;
 
             // Initilaze resets quaternion rotation.
             Initilaze();
         }
-        private void Initilaze()
+        protected virtual void Initilaze()
         {
-            if (isInit) return;
+            if (isInit)
+                return;
 
             TargetTransform = MoveTransform == null ? GetComponent<Transform>() : MoveTransform;
 
@@ -67,14 +74,14 @@ namespace BXFW
             isInit = true;
         }
 
-        private float GetMouseAxis(int Axis)
+        protected float GetMouseAxis(int Axis)
         {
             var AxisName = InputLookAxis[Axis];
-            return CameraLookRawInput ? Input.GetAxisRaw(AxisName) : Input.GetAxis(AxisName);
+            return LookRawInput ? Input.GetAxisRaw(AxisName) : Input.GetAxis(AxisName);
         }
 
-        private float CurrentRotationX = 0f, CurrentRotationY = 0f;
-        private void Update()
+        protected float CurrentRotationX = 0f, CurrentRotationY = 0f;
+        protected virtual void Update()
         {
             if (Input.GetMouseButton(1))
             {
@@ -85,8 +92,8 @@ namespace BXFW
                 }
 
                 // Rotate camera
-                CurrentRotationX += GetMouseAxis(0) * CameraLookSensitivity;
-                CurrentRotationY += GetMouseAxis(1) * CameraLookSensitivity;
+                CurrentRotationX += GetMouseAxis(0) * LookSensitivity;
+                CurrentRotationY += GetMouseAxis(1) * LookSensitivity;
                 if (MinMaxXRotation.x != 0f && MinMaxXRotation.y != 0f)
                 {
                     CurrentRotationX = Mathf.Clamp(CurrentRotationX, MinMaxXRotation.x, MinMaxXRotation.y);
@@ -126,6 +133,7 @@ namespace BXFW
                 {
                     MoveVec += Vector3.up;
                 }
+                // Normalize movement to make 'r = 1' and to make diagonal movements consistent
                 MoveVec = MoveVec.normalized;
 
                 Vector3 MoveTranslate;

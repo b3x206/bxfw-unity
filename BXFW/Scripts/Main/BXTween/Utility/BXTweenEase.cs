@@ -7,7 +7,7 @@ namespace BXFW.Tweening
     /// <summary>
     /// Ease type.
     /// </summary>
-    /// See this website explaining ease types : https://easings.net/
+    /// See this website showing ease types : https://easings.net/
     public enum EaseType
     {
         Linear,
@@ -49,7 +49,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// All hardcoded ease methods in a dictionary.
         /// </summary>
-        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> EaseMethods = new Dictionary<EaseType, BXTweenEaseSetMethod>
+        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>
         {
             // None = Linear
             // The option 'None' was added to detect default settings.
@@ -129,8 +129,8 @@ namespace BXFW.Tweening
         }
         private static float QuartOut(float t)
         {
-            var tInv = 1f - t; // inverted t (assuming t = clamped between 0-1)
-            var tVal = 1 - (tInv * tInv * tInv * tInv);
+            var tSub = 1f - t; // inverted t (assuming t = clamped between 0-1)
+            var tVal = 1f - (tSub * tSub * tSub * tSub);
             return tVal;
         }
         private static float QuartInOut(float t)

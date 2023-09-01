@@ -321,7 +321,7 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            BXTweenEaseSetMethod EaseMethod = BXTweenEase.EaseMethods[Easing];
+            BXTweenEaseSetMethod EaseMethod = BXTweenEase.Methods[Easing];
             TimeSetLerp = (float progress) => { return Clamp01 ? Mathf.Clamp01(EaseMethod.Invoke(progress)) : EaseMethod.Invoke(progress); };
 
             return this;
