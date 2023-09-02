@@ -56,7 +56,7 @@ namespace BXFW.Tweening.Next
         public event BXSSetterAction<IBXSTweenRunner> OnRunnerFixedTick;
         /// <summary>
         /// Should be invoked when the runner is closed/destroyed/disposed.
-        /// <br>Hook into OnApplicationQuit if unsure.</br>
+        /// <br>Hook into OnApplicationQuit+OnDestroy if unsure.</br>
         /// </summary>
         public event BXSExitAction OnRunnerExit;
 

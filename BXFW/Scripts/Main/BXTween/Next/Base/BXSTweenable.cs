@@ -422,6 +422,7 @@ namespace BXFW.Tweening.Next
 
             IsPlaying = true;
             OnStartAction?.Invoke();
+            BXSTween.RunningTweens.Add(this);
 
             if (!HasPlayedOnce)
                 HasPlayedOnce = true;
@@ -446,6 +447,7 @@ namespace BXFW.Tweening.Next
         {
             IsPlaying = false;
             OnEndAction?.Invoke();
+            BXSTween.RunningTweens.Remove(this);
 
             Reset();
         }

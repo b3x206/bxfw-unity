@@ -43,32 +43,63 @@ namespace BXFW.Tweening.Next
         /// The actual list of all running tweens.
         /// <br>The '<see cref="IReadOnlyList{T}"/>' is only used for making 'BXSTweenable's non-assignable.</br>
         /// </summary>
-        private static List<BXSTweenable> m_RunningTweens = new List<BXSTweenable>();
+        public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>();
+
         /// <summary>
-        /// List of all assigned running tweens.
+        /// Stops all tweens and clears BXSTween.
         /// </summary>
-        public static IReadOnlyList<BXSTweenable> RunningTweens
+        public static void Clear()
         {
-            get
+            for (int i = 0; i < RunningTweens.Count; i++)
             {
-                return m_RunningTweens;
+                BXSTweenable tween = RunningTweens[i];
+                if (tween == null)
+                    continue;
+
+                tween.Stop();
             }
+
+            RunningTweens.Clear();
         }
 
         #region IBXSRunner
-        private static void OnTweenRunnerTick(IBXSTweenRunner _)
+        private static void OnTweenRunnerTick(IBXSTweenRunner runner)
         {
-            // Iterate all tweens (TODO 1)
+            // Iterate all tweens
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                // Run those tweens (if the tick is suitable)
+                BXSTweenable tween = RunningTweens[i];
 
-            // Run those tweens (TODO 2)
-
-            // Note : this will require a interpolator implementation? (with the control of this parent method)
+                if (tween.TickType == TickType.Variable)
+                {
+                    RunTweenable(runner, tween);
+                }
+            }
         }
-        private static void OnTweenRunnerFixedTick(IBXSTweenRunner _)
+        private static void OnTweenRunnerFixedTick(IBXSTweenRunner runner)
+        {
+            // Iterate all tweens
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                // Run those tweens (if the tick is suitable)
+                BXSTweenable tween = RunningTweens[i];
+
+                if (tween.TickType == TickType.Fixed)
+                {
+                    RunTweenable(runner, tween);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs a tweenable.
+        /// <br>The <paramref name="tween"/> itself contains the state.</br>
+        /// </summary>
+        private static void RunTweenable(IBXSTweenRunner runner, BXSTweenable tween)
         {
 
         }
-
 
         /// <summary>
         /// The exit method for the <see cref="MainRunner"/>.
@@ -78,6 +109,10 @@ namespace BXFW.Tweening.Next
             // The tween is dead, set 'MainRunner' to null
 
             // If we are quitting app as well clear the BXSTween runnings.
+            if (applicationQuit)
+            {
+                Clear(); 
+            }
         }
 
         /// <summary>
