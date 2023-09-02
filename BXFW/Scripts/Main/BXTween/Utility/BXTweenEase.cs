@@ -5,9 +5,12 @@ using System.Collections.Generic;
 namespace BXFW.Tweening
 {
     /// <summary>
-    /// Ease type.
+    /// Easing type of the tweenings, the easing functions are gathered from the <see cref="BXTweenEase"/>.
+    /// <br>
+    /// You can see an approximation curve in the Window &gt; BXTween &gt; Settings by selecting 
+    /// the default curve or look at the website https://easings.net/
+    /// </br>
     /// </summary>
-    /// See this website showing ease types : https://easings.net/
     public enum EaseType
     {
         Linear,
@@ -42,12 +45,13 @@ namespace BXFW.Tweening
 
     /// <summary>
     /// Includes the hard coded ease types.
-    /// To create custom ease types use the <see cref="AnimationCurve"/>. (in BXTween context field : <see cref="BXTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
+    /// To create custom ease curves use the <see cref="AnimationCurve"/>. (in BXTween context field : <see cref="BXTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
     /// </summary>
     public static class BXTweenEase
     {
         /// <summary>
         /// All hardcoded ease methods in a dictionary.
+        /// <br>All values from the <see cref="EaseType"/> enumeration exists in here.</br>
         /// </summary>
         public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>
         {
@@ -84,8 +88,7 @@ namespace BXFW.Tweening
         };
 
         #region Ease Methods
-        // Note : All ease methods change between -Infinity~Infinity.
-        // Clamping is done by setting a bool.
+        // Note : All ease methods are unclamped.
         private static float Linear(float t)
         {
             var tVal = t;
@@ -129,8 +132,8 @@ namespace BXFW.Tweening
         }
         private static float QuartOut(float t)
         {
-            var tSub = 1f - t; // inverted t (assuming t = clamped between 0-1)
-            var tVal = 1f - (tSub * tSub * tSub * tSub);
+            var tInv = 1f - t; // inverted t (assuming t = clamped between 0-1)
+            var tVal = 1f - (tInv * tInv * tInv * tInv);
             return tVal;
         }
         private static float QuartInOut(float t)

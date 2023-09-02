@@ -38,7 +38,7 @@ namespace BXFW.Tweening.Next
         /// <br><see cref="BXSTween"/> hooks into this method and unhooks from this method when the application is closed.</br>
         /// <br>Hook into Update/FixedUpdate if unsure.</br>
         /// </summary>
-        public event BXSAction<IBXSTweenRunner> OnRunnerTick;
+        public event BXSSetterAction<IBXSTweenRunner> OnRunnerTick;
         // Maybe seperate these as IBXSTweenFixedTicker? or keep these.
         /// <summary>
         /// Whether if this runner supports <see cref="OnRunnerFixedTick"/>.
@@ -53,7 +53,7 @@ namespace BXFW.Tweening.Next
         /// A fixed tick method.
         /// <br>This should only be used if the <see cref="SupportsFixedTick"/> is true.</br>
         /// </summary>
-        public event BXSAction<IBXSTweenRunner> OnRunnerFixedTick;
+        public event BXSSetterAction<IBXSTweenRunner> OnRunnerFixedTick;
         /// <summary>
         /// Should be invoked when the runner is closed/destroyed/disposed.
         /// <br>Hook into OnApplicationQuit if unsure.</br>

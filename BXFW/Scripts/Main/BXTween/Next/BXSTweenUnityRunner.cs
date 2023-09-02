@@ -1,4 +1,4 @@
-#if UNITY_2019_3_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
 using UnityEngine;
 
 namespace BXFW.Tweening.Next

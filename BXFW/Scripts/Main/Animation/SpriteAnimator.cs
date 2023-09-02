@@ -132,16 +132,20 @@ namespace BXFW
         }
         private void Update()
         {
-            if (useFixedUpdate) return;
-            if (!IsPlaying) return;
+            if (useFixedUpdate)
+                return;
+            if (!IsPlaying)
+                return;
 
             timer += overrideTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
             UpdateAnimator();
         }
         private void FixedUpdate()
         {
-            if (!useFixedUpdate) return;
-            if (!IsPlaying) return;
+            if (!useFixedUpdate)
+                return;
+            if (!IsPlaying)
+                return;
 
             timer += overrideTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
             UpdateAnimator();
@@ -159,7 +163,8 @@ namespace BXFW
             var frameMS = CurrentAnimation.frameMS;
             var loop = CurrentAnimation.loop;
 
-            if (frameMS <= 0f) return;
+            if (frameMS <= 0f)
+                return;
 
             if (timer >= frameMS)
             {
@@ -215,7 +220,7 @@ namespace BXFW
             SetInitialObjectSprite(CurrentAnimation[CurrentFrame]);
         }
         /// <summary>
-        /// Plays the <see cref="animations"/> with matching id.
+        /// Plays the <see cref="SpriteAnimSequence"/> in <see cref="animations"/> with matching id.
         /// </summary>
         public void Play(string id)
         {
@@ -232,7 +237,7 @@ namespace BXFW
                 GatherInitialSprite();
             }
 
-            // Brute force the finding (bruh)
+            // Find sequentially as animations are not sorted in an ordinal way or at all.
             bool foundID = false;
             for (int i = 0; i < animations.Length; i++)
             {

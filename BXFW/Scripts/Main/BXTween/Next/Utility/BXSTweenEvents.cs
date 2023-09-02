@@ -5,7 +5,7 @@ namespace BXFW.Tweening.Next.Events
     /// <summary>
     /// A way of setting the event value if plausible.
     /// </summary>
-    public enum ActionSetMode
+    public enum EventSetMode
     {
         Add, Equals, Subtract
     }
@@ -14,7 +14,7 @@ namespace BXFW.Tweening.Next.Events
     /// A blank void action.
     /// </summary>
     public delegate void BXSAction();
-    
+
     /// <summary>
     /// A boolean action that returns a condition.
     /// </summary>
@@ -35,15 +35,21 @@ namespace BXFW.Tweening.Next.Events
     public delegate void BXSExitAction(bool applicationQuit);
 
     /// <summary>
-    /// A action called to get a value for a tween.
+    /// A action called to get a value out.
     /// </summary>
     public delegate T BXSGetterAction<out T>();
-
     /// <summary>
     /// A void action that takes a generic parameter with value.
-    /// <br>Can be used for a setter action or a ticker method with float only.</br>
     /// </summary>
-    public delegate void BXSAction<in T>(T value);
+    public delegate void BXSSetterAction<in T>(T value);
+    /// <summary>
+    /// A linear interpolation method. The <paramref name="time"/> parameter is the value to ease.
+    /// </summary>
+    public delegate T BXSLerpAction<T>(T a, T b, float time);
+    /// <summary>
+    /// A math action used for adding/subtracting/dividing/multiplying.
+    /// </summary>
+    public delegate T BXSMathAction<T>(T lhs, T rhs);
 
     /// <summary>
     /// A ease action.

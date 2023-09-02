@@ -356,6 +356,9 @@ namespace BXFW
             }
         }
 
+        // TODO : PlotLine with pixel filling instead of calling 'DrawLine', but without using pixels put into a Texture2D and just using subpixel sized meshes?
+        //public static void PlotLineNoSegment(Rect position, Func<float>)
+
         private const float PLOT_LINE_LAYOUTED_HEIGHT = 48;
         private const float PLOT_LINE_LAYOUTED_MIN_WIDTH = 60;
         /// <summary>
