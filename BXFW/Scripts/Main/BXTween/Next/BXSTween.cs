@@ -13,10 +13,13 @@ namespace BXFW.Tweening.Next
     /// TODO : A lot of things
     /// But first to decide what things i am gonna do.
     /// Probably it is so that 'BXSTweenable' implementing context can have a lot of features and controlability and the rest will be more normal.
+    /// * Error handling for run tweens
+    /// * A logger class for BXFW (general purpose)
+    /// 
     /// ---------
     /// <summary>
     /// A simpler tick based tweening engine.
-    /// <br>This tweening engine focuses on flexibility and simplicity.</br>
+    /// <br>This tweening engine focuses on flexibility. (it won't be simple due to the required features)</br>
     /// <br/>
     /// <br><see cref="BXSTween"/> is mostly going to be similar to <see cref="BXTween"/>, so you will see the reuse of most parts that are fine.</br>
     /// <br/>
@@ -46,6 +49,30 @@ namespace BXFW.Tweening.Next
         public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>();
 
         /// <summary>
+        /// Hooks the tween runner.
+        /// </summary>
+        private static void HookTweenRunner(IBXSTweenRunner runner)
+        {
+            runner.OnRunnerExit += OnTweenRunnerExit;
+            runner.OnRunnerTick += OnTweenRunnerTick;
+            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+        }
+
+        /// <summary>
+        /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/>.
+        /// </summary>
+        public static void Initialize(IBXSTweenRunner runner)
+        {
+            // Call this first to call all events on the 'OnRunnerExit'
+            MainRunner?.Kill();
+
+            // Set the 'MainRunner'
+            MainRunner = runner;
+            // Hook the tween runner
+            HookTweenRunner(runner);
+        }
+
+        /// <summary>
         /// Stops all tweens and clears BXSTween.
         /// </summary>
         public static void Clear()
@@ -71,7 +98,7 @@ namespace BXFW.Tweening.Next
                 // Run those tweens (if the tick is suitable)
                 BXSTweenable tween = RunningTweens[i];
 
-                if (tween.TickType == TickType.Variable)
+                if (tween.ActualTickType == TickType.Variable)
                 {
                     RunTweenable(runner, tween);
                 }
@@ -85,7 +112,7 @@ namespace BXFW.Tweening.Next
                 // Run those tweens (if the tick is suitable)
                 BXSTweenable tween = RunningTweens[i];
 
-                if (tween.TickType == TickType.Fixed)
+                if (tween.ActualTickType == TickType.Fixed)
                 {
                     RunTweenable(runner, tween);
                 }
@@ -96,9 +123,101 @@ namespace BXFW.Tweening.Next
         /// Runs a tweenable.
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
         /// </summary>
-        private static void RunTweenable(IBXSTweenRunner runner, BXSTweenable tween)
+        public static void RunTweenable(IBXSTweenRunner runner, BXSTweenable tween)
         {
+            // Checks
+            if (!tween.IsValid)
+            {
+                tween.Stop();
+                RunningTweens.Remove(tween);
+                // TODO : Debug Log here
+                return;
+            }
 
+            // DeltaTime
+            float deltaTime;
+            // unity didn't support the switch expression for a long time, so no switch expression.
+            switch (tween.ActualTickType)
+            {
+                default:
+                case TickType.Variable:
+                    deltaTime = runner.UnscaledDeltaTime;
+                    break;
+                case TickType.Fixed:
+                    deltaTime = runner.FixedUnscaledDeltaTime;
+                    break;
+            };
+            if (!tween.IgnoreTimeScale)
+            {
+                deltaTime *= runner.TimeScale;
+            }
+            deltaTime *= tween.Speed;
+
+            // Tickability
+            if (tween.TickConditionAction != null)
+            {
+                TickConditionSuspendType suspendType = tween.TickConditionAction();
+
+                switch (suspendType)
+                {
+                    case TickConditionSuspendType.Tick:
+                        return;
+                    case TickConditionSuspendType.Pause:
+                        tween.Pause();
+                        return;
+                    case TickConditionSuspendType.Stop:
+                        tween.Stop();
+                        return;
+
+                    default:
+                    case TickConditionSuspendType.None:
+                        break;
+                }
+            }
+
+            bool isFirstRun = tween.CurrentLoop == tween.LoopCount;
+
+            // Delay
+            if (tween.DelayElapsed < 1f)
+            {
+                // Instant finish + wait one frame
+                if (!tween.IsDelayed)
+                {
+                    tween.DelayElapsed = 1f;
+                }
+
+                // Elapse delay further
+                tween.DelayElapsed += deltaTime / tween.Delay;
+
+                if (tween.DelayElapsed >= 1f && isFirstRun)
+                {
+                    tween.OnStartAction?.Invoke();
+                }
+                return;
+            }
+
+            // Tweening + Elapsing
+            if (tween.CurrentElapsed < 1f)
+            {
+                tween.EvaluateTween(tween.CurrentElapsed);
+                tween.OnTickAction?.Invoke();
+                tween.CurrentElapsed += deltaTime / tween.Duration;
+
+                return;
+            }
+
+            // Looping
+            if (tween.CurrentLoop != 0)
+            {
+                if (tween.CurrentLoop > 0)
+                    tween.CurrentLoop--;
+
+                tween.OnRepeatAction?.Invoke();
+                tween.Reset();
+                return;
+            }
+
+            tween.Stop();
         }
 
         /// <summary>
@@ -106,37 +225,13 @@ namespace BXFW.Tweening.Next
         /// </summary>
         private static void OnTweenRunnerExit(bool applicationQuit)
         {
-            // The tween is dead, set 'MainRunner' to null
-
             // If we are quitting app as well clear the BXSTween runnings.
             if (applicationQuit)
             {
                 Clear(); 
             }
-        }
 
-        /// <summary>
-        /// Hooks the tween runner.
-        /// </summary>
-        private static void HookTweenRunner(IBXSTweenRunner runner)
-        {
-            runner.OnRunnerExit += OnTweenRunnerExit;
-            runner.OnRunnerTick += OnTweenRunnerTick;
-            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
-        }
-
-        /// <summary>
-        /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/>.
-        /// </summary>
-        public static void Initialize(IBXSTweenRunner runner)
-        {
-            // Call this first to call all events on the 'OnRunnerExit'
-            MainRunner?.Kill();
-
-            // Set the 'MainRunner'
-            MainRunner = runner;
-            // Hook the tween runner
-            HookTweenRunner(runner);
+            MainRunner = null;
         }
         #endregion
     }

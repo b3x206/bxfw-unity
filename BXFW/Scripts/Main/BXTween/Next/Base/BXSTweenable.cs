@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
+using System.Text;
 
 /// -- To make this file compatible with other things :
 /// A : 'using' Alias 'SerializeField' with something that marks hidden fields as serializable (i.e 'ExportAttribute' in godot)
@@ -58,7 +59,7 @@ namespace BXFW.Tweening.Next
         /// <inheritdoc cref="Duration"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
         [SerializeField]
-        protected float m_Duration;
+        protected float m_Duration = 0f;
 
         /// <summary>
         /// Whether if the tween is a delayed one. (Delay &gt; 0f)
@@ -72,7 +73,7 @@ namespace BXFW.Tweening.Next
         /// <inheritdoc cref="Delay"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
         [SerializeField]
-        protected float m_Delay;
+        protected float m_Delay = 0f;
 
         /// <summary>
         /// Returns whether if this tween could loop (LoopCount &gt; 0)
@@ -153,7 +154,7 @@ namespace BXFW.Tweening.Next
         [SerializeField]
         protected AnimationCurve m_EaseCurve;
         /// <summary>
-        /// Evaluates the current easing curve.
+        /// Evaluates the current selected easing curve.
         /// <br>This respects the <see cref="Clamp01EasingSetter"/> and <see cref="UseEaseCurve"/> settings.</br>
         /// </summary>
         protected virtual float EvaluateEasing(float t)
@@ -164,6 +165,22 @@ namespace BXFW.Tweening.Next
 
             return returnValue;
         }
+
+        /// <summary>
+        /// The speed that this tween will run. 1 is normal speed and default value.
+        /// <br>This value can't be negative. It being negative will cause the <see cref="BXSTween.RunTweenable(IBXSTweenRunner, BXSTweenable)"/>
+        /// to hang on this tween, but won't make this tween invalid.</br>
+        /// </summary>
+        public float Speed
+        {
+            get { return m_Speed; }
+            protected set { m_Speed = Math.Max(0f, value); }
+        }
+        /// <summary>
+        /// <inheritdoc cref="Speed"/>
+        /// </summary>
+        [SerializeField, Clamp(0f, 65535f)]
+        private float m_Speed = 1f;
 
         /// <summary>
         /// Whether if this tween is relative to it's ending value.
@@ -212,6 +229,13 @@ namespace BXFW.Tweening.Next
         protected TickType m_TickType = TickType.Variable;
 
         /// <summary>
+        /// Whether if this tween should ignore timeScale while updating.
+        /// </summary>
+        public bool IgnoreTimeScale => m_IgnoreTimeScale;
+        [SerializeField]
+        protected bool m_IgnoreTimeScale = false;
+
+        /// <summary>
         /// ID of the given tweening object.
         /// <br>If this is <see cref="BXSTween.NoID"/>, no object conditions were attached 
         /// + this tween has no id and can't be accessed except for code references.</br>
@@ -234,25 +258,33 @@ namespace BXFW.Tweening.Next
         // -- Events
         // The events can be changed either manually or by using the setter methods by classes overriding this
         /// <summary>
-        /// Called on the start of the tween.
+        /// Called with <see cref="Play"/> of the tween.
         /// </summary>
-        public event BXSAction OnStartAction;
+        public BXSAction OnPlayAction;
+        /// <summary>
+        /// Called on the start of the tween once.
+        /// <br>After the <see cref="Delay"/> has been waited out.</br>
+        /// </summary>
+        public BXSAction OnStartAction;
         /// <summary>
         /// Called every tick of this tween.
         /// </summary>
-        public event BXSAction OnUpdateAction;
-        /// <summary>
-        /// The <see cref="OnUpdateAction"/>, but can be called by the BXFW tweening stuff.
-        /// </summary>
-        internal BXSAction CallableUpdateAction => OnUpdateAction;
+        public BXSAction OnTickAction;
         /// <summary>
         /// Called when the tween is to be paused.
+        /// <br><see cref="Pause"/> function is one of the triggers.</br>
         /// </summary>
-        public event BXSAction OnPauseAction;
+        public BXSAction OnPauseAction;
         /// <summary>
-        /// Called on the end.
+        /// Called when the tween repeats. (with the same priority as <see cref="OnEndAction"/>)
+        /// <br>The tween is not reset when this is called, but it has to be reset.</br>
+        /// <br>This DOES NOT get called when the tween completely ends, use <see cref="OnEndAction"/> for that.</br>
         /// </summary>
-        public event BXSAction OnEndAction;
+        public BXSAction OnRepeatAction; 
+        /// <summary>
+        /// Called when the tween completely ends.
+        /// </summary>
+        public BXSAction OnEndAction;
 
         // -- Control Events
         /// <summary>
@@ -262,27 +294,6 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public BXSTickConditionAction TickConditionAction { get; protected set; }
 
-        /// <summary>Sets the <see cref="OnStartAction"/>.</summary>
-        protected void SetStartActionValue(BXSAction value)
-        {
-            OnStartAction = value;
-        }
-        /// <summary>Sets the <see cref="OnUpdateAction"/>.</summary>
-        protected void SetUpdateActionValue(BXSAction value)
-        {
-            OnUpdateAction = value;
-        }
-        /// <summary>Sets the <see cref="OnPauseAction"/>.</summary>
-        protected void SetPauseActionValue(BXSAction value)
-        {
-            OnPauseAction = value;
-        }
-        /// <summary>Sets the <see cref="OnEndAction"/>.</summary>
-        protected void SetEndActionValue(BXSAction value)
-        {
-            OnEndAction = value;
-        }
-
         /// <summary>
         /// Clears the <see cref="OnStartAction"/>
         /// </summary>
@@ -291,11 +302,11 @@ namespace BXFW.Tweening.Next
             OnStartAction = null;
         }
         /// <summary>
-        /// Clears the <see cref="OnUpdateAction"/>.
+        /// Clears the <see cref="OnTickAction"/>.
         /// </summary>
         public void ClearUpdateAction()
         {
-            OnUpdateAction = null;
+            OnTickAction = null;
         }
         /// <summary>
         /// Clears the <see cref="OnPauseAction"/>.
@@ -339,16 +350,17 @@ namespace BXFW.Tweening.Next
         /// Otherwise it will be instantly set to 1 if there's no delay (except for a single frame delay for all tweens)
         /// </br>
         /// </summary>
-        public float DelayElapsed { get; protected set; }
+        public float DelayElapsed { get; protected internal set; }
         /// <summary>
         /// The current elapsed value for this tween.
+        /// <br>This value only resets when the <see cref="Reset"/> is called, which is done by the stop action.</br>
         /// </summary>
-        public float CurrentElapsed { get; protected set; }
+        public float CurrentElapsed { get; protected internal set; }
         /// <summary>
         /// The remaining loops that this tween has.
         /// <br>Only decrements until the 0.</br>
         /// </summary>
-        public int CurrentLoop { get; protected set; } = 0;
+        public int CurrentLoop { get; protected internal set; } = 0;
         /// <summary>
         /// Whether if the tween has started.
         /// </summary>
@@ -358,6 +370,10 @@ namespace BXFW.Tweening.Next
         /// <br>This depends on several factors, such as whether if the tween was elasped at all and if it is running currently or not.</br>
         /// </summary>
         public bool IsPaused => !IsPlaying && (DelayElapsed > float.Epsilon || CurrentElapsed > float.Epsilon);
+        /// <summary>
+        /// Whether if the tweenable is valid.
+        /// </summary>
+        public virtual bool IsValid => true;
 
         /// <summary>
         /// <inheritdoc cref="IsTargetValuesSwitched"/>
@@ -391,10 +407,10 @@ namespace BXFW.Tweening.Next
 
         // -- Methods
         /// <summary>
-        /// The tween value to be evaluated. Use the setter here.
+        /// The tween value to be evaluated. Do the interpolation in this function here.
         /// </summary>
-        /// <param name="t">A linear value that goes from 0-&gt;1</param>
-        protected internal abstract void EvaluateTween(float t);
+        /// <param name="t">A linear value that goes from 0-&gt;1. You can set this to <see cref="CurrentElapsed"/> or your custom elapsing variable.</param>
+        public abstract void EvaluateTween(float t);
 
         /// <summary>
         /// Copies the values of <paramref name="tweenable"/> to this method. (everything except the State values)
@@ -405,7 +421,28 @@ namespace BXFW.Tweening.Next
             where T : BXSTweenable
         {
             // Copy the base values to this
-            
+            m_Duration = tweenable.m_Duration;
+            m_Delay = tweenable.m_Delay;
+            m_LoopCount = tweenable.m_LoopCount;
+            m_LoopType = tweenable.m_LoopType;
+            m_Ease = tweenable.m_Ease;
+            m_EaseCurve = tweenable.m_EaseCurve;
+            m_Speed = tweenable.m_Speed;
+            m_IsEndValueRelative = tweenable.m_IsEndValueRelative;
+            m_Clamp01EasingSetter = tweenable.m_Clamp01EasingSetter;
+
+            m_TickType = tweenable.m_TickType;
+            m_IgnoreTimeScale = tweenable.m_IgnoreTimeScale;
+            m_ID = tweenable.m_ID;
+            m_IDObject = tweenable.m_IDObject;
+
+            OnPlayAction = tweenable.OnPlayAction;
+            OnStartAction = tweenable.OnStartAction;
+            OnTickAction = tweenable.OnTickAction;
+            OnRepeatAction = tweenable.OnRepeatAction;
+            OnPauseAction = tweenable.OnPauseAction;
+            OnEndAction = tweenable.OnEndAction;
+            TickConditionAction = tweenable.TickConditionAction;
 
             // Other values will be copied by the override casting the values to itself...
         }
@@ -421,7 +458,7 @@ namespace BXFW.Tweening.Next
                 Stop();
 
             IsPlaying = true;
-            OnStartAction?.Invoke();
+            OnPlayAction?.Invoke();
             BXSTween.RunningTweens.Add(this);
 
             if (!HasPlayedOnce)
@@ -451,16 +488,61 @@ namespace BXFW.Tweening.Next
 
             Reset();
         }
-        
         /// <summary>
-        /// Resets the state. (like the elapsed, the current loop count, whether if values are switched etc.)
+        /// Resets the state. (like the elapsed, the current loop count [only resets when !<see cref="IsPlaying"/>], whether if values are switched etc.)
+        /// <br>Calling this while the tween is playing will reset all progress.</br>
         /// </summary>
-        protected virtual void Reset()
+        public virtual void Reset()
         {
             DelayElapsed = 0f;
             CurrentElapsed = 0f;
-            CurrentLoop = LoopCount;
+            if (!IsPlaying)
+                CurrentLoop = LoopCount;
             IsTargetValuesSwitched = false;
+        }
+
+        /// <summary>
+        /// Converts a <see cref="BXSTweenable"/> to string.
+        /// <br>NOTE: Only use this for debugging, this will return a large string!</br>
+        /// </summary>
+        public override string ToString()
+        {
+            return ToString(false);
+        }
+        /// <summary>
+        /// Converts a <see cref="BXSTweenable"/> to string.
+        /// </summary>
+        /// <param name="simpleString">Whether to return a shorter, simpler string. Use this option if you are gonna call this method often.</param>
+        public virtual string ToString(bool simpleString)
+        {
+            if (simpleString)
+            {
+                return $"[BXSTweenable] Duration={m_Duration}, Delay={m_Delay}, Loops={m_LoopCount}, Speed={m_Speed}, ID={m_ID}, IDObj={m_IDObject}";
+            }
+
+            StringBuilder sb = new StringBuilder(512);
+            sb.Append("[BXSTweenable] ")
+                .Append("Duration=").Append(m_Duration)
+                .Append(", Delay=").Append(m_Delay)
+                .Append(", LoopCount=").Append(m_LoopCount)
+                .Append(", Ease=").Append(m_Ease)
+                .Append(", EaseCurve=").Append(m_EaseCurve)
+                .Append(", Speed=").Append(m_Speed)
+                .Append(", IgnoreTimeScale=").Append(m_IgnoreTimeScale)
+                .Append(", EndValueRelative=").Append(m_IsEndValueRelative)
+                .Append(", Clamp01Easing=").Append(m_Clamp01EasingSetter)
+                .Append(", TickType=").Append(m_TickType)
+                .Append(", ID=").Append(m_ID)
+                .Append(", IDObject=").Append(m_IDObject)
+                .Append(", PlayAction=").Append(OnPlayAction)
+                .Append(", StartAction=").Append(OnStartAction)
+                .Append(", UpdateAction=").Append(OnTickAction)
+                .Append(", PauseAction=").Append(OnPauseAction)
+                .Append(", RepeatAction=").Append(OnRepeatAction)
+                .Append(", EndAction=").Append(OnEndAction)
+                .Append(", TickConditionAction=").Append(TickConditionAction);
+
+            return sb.ToString();
         }
     }
 }

@@ -29,7 +29,7 @@ namespace BXFW.Tweening.Next.Events
     public delegate bool BXSPredicateAction<in T>(T value);
 
     /// <summary>
-    /// A action called when the <see cref="IBXSTweenRunner{TDispatchObject}"/> is about to quit.
+    /// A action called when the <see cref="IBXSTweenRunner"/> is about to quit.
     /// </summary>
     /// <param name="applicationQuit">Whether if the tween runner was closed because the application was being closed.</param>
     public delegate void BXSExitAction(bool applicationQuit);

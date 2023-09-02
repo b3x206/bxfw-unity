@@ -1,6 +1,8 @@
 #if UNITY_2018_3_OR_NEWER
-using BXFW.Tweening.Next.Events;
+using System;
 using UnityEngine;
+using BXFW.Tweening.Next.Events;
+using Object = UnityEngine.Object;
 
 namespace BXFW.Tweening.Next
 {
@@ -11,14 +13,11 @@ namespace BXFW.Tweening.Next
     public class BXSTweenUnityRunner : MonoBehaviour, IBXSTweenRunner
     {
         public int ElapsedTickCount => Time.frameCount;
-
         public float UnscaledDeltaTime => Time.unscaledDeltaTime;
-
         public float TimeScale => Time.timeScale;
 
         public bool SupportsFixedTick => true;
-
-        public int FixedTickRate => (int)(Time.fixedDeltaTime * 1000f);
+        public float FixedUnscaledDeltaTime => Time.fixedUnscaledDeltaTime;
 
         public event BXSAction OnRunnerStart;
         public event BXSSetterAction<IBXSTweenRunner> OnRunnerTick;
@@ -28,24 +27,63 @@ namespace BXFW.Tweening.Next
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnApplicationLoad()
         {
-            // TODO : Spawn GameObject
-            Debug.Log("todo");
+            if (BXSTween.MainRunner == null)
+            {
+                // Spawn object
+                BXSTweenUnityRunner runner = new GameObject("BXSTween").AddComponent<BXSTweenUnityRunner>();
+
+                // Initialize the static things
+                BXSTween.Initialize(runner);
+                runner.OnRunnerStart?.Invoke();
+
+                // Add it to 'DontDestroyOnLoad'
+                DontDestroyOnLoad(runner.gameObject);
+            }
         }
 
-        private void Awake()
+        /// <summary>
+        /// A registry for a UnityEngine object.
+        /// </summary>
+        private class ObjectRegistry : IComparable<ObjectRegistry>
         {
-            BXSTween.Initialize(this);
-            OnRunnerStart?.Invoke();
+            public Object unityObject;
+
+            public int CompareTo(ObjectRegistry other)
+            {
+                if (other == null || other.unityObject == null)
+                    return 1;
+                if (unityObject == null)
+                    return other.unityObject == null ? 0 : 1;
+
+                return unityObject.GetInstanceID().CompareTo(other.unityObject.GetInstanceID());
+            }
+        }
+        /// <summary>
+        /// List of the registered objects.
+        /// </summary>
+        private SortedList<ObjectRegistry> idObjectRegistries = new SortedList<ObjectRegistry>();
+
+        public TDispatchObject GetObjectFromID<TDispatchObject>(int id) where TDispatchObject : class
+        {
+            if (id == BXSTween.NoID)
+                return null;
+
+            int index = idObjectRegistries.FindIndex((reg) => reg.unityObject.GetInstanceID() == id);
+            if (index < 0)
+                return null;
+
+            return idObjectRegistries[index].unityObject as TDispatchObject;
         }
 
-        public TDispatchObject GetIDObject<TDispatchObject>(int id) where TDispatchObject : class
+        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject) where TDispatchObject : class
         {
-            throw new System.NotImplementedException();
-        }
+            Object idUnityObject = (idObject as Object);
+            if (idUnityObject != null)
+            {
+                return idUnityObject.GetInstanceID();
+            }
 
-        public int GetObjectID<TDispatchObject>(TDispatchObject idObject) where TDispatchObject : class
-        {
-            throw new System.NotImplementedException();
+            return BXSTween.NoID;
         }
 
         private void Update()
@@ -54,7 +92,7 @@ namespace BXFW.Tweening.Next
         }
         private void FixedUpdate()
         {
-            OnRunnerTick?.Invoke(this);
+            OnRunnerFixedTick?.Invoke(this);
         }
 
         private void OnApplicationQuit()

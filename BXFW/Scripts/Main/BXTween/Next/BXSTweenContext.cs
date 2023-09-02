@@ -58,15 +58,33 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public abstract BXSMathAction<TValue> AddValueAction { get; }
         // - Overrides
+        public override bool IsValid => GetterAction != null && SetterAction != null;
+
         /// <summary>
         /// Evaluates the <see cref="SetterAction"/> with <see cref="LerpAction"/>.
         /// </summary>
-        protected internal override void EvaluateTween(float t)
+        public override void EvaluateTween(float t)
         {
             // Check easing clamping
             float easedTime = EvaluateEasing(t);
 
             SetterAction(LerpAction(StartValue, EndValue, easedTime));
+        }
+
+        // -- Methods
+        public override void CopyFrom<T>(T tweenable)
+        {
+            base.CopyFrom(tweenable);
+            BXSTweenContext<TValue> tweenableAsContext = tweenable as BXSTweenContext<TValue>;
+            if (tweenableAsContext == null)
+            {
+                return;
+            }
+
+            StartValue = tweenableAsContext.StartValue;
+            EndValue = tweenableAsContext.EndValue;
+            GetterAction = tweenableAsContext.GetterAction;
+            SetterAction = tweenableAsContext.SetterAction;
         }
 
         // -- Daisy Chain Setters
@@ -152,6 +170,7 @@ namespace BXFW.Tweening.Next
 
             return this;
         }
+
         /// <summary>
         /// Sets whether if the <see cref="EndValue"/> is relative.
         /// <br>If this is the case, every time the tween is started or repeated, the <see cref="EndValue"/> will be gathered.</br>
@@ -184,6 +203,17 @@ namespace BXFW.Tweening.Next
             return this;
         }
         /// <summary>
+        /// Sets to whether ignore the time scale.
+        /// <br>Setting this will run the tween unscaled except for it's <see cref="BXSTweenable.Speed"/>.</br>
+        /// </summary>
+        /// <param name="doIgnore"></param>
+        public BXSTweenContext<TValue> SetIgnoreTimeScale(bool doIgnore)
+        {
+            m_IgnoreTimeScale = doIgnore;
+
+            return this;
+        }
+        /// <summary>
         /// Sets the target object id.
         /// <br>Fallbacks to <see cref="object.GetHashCode"/> if there's no <see cref="BXSTween.MainRunner"/></br>
         /// </summary>
@@ -198,11 +228,32 @@ namespace BXFW.Tweening.Next
                 return this;
             }
 
-            m_ID = BXSTween.MainRunner.GetObjectID(m_IDObject);
+            m_ID = BXSTween.MainRunner.GetIDFromObject(m_IDObject);
 
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnPlayAction"/> event.
+        /// </summary>
+        public BXSTweenContext<TValue> SetPlayAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnPlayAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnPlayAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnPlayAction = action;
+                    break;
+            }
+            return this;
+        }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnStartAction"/> event.
         /// </summary>
@@ -219,31 +270,39 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    SetStartActionValue(action);
+                    OnStartAction = action;
                     break;
             }
             return this;
         }
         /// <summary>
-        /// Sets the <see cref="BXSTweenable.OnUpdateAction"/> event.
+        /// Sets the <see cref="BXSTweenable.OnTickAction"/> event.
         /// </summary>
-        public BXSTweenContext<TValue> SetUpdateAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        public BXSTweenContext<TValue> SetTickAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
             switch (setMode)
             {
                 case EventSetMode.Subtract:
-                    OnUpdateAction -= action;
+                    OnTickAction -= action;
                     break;
                 case EventSetMode.Add:
-                    OnUpdateAction += action;
+                    OnTickAction += action;
                     break;
 
                 default:
                 case EventSetMode.Equals:
-                    SetUpdateActionValue(action);
+                    OnStartAction = action;
                     break;
             }
             return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnTickAction"/> event.<br/>
+        /// This method is an alias for <see cref="SetTickAction(BXSAction, EventSetMode)"/>.
+        /// </summary>
+        public BXSTweenContext<TValue> SetUpdateAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            return SetTickAction(action, setMode);
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnPauseAction"/> event.
@@ -261,7 +320,28 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    SetPauseActionValue(action);
+                    OnStartAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnRepeatAction"/> event.
+        /// </summary>
+        public BXSTweenContext<TValue> SetRepeatAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnRepeatAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnRepeatAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnRepeatAction = action;
                     break;
             }
             return this;
@@ -282,7 +362,7 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    SetEndActionValue(action);
+                    OnStartAction = action;
                     break;
             }
             return this;

@@ -21,8 +21,18 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public float UnscaledDeltaTime { get; }
         /// <summary>
+        /// Whether if this runner supports <see cref="OnRunnerFixedTick"/>.
+        /// </summary>
+        public bool SupportsFixedTick { get; }
+        /// <summary>
+        /// The fixed tick delta time if <see cref="SupportsFixedTick"/> is true.
+        /// <br>This value should be ignored if the runner doesn't support fixed tick.</br>
+        /// </summary>
+        public float FixedUnscaledDeltaTime { get; }
+
+        /// <summary>
         /// The current time scale for this runner.
-        /// <br>Return 1 if unsure.</br>
+        /// <br>Return 1 or Time.timeScale if unsure.</br>
         /// </summary>
         public float TimeScale { get; }
 
@@ -39,16 +49,6 @@ namespace BXFW.Tweening.Next
         /// <br>Hook into Update/FixedUpdate if unsure.</br>
         /// </summary>
         public event BXSSetterAction<IBXSTweenRunner> OnRunnerTick;
-        // Maybe seperate these as IBXSTweenFixedTicker? or keep these.
-        /// <summary>
-        /// Whether if this runner supports <see cref="OnRunnerFixedTick"/>.
-        /// </summary>
-        public bool SupportsFixedTick { get; }
-        /// <summary>
-        /// The fixed tick rate if <see cref="SupportsFixedTick"/> is true.
-        /// <br>This value should be ignored if the runner doesn't support fixed tick.</br>
-        /// </summary>
-        public int FixedTickRate { get; }
         /// <summary>
         /// A fixed tick method.
         /// <br>This should only be used if the <see cref="SupportsFixedTick"/> is true.</br>
@@ -56,7 +56,7 @@ namespace BXFW.Tweening.Next
         public event BXSSetterAction<IBXSTweenRunner> OnRunnerFixedTick;
         /// <summary>
         /// Should be invoked when the runner is closed/destroyed/disposed.
-        /// <br>Hook into OnApplicationQuit+OnDestroy if unsure.</br>
+        /// <br>Hook into OnApplicationQuit+<see cref="Kill"/> if unsure.</br>
         /// </summary>
         public event BXSExitAction OnRunnerExit;
 
@@ -71,13 +71,13 @@ namespace BXFW.Tweening.Next
         /// Returns a tweening id from the given object.
         /// <br>Implement this according to your id system, or always return <see cref="BXSTween.NoID"/> if no id.</br>
         /// </summary>
-        public int GetObjectID<TDispatchObject>(TDispatchObject idObject)
+        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject)
             where TDispatchObject : class;
             
         /// <summary>
         /// Returns a tweening object from the given id.
         /// </summary>
-        public TDispatchObject GetIDObject<TDispatchObject>(int id)
+        public TDispatchObject GetObjectFromID<TDispatchObject>(int id)
             where TDispatchObject : class;
     }
 }
