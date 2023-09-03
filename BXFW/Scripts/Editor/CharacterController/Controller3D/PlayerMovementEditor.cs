@@ -34,7 +34,7 @@ namespace BXFW.ScriptEditor
                 dict.Add(nameof(PlayerMovement.gravity), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
                 dict.Add(nameof(PlayerMovement.groundMask), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
             }
-            if (targets.Any(m => m.currentCameraView != PlayerMovement.PlayerViewType.TPS && m.currentCameraView != PlayerMovement.PlayerViewType.FreeRelativeCam))
+            if (targets.Any(m => m.currentCameraView != PlayerMovement.CamViewType.TPS && m.currentCameraView != PlayerMovement.CamViewType.FreeRelativeCam))
             {
                 dict.Add(nameof(PlayerMovement.targetCamera), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
                 {

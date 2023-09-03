@@ -63,7 +63,8 @@ namespace BXFW.Tweening.Next
         /// </summary>
         private SortedList<ObjectRegistry> idObjectRegistries = new SortedList<ObjectRegistry>();
 
-        public TDispatchObject GetObjectFromID<TDispatchObject>(int id) where TDispatchObject : class
+        public TDispatchObject GetObjectFromID<TDispatchObject>(int id)
+            where TDispatchObject : class
         {
             if (id == BXSTween.NoID)
                 return null;
@@ -75,7 +76,8 @@ namespace BXFW.Tweening.Next
             return idObjectRegistries[index].unityObject as TDispatchObject;
         }
 
-        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject) where TDispatchObject : class
+        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject)
+            where TDispatchObject : class
         {
             Object idUnityObject = (idObject as Object);
             if (idUnityObject != null)

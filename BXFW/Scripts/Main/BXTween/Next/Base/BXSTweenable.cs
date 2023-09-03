@@ -184,7 +184,8 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// Whether if this tween is relative to it's ending value.
-        /// <br>If this is true, the tween should calculate it's ending value relatively.</br>
+        /// <br>If this is true, the tween should calculate it's ending value as <c>StartValue + EndValue</c>.</br>
+        /// <br>Setting this value will also get the <c>StartValue</c> everytime <see cref="Play"/> is called.</br>
         /// </summary>
         public bool IsEndValueRelative => m_IsEndValueRelative;
         /// <summary>
@@ -249,11 +250,6 @@ namespace BXFW.Tweening.Next
         /// Object reference attached to this tween that gets calculated with the ID.
         /// </summary>
         protected object m_IDObject;
-
-        /// <summary>
-        /// Is true if <see cref="Play"/> was called once.
-        /// </summary>
-        public bool HasPlayedOnce { get; protected set; } = false;
 
         // -- Events
         // The events can be changed either manually or by using the setter methods by classes overriding this
@@ -360,7 +356,7 @@ namespace BXFW.Tweening.Next
         /// The remaining loops that this tween has.
         /// <br>Only decrements until the 0.</br>
         /// </summary>
-        public int CurrentLoop { get; protected internal set; } = 0;
+        public int RemainingLoops { get; protected internal set; } = 0;
         /// <summary>
         /// Whether if the tween has started.
         /// </summary>
@@ -370,11 +366,29 @@ namespace BXFW.Tweening.Next
         /// <br>This depends on several factors, such as whether if the tween was elasped at all and if it is running currently or not.</br>
         /// </summary>
         public bool IsPaused => !IsPlaying && (DelayElapsed > float.Epsilon || CurrentElapsed > float.Epsilon);
+        // -- Starting State
+        /// <summary>
+        /// The delay when the <see cref="Play"/> is called.
+        /// </summary>
+        public float StartingDelay { get; protected set; }
+        /// <summary>
+        /// The duration when the <see cref="Play"/> is called.
+        /// </summary>
+        public float StartingDuration { get; protected set; }
+        /// <summary>
+        /// The count of loops when the <see cref="Play"/> is called.
+        /// </summary>
+        public int StartingLoops { get; protected set; }
         /// <summary>
         /// Whether if the tweenable is valid.
+        /// <br>If this is <see langword="false"/>, the playing methods (<see cref="Play"/>, <see cref="Pause"/>, <see cref="Stop"/>) won't work.</br>
         /// </summary>
         public virtual bool IsValid => true;
 
+        /// <summary>
+        /// Is set true if <see cref="Play"/> was called once. (note : only for runtime)
+        /// </summary>
+        public bool HasPlayedOnce { get; protected set; } = false;
         /// <summary>
         /// <inheritdoc cref="IsTargetValuesSwitched"/>
         /// </summary>
@@ -454,6 +468,12 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public virtual void Play()
         {
+            if (!IsValid)
+            {
+                // Debug Log
+                return;
+            }
+
             if (IsPlaying)
                 Stop();
 
@@ -470,6 +490,12 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public virtual void Pause()
         {
+            if (!IsValid)
+            {
+                // Debug Log
+                return;
+            }
+
             if (!IsPlaying)
                 return;
 
@@ -482,6 +508,12 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public virtual void Stop()
         {
+            if (!IsValid)
+            {
+                // Debug Log
+                return;
+            }
+
             IsPlaying = false;
             OnEndAction?.Invoke();
             BXSTween.RunningTweens.Remove(this);
@@ -497,7 +529,7 @@ namespace BXFW.Tweening.Next
             DelayElapsed = 0f;
             CurrentElapsed = 0f;
             if (!IsPlaying)
-                CurrentLoop = LoopCount;
+                RemainingLoops = LoopCount;
             IsTargetValuesSwitched = false;
         }
 
@@ -513,34 +545,35 @@ namespace BXFW.Tweening.Next
         /// Converts a <see cref="BXSTweenable"/> to string.
         /// </summary>
         /// <param name="simpleString">Whether to return a shorter, simpler string. Use this option if you are gonna call this method often.</param>
-        public virtual string ToString(bool simpleString)
+        /// <param name="pSep">The property seperator for values.</param>
+        public virtual string ToString(bool simpleString, char pSep = ',')
         {
             if (simpleString)
             {
-                return $"[BXSTweenable] Duration={m_Duration}, Delay={m_Delay}, Loops={m_LoopCount}, Speed={m_Speed}, ID={m_ID}, IDObj={m_IDObject}";
+                return $"[BXSTweenable(play={IsPlaying})] Duration={m_Duration}{pSep} Delay={m_Delay}{pSep} Loops={m_LoopCount}{pSep} Speed={m_Speed}{pSep} ID={m_ID}{pSep} IDObj={m_IDObject}";
             }
 
             StringBuilder sb = new StringBuilder(512);
-            sb.Append("[BXSTweenable] ")
-                .Append("Duration=").Append(m_Duration)
-                .Append(", Delay=").Append(m_Delay)
-                .Append(", LoopCount=").Append(m_LoopCount)
-                .Append(", Ease=").Append(m_Ease)
-                .Append(", EaseCurve=").Append(m_EaseCurve)
-                .Append(", Speed=").Append(m_Speed)
-                .Append(", IgnoreTimeScale=").Append(m_IgnoreTimeScale)
-                .Append(", EndValueRelative=").Append(m_IsEndValueRelative)
-                .Append(", Clamp01Easing=").Append(m_Clamp01EasingSetter)
-                .Append(", TickType=").Append(m_TickType)
-                .Append(", ID=").Append(m_ID)
-                .Append(", IDObject=").Append(m_IDObject)
-                .Append(", PlayAction=").Append(OnPlayAction)
-                .Append(", StartAction=").Append(OnStartAction)
-                .Append(", UpdateAction=").Append(OnTickAction)
-                .Append(", PauseAction=").Append(OnPauseAction)
-                .Append(", RepeatAction=").Append(OnRepeatAction)
-                .Append(", EndAction=").Append(OnEndAction)
-                .Append(", TickConditionAction=").Append(TickConditionAction);
+            sb.Append("[BXSTweenable(play=").Append(IsPlaying).Append(")]")
+                .Append(pSep).Append(" Duration=").Append(m_Duration)
+                .Append(pSep).Append(" Delay=").Append(m_Delay)
+                .Append(pSep).Append(" LoopCount=").Append(m_LoopCount)
+                .Append(pSep).Append(" Ease=").Append(m_Ease)
+                .Append(pSep).Append(" EaseCurve=").Append(m_EaseCurve)
+                .Append(pSep).Append(" Speed=").Append(m_Speed)
+                .Append(pSep).Append(" IgnoreTimeScale=").Append(m_IgnoreTimeScale)
+                .Append(pSep).Append(" EndValueRelative=").Append(m_IsEndValueRelative)
+                .Append(pSep).Append(" Clamp01Easing=").Append(m_Clamp01EasingSetter)
+                .Append(pSep).Append(" TickType=").Append(m_TickType)
+                .Append(pSep).Append(" ID=").Append(m_ID)
+                .Append(pSep).Append(" IDObject=").Append(m_IDObject)
+                .Append(pSep).Append(" PlayAction=").Append(OnPlayAction)
+                .Append(pSep).Append(" StartAction=").Append(OnStartAction)
+                .Append(pSep).Append(" UpdateAction=").Append(OnTickAction)
+                .Append(pSep).Append(" PauseAction=").Append(OnPauseAction)
+                .Append(pSep).Append(" RepeatAction=").Append(OnRepeatAction)
+                .Append(pSep).Append(" EndAction=").Append(OnEndAction)
+                .Append(pSep).Append(" TickConditionAction=").Append(TickConditionAction);
 
             return sb.ToString();
         }

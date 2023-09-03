@@ -85,14 +85,15 @@ namespace BXFW
                 v[i] = setVector;
             }
 
+            // Draw loop
             int len = v.Length;
             for (int i = 0; i < len; i++)
             {
-                // Calculate sphere points using radius
-                Vector3 sX = pos + (radius * v[(0 * len) + i]);
-                Vector3 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
-
-                Gizmos.DrawLine(sX, eX);
+                // Calculate sphere points with radius and relative positioning
+                Vector3 start = pos + (radius * v[i]);
+                Vector3 end = pos + (radius * v[(i + 1) % len]);
+                // Draw line
+                Gizmos.DrawLine(start, end);
             }
         }
         /// <summary>
@@ -105,6 +106,75 @@ namespace BXFW
             Gizmos.color = color;
             DrawWireCircle(pos, radius, direction);
             Gizmos.color = gColor;
+        }
+
+        /// <summary>
+        /// Draws an arc.
+        /// </summary>
+        /// <param name="origin">World point origin point of the arc sphere. Defines the direction the arc is pointing.</param>
+        /// <param name="rotation">Rotation of this arc.</param>
+        /// <param name="distance">Distance relative to the origin.</param>
+        /// <param name="arcAngle">The size of the arc, in degrees. Converted to radians by <see cref="Mathf.Deg2Rad"/>.</param>
+        /// <param name="drawLinesFromOrigin">Draws 2 lines towards the starting and ending position from <paramref name="origin"/>.</param>
+        public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            // rotate direction by that so it actually looks towards
+            // The center of the arc is the (direction * origin) * distance), but it's not needed.
+            
+            // this number should be even, but an odd number of segments are drawn
+            // because i am still stuck in how to do for loops
+            int segments = 48;
+            int halfSegments = segments / 2;
+
+
+            // Draw origin line for initial
+            Vector3 prevPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(-arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(-arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            if (drawLinesFromOrigin)
+            {
+                Gizmos.DrawLine(origin, prevPosition);
+            }
+
+            for (int i = -halfSegments + 1; i < halfSegments; i++)
+            {
+                // initial line is already drawn
+                // since lerp only goes from -0.49.. -> 0.5, the arc angle will be completed.
+                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.5
+                float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
+                float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
+                Vector3 arcToPosition = origin + (rotation * new Vector3(c, s) * distance);
+
+                // Primary line
+                Gizmos.DrawLine(prevPosition, arcToPosition);
+
+                prevPosition = arcToPosition;
+            }
+
+            // Final line
+            Vector3 lastPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            // Draw origin line + normal for the last line
+            Gizmos.DrawLine(prevPosition, lastPosition);
+            if (drawLinesFromOrigin)
+            { 
+                Gizmos.DrawLine(origin, lastPosition);
+            }
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, bool)"/>
+        /// <param name="direction">
+        /// Direction relative to the origin point.
+        /// Converted to a look rotation with upwards of <see cref="Vector3.up"/> and rotated in <see cref="Vector3.up"/> axis by 90f degrees.
+        /// </param>
+        public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            Quaternion rotation = direction == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(direction, Vector3.up) * Quaternion.AngleAxis(90f, Vector3.up);
+            DrawArc(origin, rotation, distance, arcAngle, drawLinesFromOrigin);
         }
 
         /// <summary>

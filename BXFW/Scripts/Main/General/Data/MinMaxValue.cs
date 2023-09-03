@@ -12,6 +12,7 @@ namespace BXFW
     [Serializable]
     public struct MinMaxValue : IEquatable<MinMaxValue>, IEquatable<MinMaxValueInt>
     {
+        // - Variable+Property
         [SerializeField] private float m_Min;
         [SerializeField] private float m_Max;
 
@@ -32,6 +33,7 @@ namespace BXFW
             }
         }
 
+        // - Ctors
         /// <summary>
         /// Constructs the MinMaxValue.
         /// <br>Checks the given parameters for appopriateness.</br>
@@ -46,6 +48,10 @@ namespace BXFW
             m_Max = max;
         }
 
+        // - Constants
+        public static readonly MinMaxValue Zero = new MinMaxValue(0f, 0f);
+
+        // - Methods
         /// <summary>
         /// Returns a random value between <see cref="Min"/> and <see cref="Max"/>.
         /// </summary>
@@ -60,9 +66,17 @@ namespace BXFW
         /// <returns>Clamped value.</returns>
         public float ClampBetween(float value)
         {
-            return Mathf.Clamp(value, Min, Max);
+            return Math.Clamp(value, Min, Max);
+        }
+        /// <summary>
+        /// 1D size difference as <see cref="Max"/> - <see cref="Min"/>
+        /// </summary>
+        public float Size()
+        {
+            return Max - Min;
         }
 
+        // - Operators
         public static implicit operator Vector2(MinMaxValue value)
         {
             return new Vector2(value.Min, value.Max);
@@ -129,7 +143,13 @@ namespace BXFW
 
         public static bool operator==(MinMaxValue lhs, MinMaxValue rhs)
         {
-            return lhs.Equals(rhs);
+            // Epsilon equals
+            float diffMin = lhs.Min - rhs.Min;
+            float diffMax = lhs.Max - rhs.Max;
+
+            // mul twice to force flip sign to positive
+            // epsilon is multiplied by 4 for possible 4x epsilons difference
+            return (diffMin * diffMin) + (diffMax * diffMax) < float.Epsilon * 4f;
         }
         public static bool operator!=(MinMaxValue lhs, MinMaxValue rhs)
         {
@@ -179,6 +199,7 @@ namespace BXFW
     [Serializable]
     public struct MinMaxValueInt : IEquatable<MinMaxValueInt>, IEquatable<MinMaxValue>
     {
+        // - Variables+Property
         [SerializeField] private int m_Min;
         [SerializeField] private int m_Max;
 
@@ -199,6 +220,7 @@ namespace BXFW
             }
         }
 
+        // - Ctors
         /// <summary>
         /// Constructs the MinMaxValueInt.
         /// <br>Checks the values for appopriateness.</br>
@@ -212,6 +234,10 @@ namespace BXFW
             m_Max = max;
         }
 
+        // - Constants
+        public static readonly MinMaxValueInt Zero = new MinMaxValueInt(0, 0);
+
+        // - Methods
         /// <summary>
         /// Returns a random value between min and max.
         /// </summary>
@@ -226,9 +252,17 @@ namespace BXFW
         /// <returns>Clamped value.</returns>
         public int ClampBetween(int value)
         {
-            return Mathf.Clamp(value, Min, Max);
+            return Math.Clamp(value, Min, Max);
+        }
+        /// <summary>
+        /// 1D size difference as <see cref="Max"/> - <see cref="Min"/>
+        /// </summary>
+        public int Size()
+        {
+            return Max - Min;
         }
 
+        // - Operators
         public static implicit operator Vector2(MinMaxValueInt value)
         {
             return new Vector2Int(value.Min, value.Max);
@@ -240,6 +274,10 @@ namespace BXFW
         public static implicit operator MinMaxValueInt(Vector2Int value)
         {
             return new MinMaxValueInt(value.x, value.y);
+        }
+        public static explicit operator MinMaxValue(MinMaxValueInt value)
+        {
+            return new MinMaxValue(value.Min, value.Max);
         }
 
         /// <summary>
@@ -299,6 +337,7 @@ namespace BXFW
 
         public static bool operator ==(MinMaxValueInt lhs, MinMaxValueInt rhs)
         {
+            // int is int, doesn't require epsilon shenanigans
             return lhs.Equals(rhs);
         }
         public static bool operator !=(MinMaxValueInt lhs, MinMaxValueInt rhs)

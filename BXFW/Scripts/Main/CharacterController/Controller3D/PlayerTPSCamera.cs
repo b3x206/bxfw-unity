@@ -4,27 +4,27 @@ namespace BXFW
 {
     /// <summary>
     /// TPS camera for <see cref="PlayerMovement"/>.
-    /// <br>Note : This script is based of <see cref="PivotRotatingCamera"/>.</br>
+    /// <br>Note : This script is loosely based of <see cref="PivotRotatingCamera"/>.</br>
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class PlayerTPSCamera : MonoBehaviour
     {
         [Header("Camera Reference")]
         public Transform playerTransform;
-        private Vector3 followTargetPos;
-        public CameraUpdateMode updateMode = CameraUpdateMode.Update;
-        public CameraUpdateMode moveMode = CameraUpdateMode.FixedUpdate;
+        private Vector3 m_followTargetPos;
+        public CameraUpdateMode lookUpdateMode = CameraUpdateMode.Update;
+        public CameraUpdateMode moveUpdateMode = CameraUpdateMode.FixedUpdate;
 
         [Header("Camera Settings")] // Input settings
-        [SerializeField] private bool rawMouseLook = true;
-        public bool SensitivityMouseRawInput { get => rawMouseLook; set => rawMouseLook = value; }
-        [SerializeField] private float sensitivityMouse = 100f;
-        public float SensitivityMouseCamera { get => sensitivityMouse; set => sensitivityMouse = value; }
-        [Space] // In-game settings
+        [SerializeField] private bool m_UseRawInputLook = true;
+        public bool UseRawInputLook { get => m_UseRawInputLook; set => m_UseRawInputLook = value; }
+        [SerializeField] private float m_LookSensitivity = 100f;
+        public float LookSensitivity { get => m_LookSensitivity; set => m_LookSensitivity = value; }
+        [Space]
 
         [Tooltip("Camera rotation axes. X only makes horizontal rotate and Y does vertical.")]
-        public InputAxis currentAxes = InputAxis.MouseX | InputAxis.MouseY;
-        public InputAxis invertAxes;
+        public MouseInputAxis currentAxes = MouseInputAxis.MouseX | MouseInputAxis.MouseY;
+        public MouseInputAxis invertAxes;
         [Tooltip("Camera offset, for the player follow.")]
         public Vector3 playerTransformPositionOffset;
         [Tooltip("Distance between the 'PlayerTransform' and the camera.")]
@@ -32,81 +32,108 @@ namespace BXFW
         [Tooltip("Follow dampening. Set to 0 or lower for no smooth follow.")]
         public float followDamp = 4f;
         [Tooltip("Camera clamp for vertical looking.")]
-        public Vector2 lookVerticalAngleClamp = Vector2.zero;
+        [Clamp(-89.9f, 89.9f)] public MinMaxValue lookVerticalAngleRange = MinMaxValue.Zero;
 
         private void Awake()
         {
-            followTargetPos = playerTransform.position;
+            m_followTargetPos = playerTransform.position;
         }
 
         private void Update()
         {
-            if (updateMode != CameraUpdateMode.FixedUpdate)
+            if (lookUpdateMode != CameraUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.deltaTime);
 
-            if (moveMode != CameraUpdateMode.FixedUpdate)
+            if (moveUpdateMode != CameraUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.deltaTime);
         }
         private void FixedUpdate()
         {
-            if (updateMode == CameraUpdateMode.FixedUpdate)
+            if (lookUpdateMode == CameraUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.fixedDeltaTime);
 
-            if (moveMode == CameraUpdateMode.FixedUpdate)
+            if (moveUpdateMode == CameraUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.fixedDeltaTime);
         }
 
         /// <summary>
         /// Update camera position into required rotation + position
         /// </summary>
-        protected void CameraLookUpdate(float deltaTime)
+        private void CameraLookUpdate(float deltaTime)
         {
             // Place camera into the same position as 'fake origin that follows PlayerTransform'
-            transform.position = followTargetPos;
+            transform.position = m_followTargetPos;
 
             // Rotate using transform.Rotate
-            float xAxis = rawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X");
-            float yAxis = rawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y");
-            xAxis *= sensitivityMouse * deltaTime;
-            yAxis *= sensitivityMouse * deltaTime;
+            float xAxis = m_UseRawInputLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X");
+            float yAxis = m_UseRawInputLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y");
+            xAxis *= m_LookSensitivity * deltaTime;
+            yAxis *= m_LookSensitivity * deltaTime;
 
-            if ((invertAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            if ((invertAxes & MouseInputAxis.MouseX) == MouseInputAxis.MouseX)
                 xAxis *= -1;
-            if ((invertAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            if ((invertAxes & MouseInputAxis.MouseY) == MouseInputAxis.MouseY)
                 yAxis *= -1;
 
-            // Clamping
-            if (lookVerticalAngleClamp != Vector2.zero)
-            {
-                // Get Rotation to apply
-                Vector3 CurrentRotationEuler = Additionals.FixEulerRotation(transform.eulerAngles);
-                // Clamp vertical look
-                CurrentRotationEuler.x = Mathf.Clamp(CurrentRotationEuler.x, lookVerticalAngleClamp.x, lookVerticalAngleClamp.y);
-                CurrentRotationEuler.z = 0f;
-                // Apply clamped Rotation
-                transform.localRotation = Quaternion.Euler(CurrentRotationEuler);
-            }
-
             // Rotating
-            if ((currentAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            if ((currentAxes & MouseInputAxis.MouseX) == MouseInputAxis.MouseX)
                 transform.Rotate(Vector3.up, -xAxis, Space.World);
-            if ((currentAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            if ((currentAxes & MouseInputAxis.MouseY) == MouseInputAxis.MouseY)
                 transform.Rotate(Vector3.right, yAxis);
 
             transform.Translate(0f, 0f, -distanceFromTarget, Space.Self);
         }
 
+        private void LateUpdate()
+        {
+            // Do clamping here because the 'transform.Rotate' is not very fond of doing rotate after setting transform.rotation
+            if (lookVerticalAngleRange != MinMaxValue.Zero)
+            {
+                // Get Rotation to apply
+                Vector3 CurrentRotationEuler = Additionals.EditorEulerRotation(transform.eulerAngles);
+                // Clamp vertical look
+                CurrentRotationEuler.x = lookVerticalAngleRange.ClampBetween(CurrentRotationEuler.x);
+                CurrentRotationEuler.z = 0f;
+                // Apply clamped Rotation
+                transform.localRotation = Quaternion.Euler(CurrentRotationEuler);
+            }
+        }
+
         /// <summary>
         /// Updates the follow position of the camera.
         /// </summary>
-        protected void CameraMoveUpdate(float deltaTime)
+        private void CameraMoveUpdate(float deltaTime)
         {
             // Offseted position
             Vector3 offsetPos = playerTransform.position + (transform.TransformPoint(playerTransformPositionOffset) - transform.position);
             // Lerp origin position
-            followTargetPos = followDamp >= 0f ? Vector3.Lerp(followTargetPos,
+            m_followTargetPos = followDamp >= 0f ? Vector3.Lerp(
+                m_followTargetPos,
                 offsetPos,
-                followDamp * deltaTime) : offsetPos;
+                followDamp * deltaTime
+            ) : offsetPos;
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (playerTransform != null && lookVerticalAngleRange != MinMaxValue.Zero)
+            {
+                Vector3 lookDir = (transform.position - playerTransform.position).normalized;
+                lookDir.y = 0f;
+                if (lookDir == Vector3.zero)
+                {
+                    lookDir = Vector3.forward;
+                }
+
+                Quaternion centerRotation = Quaternion.LookRotation(lookDir, Vector3.up) *
+                    //Quaternion.AngleAxis(90f, Vector3.right);
+                    Quaternion.AngleAxis(-90f, Vector3.up);
+
+                centerRotation *= Quaternion.AngleAxis((lookVerticalAngleRange.Min + lookVerticalAngleRange.Max) / 2f, Vector3.forward);
+                GizmoUtility.DrawArc(playerTransform.position, centerRotation, distanceFromTarget, lookVerticalAngleRange.Size());
+            }
+        }
+#endif
     }
 }

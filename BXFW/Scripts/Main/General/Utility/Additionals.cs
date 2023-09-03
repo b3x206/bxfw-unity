@@ -722,15 +722,17 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Fixes euler rotation to Unity Editor instead of the code ranges.
+        /// Fixes euler rotation to Unity Editor type of values instead of the code based setting values.
         /// </summary>
-        public static Vector3 FixEulerRotation(Vector3 eulerRot)
+        public static Vector3 EditorEulerRotation(Vector3 eulerRot)
         {
+            // The editor view for the rotation constraints are rolled between -180f~180f
+            // Instead of going between 0f~360f if you use transform.Rotate or anything similar
             Vector3 TransformEulerFixed = new Vector3(
                 eulerRot.x > 180f ? eulerRot.x - 360f : eulerRot.x,
                 eulerRot.y > 180f ? eulerRot.y - 360f : eulerRot.y,
                 eulerRot.z > 180f ? eulerRot.z - 360f : eulerRot.z
-                );
+            );
 
             return TransformEulerFixed;
         }

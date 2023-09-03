@@ -1,7 +1,7 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace BXFW
@@ -42,14 +42,22 @@ namespace BXFW
         /// </summary>
         public abstract void Sort();
     }
+
     /// <summary>
-    /// A sorted list that is sorted by the value's comparability itself.
+    /// A serializable sorted list that is sorted by the value's comparability to itself.
+    /// <br>(<see cref="IComparable{T}"/> types recommended)</br>
     /// </summary>
     [Serializable]
     public class SortedList<T> : SortedListBase, ICollection<T>, IEquatable<IEnumerable<T>>
-        where T : IComparable<T>
     {
-        [SerializeField] private List<T> m_list;
+        /// <summary>
+        /// Internal list used. (<c>Serialized</c>)
+        /// </summary>
+        [SerializeField]
+        private List<T> m_list;
+        /// <summary>
+        /// The comparer used for comparing the <typeparamref name="T"/> type objects.
+        /// </summary>
         private IComparer<T> m_comparer = Comparer<T>.Default;
         /// <summary>
         /// The current comparer for this sorted list.
@@ -215,7 +223,7 @@ namespace BXFW
                 m_list[index] = value;
                 m_list[prevIndex] = valueOnPrevIndex;
                 // Can alternatively also be this :
-                // (m_list[prevIndex], m_list[index]) = (value, m_list[index]);
+                // (m_list[index], m_list[prevIndex]) = (value, m_list[index]);
             }
         }
 
@@ -240,6 +248,7 @@ namespace BXFW
                 m_list.Capacity += collection2.Count;
             }
 
+            // Add
             foreach (T elem in elements)
             {
                 Add(elem);

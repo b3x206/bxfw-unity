@@ -175,7 +175,7 @@ namespace BXFW.Tweening.Next
                 }
             }
 
-            bool isFirstRun = tween.CurrentLoop == tween.LoopCount;
+            bool isFirstRun = tween.RemainingLoops == tween.LoopCount;
 
             // Delay
             if (tween.DelayElapsed < 1f)
@@ -207,10 +207,10 @@ namespace BXFW.Tweening.Next
             }
 
             // Looping
-            if (tween.CurrentLoop != 0)
+            if (tween.RemainingLoops != 0)
             {
-                if (tween.CurrentLoop > 0)
-                    tween.CurrentLoop--;
+                if (tween.RemainingLoops > 0)
+                    tween.RemainingLoops--;
 
                 tween.OnRepeatAction?.Invoke();
                 tween.Reset();

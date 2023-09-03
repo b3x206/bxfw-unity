@@ -1,18 +1,45 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using UnityEngine.Events;
 
 namespace BXFW
 {
     /// <summary>
-    /// Enables interaction between player and generic interface implementing components / objects.
+    /// Enables interaction between player and generic interface implementing <see cref="IPlayerInteractable"/> components / objects.
     /// </summary>
     public class PlayerInteraction : MonoBehaviour
     {
+        public bool canInteract = true;
         public CustomInputEvent interactionInput = new KeyCode[] { KeyCode.E };
         public Vector3 interactionPointOffset;
         public Vector3 interactionBoxSize = new Vector3(1.2f, 1.2f, 1.2f);
         public LayerMask interactionLayer;
-        public bool canInteract = true;
+        [SerializeField, Clamp(1, ushort.MaxValue), Tooltip("Maximum amount of physics objects/colliders to interact with at one time.\nUsed for the Physics.OverlapBoxNoAlloc()")]
+        private int m_MaxInteractCount = 16;
+        /// <summary>
+        /// Maximum interaction count for this interaction.
+        /// </summary>
+        public int MaxInteractCount
+        {
+            get { return m_MaxInteractCount; }
+            set
+            {
+                m_MaxInteractCount = Mathf.Clamp(value, 1, ushort.MaxValue);
 
+#if UNITY_EDITOR
+                // No arrays while not playing
+                if (!Application.isPlaying)
+                {
+                    return;
+                }
+#endif
+                // Create array without original data (who cares)
+                overlapBoxInteractables = new Collider[m_MaxInteractCount];
+            }
+        }
+        /// <summary>
+        /// The local point of interaction for this <see cref="PlayerInteraction"/>.
+        /// </summary>
         public Vector3 InteractionPoint
         {
             get
@@ -20,30 +47,50 @@ namespace BXFW
                 return transform.position + transform.TransformDirection(interactionPointOffset);
             }
         }
+        private Collider[] overlapBoxInteractables;
+
+        private void Start()
+        {
+            overlapBoxInteractables = new Collider[MaxInteractCount];
+        }
 
         private void Update()
         {
-            if (!canInteract) return;
+            if (!canInteract)
+                return;
 
             if (interactionInput)
             {
-                Collider[] playerEnvInteractables =
-                    Physics.OverlapBox(
-                        center: transform.InverseTransformPoint(InteractionPoint),
-                        halfExtents: interactionBoxSize,
-                        orientation: transform.rotation,
-                        interactionLayer,
-                        QueryTriggerInteraction.Collide
-                    );
+                Interact();
+            }
+        }
 
-                for (int i = 0; i < playerEnvInteractables.Length; i++)
+        /// <summary>
+        /// Interacts with <see cref="IPlayerInteractable"/>'s with the parameters on this <see cref="PlayerInteraction"/> component.
+        /// <br>By default, called on the <see cref="Update"/> method with the <see cref="interactionInput"/> trigger.</br>
+        /// <br>Does nothing if the <see cref="canInteract"/> is <see langword="false"/>.</br>
+        /// </summary>
+        public void Interact()
+        {
+            if (!canInteract)
+                return;
+
+            int overlapBoxInteractedCount = Physics.OverlapBoxNonAlloc(
+                center: transform.InverseTransformPoint(InteractionPoint),
+                halfExtents: interactionBoxSize, 
+                results: overlapBoxInteractables,
+                orientation: transform.rotation,
+                interactionLayer,
+                QueryTriggerInteraction.Collide
+            );
+
+            for (int i = 0; i < overlapBoxInteractedCount; i++)
+            {
+                if (overlapBoxInteractables[i].TryGetComponent(out IPlayerInteractable pInteract))
                 {
-                    if (playerEnvInteractables[i].TryGetComponent(out IPlayerInteractable pInteract))
+                    if (pInteract.AllowPlayerInteraction)
                     {
-                        if (pInteract.AllowPlayerInteraction)
-                        {
-                            pInteract.OnPlayerInteract(this);
-                        }
+                        pInteract.OnPlayerInteract(this);
                     }
                 }
             }
