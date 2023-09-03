@@ -31,8 +31,8 @@ namespace BXFW.Tweening.Next.Events
     /// <summary>
     /// A action called when the <see cref="IBXSTweenRunner"/> is about to quit.
     /// </summary>
-    /// <param name="applicationQuit">Whether if the tween runner was closed because the application was being closed.</param>
-    public delegate void BXSExitAction(bool applicationQuit);
+    /// <param name="cleanup">Whether if the tween runner was closed for good.</param>
+    public delegate void BXSExitAction(bool cleanup);
 
     /// <summary>
     /// A action called to get a value out.

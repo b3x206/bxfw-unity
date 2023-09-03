@@ -101,6 +101,15 @@ namespace BXFW.Tweening.Next
         /// </summary>
         [SerializeField, InspectorConditionalDraw(nameof(IsLoopable))]
         protected LoopType m_LoopType = LoopType.Yoyo;
+        /// <summary>
+        /// Waits the <see cref="Delay"/> again when the tween loops.
+        /// </summary>
+        public bool WaitDelayOnLoop => m_WaitDelayOnLoop;
+        /// <summary>
+        /// <inheritdoc cref="WaitDelayOnLoop"/> <c>[Tweenable Internal, Serialized]</c>
+        /// </summary>
+        [SerializeField, InspectorConditionalDraw(nameof(IsLoopable))]
+        protected bool m_WaitDelayOnLoop = true;
 
         /// <summary>
         /// Type of the easing for this tweenable.
@@ -116,33 +125,53 @@ namespace BXFW.Tweening.Next
             }
         }
         /// <summary>
-        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
-        /// </summary>
-        [SerializeField]
-        private EaseType m_Ease = EaseType.QuadOut;
-        /// <summary>
-        /// The easing function set by the <see cref="m_Ease"/>.
-        /// </summary>
-        protected BXSEaseAction m_EaseFunction;
-
-        /// <summary>
         /// Whether if the 'EaseCurve' should be used.
-        /// <br>Setting this will either set the internal ease curve value to </br>
+        /// <br>Setting this will not touch the internal <see cref="m_EaseCurve"/> value.</br>
         /// </summary>
         public bool UseEaseCurve
-        { 
-            get { return m_EaseCurve != null; } 
-            set 
-            { 
-                if (!value) 
+        {
+            get { return m_UseEaseCurve; }
+            set
+            {
+                m_UseEaseCurve = value;
+                if (!value)
                 {
-                    m_EaseCurve = null;
                     return;
                 }
-                // Set 'm_EaseCurve' to a value if it's null
+
+                // Set 'm_EaseCurve' to a value if it's null when the curve is set..
                 m_EaseCurve ??= AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
         }
+        /// <summary>
+        /// <inheritdoc cref="UseEaseCurve"/>
+        /// </summary>
+        [SerializeField]
+        private bool m_UseEaseCurve;
+
+        /// <summary>
+        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
+        /// </summary>
+        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
+        private EaseType m_Ease = EaseType.QuadOut;
+        /// <summary>
+        /// The internal cached ease function.
+        /// <br>Use the <see cref="EaseFunction"/> to ensure a non-null easing function.</br>
+        /// </summary>
+        protected BXSEaseAction m_EaseFunction;
+        /// <summary>
+        /// The easing function set by setting the <see cref="Ease"/>.
+        /// </summary>
+        public BXSEaseAction EaseFunction
+        {
+            get
+            {
+                m_EaseFunction ??= (f) => BXTweenEase.Methods[m_Ease](f);
+
+                return m_EaseFunction;
+            }
+        }
+
         /// <summary>
         /// The used ease curve.
         /// <br>If this is non-null the animation curve will be used instead.</br>
@@ -151,7 +180,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="EaseCurve"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField]
+        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve))]
         protected AnimationCurve m_EaseCurve;
         /// <summary>
         /// Evaluates the current selected easing curve.
@@ -159,7 +188,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         protected virtual float EvaluateEasing(float t)
         {
-            float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : m_EaseFunction(t);
+            float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : EaseFunction(t);
             if (Clamp01EasingSetter)
                 returnValue = Math.Clamp(returnValue, 0f, 1f);
 
@@ -263,7 +292,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public BXSAction OnStartAction;
         /// <summary>
-        /// Called every tick of this tween.
+        /// Called every tick of this tween, after the tween has waited out it's delay and while it's running.
         /// </summary>
         public BXSAction OnTickAction;
         /// <summary>
@@ -368,13 +397,13 @@ namespace BXFW.Tweening.Next
         public bool IsPaused => !IsPlaying && (DelayElapsed > float.Epsilon || CurrentElapsed > float.Epsilon);
         // -- Starting State
         /// <summary>
-        /// The delay when the <see cref="Play"/> is called.
-        /// </summary>
-        public float StartingDelay { get; protected set; }
-        /// <summary>
         /// The duration when the <see cref="Play"/> is called.
         /// </summary>
         public float StartingDuration { get; protected set; }
+        /// <summary>
+        /// The delay when the <see cref="Play"/> is called.
+        /// </summary>
+        public float StartingDelay { get; protected set; }
         /// <summary>
         /// The count of loops when the <see cref="Play"/> is called.
         /// </summary>
@@ -464,7 +493,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Starts the tween.
         /// <br>If the tween is already running, calling this will stop it.</br>
-        /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true.</br>
+        /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true, please call it.</br>
         /// </summary>
         public virtual void Play()
         {
@@ -477,8 +506,14 @@ namespace BXFW.Tweening.Next
             if (IsPlaying)
                 Stop();
 
+            // Assign run temps
+            StartingDuration = Duration;
+            StartingDelay = Delay;
+            StartingLoops = LoopCount;
+            // Set state
             IsPlaying = true;
             OnPlayAction?.Invoke();
+            
             BXSTween.RunningTweens.Add(this);
 
             if (!HasPlayedOnce)

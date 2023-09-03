@@ -7,7 +7,10 @@ namespace BXFW.Tweening.Next
     /// <summary>
     /// Contains a typed context.
     /// <br>The actual setters are contained here, along with the other values.</br>
-    /// <br>This context handles most of the type related things.</br>
+    /// <br>This context handles most of the type related things + <see cref="BXSTweenable"/> setters.</br>
+    /// <br/>
+    /// <br>Overriding classes should implement everything + a preferably public default constructor 
+    /// if another constructor that isn't default was made.</br>
     /// </summary>
     [Serializable]
     public abstract class BXSTweenContext<TValue> : BXSTweenable
@@ -60,6 +63,7 @@ namespace BXFW.Tweening.Next
         // -- Interpolation
         /// <summary>
         /// The linear interpolation method to override for the setter of this <typeparamref name="TValue"/> context.
+        /// <br>This expects an unclamped interpolation action.</br>
         /// </summary>
         public abstract BXSLerpAction<TValue> LerpAction { get; }
         /// <summary>
@@ -72,7 +76,7 @@ namespace BXFW.Tweening.Next
         /// Returns whether the tween context has a getter and setter.
         /// <br>This may also return whether if the <see cref="StartValue"/> and <see cref="EndValue"/> is not null if <typeparamref name="TValue"/> is nullable.</br>
         /// </summary>
-        public override bool IsValid => 
+        public override bool IsValid =>
             GetterAction != null && SetterAction != null &&
             HasGenericActions &&
             // check if struct or not, if not a struct check nulls
@@ -107,11 +111,49 @@ namespace BXFW.Tweening.Next
 
             StartValue = tweenableAsContext.StartValue;
             EndValue = tweenableAsContext.EndValue;
+            AbsoluteEndValue = tweenableAsContext.AbsoluteEndValue;
             GetterAction = tweenableAsContext.GetterAction;
             SetterAction = tweenableAsContext.SetterAction;
         }
 
-        // -- Daisy Chain Setters
+        // - Operators
+        public static implicit operator bool(BXSTweenContext<TValue> context)
+        {
+            return context.IsValid;
+        }
+
+        /// <summary>
+        /// Sets up context. Do this if your context is not <see cref="IsValid"/>.
+        /// <br/>
+        /// <br><see cref="ArgumentNullException"/> = Thrown when any of these are null : 
+        /// <paramref name="startValueGetter"/> or <paramref name="setter"/>.</br>
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        public void SetupContext(BXSGetterAction<TValue> startValueGetter, TValue endValue, BXSSetterAction<TValue> setter)
+        {
+            SetStartValue(startValueGetter).SetEndValue(endValue).SetSetterAction(setter);
+        }
+
+        // - Daisy Chain Setters
+        /// <summary>
+        /// Sets the start value from the getter <see cref="GetterAction"/>.
+        /// </summary>
+        public BXSTweenContext<TValue> SetStartValue()
+        {
+            return SetStartValue(GetterAction());
+        }
+        /// <summary>
+        /// Sets the <see cref="GetterAction"/> value and sets the <see cref="StartValue"/> from it.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        public BXSTweenContext<TValue> SetStartValue(BXSGetterAction<TValue> getter)
+        {
+            if (getter == null)
+                throw new ArgumentNullException(nameof(getter), $"[BXSTweenContext<{typeof(TValue)}>::SetStartValue] Given argument is null.");
+
+            GetterAction = getter;
+            return SetStartValue(GetterAction());
+        }
         /// <summary>
         /// Sets the starting value.
         /// <br>This also effects the tween while running.</br>
@@ -133,10 +175,23 @@ namespace BXFW.Tweening.Next
 
             return this;
         }
+        /// <summary>
+        /// Sets the <see cref="SetterAction"/> value.
+        /// </summary>
+        /// <param name="setter">The setter. This value cannot be null.</param>
+        /// <exception cref="ArgumentNullException"/>
+        public BXSTweenContext<TValue> SetSetterAction(BXSSetterAction<TValue> setter)
+        {
+            if (setter == null)
+                throw new ArgumentNullException(nameof(setter), $"[BXSTweenContext<{typeof(TValue)}>::SetSetterAction] Given argument is null.");
+
+            SetterAction = setter;
+            return this;
+        }
 
         /// <summary>
         /// Sets the duration of the tween.
-        /// <br>Has effect and will change the duration after the tween was started.</br>
+        /// <br>Has no effect after the tween was started.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetDuration(float duration)
         {
@@ -145,7 +200,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets delay.
-        /// <br>Has no effect if the tween has it's <see cref="BXSTweenable.DelayElapsed"/> ticked to 1.</br>
+        /// <br>Has no effect after the tween was started.</br>
         /// </summary>
         /// <param name="delay">The delay to wait. Values equal or lower than 0 are no delay.</param>
         public BXSTweenContext<TValue> SetDelay(float delay)
@@ -213,6 +268,19 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetEaseCurve(AnimationCurve curve)
         {
             m_EaseCurve = curve;
+
+            if (m_EaseCurve == null)
+                UseEaseCurve = false;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets the speed of this tween.
+        /// <br>Setting this value 0 or lower will make the tween not tick forward.</br>
+        /// </summary>
+        public BXSTweenContext<TValue> SetSpeed(float speed)
+        {
+            Speed = speed;
 
             return this;
         }
@@ -448,11 +516,6 @@ namespace BXFW.Tweening.Next
                 return;
 
             base.Play();
-
-            /// Calculate Start/End values
-            /// The <see cref="EvaluateTween(float)"/> will do the interpolation with respect to the <see cref="StartValue"/> if relative
-            if (m_IsEndValueRelative)
-                StartValue = GetterAction();
 
             GetAbsoluteEndValue();
         }

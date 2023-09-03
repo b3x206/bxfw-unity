@@ -355,7 +355,7 @@ namespace BXFW
                 return;
 
             // Push rigidbodies 
-            var rb = hit.rigidbody;
+            Rigidbody rb = hit.rigidbody;
             Vector3 force;
 
             if (rb == null || rb.isKinematic)

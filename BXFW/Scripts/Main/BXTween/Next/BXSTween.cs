@@ -46,17 +46,7 @@ namespace BXFW.Tweening.Next
         /// The actual list of all running tweens.
         /// <br>The '<see cref="IReadOnlyList{T}"/>' is only used for making 'BXSTweenable's non-assignable.</br>
         /// </summary>
-        public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>();
-
-        /// <summary>
-        /// Hooks the tween runner.
-        /// </summary>
-        private static void HookTweenRunner(IBXSTweenRunner runner)
-        {
-            runner.OnRunnerExit += OnTweenRunnerExit;
-            runner.OnRunnerTick += OnTweenRunnerTick;
-            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
-        }
+        public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>(50);
 
         /// <summary>
         /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/>.
@@ -89,7 +79,20 @@ namespace BXFW.Tweening.Next
             RunningTweens.Clear();
         }
 
+        // -- Tweening
+
+
         #region IBXSRunner
+        /// <summary>
+        /// Hooks the tween runner.
+        /// </summary>
+        private static void HookTweenRunner(IBXSTweenRunner runner)
+        {
+            runner.OnRunnerExit += OnTweenRunnerExit;
+            runner.OnRunnerTick += OnTweenRunnerTick;
+            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+        }
+
         private static void OnTweenRunnerTick(IBXSTweenRunner runner)
         {
             // Iterate all tweens
@@ -175,7 +178,7 @@ namespace BXFW.Tweening.Next
                 }
             }
 
-            bool isFirstRun = tween.RemainingLoops == tween.LoopCount;
+            bool isFirstRun = tween.RemainingLoops == tween.StartingLoops;
 
             // Delay
             if (tween.DelayElapsed < 1f)
@@ -187,7 +190,7 @@ namespace BXFW.Tweening.Next
                 }
 
                 // Elapse delay further
-                tween.DelayElapsed += deltaTime / tween.Delay;
+                tween.DelayElapsed += deltaTime / tween.StartingDelay;
 
                 if (tween.DelayElapsed >= 1f && isFirstRun)
                 {
@@ -201,10 +204,12 @@ namespace BXFW.Tweening.Next
             {
                 tween.EvaluateTween(tween.CurrentElapsed);
                 tween.OnTickAction?.Invoke();
-                tween.CurrentElapsed += deltaTime / tween.Duration;
+                tween.CurrentElapsed += deltaTime / tween.StartingDuration;
 
                 return;
             }
+            // Base tweening ended, set 'tween.EvaluateTween' with 1f.
+            tween.EvaluateTween(1f);
 
             // Looping
             if (tween.RemainingLoops != 0)
@@ -217,16 +222,17 @@ namespace BXFW.Tweening.Next
                 return;
             }
 
+            // Stop + Call endings
             tween.Stop();
         }
 
         /// <summary>
         /// The exit method for the <see cref="MainRunner"/>.
         /// </summary>
-        private static void OnTweenRunnerExit(bool applicationQuit)
+        private static void OnTweenRunnerExit(bool cleanup)
         {
             // If we are quitting app as well clear the BXSTween runnings.
-            if (applicationQuit)
+            if (cleanup)
             {
                 Clear(); 
             }
