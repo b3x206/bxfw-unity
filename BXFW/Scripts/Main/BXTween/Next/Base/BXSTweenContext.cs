@@ -24,6 +24,8 @@ namespace BXFW.Tweening.Next
         /// The current gathered ending value.
         /// </summary>
         public TValue EndValue { get; protected set; }
+        // TODO : Fix the 'AbsoluteEndValue' by pairing it with a 'AbsoluteStartValue'
+        // So that the relativeness with Yoyo loop tweens work fine.
         /// <summary>
         /// The targeted absolute end value for the tween.
         /// <br>This is only relevant when this tween <see cref="BXSTweenable.IsEndValueRelative"/>, otherwise this is equal to the <see cref="EndValue"/>.</br>
@@ -38,6 +40,7 @@ namespace BXFW.Tweening.Next
             // StartValue is EndValue (this is called because the valeus has to switch)
             // So switch it regardless of value safety.
             (StartValue, EndValue) = (EndValue, StartValue);
+            GetAbsoluteEndValue();
         }
 
         /// <summary>
@@ -131,7 +134,7 @@ namespace BXFW.Tweening.Next
         /// <exception cref="ArgumentNullException"/>
         public void SetupContext(BXSGetterAction<TValue> startValueGetter, TValue endValue, BXSSetterAction<TValue> setter)
         {
-            SetStartValue(startValueGetter).SetEndValue(endValue).SetSetterAction(setter);
+            SetStartValue(startValueGetter).SetEndValue(endValue).SetSetter(setter);
         }
 
         // - Daisy Chain Setters
@@ -180,7 +183,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         /// <param name="setter">The setter. This value cannot be null.</param>
         /// <exception cref="ArgumentNullException"/>
-        public BXSTweenContext<TValue> SetSetterAction(BXSSetterAction<TValue> setter)
+        public BXSTweenContext<TValue> SetSetter(BXSSetterAction<TValue> setter)
         {
             if (setter == null)
                 throw new ArgumentNullException(nameof(setter), $"[BXSTweenContext<{typeof(TValue)}>::SetSetterAction] Given argument is null.");
@@ -241,6 +244,15 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetLoopType(LoopType type)
         {
             m_LoopType = type;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets whether to wait the <see cref="BXSTweenable.Delay"/> when the tween repeats.
+        /// </summary>
+        public BXSTweenContext<TValue> SetWaitDelayOnLoop(bool doWait)
+        {
+            m_WaitDelayOnLoop = doWait;
 
             return this;
         }
@@ -354,6 +366,7 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnPlayAction"/> event.
+        /// <br>This is called when <see cref="BXSTweenable.Play"/> is called on this tween.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetPlayAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -375,6 +388,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnStartAction"/> event.
+        /// <br>This is called when the tween has waited out it's delay and it is starting for the first time.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetStartAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -396,6 +410,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnTickAction"/> event.
+        /// <br>This is called every time the tween ticks. It is started to be called after the delay was waited out.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetTickAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -410,7 +425,7 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    OnStartAction = action;
+                    OnTickAction = action;
                     break;
             }
             return this;
@@ -425,6 +440,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnPauseAction"/> event.
+        /// <br>It is called when <see cref="BXSTweenable.Pause"/> is called on this tween.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetPauseAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -439,7 +455,7 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    OnStartAction = action;
+                    OnPauseAction = action;
                     break;
             }
             return this;
@@ -481,7 +497,7 @@ namespace BXFW.Tweening.Next
 
                 default:
                 case EventSetMode.Equals:
-                    OnStartAction = action;
+                    OnEndAction = action;
                     break;
             }
             return this;

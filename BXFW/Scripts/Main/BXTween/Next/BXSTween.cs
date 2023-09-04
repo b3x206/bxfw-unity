@@ -80,48 +80,6 @@ namespace BXFW.Tweening.Next
         }
 
         // -- Tweening
-
-
-        #region IBXSRunner
-        /// <summary>
-        /// Hooks the tween runner.
-        /// </summary>
-        private static void HookTweenRunner(IBXSTweenRunner runner)
-        {
-            runner.OnRunnerExit += OnTweenRunnerExit;
-            runner.OnRunnerTick += OnTweenRunnerTick;
-            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
-        }
-
-        private static void OnTweenRunnerTick(IBXSTweenRunner runner)
-        {
-            // Iterate all tweens
-            for (int i = 0; i < RunningTweens.Count; i++)
-            {
-                // Run those tweens (if the tick is suitable)
-                BXSTweenable tween = RunningTweens[i];
-
-                if (tween.ActualTickType == TickType.Variable)
-                {
-                    RunTweenable(runner, tween);
-                }
-            }
-        }
-        private static void OnTweenRunnerFixedTick(IBXSTweenRunner runner)
-        {
-            // Iterate all tweens
-            for (int i = 0; i < RunningTweens.Count; i++)
-            {
-                // Run those tweens (if the tick is suitable)
-                BXSTweenable tween = RunningTweens[i];
-
-                if (tween.ActualTickType == TickType.Fixed)
-                {
-                    RunTweenable(runner, tween);
-                }
-            }
-        }
-
         /// <summary>
         /// Runs a tweenable.
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
@@ -134,6 +92,17 @@ namespace BXFW.Tweening.Next
                 tween.Stop();
                 RunningTweens.Remove(tween);
                 // TODO : Debug Log here
+                return;
+            }
+            if (!tween.IsPlaying)
+                return;
+
+            if (tween.IsInstant)
+            {
+                tween.OnStartAction?.Invoke();
+                tween.OnEndAction?.Invoke();
+                tween.EvaluateTween(1f);
+                tween.Stop();
                 return;
             }
 
@@ -178,7 +147,7 @@ namespace BXFW.Tweening.Next
                 }
             }
 
-            bool isFirstRun = tween.RemainingLoops == tween.StartingLoops;
+            bool isFirstRun = tween.LoopsElapsed == tween.StartingLoopCount;
 
             // Delay
             if (tween.DelayElapsed < 1f)
@@ -187,9 +156,12 @@ namespace BXFW.Tweening.Next
                 if (!tween.IsDelayed)
                 {
                     tween.DelayElapsed = 1f;
+                    tween.OnStartAction?.Invoke();
+                    return;
                 }
 
                 // Elapse delay further
+                // (not returning if the tween is not delayed will cause a division by zero)
                 tween.DelayElapsed += deltaTime / tween.StartingDelay;
 
                 if (tween.DelayElapsed >= 1f && isFirstRun)
@@ -211,19 +183,64 @@ namespace BXFW.Tweening.Next
             // Base tweening ended, set 'tween.EvaluateTween' with 1f.
             tween.EvaluateTween(1f);
 
-            // Looping
-            if (tween.RemainingLoops != 0)
+            // Looping (infinite loop if the 'StartingLoopCount' is less than 0
+            // StartingLoopCount should be greater than 0 or less than zero to be able to loop.
+            // Only do loops if there is still yet to do loops
+            if (tween.StartingLoopCount < 0 || tween.LoopsElapsed < tween.StartingLoopCount)
             {
-                if (tween.RemainingLoops > 0)
-                    tween.RemainingLoops--;
+                if (tween.StartingLoopCount > 0)
+                    tween.LoopsElapsed++;
 
                 tween.OnRepeatAction?.Invoke();
                 tween.Reset();
+                if (tween.LoopType == LoopType.Yoyo)
+                    tween.IsTargetValuesSwitched = !tween.IsTargetValuesSwitched;
+                
                 return;
             }
 
             // Stop + Call endings
             tween.Stop();
+        }
+
+        #region IBXSRunner
+        /// <summary>
+        /// Hooks the tween runner.
+        /// </summary>
+        private static void HookTweenRunner(IBXSTweenRunner runner)
+        {
+            runner.OnRunnerExit += OnTweenRunnerExit;
+            runner.OnRunnerTick += OnTweenRunnerTick;
+            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+        }
+
+        private static void OnTweenRunnerTick(IBXSTweenRunner runner)
+        {
+            // Iterate all tweens
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                // Run those tweens (if the tick is suitable)
+                BXSTweenable tween = RunningTweens[i];
+
+                if (tween.ActualTickType == TickType.Variable)
+                {
+                    RunTweenable(runner, tween);
+                }
+            }
+        }
+        private static void OnTweenRunnerFixedTick(IBXSTweenRunner runner)
+        {
+            // Iterate all tweens
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                // Run those tweens (if the tick is suitable)
+                BXSTweenable tween = RunningTweens[i];
+
+                if (tween.ActualTickType == TickType.Fixed)
+                {
+                    RunTweenable(runner, tween);
+                }
+            }
         }
 
         /// <summary>

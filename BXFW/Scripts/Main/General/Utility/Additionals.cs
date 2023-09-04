@@ -752,6 +752,12 @@ namespace BXFW
         /// <summary>
         /// Copies the given directory.
         /// </summary>
+        /// <param name="sourceDirName">The given directory to copy. If this does not exist then <see cref="DirectoryNotFoundException"/> is thrown.</param>
+        /// <param name="destDirName">
+        /// The destination directory to copy into. This is created if it doesn't exist, 
+        /// and it shouldn't be the same as <paramref name="sourceDirName"/>.
+        /// </param>
+        /// <param name="copySubDirs">Whether to also copy the subdirectories on the <paramref name="sourceDirName"/> into <paramref name="destDirName"/>.</param>
         public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
         {
             // Get the subdirectories for the specified directory.
@@ -759,8 +765,7 @@ namespace BXFW
 
             if (!dir.Exists)
             {
-                throw new DirectoryNotFoundException
-                    (string.Format("[Additionals::DirectoryCopy] Source directory does not exist or could not be found: {0}", sourceDirName));
+                throw new DirectoryNotFoundException(string.Format("[Additionals::DirectoryCopy] Source directory does not exist or could not be found: {0}", sourceDirName));
             }
 
             if (sourceDirName.Equals(destDirName))
@@ -785,10 +790,10 @@ namespace BXFW
             // If copying subdirectories, copy them and their contents to new location.
             if (copySubDirs)
             {
-                foreach (DirectoryInfo subdir in dirs)
+                foreach (DirectoryInfo subDir in dirs)
                 {
-                    string tempPath = Path.Combine(destDirName, subdir.Name);
-                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
+                    string tempPath = Path.Combine(destDirName, subDir.Name);
+                    DirectoryCopy(subDir.FullName, tempPath, copySubDirs);
                 }
             }
         }
@@ -879,7 +884,10 @@ namespace BXFW
                 typeName == typeof(long).Name ||
                 typeName == typeof(ulong).Name ||
                 typeName == typeof(IntPtr).Name ||
-                typeName == typeof(UIntPtr).Name;
+                typeName == typeof(UIntPtr).Name ||
+                // SerializedProperty.type
+                typeName == "int" ||
+                typeName == "long";
         }
         /// <summary>
         /// Returns whether if the type name is a floating point number type.
@@ -889,7 +897,10 @@ namespace BXFW
         {
             return typeName == typeof(float).Name ||
                 typeName == typeof(double).Name ||
-                typeName == typeof(decimal).Name;
+                typeName == typeof(decimal).Name ||
+                // SerializedProperty.type
+                typeName == "float" ||
+                typeName == "double";
         }
         /// <summary>
         /// Returns whether if the <paramref name="typeName"/> has a numerical name.
@@ -997,7 +1008,8 @@ namespace BXFW
         /// </summary>
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
-            if (type.BaseType == null) return type.GetInterfaces();
+            if (type.BaseType == null)
+                return type.GetInterfaces();
 
             return Enumerable.Repeat(type.BaseType, 1)
                              .Concat(type.GetInterfaces())

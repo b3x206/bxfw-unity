@@ -469,7 +469,7 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.BeginChangeCheck();
                 // Can't just cast float to double because reasons
-                if (property.type == typeof(float).Name)
+                if (property.type.Contains("float", StringComparison.Ordinal))
                 {
                     float v = Mathf.Clamp(EditorGUI.FloatField(position, label, property.floatValue), (float)CAttribute.min, (float)CAttribute.max);
                     if (EditorGUI.EndChangeCheck())
