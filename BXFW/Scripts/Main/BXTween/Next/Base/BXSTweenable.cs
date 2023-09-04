@@ -3,6 +3,7 @@ using UnityEngine;
 using BXFW.Tweening.Next.Events;
 using System.Text;
 using UnityEngine.Assertions;
+using DG.Tweening;
 
 /// -- To make this file compatible with other things :
 /// A : 'using' Alias 'SerializeField' with something that marks hidden fields as serializable (i.e 'ExportAttribute' in godot)
@@ -25,7 +26,7 @@ namespace BXFW.Tweening.Next
     /// <br><see cref="Pause"/> = Pauses the base tween.</br>
     /// <br><see cref="Stop"/>  = Stops the base tween.</br>
     /// </summary>
-    public enum TickConditionSuspendType
+    public enum TickSuspendType
     {
         None, Tick, Pause, Stop
     }
@@ -73,7 +74,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="Delay"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField]
+        [SerializeField, Clamp(0f, float.MaxValue)]
         protected float m_Delay = 0f;
 
         /// <summary>
@@ -180,10 +181,10 @@ namespace BXFW.Tweening.Next
         [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve))]
         protected AnimationCurve m_EaseCurve;
         /// <summary>
-        /// Evaluates the current selected easing curve.
+        /// Evaluates the current selected easing curve of this <see cref="BXSTweenable"/>.
         /// <br>This respects the <see cref="Clamp01EasingSetter"/> and <see cref="UseEaseCurve"/> settings.</br>
         /// </summary>
-        protected virtual float EvaluateEasing(float t)
+        public virtual float EvaluateEasing(float t)
         {
             float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : EaseFunction(t);
 
@@ -282,6 +283,7 @@ namespace BXFW.Tweening.Next
         // The events can be changed either manually or by using the setter methods by classes overriding this
         /// <summary>
         /// Called with <see cref="Play"/> of the tween.
+        /// <br>If this event throws an <see cref="Exception"/> of any kind the tween won't play.</br>
         /// </summary>
         public BXSAction OnPlayAction;
         /// <summary>
@@ -291,6 +293,7 @@ namespace BXFW.Tweening.Next
         public BXSAction OnStartAction;
         /// <summary>
         /// Called every tick of this tween, after the tween has waited out it's delay and while it's running.
+        /// <br>If this event throws an <see cref="Exception"/> the tween will <see cref="Stop"/>.</br>
         /// </summary>
         public BXSAction OnTickAction;
         /// <summary>
@@ -314,6 +317,8 @@ namespace BXFW.Tweening.Next
         /// The condition for elapsing the tween or not.
         /// <br>This function should return true constantly unless the tween shouldn't elapse more.</br>
         /// <br>This will suspend the tween until this condition is true.</br>
+        /// <br/>
+        /// <br>If this event throws an <see cref="Exception"/> the tween will <see cref="Stop"/>.</br>
         /// </summary>
         public BXSTickConditionAction TickConditionAction { get; protected set; }
 
@@ -497,7 +502,7 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                // Debug Log
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Play] This tweenable '{ToString(true)}' isn't valid. Cannot 'Play' tween.");
                 return;
             }
 
@@ -515,9 +520,19 @@ namespace BXFW.Tweening.Next
             }
 
             // Set state
+            try
+            {
+                OnPlayAction?.Invoke();
+            }
+            catch (Exception e)
+            {
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Play] OnPlayAction in tween '{ToString(true)}'\n", e);
+                return;
+            }
+
             IsPlaying = true;
-            OnPlayAction?.Invoke();
             BXSTween.RunningTweens.Add(this);
+            
             if (!HasPlayedOnce)
                 HasPlayedOnce = true;
         }
@@ -529,7 +544,7 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                // Debug Log
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Pause] This tweenable '{ToString(true)}' isn't valid. Cannot 'Pause' tween.");
                 return;
             }
 
@@ -538,8 +553,16 @@ namespace BXFW.Tweening.Next
 
             // Set state
             IsPlaying = false;
-            OnPauseAction?.Invoke();
             BXSTween.RunningTweens.Remove(this);
+
+            try
+            {
+                OnPauseAction?.Invoke();
+            }
+            catch (Exception e)
+            {
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Pause] OnPauseAction in tween '{ToString(true)}'\n", e);
+            }
         }
         /// <summary>
         /// Stops the tween.
@@ -549,13 +572,21 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                // Debug Log
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Stop] This tweenable '{ToString(true)}' isn't valid. Cannot 'Stop' tween.");
                 return;
             }
 
             IsPlaying = false;
-            OnEndAction?.Invoke();
             BXSTween.RunningTweens.Remove(this);
+
+            try
+            {
+                OnEndAction?.Invoke();
+            }
+            catch (Exception e)
+            {
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Stop] OnStopAction in tween '{ToString(true)}'\n", e);
+            }
 
             Reset();
         }
@@ -575,7 +606,9 @@ namespace BXFW.Tweening.Next
             {
                 IsTargetValuesSwitched = false;
                 LoopsElapsed = 0;
-
+            }
+            else
+            {
                 if (!m_WaitDelayOnLoop)
                     DelayElapsed = 1f;
             }

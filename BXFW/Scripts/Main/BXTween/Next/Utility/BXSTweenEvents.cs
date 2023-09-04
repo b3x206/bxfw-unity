@@ -22,7 +22,7 @@ namespace BXFW.Tweening.Next.Events
     /// <summary>
     /// A tick condition return action.
     /// </summary>
-    public delegate TickConditionSuspendType BXSTickConditionAction();
+    public delegate TickSuspendType BXSTickConditionAction();
     /// <summary>
     /// A predicate action.
     /// </summary>

@@ -1,4 +1,3 @@
-#if UNITY_2018_3_OR_NEWER
 using System;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
@@ -33,7 +32,7 @@ namespace BXFW.Tweening.Next
                 BXSTweenUnityRunner runner = new GameObject("BXSTween").AddComponent<BXSTweenUnityRunner>();
 
                 // Initialize the static things
-                BXSTween.Initialize(runner);
+                BXSTween.Initialize(runner, new Logger(Debug.Log, Debug.LogWarning, Debug.LogError, Debug.LogException));
                 runner.OnRunnerStart?.Invoke();
 
                 // Add it to 'DontDestroyOnLoad'
@@ -69,7 +68,7 @@ namespace BXFW.Tweening.Next
             if (id == BXSTween.NoID)
                 return null;
 
-            int index = idObjectRegistries.FindIndex((reg) => reg.unityObject.GetInstanceID() == id);
+            int index = idObjectRegistries.FindIndex((reg) => GetIDFromObject(reg.unityObject) == id);
             if (index < 0)
                 return null;
 
@@ -109,4 +108,3 @@ namespace BXFW.Tweening.Next
         }
     }
 }
-#endif

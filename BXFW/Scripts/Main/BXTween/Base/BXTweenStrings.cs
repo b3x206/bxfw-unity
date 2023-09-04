@@ -9,8 +9,6 @@ using static BXFW.Tweening.BXTween;
 namespace BXFW.Tweening
 {
     /// Solution for stylized print strings. 
-    /// note : (for+++hh9jhfjh??j); please put this code
-    /// (thank you sister for valuable feedback, i will fix this)
     /// <summary>
     /// Constant strings for <see cref="BXTween"/> messages.
     /// <br>Doesn't apply styling on compiled builds of the game.</br>
@@ -123,7 +121,7 @@ namespace BXFW.Tweening
 Tween Details : Duration={2} Delay={3} StartVal={4} EndVal={5} HasEndActions={6} InvokeActionsOnManualStop={6}.",
                     // why a ternary that returns "Null" if target object is null? 
                     // because accessing the 'TargetObject' causes a MissingReferenceException if it was destroyed
-                    // yeah.
+                    // And this is a unity object so no null coalesence
                     gContext.ToString(), gContext.TargetObject == null ? "Null" : gContext.TargetObject.ToString(), gContext.Duration, gContext.Delay, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
         }
         public static string DLog_BXTwCallGenericTo<T>(T StartValue, T TargetValue, float Duration, UnityEngine.Object TargetObject)

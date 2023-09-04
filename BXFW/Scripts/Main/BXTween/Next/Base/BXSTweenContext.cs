@@ -24,8 +24,6 @@ namespace BXFW.Tweening.Next
         /// The current gathered ending value.
         /// </summary>
         public TValue EndValue { get; protected set; }
-        // TODO : Fix the 'AbsoluteEndValue' by pairing it with a 'AbsoluteStartValue'
-        // So that the relativeness with Yoyo loop tweens work fine.
         /// <summary>
         /// The targeted absolute end value for the tween.
         /// <br>This is only relevant when this tween <see cref="BXSTweenable.IsEndValueRelative"/>, otherwise this is equal to the <see cref="EndValue"/>.</br>
@@ -39,8 +37,22 @@ namespace BXFW.Tweening.Next
             // EndValue is StartValue
             // StartValue is EndValue (this is called because the valeus has to switch)
             // So switch it regardless of value safety.
-            (StartValue, EndValue) = (EndValue, StartValue);
-            GetAbsoluteEndValue();
+            if (IsEndValueRelative)
+            {
+                // Set the 'AbsoluteEndValue' to start value (without changing the 'EndValue')
+                // ---------------
+                // Do this because
+                // A : We don't have an 'AbsoluteStartValue',
+                // B : Yoyo tweens expect the values to be switched
+                // And C : Relative tweens use the 'EndValue' as to be added to the 'StartValue', so it is the actual value
+                // FIXME : This apporach may have issues + bugs, fix it using by creating an 'AbsoluteStartValue'.
+                (StartValue, AbsoluteEndValue) = (AbsoluteEndValue, StartValue);
+            }
+            else
+            {
+                (StartValue, EndValue) = (EndValue, StartValue);
+                GetAbsoluteEndValue();
+            }            
         }
 
         /// <summary>
@@ -504,7 +516,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.TickConditionAction"/> action.
-        /// <br>Return the suitable <see cref="TickConditionSuspendType"/> in the function.</br>
+        /// <br>Return the suitable <see cref="TickSuspendType"/> in the function.</br>
         /// </summary> 
         public BXSTweenContext<TValue> SetTickConditionAction(BXSTickConditionAction action, EventSetMode setMode = EventSetMode.Equals)
         {

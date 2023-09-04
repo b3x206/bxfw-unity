@@ -1,10 +1,11 @@
+using System;
 using System.Collections.Generic;
 
 namespace BXFW.Tweening.Next
 {
     /// BXFW.Tweening.Next roadmap
     /// A tweening engine that can be attached to most things supporting c#.
-    /// (but will still require things to do because unity doesn't serialize private/protected's)
+    /// (but will still require things to do/remove because unity doesn't serialize private/protected's)
     /// 
     /// Rule #1 = NO TIMERS OR COROUTINES (timer is coroutine anyways)
     /// Only functions that update things in the <see cref="RunningTweens"/> array.
@@ -13,7 +14,7 @@ namespace BXFW.Tweening.Next
     /// TODO : A lot of things
     /// But first to decide what things i am gonna do.
     /// Probably it is so that 'BXSTweenable' implementing context can have a lot of features and controlability and the rest will be more normal.
-    /// * Error handling for run tweens
+    /// * Error handling for running tweens so that those tweens wouldn't hang the main running thread
     /// * A logger class for BXFW (general purpose)
     /// 
     /// ---------
@@ -25,7 +26,7 @@ namespace BXFW.Tweening.Next
     /// <br/>
     /// <b>!! CAUTION !!</b>
     /// <br><see cref="BXSTween"/> is in an experimental state, i am still unsure what to do with this, the api will be different but also do the same things.</br>
-    /// <br>So yeah don't use this, the actual <see cref="BXTween"/> is stabler (but dumber).</br>
+    /// <br>So yeah don't use this, the actual <see cref="BXTween"/> is stabler (but dumber and has less features).</br>
     /// </summary>
     public static class BXSTween
     {
@@ -41,17 +42,24 @@ namespace BXFW.Tweening.Next
         /// <br>This controls the running operations. To set this value to something else use the </br>
         /// </summary>
         public static IBXSTweenRunner MainRunner { get; private set; }
-        
+
         /// <summary>
-        /// The actual list of all running tweens.
-        /// <br>The '<see cref="IReadOnlyList{T}"/>' is only used for making 'BXSTweenable's non-assignable.</br>
+        /// The <see cref="BXSTween"/> logger.
+        /// <br>Only to be used by BXSTween classes and the <see cref="IBXSTweenRunner"/> initializing this class.</br>
+        /// </summary>
+        internal static Logger MainLogger { get; private set; }
+
+        /// <summary>
+        /// The list of all running tweens.
+        /// <br>Unless absolutely necessary, there is no need to change the contents of this.</br>
+        /// <br>Can use the <see cref="BXSTweenable"/> methods on tweens here.</br>
         /// </summary>
         public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>(50);
 
         /// <summary>
-        /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/>.
+        /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/> with logger <paramref name="logger"/>.
         /// </summary>
-        public static void Initialize(IBXSTweenRunner runner)
+        public static void Initialize(IBXSTweenRunner runner, Logger logger)
         {
             // Call this first to call all events on the 'OnRunnerExit'
             MainRunner?.Kill();
@@ -60,12 +68,25 @@ namespace BXFW.Tweening.Next
             MainRunner = runner;
             // Hook the tween runner
             HookTweenRunner(runner);
+
+            // Hook the logger
+            SetLogger(logger);
+        }
+        /// <summary>
+        /// Sets a logger.
+        /// </summary>
+        public static void SetLogger(Logger logger)
+        {
+            if (logger == null)
+                throw new ArgumentNullException(nameof(logger), "[BXSTween::SetLogger] Given argument was null.");
+
+            MainLogger = logger;
         }
 
         /// <summary>
-        /// Stops all tweens and clears BXSTween.
+        /// Stops all tweens of <see cref="RunningTweens"/>.
         /// </summary>
-        public static void Clear()
+        public static void StopAllTweens()
         {
             for (int i = 0; i < RunningTweens.Count; i++)
             {
@@ -79,6 +100,16 @@ namespace BXFW.Tweening.Next
             RunningTweens.Clear();
         }
 
+        /// <summary>
+        /// Clears the <see cref="BXSTween"/>, this includes the <see cref="MainRunner"/> and <see cref="MainLogger"/>.
+        /// </summary>
+        public static void Clear()
+        {
+            StopAllTweens();
+            MainRunner?.Kill();
+            // Don't unset the logger.
+        }
+
         // -- Tweening
         /// <summary>
         /// Runs a tweenable.
@@ -89,21 +120,65 @@ namespace BXFW.Tweening.Next
             // Checks
             if (!tween.IsValid)
             {
-                tween.Stop();
                 RunningTweens.Remove(tween);
-                // TODO : Debug Log here
+                MainLogger.LogError($"[BXSTweenable::RunTweenable] Invalid tween '{tween.ToString(true)}', stopping and removing it.");
+                tween.Stop();
                 return;
             }
             if (!tween.IsPlaying)
+            {
+                RunningTweens.Remove(tween);
+                MainLogger.LogWarning($"[BXSTweenable::RunTweenable] Non playing tween '{tween.ToString(true)}' tried to be run.");
                 return;
+            }
 
             if (tween.IsInstant)
             {
-                tween.OnStartAction?.Invoke();
-                tween.OnEndAction?.Invoke();
+                try
+                {
+                    tween.OnStartAction?.Invoke();
+                    tween.OnEndAction?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction+OnEndAction in tween '{tween.ToString(true)}'\n", e);
+                }
                 tween.EvaluateTween(1f);
                 tween.Stop();
+                
                 return;
+            }
+
+            // Tickability
+            if (tween.TickConditionAction != null)
+            {
+                TickSuspendType suspendType = TickSuspendType.None;
+
+                try
+                {
+                    suspendType = tween.TickConditionAction();
+                }
+                catch (Exception e)
+                {
+                    MainLogger.LogException($"[BXSTween::RunTweenable] TickConditionAction in tween '{tween.ToString(true)}'\n", e);
+                    suspendType = TickSuspendType.Stop;
+                }
+
+                switch (suspendType)
+                {
+                    case TickSuspendType.Tick:
+                        return;
+                    case TickSuspendType.Pause:
+                        tween.Pause();
+                        return;
+                    case TickSuspendType.Stop:
+                        tween.Stop();
+                        return;
+
+                    default:
+                    case TickSuspendType.None:
+                        break;
+                }
             }
 
             // DeltaTime
@@ -125,48 +200,33 @@ namespace BXFW.Tweening.Next
             }
             deltaTime *= tween.Speed;
 
-            // Tickability
-            if (tween.TickConditionAction != null)
-            {
-                TickConditionSuspendType suspendType = tween.TickConditionAction();
-
-                switch (suspendType)
-                {
-                    case TickConditionSuspendType.Tick:
-                        return;
-                    case TickConditionSuspendType.Pause:
-                        tween.Pause();
-                        return;
-                    case TickConditionSuspendType.Stop:
-                        tween.Stop();
-                        return;
-
-                    default:
-                    case TickConditionSuspendType.None:
-                        break;
-                }
-            }
-
             bool isFirstRun = tween.LoopsElapsed == tween.StartingLoopCount;
 
             // Delay
             if (tween.DelayElapsed < 1f)
             {
                 // Instant finish + wait one frame
-                if (!tween.IsDelayed)
+                if (tween.StartingDelay <= 0f)
                 {
                     tween.DelayElapsed = 1f;
-                    tween.OnStartAction?.Invoke();
-                    return;
                 }
-
-                // Elapse delay further
-                // (not returning if the tween is not delayed will cause a division by zero)
-                tween.DelayElapsed += deltaTime / tween.StartingDelay;
+                else
+                {
+                    // Elapse delay further
+                    // (only elapse if the tween has delaying)
+                    tween.DelayElapsed += deltaTime / tween.StartingDelay;
+                }
 
                 if (tween.DelayElapsed >= 1f && isFirstRun)
                 {
-                    tween.OnStartAction?.Invoke();
+                    try
+                    {
+                        tween.OnStartAction?.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction in tween '{tween.ToString(true)}'\n", e);
+                    }
                 }
                 return;
             }
@@ -174,8 +234,17 @@ namespace BXFW.Tweening.Next
             // Tweening + Elapsing
             if (tween.CurrentElapsed < 1f)
             {
-                tween.EvaluateTween(tween.CurrentElapsed);
-                tween.OnTickAction?.Invoke();
+                try
+                {
+                    tween.EvaluateTween(tween.CurrentElapsed);
+                    tween.OnTickAction?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    MainLogger.LogException($"[BXSTween::RunTweenable] EvaluateTween+OnTickAction in tween '{tween.ToString(true)}'\n", e);
+                    tween.Stop();
+                }
+                
                 tween.CurrentElapsed += deltaTime / tween.StartingDuration;
 
                 return;
@@ -191,11 +260,21 @@ namespace BXFW.Tweening.Next
                 if (tween.StartingLoopCount > 0)
                     tween.LoopsElapsed++;
 
-                tween.OnRepeatAction?.Invoke();
+                // Call this before just in case the parameters are changed
+                try
+                {
+                    tween.OnRepeatAction?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    MainLogger.LogException($"[BXSTween::RunTweenable] OnRepeatAction in tween '{tween.ToString(true)}'\n", e);
+                }
+
+                // Reset the base while looping
                 tween.Reset();
                 if (tween.LoopType == LoopType.Yoyo)
                     tween.IsTargetValuesSwitched = !tween.IsTargetValuesSwitched;
-                
+
                 return;
             }
 
@@ -251,7 +330,7 @@ namespace BXFW.Tweening.Next
             // If we are quitting app as well clear the BXSTween runnings.
             if (cleanup)
             {
-                Clear(); 
+                StopAllTweens();
             }
 
             MainRunner = null;

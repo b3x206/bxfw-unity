@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace BXFW
 {
-    /// TODO : Make this class abstract and take a sprite reference for value to set.
+    /// TODO : Make this class abstract and take a SetFrame function with the given settable type for value to set.
     /// <summary>
     /// An animation runner that does not hold grudges to the variable that is going to be animated.
     /// </summary>
