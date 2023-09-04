@@ -66,6 +66,24 @@ namespace BXFW
         }
         /// <summary>
         /// Prints out an exception.
+        /// </summary>
+        public void LogException(Exception exception)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception), "[Logger::LogException] Given parameter is null.");
+            }
+
+            if (logExceptionAction == null)
+            {
+                LogError($"[Logger::LogException] There is no 'logExceptionAction' available. Message : {exception.Message}, {exception.StackTrace}");
+                return;
+            }
+
+            logExceptionAction(exception);
+        }
+        /// <summary>
+        /// Prints out an exception.
         /// <br>A special unity method, can use <see cref="LogError"/> instead.</br>
         /// </summary>
         public void LogException(string exceptionPrependMessage, Exception exception)
@@ -81,21 +99,6 @@ namespace BXFW
                 string exMessage = exception.Message;
                 // Prepend the given string to 'exMessage'
                 exception.GetType().GetField("_message", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(exception, exMessage.Insert(0, exceptionPrependMessage));
-            }
-
-            logExceptionAction(exception);
-        }
-        public void LogException(Exception exception)
-        {
-            if (exception == null)
-            {
-                throw new ArgumentNullException(nameof(exception), "[Logger::LogException] Given parameter is null.");
-            }
-
-            if (logExceptionAction == null)
-            {
-                Log($"[Logger::LogException] There is no 'logErrorAction' available. Message : {exception.Message}, {exception.StackTrace}");
-                return;
             }
 
             logExceptionAction(exception);

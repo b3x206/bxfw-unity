@@ -228,6 +228,11 @@ namespace BXFW
         }
 
         public override int Count => m_list.Count;
+        public int Capacity
+        {
+            get { return m_list.Capacity; }
+            set { m_list.Capacity = value; }
+        }
         public override Type ElementType => typeof(T);
         public bool IsReadOnly => false;
         public void Add(T item)

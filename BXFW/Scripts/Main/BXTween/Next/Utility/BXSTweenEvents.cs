@@ -14,6 +14,10 @@ namespace BXFW.Tweening.Next.Events
     /// A blank void action.
     /// </summary>
     public delegate void BXSAction();
+    /// <summary>
+    /// A void action that takes a generic parameter with value.
+    /// </summary>
+    public delegate void BXSAction<in T>(T value);
 
     /// <summary>
     /// A boolean action that returns a condition.
@@ -39,7 +43,7 @@ namespace BXFW.Tweening.Next.Events
     /// </summary>
     public delegate T BXSGetterAction<out T>();
     /// <summary>
-    /// A void action that takes a generic parameter with value.
+    /// A action called to set a value on given delegate.
     /// </summary>
     public delegate void BXSSetterAction<in T>(T value);
     /// <summary>

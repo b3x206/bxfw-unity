@@ -636,7 +636,7 @@ namespace BXFW.Tweening.Next
 
             StringBuilder sb = new StringBuilder(512);
             sb.Append("[BXSTweenable(play=").Append(IsPlaying).Append(")]")
-                .Append(pSep).Append(" Duration=").Append(m_Duration)
+                .Append(pSep).Append(" Duration=").Append(Duration)
                 .Append(pSep).Append(" Delay=").Append(m_Delay)
                 .Append(pSep).Append(" LoopCount=").Append(m_LoopCount)
                 .Append(pSep).Append(" Ease=").Append(m_Ease)
