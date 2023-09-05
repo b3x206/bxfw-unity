@@ -76,6 +76,8 @@ namespace BXFW.ScriptEditor
             position.y += PADDING / 2f;
             currentPropY = -1f;
 
+            // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
+            // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
             var targetPair = property.GetTarget();
             var target = targetPair.Value as LocalizedTextData;
             var gEnabled = GUI.enabled;

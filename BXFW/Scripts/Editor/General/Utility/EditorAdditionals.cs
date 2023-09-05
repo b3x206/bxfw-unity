@@ -187,12 +187,23 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Returns the c# object's fieldInfo and the instance object it comes with.
-        /// <br>Important NOTE : The instance object that gets returned with this method may be null.</br>
-        /// <br>In these cases use the <see langword="return"/>'s field info.</br>
         /// <br>
-        /// NOTE 2 : The field info returned may not be the exact field info, 
+        /// <b>NOTE :</b> The instance object that gets returned with this method may be null.
+        /// <br>In these cases use the <see langword="return"/>'s field info.</br>
+        /// </br>
+        /// <br/>
+        /// <br>
+        /// <b>NOTE 2 :</b> The <see cref="FieldInfo"/> returned may not be the exact <see cref="FieldInfo"/>, 
         /// as such case usually happens when you try to call 'GetTarget' on an array element.
-        /// In this case, to change the value of the array, you may need to copy the entire array, and call <see cref="FieldInfo.SetValue"/> to it.
+        /// <br>In this case, to change the value of the array, you may need to copy the entire array,
+        /// and call <see cref="FieldInfo.SetValue"/> to it.</br>
+        /// </br>
+        /// <br/>
+        /// <br>
+        /// <b>NOTE 3 :</b> Any value gathered from a normal <see langword="struct"/> child <see cref="SerializedProperty"/>
+        /// (except for the 'FieldInfo') should be considered as a copy of target.
+        /// <br>This is because <see cref="GetTarget(SerializedProperty)"/> cannot return struct references
+        /// and it does not have low-level control of neither c# or unity.</br>
         /// </br>
         /// </summary>
         /// <param name="prop">Property to get the c# object from.</param>
@@ -291,14 +302,16 @@ namespace BXFW.Tools.Editor
                                 // oh wait, that's impossible, riiight.
                                 // basically FieldInfo can't point into a c# array element member, only the parent array container as it's just the object
                                 // Because it isn't an actual field.
-                                // could use some unsafe {} but that doesn't put a guarantee of whether if will solve it.
-                                // (which it most likely won't because our result data is in ''safe'' FieldInfo type)
+                                // could use some unsafe {} but that won't solve it.
+                                // (unless we are returning a managed memory pointer, which is not really possible)
+                                // (+ which it most likely won't because our result data is in ''safe'' FieldInfo type)
 
-                                // If the array contains a member that actually has a field, it updates fine though.
-                                // So you could use a wrapper class that just contains an explicit field (but we can't act like that, because c# arrays are covariant)
+                                // If the array contains a class or a struct, and the target is a member that actually is not an array value, it updates fine though.
+                                // So you could use a wrapper class that just contains the field as the target
+                                // (but we can't act like that, because c# arrays are covariant and casting c# arrays is not fun)
                                 // whatever just look at this : https://stackoverflow.com/questions/13790527/c-sharp-fieldinfo-setvalue-with-an-array-parameter-and-arbitrary-element-type
 
-                                // ---------- No FieldInfo? -------------
+                                // ---------- No Array FieldInfo? -------------
                                 // (would like to put ascii megamind here, but git will most likely break it)
                                 target = item;
                                 isSuccess = true;
@@ -309,6 +322,7 @@ namespace BXFW.Tools.Editor
                             cntIndex++;
                         }
 
+                        // Element doesn't exist in the array
                         if (!isSuccess)
                             throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", propertyPath, targetAsArray));
                     }
@@ -324,8 +338,8 @@ namespace BXFW.Tools.Editor
                         catch
                         {
                             // It can also have an non-existent field for some reason
-                            // Because unity, so we give up (with the last information we have)
-                            // Maybe we should print a warning, but it's not too much of a thing (just a fallback)
+                            // Because unity, so the method should give up (with the last information it has)
+                            // Maybe this should print a warning, but it's not too much of a thing (just a fallback)
 
                             return new KeyValuePair<FieldInfo, object>(targetInfo, target);
                         }
@@ -333,6 +347,7 @@ namespace BXFW.Tools.Editor
                 }
                 else
                 {
+                    // Get next target + value.
                     targetInfo = GetField(target, propName);
                     target = targetInfo.GetValue(target);
                 }
@@ -349,35 +364,44 @@ namespace BXFW.Tools.Editor
             return property.GetTarget().Key.FieldType;
         }
         /// <summary>
+        /// String token used to define a <see cref="SerializedProperty"/> array element.
+        /// </summary>
+        private const string SP_ARRAY_DATA_TK = "Array.data[";
+        /// <summary>
         /// Returns the (last array) index of this property in the array.
-        /// <br>Returns <c>-1</c> if not in an array.</br>
+        /// <br>Returns <c>-1</c> if <paramref name="property"/> is not in an array.</br>
         /// </summary>
         public static int GetPropertyArrayIndex(this SerializedProperty property)
         {
-            const string AD_STR = "Array.data[";
-            int arrayDefLastIndex = property.propertyPath.LastIndexOf(AD_STR);
+            // Find whether if there's any array define token
+            int arrayDefLastIndex = property.propertyPath.LastIndexOf(SP_ARRAY_DATA_TK);
+            // No define token
             if (arrayDefLastIndex < 0)
                 return -1;
 
-            string indStr = property.propertyPath.Substring(arrayDefLastIndex + AD_STR.Length).TrimEnd(']');
+            // Remove the enclosing bracket ']' token
+            string indStr = property.propertyPath.Substring(arrayDefLastIndex + SP_ARRAY_DATA_TK.Length).TrimEnd(']');
             return int.Parse(indStr);
         }
         /// <summary>
         /// Internal helper method for getting field from properties.
-        /// <br>Gets the target normally, if not found searches in <see cref="Type.BaseType"/>.</br>
+        /// <br>Gets the target normally, if not found searches the field in <paramref name="targetType"/>'s <see cref="Type.BaseType"/>.</br>
         /// </summary>
         private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
+            if (target == null)
+                throw new ArgumentNullException(nameof(target), "[EditorAdditionals::GetField] Error while getting field : Null 'target' object.");
+
             if (string.IsNullOrEmpty(name))
-                throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
+                throw new ArgumentNullException(nameof(name), string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
 
             if (targetType == null)
             {
                 targetType = target.GetType();
             }
 
-            // This won't work for struct childs because GetField does the normal c# behaviour
-            // (and it's because c# structs are stackalloc)
+            // This won't work for struct childs (it will, but it will return a copy of the struct)
+            // because GetField does the normal c# behaviour (and it's because c# structs are stackalloc)
             FieldInfo fi = targetType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
             // If the field info is present.

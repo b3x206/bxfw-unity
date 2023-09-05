@@ -4,7 +4,7 @@ using System.Reflection;
 namespace BXFW
 {
     /// <summary>
-    /// Defines a simple logger.
+    /// Defines a simple generic logger, where the purpose is just to print stuff.
     /// <br>This is not a substitute for a normal logger, you have to attach a proper logger here.</br>
     /// </summary>
     public sealed class Logger
@@ -66,6 +66,7 @@ namespace BXFW
         }
         /// <summary>
         /// Prints out an exception.
+        /// <br>A special unity method, this will use <see cref="LogError"/> if there's no <see cref="logExceptionAction"/> assigned.</br>
         /// </summary>
         public void LogException(Exception exception)
         {
@@ -84,7 +85,7 @@ namespace BXFW
         }
         /// <summary>
         /// Prints out an exception.
-        /// <br>A special unity method, can use <see cref="LogError"/> instead.</br>
+        /// <br>A special unity method, this will use <see cref="LogError"/> if there's no <see cref="logExceptionAction"/> assigned.</br>
         /// </summary>
         public void LogException(string exceptionPrependMessage, Exception exception)
         {
@@ -101,7 +102,7 @@ namespace BXFW
                 exception.GetType().GetField("_message", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(exception, exMessage.Insert(0, exceptionPrependMessage));
             }
 
-            logExceptionAction(exception);
+            LogException(exception);
         }
     }
 }

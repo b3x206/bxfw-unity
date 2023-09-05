@@ -8,8 +8,8 @@ namespace BXFW.Tweening.Next
 {
     /// <summary>
     /// A sequencer of <see cref="BXSTweenable"/>'s.
-    /// <br>The setters in this class sets ALL values in <see cref="m_RunnableTweens"/> list that this sequencer has.</br>
-    /// <br>While this is editable in the unity editor, you cannot add sequences to it. Only change the settings of attached tweens.</br>
+    /// <br>The setters in this class does not set any values in <see cref="m_RunnableTweens"/>.</br>
+    /// <br>While this is editable in the unity editor, you cannot add sequences to it. Only change the delay length and loop count.</br>
     /// </summary>
     [Serializable]
     public sealed class BXSTweenSequence : BXSTweenable, ICollection<BXSTweenable>, IEnumerable<KeyValuePair<int, BXSTweenable>>
@@ -51,7 +51,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Current ID that is being run.
         /// </summary>
-        public int CurrentRunPriority { get; private set; } = 0;
+        public int CurrentRunPriority { get; private set; } = -1;
         /// <summary>
         /// The duration elapsed by the longest tweens run.
         /// </summary>
@@ -74,6 +74,10 @@ namespace BXFW.Tweening.Next
             }
         }
         /// <summary>
+        /// The current priority to go into if another tween was to be <see cref="Append(BXSTweenable)"/>ed.
+        /// </summary>
+        public int NextPriority => LastPriority + 1;
+        /// <summary>
         /// The sequence duration.
         /// <br>This depends on the added tweens, if no tweens this will be zero.</br>
         /// <br>This calculates all tweens duration + delay.</br>
@@ -83,7 +87,7 @@ namespace BXFW.Tweening.Next
             get
             {
                 float totalDuration = 0f;
-                for (int i = 0; i < LastPriority + 1; i++)
+                for (int i = 0; i < NextPriority; i++)
                 {
                     totalDuration += PriorityDuration(i);
                 }
@@ -132,12 +136,13 @@ namespace BXFW.Tweening.Next
                 throw new NullReferenceException("[BXSTweenSequence::Run] The sequence has no runnable tweens!");
             }
 
+            // Always set
+            m_LoopType = LoopType.Reset;
+            
             // Play
             base.Play();
             // The 'BXSTweenable.Play' doesn't reset
             Reset();
-
-            RunTweensInPriority(CurrentRunPriority);
         }
         /// <summary>
         /// Stops the sequence. (if running)
@@ -159,9 +164,11 @@ namespace BXFW.Tweening.Next
         {
             base.Reset();
 
-            CurrentRunPriority = 0;
+            // Only set this to very initial value (because it denotes the initial run)
+            CurrentRunPriority = -1;
+            // These two has to be set according to the first tween sequence state
             TweensTotalElapsed = 0f;
-            CurrentPriorityTweensDuration = PriorityDuration(CurrentRunPriority);
+            CurrentPriorityTweensDuration = PriorityDuration(0);
         }
 
         /// <summary>
@@ -169,11 +176,20 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public override void EvaluateTween(float t)
         {
+            // Initial run
+            if (CurrentRunPriority <= -1)
+            {
+                CurrentRunPriority = 0;
+                RunTweensInPriority(CurrentRunPriority);
+                
+                return;
+            }
+
             // Get the current possible run priority
             float totalDurationElapsed = t * Duration;
             float currentTweenDurationElapsed = totalDurationElapsed - TweensTotalElapsed;
 
-            // Increment if the duration elapsed was larger.
+            // Increment to the next group if the duration elapsed was larger.
             if (currentTweenDurationElapsed > CurrentPriorityTweensDuration)
             {
                 TweensTotalElapsed += CurrentPriorityTweensDuration; // Increment total elapsed
@@ -183,13 +199,10 @@ namespace BXFW.Tweening.Next
                 RunTweensInPriority(CurrentRunPriority);
             }
         }
-        protected override void OnSwitchTargetValues()
-        {
-            foreach (var runnable in m_RunnableTweens)
-            {
-                runnable.tween.IsTargetValuesSwitched = IsTargetValuesSwitched;
-            }
-        }
+        /// <summary>
+        /// Does nothing in the case of a sequence.
+        /// </summary>
+        protected override void OnSwitchTargetValues() { }
         /// <summary>
         /// Copies the sequence runnable tweens + settings.
         /// </summary>
@@ -278,7 +291,7 @@ namespace BXFW.Tweening.Next
             if (ctx.IsPlaying)
                 ctx.Stop();
 
-            m_RunnableTweens.Add(new RunnableTween(LastPriority + 1, ctx));
+            m_RunnableTweens.Add(new RunnableTween(NextPriority, ctx));
         }
         /// <summary>
         /// Same as calling <see cref="Append(BXSTweenable)"/>, but for the <see cref="ICollection{T}"/>.
@@ -375,6 +388,11 @@ namespace BXFW.Tweening.Next
             }
 
             return result;
+        }
+        public void RemovePriority(int priority)
+        {
+            if (priority < 0 || priority > LastPriority + 1)
+                throw new IndexOutOfRangeException($"[BXSTweenSequence::RemovePriority] Failed to remove priority '{priority}' : Index was out of range.");
         }
         /// <summary>
         /// Count of tweens in given priority.
