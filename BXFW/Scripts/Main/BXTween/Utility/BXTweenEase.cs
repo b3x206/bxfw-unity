@@ -49,11 +49,19 @@ namespace BXFW.Tweening
     /// </summary>
     public static class BXTweenEase
     {
+        /// This generates garbage when the initial BXTween is done.
+        /// <br>To avoid this, there are several approaches;</br>
+        /// <br>A : Use a switch statement : this has the inefficiency of not being dictionary and the switch statement has to be evaluated always</br>
+        /// <br>However it is probably a no-alloc thing and it will be similar + custom easings could be simpler and more ergonomic.</br>
+        /// <br>Or B : This probably doesn't generate garbage in il2cpp</br>
+        /// <br>C : Use a capacity as the { } constructor probably doesn't allocate capacity by the compiler.
+        /// (this cut off 1kb of garbage, larger capacities brought back the 1kb garbage)</br>
+        /// <br>Or D : Access 'BXTweenEase' on the IBXSTweenRunner when the application launches? (This cut off 5kb garbage when a new tween runs)</br>
         /// <summary>
         /// All hardcoded ease methods in a dictionary.
         /// <br>All values from the <see cref="EaseType"/> enumeration exists in here.</br>
         /// </summary>
-        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>
+        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>(28)
         {
             // None = Linear
             // The option 'None' was added to detect default settings.

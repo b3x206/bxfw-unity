@@ -4,61 +4,80 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// An inspector for the <see cref="SortedListBase"/>.
+    /// <br>Only draws the given internal list value 'm_list'.</br>
+    /// </summary>
     [CustomPropertyDrawer(typeof(SortedListBase), true)]
     public class SortedListFieldEditor : PropertyDrawer
     {
+        private const float WARN_BOX_HEIGHT = 40f;
+        private const float FOLDOUT_ARROW_WIDTH = 3f;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float height = EditorGUIUtility.singleLineHeight + 2f;
-            
-            foreach (var visibleProp in property.GetVisibleChildren())
-            {
-                height += EditorGUI.GetPropertyHeight(visibleProp);
-            }
+            SerializedProperty listProperty = property.FindPropertyRelative("m_list");
+
+            // Only draw the warning box if the given child type is not serializable
+            float height = listProperty == null ?
+                EditorGUIUtility.singleLineHeight + 2f + WARN_BOX_HEIGHT :
+                EditorGUI.GetPropertyHeight(listProperty);
+
             return height;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            label = EditorGUI.BeginProperty(position, label, property);
-            Rect labelRect = new Rect(position) { y = position.y + 1f, height = EditorGUIUtility.singleLineHeight };
-            position.height -= EditorGUIUtility.singleLineHeight + 2f;
-            position.y += EditorGUIUtility.singleLineHeight + 2f;
-            EditorGUI.LabelField(labelRect, label);
+            EditorGUI.BeginProperty(position, label, property);
 
-            int prevIndent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel++;
-            position = EditorGUI.IndentedRect(position);
+            // Using the given label gives a random value of the drawn ReorderableList
+            label = new GUIContent(ObjectNames.NicifyVariableName(property.name), property.tooltip);
+            
+            Rect foldoutLabelRect = new Rect(position) { y = position.y + 1f, height = EditorGUIUtility.singleLineHeight };
+            SerializedProperty listProperty = property.FindPropertyRelative("m_list");
 
-            float currentY = position.y;
-
-            foreach (var visibleProp in property.GetVisibleChildren())
+            if (listProperty == null)
             {
-                EditorGUI.BeginChangeCheck();
-
-                float propHeight = EditorGUI.GetPropertyHeight(visibleProp);
-                EditorGUI.PropertyField(new Rect(position)
+                EditorGUI.LabelField(new Rect(foldoutLabelRect)
                 {
-                    height = propHeight,
-                    y = currentY
-                }, visibleProp);
+                    x = foldoutLabelRect.x + FOLDOUT_ARROW_WIDTH,
+                    width = foldoutLabelRect.width - FOLDOUT_ARROW_WIDTH
+                }, label, EditorStyles.boldLabel);
 
-                if (EditorGUI.EndChangeCheck())
+                EditorGUI.HelpBox(new Rect()
                 {
-                    Undo.RecordObject(property.serializedObject.targetObject, "set element in sorted array");
-                    property.serializedObject.ApplyModifiedProperties();
+                    x = foldoutLabelRect.x + 12f,
+                    y = position.y + EditorGUIUtility.singleLineHeight + 2f,
+                    height = WARN_BOX_HEIGHT,
+                    width = foldoutLabelRect.width - 12f
+                }, $"[SortedList] Type could not be serialized for field '{label.text}'! Ensure that the type is serialized.", MessageType.Warning);
 
-                    SortedListBase listBase = property.GetTarget().Value as SortedListBase;
+                EditorGUI.EndProperty();
+                return;
+            }
+            
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.PropertyField(position, listProperty, GUIContent.none, true);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(property.serializedObject.targetObject, "set element in sorted array");
+                property.serializedObject.ApplyModifiedProperties();
 
-                    // Eh, this is fine. It doesn't hinder the ability of 'ReorderableList' setting it's values, it's just not clamped the cool way.
-                    if (!listBase.IsSorted())
-                        listBase.Sort();
-                }
+                SortedListBase listBase = property.GetTarget().Value as SortedListBase;
 
-                currentY += propHeight;
+                // Eh, this is fine. It doesn't hinder the ability of 'ReorderableList'
+                // setting it's values, it's just not clamped the cool way.
+                if (!listBase.IsSorted())
+                    listBase.Sort();
             }
 
-            EditorGUI.indentLevel = prevIndent;
+            // Draw the label last to draw it over the given ReorderableList
+            EditorGUI.LabelField(new Rect(foldoutLabelRect)
+            {
+                x = foldoutLabelRect.x + FOLDOUT_ARROW_WIDTH,
+                width = foldoutLabelRect.width - FOLDOUT_ARROW_WIDTH
+            }, label, EditorStyles.boldLabel);
+
             EditorGUI.EndProperty();
         }
     }

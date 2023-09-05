@@ -104,6 +104,11 @@ namespace BXFW.Tweening.Next
             LerpAction != null && AddValueAction != null;
 
         /// <summary>
+        /// The tick type of a sequence is always to be run at the variable mode.
+        /// </summary>
+        public override TickType ActualTickType => TickType.Variable;
+
+        /// <summary>
         /// Evaluates the <see cref="SetterAction"/> with <see cref="LerpAction"/>.
         /// </summary>
         public override void EvaluateTween(float t)

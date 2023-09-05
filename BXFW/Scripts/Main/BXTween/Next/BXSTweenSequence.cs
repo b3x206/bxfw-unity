@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections;
-using BXFW.Tweening.Events;
 using System.Collections.Generic;
-using UnityEngine;
 using BXFW.Tweening.Next.Events;
 
 namespace BXFW.Tweening.Next
@@ -11,15 +9,18 @@ namespace BXFW.Tweening.Next
     /// <summary>
     /// A sequencer of <see cref="BXSTweenable"/>'s.
     /// <br>The setters in this class sets ALL values in <see cref="m_RunnableTweens"/> list that this sequencer has.</br>
+    /// <br>While this is editable in the unity editor, you cannot add sequences to it. Only change the settings of attached tweens.</br>
     /// </summary>
-    public sealed class BXSTweenSequence : BXSTweenable, ICollection<BXSTweenable>
+    [Serializable]
+    public sealed class BXSTweenSequence : BXSTweenable, ICollection<BXSTweenable>, IEnumerable<KeyValuePair<int, BXSTweenable>>
     {
         /// <summary>
-        /// A <see cref="BXSTweenable"/> container that has a priority.
+        /// A <see cref="BXSTweenable"/> container that has a priority for sequencing.
         /// </summary>
         public class RunnableTween : IEquatable<RunnableTween>, IComparable<RunnableTween>
         {
             public int priority;
+            // Unity can't serialize abstract c# objects, only ScriptableObjects (which is just fancy UnityEngine.Object)
             public BXSTweenable tween;
 
             public RunnableTween(int order, BXSTweenable tweenable)
@@ -45,36 +46,21 @@ namespace BXFW.Tweening.Next
             }
         }
 
-        [SerializeField]
         private SortedList<RunnableTween> m_RunnableTweens = new SortedList<RunnableTween>();
-
-        public override void EvaluateTween(float t)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void OnSwitchTargetValues()
-        {
-            foreach (var runnable in m_RunnableTweens)
-            {
-                runnable.tween.IsTargetValuesSwitched = IsTargetValuesSwitched;
-            }
-        }
 
         /// <summary>
         /// Current ID that is being run.
         /// </summary>
-        private int m_currentRunPriority = 0;
+        public int CurrentRunPriority { get; private set; } = 0;
+        /// <summary>
+        /// The duration elapsed by the longest tweens run.
+        /// </summary>
+        public float TweensTotalElapsed { get; private set; } = -1f;
+        /// <summary>
+        /// The <see cref="CurrentRunPriority"/>'s longest duration.
+        /// </summary>
+        public float CurrentPriorityTweensDuration { get; private set; } = -1f;
 
-        /// <summary>
-        /// Called on the end of sequence.
-        /// </summary>
-        public BXTweenMethod OnSequenceEnd;
-        /// <summary>
-        /// Called when a tween ends in the sequence.
-        /// <br>Index priority is given with 'Key'.</br>
-        /// </summary>
-        public BXSAction<KeyValuePair<int, BXSTweenable>> OnIndiviualTweenEnd;
         /// <summary>
         /// Last <see cref="RunnableTweenContext.priority"/> in the list <see cref="m_RunnableTweens"/>.
         /// <br>Returns -1 as the start id if no tweens exist. This will be the last group id used.</br>
@@ -96,42 +82,154 @@ namespace BXFW.Tweening.Next
         {
             get
             {
-                float duration = 0f;
-                int checkPriority = 0;
-                float maxDuration = 0f;
-                for (int i = 0; i < m_RunnableTweens.Count; i++)
+                float totalDuration = 0f;
+                for (int i = 0; i < LastPriority + 1; i++)
                 {
-                    var runnable = m_RunnableTweens[i];
-
-                    // ID's are same
-                    if (runnable.priority == checkPriority)
-                    {
-                        // Get duration
-                        float tweenDuration = runnable.tween.Duration + runnable.tween.Delay;
-                        // Check if longest in current 'checkID'
-                        if (tweenDuration > maxDuration)
-                        {
-                            maxDuration = tweenDuration;
-                        }
-                    }
-                    else
-                    {
-                        // ID's different, changed id.
-                        duration += maxDuration;
-                        maxDuration = 0f;
-                    }
-
-                    checkPriority = runnable.priority;
-                    // Last run, add 'maxDuration' if not added
-                    if (i == m_RunnableTweens.Count - 1)
-                    {
-                        duration += maxDuration;
-                    }
+                    totalDuration += PriorityDuration(i);
                 }
 
-                return duration;
+                return totalDuration;
             }
         }
+
+        /// <summary>
+        /// Creates a blank sequence.
+        /// </summary>
+        public BXSTweenSequence() { }
+        /// <summary>
+        /// Reserves a capacity for the tweens.
+        /// </summary>
+        public BXSTweenSequence(int capacity)
+        {
+            m_RunnableTweens.Capacity = capacity;
+        }
+        /// <summary>
+        /// Adds the enumerable tweens to be run sequentially.
+        /// </summary>
+        public BXSTweenSequence(IEnumerable<BXSTweenable> tweens)
+        {
+            int i = 0;
+            foreach (var ctx in tweens)
+            {
+                m_RunnableTweens.Add(new RunnableTween(i, ctx));
+
+                i++;
+            }
+        }
+
+        public override bool IsValid => m_RunnableTweens.Count > 0;
+        public override bool IsSequence => true;
+
+        /// <summary>
+        /// Starts running the sequence.
+        /// <br>Restarts running if the <see cref="IsRunning"/> is true.</br>
+        /// </summary>
+        public override void Play()
+        {
+            // No play if no tween
+            if (m_RunnableTweens.Count <= 0)
+            {
+                throw new NullReferenceException("[BXSTweenSequence::Run] The sequence has no runnable tweens!");
+            }
+
+            // Play
+            base.Play();
+            // The 'BXSTweenable.Play' doesn't reset
+            Reset();
+
+            RunTweensInPriority(CurrentRunPriority);
+        }
+        /// <summary>
+        /// Stops the sequence. (if running)
+        /// </summary>
+        public override void Stop()
+        {
+            base.Stop();
+            
+            // Stop everything
+            foreach (var runnable in m_RunnableTweens)
+            {
+                runnable.tween.Stop();
+            }
+        }
+        /// <summary>
+        /// Resets the sequence variables.
+        /// </summary>
+        public override void Reset()
+        {
+            base.Reset();
+
+            CurrentRunPriority = 0;
+            TweensTotalElapsed = 0f;
+            CurrentPriorityTweensDuration = PriorityDuration(CurrentRunPriority);
+        }
+
+        /// <summary>
+        /// Runs the sequence priorities sequentially if the necessary duration was elapsed.
+        /// </summary>
+        public override void EvaluateTween(float t)
+        {
+            // Get the current possible run priority
+            float totalDurationElapsed = t * Duration;
+            float currentTweenDurationElapsed = totalDurationElapsed - TweensTotalElapsed;
+
+            // Increment if the duration elapsed was larger.
+            if (currentTweenDurationElapsed > CurrentPriorityTweensDuration)
+            {
+                TweensTotalElapsed += CurrentPriorityTweensDuration; // Increment total elapsed
+                CurrentRunPriority++;
+                CurrentPriorityTweensDuration = PriorityDuration(CurrentRunPriority);
+
+                RunTweensInPriority(CurrentRunPriority);
+            }
+        }
+        protected override void OnSwitchTargetValues()
+        {
+            foreach (var runnable in m_RunnableTweens)
+            {
+                runnable.tween.IsTargetValuesSwitched = IsTargetValuesSwitched;
+            }
+        }
+        /// <summary>
+        /// Copies the sequence runnable tweens + settings.
+        /// </summary>
+        public override void CopyFrom<T>(T tweenable)
+        {
+            base.CopyFrom(tweenable);
+
+            BXSTweenSequence tweenableSequence = tweenable as BXSTweenSequence;
+            if (tweenableSequence == null)
+            {
+                return;
+            }
+
+            m_RunnableTweens = new SortedList<RunnableTween>(tweenableSequence.m_RunnableTweens);
+        }
+
+        // -- List Management
+        /// <summary>
+        /// Returns a tween in given index.
+        /// <br>The priority is not contained with this tween.</br>
+        /// </summary>
+        public BXSTweenable this[int index]
+        {
+            get { return m_RunnableTweens[index].tween; }
+            set
+            {
+                if (value == null)
+                    throw new NullReferenceException(string.Format("[BXTweenSequence::(set)this[{0}]] Given value for index '{0}' is null.", index));
+
+                m_RunnableTweens[index].tween = value;
+            }
+        }
+        /// <summary>
+        /// Count of tweenables to run in this sequence.
+        /// </summary>
+        public int Count => m_RunnableTweens.Count;
+        /// <summary>
+        /// Is false.
+        /// </summary>
+        public bool IsReadOnly => false;
 
         /// <summary>
         /// Joins a tween to current id.
@@ -140,14 +238,14 @@ namespace BXFW.Tweening.Next
         public void Join(BXSTweenable tween)
         {
             if (tween == null)
-                throw new ArgumentNullException(nameof(tween), "[BXTweenSequence::Join] Given context parameter is null.");
+                throw new ArgumentNullException(nameof(tween), "[BXSTweenSequence::Join] Given context parameter is null.");
 
             if (tween.IsPlaying)
                 tween.Stop();
 
             if (LastPriority <= -1)
             {
-                Debug.LogWarning(string.Format("[BXSTweenSequence::Join] Tried to join context {0} without any tweens appended. Appending first tween.", tween));
+                BXSTween.MainLogger.LogWarning($"[BXSTweenSequence::Join] Tried to join context '{tween.ToString(true)}' without any tweens appended. Appending first tween.");
                 Append(tween);
                 return;
             }
@@ -183,6 +281,13 @@ namespace BXFW.Tweening.Next
             m_RunnableTweens.Add(new RunnableTween(LastPriority + 1, ctx));
         }
         /// <summary>
+        /// Same as calling <see cref="Append(BXSTweenable)"/>, but for the <see cref="ICollection{T}"/>.
+        /// </summary>
+        public void Add(BXSTweenable item)
+        {
+            Append(item);
+        }
+        /// <summary>
         /// Prepends the tween to the start (id = 0).
         /// <br>Shifts all runnable added tweens by 1.</br>
         /// </summary>
@@ -201,145 +306,23 @@ namespace BXFW.Tweening.Next
             // Sort manually becuase IComparable changes doesn't notify the 'm_RunnableTweens'
             m_RunnableTweens.Sort();
 
-            m_RunnableTweens.Append(new RunnableTween(0, ctx));
-        }
-
-        /// <summary>
-        /// Starts running the sequence.
-        /// <br>Restarts running if the <see cref="IsRunning"/> is true.</br>
-        /// </summary>
-        public override void Play()
-        {
-            if (m_RunnableTweens.Count <= 0)
-            {
-                throw new NullReferenceException("[BXTweenSequence::Run] The sequence has no runnable tweens!");
-            }
-
-            base.Play();
-
-            m_currentRunPriority = 0;
-            RunRecursive();
+            m_RunnableTweens.Add(new RunnableTween(0, ctx));
         }
         /// <summary>
-        /// Runs the contexts recursively.
-        /// <br>Uses the <see cref="m_currentRunPriority"/> to keep track of id.</br>
+        /// Clears this sequence.
+        /// <br>When an empty sequence is played, it throws a <see cref="NullReferenceException"/>.</br>
         /// </summary>
-        private void RunRecursive()
-        {
-            BXSTweenable longestDurationCtx = null;
-            foreach (var runnable in m_RunnableTweens.Where(rt => rt.priority == m_currentRunPriority))
-            {
-                float longestDuration = longestDurationCtx != null ?
-                    (longestDurationCtx.Duration + longestDurationCtx.Delay) : float.NegativeInfinity;
-
-                if ((runnable.tween.Duration + runnable.tween.Delay) > longestDuration)
-                    longestDurationCtx = runnable.tween;
-
-                runnable.tween.Play();
-                runnable.tween.OnEndAction += () =>
-                {
-                    OnIndiviualTweenEnd?.Invoke(new KeyValuePair<int, BXSTweenable>(runnable.priority, runnable.tween));
-                };
-            }
-
-            if (longestDurationCtx == null)
-                throw new NullReferenceException(string.Format("[BXTweenSequence::RunRecursive] Sequence id={0} does not have any tweens on it.", m_currentRunPriority));
-
-            longestDurationCtx.OnEndAction += () =>
-            {
-                if (m_currentRunPriority <= LastPriority)
-                {
-                    m_currentRunPriority++;
-                    RunRecursive();
-                }
-                else
-                {
-                    Stop();
-                }
-            };
-        }
-        /// <summary>
-        /// Stops the sequence. (if running)
-        /// </summary>
-        public override void Stop()
-        {
-            base.Stop();
-
-            m_currentRunPriority = 0;
-            foreach (var runnable in m_RunnableTweens)
-            {
-                runnable.tween.ClearEndAction();
-                runnable.tween.Stop();
-            }
-        }
-
-        /// <summary>
-        /// Creates a blank sequence.
-        /// </summary>
-        public BXSTweenSequence() { }
-        /// <summary>
-        /// Reserves a capacity for the tweens.
-        /// </summary>
-        public BXSTweenSequence(int capacity)
-        {
-            m_RunnableTweens.Capacity = capacity;
-        }
-        /// <summary>
-        /// Adds the enumerable tweens to be run sequentially.
-        /// </summary>
-        public BXSTweenSequence(IEnumerable<BXSTweenable> tweens)
-        {
-            int i = 0;
-            foreach (var ctx in tweens)
-            {
-                m_RunnableTweens.Add(new RunnableTween(i, ctx));
-
-                i++;
-            }
-        }
-
-        /// <summary>
-        /// Returns a tween in given index.
-        /// <br>The priority is not contained with this tween.</br>
-        /// </summary>
-        public BXSTweenable this[int index]
-        {
-            get { return m_RunnableTweens[index].tween; }
-            set
-            {
-                if (value == null)
-                    throw new NullReferenceException(string.Format("[BXTweenSequence::(set)this[{0}]] Given value for index '{0}' is null.", index));
-
-                m_RunnableTweens[index].tween = value;
-            }
-        }
-        public int Count => m_RunnableTweens.Count;
-
-        public bool IsReadOnly => false;
-
-        public int PriorityCount(int priority)
-        {
-            return m_RunnableTweens.Count((rt) => rt.priority == priority);
-        }
-
-        /// <summary>
-        /// Same as calling <see cref="Append(BXSTweenable)"/>.
-        /// </summary>
-        public void Add(BXSTweenable item)
-        {
-            Append(item);
-        }
-
         public void Clear()
         {
             m_RunnableTweens.Clear();
         }
-
+        /// <summary>
+        /// Whether if this sequence contains given <paramref name="item"/>.
+        /// </summary>
         public bool Contains(BXSTweenable item)
         {
             return m_RunnableTweens.Any((runnable) => runnable.tween == item);
         }
-
         /// <summary>
         /// Copies internal tweenables array to <paramref name="array"/>.
         /// <br>The <paramref name="arrayIndex"/> is used for defining the starting index of <paramref name="array"/> to start the copying from.</br>
@@ -351,11 +334,11 @@ namespace BXFW.Tweening.Next
             if (array == null)
                 throw new ArgumentNullException(nameof(array));
 
-            if (m_RunnableTweens.Count + arrayIndex > array.Length)
-                throw new ArgumentException($"[BXSTweenSequence::CopyTo] Source array was not long enough. array.Length={array.Length}, arrayIndex={arrayIndex}", nameof(array));
-
             if (arrayIndex < 0 || arrayIndex >= array.Length)
                 throw new IndexOutOfRangeException($"[BXSTweenSequence::CopyTo] Given 'arrayIndex' is out of range. arrayIndex={arrayIndex}");
+
+            if (m_RunnableTweens.Count + arrayIndex > array.Length)
+                throw new ArgumentException($"[BXSTweenSequence::CopyTo] Source array was not long enough. array.Length={array.Length}, arrayIndex={arrayIndex}", nameof(array));
 
             for (int i = arrayIndex; i < m_RunnableTweens.Count; i++)
             {
@@ -363,19 +346,312 @@ namespace BXFW.Tweening.Next
                 array[i] = m_RunnableTweens[i].tween;
             }
         }
-
+        /// <summary>
+        /// Removes the tweenable.
+        /// <br>NOTE : This may remove a whole priority and shift other tweens if there's no tweens existing in that priority.</br>
+        /// </summary>
         public bool Remove(BXSTweenable item)
         {
-            return m_RunnableTweens.RemoveAll(x => x.tween == item) > 0;
+            bool result = false;
+
+            for (int i = m_RunnableTweens.Count - 1; i >= 0; i--)
+            {
+                var runnable = m_RunnableTweens[i];
+                if (runnable.tween == item)
+                {
+                    // Check if this is the last element
+                    if (runnable.priority != LastPriority && PriorityCount(runnable.priority) - 1 <= 0)
+                    {
+                        // The priority no longer exists, do decrement everything beyond this runnable's priority
+                        foreach (var afterPriorityRunnable in GetAfterPriorityRunnables(runnable.priority))
+                        {
+                            afterPriorityRunnable.priority -= 1;
+                        }
+                    }
+
+                    m_RunnableTweens.RemoveAt(i);
+                    result = true;
+                }
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// Count of tweens in given priority.
+        /// </summary>
+        public int PriorityCount(int priority)
+        {
+            return m_RunnableTweens.Count(rt => rt.priority == priority);
+        }
+        /// <summary>
+        /// Returns the longest duration tween in given <paramref name="priority"/>.
+        /// <br>Returns -1f if there's no items in <paramref name="priority"/>.</br>
+        /// </summary>
+        public float PriorityDuration(int priority)
+        {
+            float longestDuration = -1f;
+            foreach (var runnable in m_RunnableTweens.Where(rt => rt.priority == priority))
+            {
+                float duration = runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount, 0) + 1) + runnable.tween.Delay;
+                if (duration > longestDuration)
+                {
+                    longestDuration = duration;
+                }
+            }
+
+            return longestDuration;
+        }
+        /// <summary>
+        /// Returns the priority of given <paramref name="item"/>.
+        /// <br>Returns <c>-1</c> if the item does not exist in the sequence.</br>
+        /// </summary>
+        public int PriorityOf(BXSTweenable item)
+        {
+            RunnableTween r = m_RunnableTweens.Where(x => x.tween == item).FirstOrDefault();
+            if (r == null)
+                return -1;
+
+            return r.priority;
         }
 
+        /// <summary>
+        /// Gets the runnable tweens from <see cref="m_RunnableTweens"/> of priority after given <paramref name="priority"/>.
+        /// </summary>
+        private IEnumerable<RunnableTween> GetAfterPriorityRunnables(int priority)
+        {
+            foreach (var runnable in m_RunnableTweens)
+            {
+                if (runnable.priority > priority)
+                    yield return runnable;
+            }
+        }
+        /// <summary>
+        /// Runs all tweens in given <paramref name="priority"/>.
+        /// </summary>
+        private void RunTweensInPriority(int priority)
+        {
+            foreach (var runnable in m_RunnableTweens.Where(rt => rt.priority == priority))
+            {
+                runnable.tween.Play();
+            }
+        }
+
+        /// <summary>
+        /// The iterator that returns the tweens contained.
+        /// </summary>
         public IEnumerator<BXSTweenable> GetEnumerator()
         {
-            return m_RunnableTweens.Cast((runnable) => runnable.tween).GetEnumerator();
+            return m_RunnableTweens.Cast(runnable => runnable.tween).GetEnumerator();
         }
+        /// <summary>
+        /// The iterator that also returns the priority.
+        /// </summary>
+        IEnumerator<KeyValuePair<int, BXSTweenable>> IEnumerable<KeyValuePair<int, BXSTweenable>>.GetEnumerator()
+        {
+            return m_RunnableTweens.Cast(runnable => new KeyValuePair<int, BXSTweenable>(runnable.priority, runnable.tween)).GetEnumerator();
+        }
+        /// <summary>
+        /// Base 'IEnumerable'.
+        /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        // -- Value Setters
+        // Hmm, idk how to solve the value setting for the all tweens.
+        // But for the time being, just keep your BXSTweenable references with yourself.
+        // - These setters could be used for the Sequence values itself
+        /// <summary>
+        /// Sets the sequence delay.
+        /// <br>This only effects this sequence and not the attached tweens.</br>
+        /// </summary>
+        public BXSTweenSequence SetDelay(float delay)
+        {
+            m_Delay = delay;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets the loop count of this sequence.
+        /// </summary>
+        public BXSTweenSequence SetLoopCount(int loops)
+        {
+            m_LoopCount = loops;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets whether to ignore time scale through this sequence.
+        /// <br>This only effects this sequence and not the attached tweens.</br>
+        /// </summary>
+        public BXSTweenSequence SetIgnoreTimeScale(bool doIgnore)
+        {
+            m_IgnoreTimeScale = doIgnore;
+
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnPlayAction"/> event.
+        /// <br>This is called when <see cref="BXSTweenable.Play"/> is called on this tween.</br>
+        /// </summary>
+        public BXSTweenSequence SetPlayAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnPlayAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnPlayAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnPlayAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnStartAction"/> event.
+        /// <br>This is called when the tween has waited out it's delay and it is starting for the first time.</br>
+        /// </summary>
+        public BXSTweenSequence SetStartAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnStartAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnStartAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnStartAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnTickAction"/> event.
+        /// <br>This is called every time the tween ticks. It is started to be called after the delay was waited out.</br>
+        /// </summary>
+        public BXSTweenSequence SetTickAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnTickAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnTickAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnTickAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnTickAction"/> event.<br/>
+        /// This method is an alias for <see cref="SetTickAction(BXSAction, EventSetMode)"/>.
+        /// </summary>
+        public BXSTweenSequence SetUpdateAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            return SetTickAction(action, setMode);
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnPauseAction"/> event.
+        /// <br>It is called when <see cref="BXSTweenable.Pause"/> is called on this tween.</br>
+        /// </summary>
+        public BXSTweenSequence SetPauseAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnPauseAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnPauseAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnPauseAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnRepeatAction"/> event.
+        /// </summary>
+        public BXSTweenSequence SetRepeatAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnRepeatAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnRepeatAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnRepeatAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnEndAction"/> event.
+        /// <br>This does not set any of the added element's actions.</br>
+        /// </summary>
+        public BXSTweenSequence SetEndAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnEndAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnEndAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnEndAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.TickConditionAction"/> action.
+        /// <br>Return the suitable <see cref="TickSuspendType"/> in the function.</br>
+        /// </summary> 
+        public BXSTweenSequence SetTickConditionAction(BXSTickConditionAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    TickConditionAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    TickConditionAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    TickConditionAction = action;
+                    break;
+            }
+            return this;
         }
     }
 }

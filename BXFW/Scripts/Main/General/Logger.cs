@@ -97,7 +97,7 @@ namespace BXFW
             {
                 // Strings are immutable
                 string exMessage = exception.Message;
-                // Prepend the given string to 'exMessage'
+                // Prepend the given string to 'exception._message' internal value
                 exception.GetType().GetField("_message", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(exception, exMessage.Insert(0, exceptionPrependMessage));
             }
 

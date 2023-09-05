@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace BXFW.Tweening.Next
 {
@@ -35,6 +36,20 @@ namespace BXFW.Tweening.Next
         /// A <see cref="BXSTweenable.ID"/> for no id.
         /// </summary>
         public const int NoID = 0;
+
+        // -- Prepare
+        static BXSTween()
+        {
+            // Only do the initialization of other classes in jit runtimes
+            // Stuff like il2cpp does compilation aot, which does not allocate garbage when a code is run for the first time
+            // Note : don't initialize anything related with 'BXSTween' here as it is still not completely constructed
+#if ENABLE_MONO
+            // Do this so that the jit is generated beforehand and so that
+            // the first started tween acceesing this class doesn't allocate much garbage.
+            Type bxTwEaseType = typeof(BXTweenEase);
+            RuntimeHelpers.RunClassConstructor(bxTwEaseType.TypeHandle);
+#endif
+        }
 
         // -- Runtime
         /// <summary>

@@ -1,13 +1,11 @@
 using System;
+using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
-using System.Text;
-using UnityEngine.Assertions;
-using DG.Tweening;
 
 /// -- To make this file compatible with other things :
 /// A : 'using' Alias 'SerializeField' with something that marks hidden fields as serializable (i.e 'ExportAttribute' in godot)
-/// B : Remove animation curve (this is get as a generic Lerp
+/// B : Remove animation curve (or make a custom class that is substitute to that)
 
 namespace BXFW.Tweening.Next
 {
@@ -115,7 +113,7 @@ namespace BXFW.Tweening.Next
         public EaseType Ease
         {
             get { return m_Ease; }
-            protected set 
+            protected set
             {
                 m_Ease = value;
                 // TODO : Get rid of this new delegate creation
@@ -240,7 +238,7 @@ namespace BXFW.Tweening.Next
         /// The actual tick type, depending on the <see cref="BXSTween.MainRunner"/>'s <see cref="IBXSTweenRunner.SupportsFixedTick"/>.
         /// <br>Always returns <see cref="TickType.Variable"/> if it isn't supported.</br>
         /// </summary>
-        public TickType ActualTickType
+        public virtual TickType ActualTickType
         {
             get
             {
@@ -306,7 +304,7 @@ namespace BXFW.Tweening.Next
         /// <br>The tween is not reset when this is called, but it has to be reset.</br>
         /// <br>This DOES NOT get called when the tween completely ends, use <see cref="OnEndAction"/> for that.</br>
         /// </summary>
-        public BXSAction OnRepeatAction; 
+        public BXSAction OnRepeatAction;
         /// <summary>
         /// Called when the tween completely ends.
         /// </summary>
@@ -398,7 +396,21 @@ namespace BXFW.Tweening.Next
         /// <br>This depends on several factors, such as whether if the tween was elasped at all and if it is running currently or not.</br>
         /// </summary>
         public bool IsPaused => !IsPlaying && (DelayElapsed > float.Epsilon || CurrentElapsed > float.Epsilon);
-        // -- Starting State
+        // - Status
+        /// <summary>
+        /// Whether if the tweenable is valid.
+        /// <br>If this is <see langword="false"/>, the playing methods (<see cref="Play"/>, <see cref="Pause"/>, <see cref="Stop"/>) won't work.</br>
+        /// </summary>
+        public virtual bool IsValid => true;
+        /// <summary>
+        /// Whether if this tween runs multiple <see cref="BXSTweenable"/>'s.
+        /// </summary>
+        public virtual bool IsSequence => false;
+        /// <summary>
+        /// The parent tweenable this tween has set.
+        /// </summary>
+        public BXSTweenable ParentTweenable { get; protected set; }
+        // - Starting
         /// <summary>
         /// The duration when the <see cref="Play"/> is called.
         /// </summary>
@@ -411,11 +423,6 @@ namespace BXFW.Tweening.Next
         /// The count of loops when the <see cref="Play"/> is called.
         /// </summary>
         public int StartingLoopCount { get; protected set; }
-        /// <summary>
-        /// Whether if the tweenable is valid.
-        /// <br>If this is <see langword="false"/>, the playing methods (<see cref="Play"/>, <see cref="Pause"/>, <see cref="Stop"/>) won't work.</br>
-        /// </summary>
-        public virtual bool IsValid => true;
 
         /// <summary>
         /// Is set true if <see cref="Play"/> was called once. (note : only for runtime)
@@ -495,8 +502,8 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// Starts the tween.
-        /// <br>If the tween is already running, calling this will stop it.</br>
-        /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true, please call it.</br>
+        /// <br>If the tween is already running, calling this will stop it. This won't call <see cref="Reset"/> on the tween.</br>
+        /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true.</br>
         /// </summary>
         public virtual void Play()
         {
@@ -532,7 +539,7 @@ namespace BXFW.Tweening.Next
 
             IsPlaying = true;
             BXSTween.RunningTweens.Add(this);
-            
+
             if (!HasPlayedOnce)
                 HasPlayedOnce = true;
         }
@@ -592,13 +599,13 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Resets the state. (like the elapsed, the current loop count [only resets when !<see cref="IsPlaying"/>], whether if values are switched etc.)
-        /// <br>Calling this while the tween is playing will reset all progress.</br>
+        /// <br>Calling this while the tween is playing will reset all elapsed progress, but not the looping progress.</br>
         /// </summary>
         public virtual void Reset()
         {
             CurrentElapsed = 0f;
             DelayElapsed = 0f;
-    
+
             // Reset looping related stuff only while not playing
             // The '!IsPlaying' part only resets when <see cref="Stop"/> is called.
             // So if the tween is reset while playing, we assume that it's a loop reset.

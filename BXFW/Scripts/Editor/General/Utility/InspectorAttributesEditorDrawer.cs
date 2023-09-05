@@ -210,20 +210,19 @@ namespace BXFW.ScriptEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            var gEnabled = GUI.enabled;
-
-            GUI.enabled = false;
-            if (UseCustomDrawer)
+            using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
             {
-                // yeah, it will display 'No GUI implemented'. definitely.
-                // Use this to not default into the defualt property drawer.
-                targetTypeCustomDrawer.OnGUI(position, property, label);
+                if (UseCustomDrawer)
+                {
+                    // yeah, it will display 'No GUI implemented'. definitely.
+                    // Use this to not default into the defualt property drawer.
+                    targetTypeCustomDrawer.OnGUI(position, property, label);
+                }
+                else
+                {
+                    EditorGUI.PropertyField(position, property, label, true);
+                }
             }
-            else
-            {
-                EditorGUI.PropertyField(position, property, label, true);
-            }
-            GUI.enabled = gEnabled;
         }
     }
 
