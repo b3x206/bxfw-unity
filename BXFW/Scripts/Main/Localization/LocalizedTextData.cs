@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace BXFW.Data
 {
@@ -13,14 +14,23 @@ namespace BXFW.Data
     /// <br><c><see langword="new"/> <see cref="LocalizedTextData"/>(localized_text_id, 
     /// <see langword="new"/> Dictionary&lt;<see cref="string"/>, <see cref="string"/>&gt; { { language_id, text_content } })</c></br>
     /// <br/>
-    /// <br>And so on.. The constructor isn't 'concise' enough and this is 'experimental'.</br>
     /// </summary>
     [Serializable]
     public class LocalizedTextData : IEnumerable<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
     {
-        /// TODO : Put <see cref="DefaultLocale"/> to a different place.
+        /// <summary>
+        /// Default locale used for the data.
+        /// <br>This is set to "en".</br>
+        /// </summary>
         public static readonly string DefaultLocale = "en";
+        /// <summary>
+        /// Current TwoLetterISOLanguageName of this current locale of your system.
+        /// <br>This does not change during runtime. The app needs to be restarted to be able to change this value.</br>
+        /// </summary>
         public static readonly string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+        /// <summary>
+        /// A text ID, used for finding a <see cref="LocalizedTextData"/> inside an array.
+        /// </summary>
         public string TextID;
 
         /// <summary>
@@ -28,12 +38,20 @@ namespace BXFW.Data
         /// <br>An optional extension way of defining variables.</br>
         /// </summary>
         public readonly SerializableDictionary<string, string> PragmaDefinitions = new SerializableDictionary<string, string>();
-        [SerializeField] private SerializableDictionary<string, string> LocalizedValues = new SerializableDictionary<string, string>();
-        public IDictionary<string, string> Data
+        /// <summary>
+        /// A dictionary that contains the localization two letter iso identifiers and it's respective values.
+        /// </summary>
+        [SerializeField, FormerlySerializedAs("LocalizedValues")]
+        private SerializableDictionary<string, string> m_LocaleDatas = new SerializableDictionary<string, string>();
+        /// <summary>
+        /// The current localization data but as a IDictionary : <br/>
+        /// <inheritdoc cref="m_LocaleDatas"/>
+        /// </summary>
+        public IDictionary<string, string> LocaleDatas
         {
             get
             {
-                return LocalizedValues;
+                return m_LocaleDatas;
             }
         }
         /// <summary>
@@ -46,11 +64,11 @@ namespace BXFW.Data
                 int sizeValues = 0;
                 int sizeKeys = 0;
 
-                foreach (var value in LocalizedValues.Values)
+                foreach (var value in m_LocaleDatas.Values)
                 {
                     sizeValues += value.Length;
                 }
-                foreach (var key in LocalizedValues.Keys)
+                foreach (var key in m_LocaleDatas.Keys)
                 {
                     sizeKeys += key.Length;
                 }
@@ -63,7 +81,7 @@ namespace BXFW.Data
         {
             get
             {
-                if (!LocalizedValues.TryGetValue(key, out string value))
+                if (!m_LocaleDatas.TryGetValue(key, out string value))
                     return string.Format("{0} (no-locale) | {1}", key, TextID); // OnError, just return the problematic TextID.
 
                 return value;
@@ -75,7 +93,7 @@ namespace BXFW.Data
         /// <param name="key">2-letter iso identifier for the language.</param>
         public bool ContainsLocale(string key)
         {
-            return LocalizedValues.ContainsKey(key);
+            return m_LocaleDatas.ContainsKey(key);
         }
 
         /// <summary>
@@ -84,7 +102,7 @@ namespace BXFW.Data
         /// </summary>
         public string GetCurrentLocaleString()
         {
-            if (LocalizedValues.Count == 0)
+            if (m_LocaleDatas.Count == 0)
                 throw new NullReferenceException("[LocalizedTextData::GetCurrentLocaleString] No locale strings registered!");
 
             var locale = ISOCurrentLocale;
@@ -96,21 +114,21 @@ namespace BXFW.Data
 
             // Return the first in values
             Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
-            return LocalizedValues.Values.ToArray()[0];
+            return m_LocaleDatas.Values.ToArray()[0];
         }
         /// <summary>
         /// Sets a value for the current locale for this data.
-        /// <br>Creates a key in <see cref="Data"/> if the value for current locale does not exist.</br>
+        /// <br>Creates a key in <see cref="LocaleDatas"/> if the value for current locale does not exist.</br>
         /// </summary>
         public void SetCurrentLocaleString(string value)
         {
             if (!ContainsLocale(value))
             {
-                LocalizedValues.Add(ISOCurrentLocale, value);
+                m_LocaleDatas.Add(ISOCurrentLocale, value);
                 return;
             }
 
-            LocalizedValues[ISOCurrentLocale] = value;
+            m_LocaleDatas[ISOCurrentLocale] = value;
         }
         /// <summary>
         /// <c><see langword="get"/> : </c> <see cref="GetCurrentLocaleString"/>
@@ -180,9 +198,9 @@ namespace BXFW.Data
         /// <param name="pragmaDefs">Pragmatic additional definitions for other classes to use. Basically a settings dictionary. Only used in <see cref="LocalizedText"/> for the time being.</param>
         public LocalizedTextData(string textID, SerializableDictionary<string, string> values, SerializableDictionary<string, string> pragmaDefs)
         {
-            TextID              = textID;
-            LocalizedValues     = values;
-            PragmaDefinitions   = pragmaDefs;
+            TextID            = textID;
+            m_LocaleDatas     = values;
+            PragmaDefinitions = pragmaDefs;
         }
 
         public static explicit operator string(LocalizedTextData text)
@@ -192,12 +210,12 @@ namespace BXFW.Data
 
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
         {
-            return LocalizedValues.GetEnumerator();
+            return m_LocaleDatas.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return LocalizedValues.GetEnumerator();
+            return m_LocaleDatas.GetEnumerator();
         }
 
         public override bool Equals(object obj)
@@ -236,14 +254,14 @@ namespace BXFW.Data
 
             // Pragma settings can be different, idc.
             return TextID.Equals(other.TextID, StringComparison.Ordinal) && 
-                LocalizedValues.SequenceEqual(other.LocalizedValues);
+                m_LocaleDatas.SequenceEqual(other.m_LocaleDatas);
         }
 
         public override int GetHashCode()
         {
             int hashCode = -2018306565;
             hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(TextID);
-            hashCode = (hashCode * -1521134295) + EqualityComparer<Dictionary<string, string>>.Default.GetHashCode(LocalizedValues);
+            hashCode = (hashCode * -1521134295) + EqualityComparer<Dictionary<string, string>>.Default.GetHashCode(m_LocaleDatas);
             return hashCode;
         }
     }

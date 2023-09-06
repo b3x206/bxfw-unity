@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -27,18 +28,18 @@ namespace BXFW.Tools.Editor
         private void Update()
         {
             if (Input.GetKeyDown(CaptureKey))
-            { TakeCameraShot(); }
+            {
+                TakeCameraShot();
+            }
         }
 
-        // Other functions
-        public int ScreenshotID
-        {
-            get { return PlayerPrefs.GetInt("LastScrID"); }
-            set { PlayerPrefs.SetInt("LastScrID", value); }
-        }
         public void TakeCameraShot()
         {
-            if (ScreenshotCamera == null) { Debug.LogError("[CameraCapture::TakeScreenshot] Screenshot camera is null."); return; }
+            if (ScreenshotCamera == null)
+            {
+                Debug.LogError("[CameraCapture::TakeScreenshot] Screenshot camera is null.");
+                return;
+            }
 
             // Capture the virtuCam and save it as a PNG with correct aspect.
             var prevAspect = ScreenshotCamera.aspect;
@@ -66,14 +67,12 @@ namespace BXFW.Tools.Editor
 
             string fileName;
             byte[] bytes = vImageTexture.EncodeToPNG();
-            using (FileStream f = File.Create(string.Format("{0}/Screenshot{1:000}.png", dirString, ScreenshotID)))
+            using (FileStream f = File.Create(string.Format("{0}/Screenshot{1}.png", dirString, DateTime.Now.ToString("yyyy.MM.dd|T|HH:mm:ss"))))
             {
                 f.Write(bytes, 0, bytes.Length);
                 fileName = f.Name;
             }
             Debug.Log(string.Format("[CameraCapture::TakeScreenshot] Saved image at : {0}", fileName));
-            // Increment ScreenshotID for unique file names.
-            ScreenshotID++;
 
             // Cleanup
             if (Application.isPlaying)

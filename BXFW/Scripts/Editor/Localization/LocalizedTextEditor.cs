@@ -75,9 +75,9 @@ namespace BXFW.ScriptEditor
                                 var data = dataList[i];
                                 
                                 // foreaching
-                                int j = 0, keyCount = data.Data.Keys.Count();
+                                int j = 0, keyCount = data.LocaleDatas.Keys.Count();
                                 StringBuilder previewStrings = new StringBuilder(data.TextID.Length);
-                                foreach (string key in data.Data.Keys)
+                                foreach (string key in data.LocaleDatas.Keys)
                                 {
                                     // Show 3 as maximum (4th element is + more)
                                     if (j == 3)
@@ -127,7 +127,7 @@ namespace BXFW.ScriptEditor
                         {
                             // Add existing spoofables
                             LocalizedTextData targetData = target.TextData.SingleOrDefault(x => x.TextID == target.textID);
-                            foreach (var idValuePair in targetData.Data)
+                            foreach (var idValuePair in targetData.LocaleDatas)
                             {
                                 if (spoofables.RemoveAll(x => x.TwoLetterISOLanguageName == idValuePair.Key) != 0)
                                 {

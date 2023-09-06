@@ -162,7 +162,7 @@ namespace BXFW
         /// Called when the list content is changed.
         /// <br>This is (usually) invoked by <see cref="this[int]"/>'s setter.</br>
         /// </summary>
-        public event ChangedDelegate Changed;
+        public event ChangedDelegate OnChanged;
         /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Add(T)"/> is called.
         /// <br>For multiple adds, use <see cref="OnAddRange"/> instead.</br>
@@ -183,9 +183,9 @@ namespace BXFW
         public event AddRemoveRangeDelegate OnRemoveRange;
         /// <summary>
         /// Called when anything happens to a list.
-        /// <br>This includes adding and removing, unlike the <see cref="Changed"/> event.</br>
+        /// <br>This includes adding and removing, unlike the <see cref="OnChanged"/> event.</br>
         /// </summary>
-        public event Action Updated;
+        public event Action OnUpdated;
 
         public ObservedList() { }
         public ObservedList(List<T> list)
@@ -199,11 +199,11 @@ namespace BXFW
 
         protected override void OnArrayUpdated()
         {
-            Updated?.Invoke();
+            OnUpdated?.Invoke();
         }
         protected override void OnArrayChanged(int index, T oldValue, T newValue)
         {
-            Changed?.Invoke(index, oldValue, newValue);
+            OnChanged?.Invoke(index, oldValue, newValue);
         }
         protected override void OnArrayAdded(int index, T added)
         {

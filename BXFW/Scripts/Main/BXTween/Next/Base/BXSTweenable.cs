@@ -3,15 +3,12 @@ using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
 
-/// -- To make this file compatible with other things :
-/// A : 'using' Alias 'SerializeField' with something that marks hidden fields as serializable (i.e 'ExportAttribute' in godot)
-/// B : Remove animation curve (or make a custom class that is substitute to that)
-
 namespace BXFW.Tweening.Next
 {
     /// <summary>
     /// Type of a loop in <see cref="BXSTweenable"/>'s repeats.
-    /// <br><see cref="Yoyo"/> = Switches the tweening values on </br>
+    /// <br><see cref="Yoyo"/> = Switches the starting and ending tween values on loop point.</br>
+    /// <br><see cref="Reset"/> = Does nothing, the tween restarts from it's normal values.</br>
     /// </summary>
     public enum LoopType
     {
@@ -509,7 +506,7 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Play] This tweenable '{ToString(true)}' isn't valid. Cannot 'Play' tween.");
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Play] This tweenable '{ToString()}' isn't valid. Cannot 'Play' tween.");
                 return;
             }
 
@@ -533,7 +530,7 @@ namespace BXFW.Tweening.Next
             }
             catch (Exception e)
             {
-                BXSTween.MainLogger.LogException($"[BXSTweenable::Play] OnPlayAction in tween '{ToString(true)}'\n", e);
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Play] OnPlayAction in tween '{ToString()}'\n", e);
                 return;
             }
 
@@ -551,7 +548,7 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Pause] This tweenable '{ToString(true)}' isn't valid. Cannot 'Pause' tween.");
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Pause] This tweenable '{ToString()}' isn't valid. Cannot 'Pause' tween.");
                 return;
             }
 
@@ -568,7 +565,7 @@ namespace BXFW.Tweening.Next
             }
             catch (Exception e)
             {
-                BXSTween.MainLogger.LogException($"[BXSTweenable::Pause] OnPauseAction in tween '{ToString(true)}'\n", e);
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Pause] OnPauseAction in tween '{ToString()}'\n", e);
             }
         }
         /// <summary>
@@ -579,7 +576,7 @@ namespace BXFW.Tweening.Next
         {
             if (!IsValid)
             {
-                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Stop] This tweenable '{ToString(true)}' isn't valid. Cannot 'Stop' tween.");
+                BXSTween.MainLogger.LogWarning($"[BXSTweenable::Stop] This tweenable '{ToString()}' isn't valid. Cannot 'Stop' tween.");
                 return;
             }
 
@@ -592,7 +589,7 @@ namespace BXFW.Tweening.Next
             }
             catch (Exception e)
             {
-                BXSTween.MainLogger.LogException($"[BXSTweenable::Stop] OnStopAction in tween '{ToString(true)}'\n", e);
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Stop] OnStopAction in tween '{ToString()}'\n", e);
             }
 
             Reset();
@@ -623,17 +620,17 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// Converts a <see cref="BXSTweenable"/> to string.
-        /// <br>NOTE: Only use this for debugging, this will return a large string!</br>
+        /// <br>By default this will return a smaller string. To return a more informative but longer string use the <see cref="ToString(bool, char)"/>.</br>
         /// </summary>
         public override string ToString()
         {
-            return ToString(false);
+            return ToString(true);
         }
         /// <summary>
         /// Converts a <see cref="BXSTweenable"/> to string.
         /// </summary>
-        /// <param name="simpleString">Whether to return a shorter, simpler string. Use this option if you are gonna call this method often.</param>
-        /// <param name="pSep">The property seperator for values.</param>
+        /// <param name="simpleString">Whether to return a shorter, simpler string. Use this option as <see langword="true"/> if you are gonna call this method often.</param>
+        /// <param name="pSep">The property seperator character for values.</param>
         public virtual string ToString(bool simpleString, char pSep = ',')
         {
             if (simpleString)

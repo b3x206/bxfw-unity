@@ -136,14 +136,14 @@ namespace BXFW.Tweening.Next
             if (!tween.IsValid)
             {
                 RunningTweens.Remove(tween);
-                MainLogger.LogError($"[BXSTweenable::RunTweenable] Invalid tween '{tween.ToString(true)}', stopping and removing it.");
+                MainLogger.LogError($"[BXSTweenable::RunTweenable] Invalid tween '{tween}', stopping and removing it.");
                 tween.Stop();
                 return;
             }
             if (!tween.IsPlaying)
             {
                 RunningTweens.Remove(tween);
-                MainLogger.LogWarning($"[BXSTweenable::RunTweenable] Non playing tween '{tween.ToString(true)}' tried to be run.");
+                MainLogger.LogWarning($"[BXSTweenable::RunTweenable] Non playing tween '{tween}' tried to be run.");
                 return;
             }
 
@@ -156,7 +156,7 @@ namespace BXFW.Tweening.Next
                 }
                 catch (Exception e)
                 {
-                    MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction+OnEndAction in tween '{tween.ToString(true)}'\n", e);
+                    MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction+OnEndAction in tween '{tween}'\n", e);
                 }
                 tween.EvaluateTween(1f);
                 tween.Stop();
@@ -175,7 +175,7 @@ namespace BXFW.Tweening.Next
                 }
                 catch (Exception e)
                 {
-                    MainLogger.LogException($"[BXSTween::RunTweenable] TickConditionAction in tween '{tween.ToString(true)}'\n", e);
+                    MainLogger.LogException($"[BXSTween::RunTweenable] TickConditionAction in tween '{tween}'\n", e);
                     suspendType = TickSuspendType.Stop;
                 }
 
@@ -240,7 +240,7 @@ namespace BXFW.Tweening.Next
                     }
                     catch (Exception e)
                     {
-                        MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction in tween '{tween.ToString(true)}'\n", e);
+                        MainLogger.LogException($"[BXSTween::RunTweenable] OnStartAction in tween '{tween}'\n", e);
                     }
                 }
                 return;
@@ -256,7 +256,7 @@ namespace BXFW.Tweening.Next
                 }
                 catch (Exception e)
                 {
-                    MainLogger.LogException($"[BXSTween::RunTweenable] EvaluateTween+OnTickAction in tween '{tween.ToString(true)}'\n", e);
+                    MainLogger.LogException($"[BXSTween::RunTweenable] EvaluateTween+OnTickAction in tween '{tween}'\n", e);
                     tween.Stop();
                 }
                 
@@ -282,7 +282,7 @@ namespace BXFW.Tweening.Next
                 }
                 catch (Exception e)
                 {
-                    MainLogger.LogException($"[BXSTween::RunTweenable] OnRepeatAction in tween '{tween.ToString(true)}'\n", e);
+                    MainLogger.LogException($"[BXSTween::RunTweenable] OnRepeatAction in tween '{tween}'\n", e);
                 }
 
                 // Reset the base while looping

@@ -371,10 +371,10 @@ namespace BXFW.Data
                 // It looks like : TEXT_ID => 
                 sb.Append(string.Format("{0} {1} ", text.TextID, TextIDDefChar));
 
-                for (int i = 0; i < text.Data.Count; i++)
+                for (int i = 0; i < text.LocaleDatas.Count; i++)
                 {
-                    var textWLocaleKey = text.Data.Keys.ToArray()[i];
-                    var textWLocaleValue = text.Data.Values.ToArray()[i];
+                    var textWLocaleKey = text.LocaleDatas.Keys.ToArray()[i];
+                    var textWLocaleValue = text.LocaleDatas.Values.ToArray()[i];
 
                     // Append the dictionary data. 
                     // It looks like : localeValue="whatever here is there.", (comma added if other elements exist)

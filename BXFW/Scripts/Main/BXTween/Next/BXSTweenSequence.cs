@@ -192,7 +192,7 @@ namespace BXFW.Tweening.Next
             // Increment to the next group if the duration elapsed was larger.
             if (currentTweenDurationElapsed > CurrentPriorityTweensDuration)
             {
-                TweensTotalElapsed += CurrentPriorityTweensDuration; // Increment total elapsed
+                TweensTotalElapsed += CurrentPriorityTweensDuration; // Increment total elapsed from prev
                 CurrentRunPriority++;
                 CurrentPriorityTweensDuration = PriorityDuration(CurrentRunPriority);
 
@@ -258,7 +258,7 @@ namespace BXFW.Tweening.Next
 
             if (LastPriority <= -1)
             {
-                BXSTween.MainLogger.LogWarning($"[BXSTweenSequence::Join] Tried to join context '{tween.ToString(true)}' without any tweens appended. Appending first tween.");
+                BXSTween.MainLogger.LogWarning($"[BXSTweenSequence::Join] Tried to join context '{tween}' without any tweens appended. Appending first tween.");
                 Append(tween);
                 return;
             }
@@ -280,7 +280,7 @@ namespace BXFW.Tweening.Next
             m_RunnableTweens.Add(new RunnableTween(0, ctx));
         }
         /// <summary>
-        /// Appends a tween with new id.
+        /// Appends a tween with new priority.
         /// <br>Appended tween contexts will be waited sequentially.</br>
         /// </summary>
         public void Append(BXSTweenable ctx)
@@ -301,8 +301,8 @@ namespace BXFW.Tweening.Next
             Append(item);
         }
         /// <summary>
-        /// Prepends the tween to the start (id = 0).
-        /// <br>Shifts all runnable added tweens by 1.</br>
+        /// Prepends the tween to the start (priority = 0).
+        /// <br>Shifts all runnable added tweens priorities by 1.</br>
         /// </summary>
         public void Prepend(BXSTweenable ctx)
         {
@@ -372,7 +372,7 @@ namespace BXFW.Tweening.Next
                 var runnable = m_RunnableTweens[i];
                 if (runnable.tween == item)
                 {
-                    // Check if this is the last element
+                    // Check if this is the last element of it's priority
                     if (runnable.priority != LastPriority && PriorityCount(runnable.priority) - 1 <= 0)
                     {
                         // The priority no longer exists, do decrement everything beyond this runnable's priority
@@ -389,10 +389,31 @@ namespace BXFW.Tweening.Next
 
             return result;
         }
+        /// <summary>
+        /// Removes a whole priority from the sequence.
+        /// <br/>
+        /// <br><see cref="IndexOutOfRangeException"/> => Thrown when the given <paramref name="priority"/> is less than 0 or more than <see cref="LastPriority"/>.</br>
+        /// </summary>
+        /// <param name="priority">Priority of the tweens list to remove.</param>
+        /// <exception cref="IndexOutOfRangeException"/>
         public void RemovePriority(int priority)
         {
-            if (priority < 0 || priority > LastPriority + 1)
+            if (priority < 0 || priority > LastPriority)
                 throw new IndexOutOfRangeException($"[BXSTweenSequence::RemovePriority] Failed to remove priority '{priority}' : Index was out of range.");
+            
+            bool removedAny = m_RunnableTweens.RemoveAll(runnable => runnable.priority == priority) > 0;
+            if (!removedAny)
+                return;
+
+            // Check if the last priority
+            if (priority == LastPriority)
+                return;
+
+            // Shift runnables (no tweens exist in given priority now)
+            foreach (var afterPriorityRunnable in GetAfterPriorityRunnables(priority))
+            {
+                afterPriorityRunnable.priority -= 1;
+            }
         }
         /// <summary>
         /// Count of tweens in given priority.

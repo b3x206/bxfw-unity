@@ -57,7 +57,7 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// The function to get the 'StartValue'.
-        /// <br>Used when <see cref="BXSTweenable.IsEndValueRelative"/> and the tween was run, the <see cref="GetAbsoluteEndValue"/> is called.</br>
+        /// <br>Can be used in tween starting by calling <see cref="SetStartValue()"/> for getting new value to interpolate from.</br>
         /// </summary>
         public BXSGetterAction<TValue> GetterAction { get; protected set; }
         /// <summary>
@@ -88,11 +88,11 @@ namespace BXFW.Tweening.Next
 
         // - Overrides
         /// <summary>
-        /// Returns whether the tween context has a getter and setter.
+        /// Returns whether the tween context has a setter.
         /// <br>This may also return whether if the <see cref="StartValue"/> and <see cref="EndValue"/> is not null if <typeparamref name="TValue"/> is nullable.</br>
         /// </summary>
         public override bool IsValid =>
-            GetterAction != null && SetterAction != null &&
+            SetterAction != null &&
             HasGenericActions &&
             // check if struct or not, if not a struct check nulls
             (typeof(TValue).IsValueType || (StartValue != null && EndValue != null));
@@ -160,6 +160,9 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public BXSTweenContext<TValue> SetStartValue()
         {
+            if (GetterAction == null)
+                throw new NullReferenceException($"[BXSTweenContext<{typeof(TValue)}>::SetStartValue] Parameterless SetStartValue 'GetterAction()' value is null.");
+
             return SetStartValue(GetterAction());
         }
         /// <summary>
@@ -546,7 +549,10 @@ namespace BXFW.Tweening.Next
         public override void Play()
         {
             if (!IsValid)
+            {
+                BXSTween.MainLogger.LogWarning($"[BXSTweenContext::Play] This tweenable '{ToString()}' isn't valid. Cannot 'Play' tween.");
                 return;
+            }
 
             base.Play();
 

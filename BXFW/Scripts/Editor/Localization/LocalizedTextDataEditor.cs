@@ -107,10 +107,10 @@ namespace BXFW.ScriptEditor
             // Get saved Value
             editedLocaleValue = savedEditedLocaleValue;
             // Add to target if it does not exist
-            if (!target.Data.ContainsKey(editedLocaleValue))
+            if (!target.LocaleDatas.ContainsKey(editedLocaleValue))
             {
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
-                target.Data.Add(editedLocaleValue, string.Empty);
+                target.LocaleDatas.Add(editedLocaleValue, string.Empty);
             }
 
             // LocalizedTextData.TextID (could be useful for classifying in an array with linq commands)
@@ -163,7 +163,7 @@ namespace BXFW.ScriptEditor
                     {
                         Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
                         editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
-                        target.Data.Add(info.TwoLetterISOLanguageName, string.Empty);
+                        target.LocaleDatas.Add(info.TwoLetterISOLanguageName, string.Empty);
                         EditorAdditionals.RepaintAll();
                         EditorGUIUtility.editingTextField = false;
                     });
@@ -173,15 +173,15 @@ namespace BXFW.ScriptEditor
             }
 
             // Remove locale menu button
-            GUI.enabled = target.Data.Keys.Count > 1;
+            GUI.enabled = target.LocaleDatas.Keys.Count > 1;
             Rect removeLocaleBtnRect = new Rect(dropdownRect) { x = dropdownRect.x + (dropdownRect.width - 30), width = 30 };
             if (GUI.Button(removeLocaleBtnRect, new GUIContent("X")))
             {
                 // Remove from object
                 Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
-                target.Data.Remove(editedLocaleValue);
+                target.LocaleDatas.Remove(editedLocaleValue);
                 // Set edited locale value
-                editedLocaleValue = target.Data.Keys.First();
+                editedLocaleValue = target.LocaleDatas.Keys.First();
                 editedLocales[GetPropertyKey(property)] = editedLocaleValue;
             }
             GUI.enabled = gEnabled;
@@ -189,7 +189,7 @@ namespace BXFW.ScriptEditor
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
             Rect txtEditAreaRect = GetPropertyRect(position, HEIGHT);
-            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.Data[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
+            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.LocaleDatas[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
             {
@@ -202,7 +202,7 @@ namespace BXFW.ScriptEditor
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "set locale string");
-                target.Data[editedLocaleValue] = lValue;
+                target.LocaleDatas[editedLocaleValue] = lValue;
             }
 
             // End prop

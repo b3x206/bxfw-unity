@@ -22,11 +22,11 @@ namespace BXFW.ScriptEditor
 
         /// <summary>
         /// Get the values for the dictionary.
-        /// <br>Don't forget to call this method as <see langword="base"/>.<see cref="GetCustomPropertyDrawerDictionary(in Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, MultiUIManagerBase[])"/></br>
+        /// <br>Don't forget to call this method as <see langword="base"/>.<see cref="GetCustomPropertyDrawerDictionary(Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, MultiUIManagerBase[])"/></br>
         /// </summary>
         /// <param name="dict">The given dictionary for the property names and the behaviour to run on those.</param>
         /// <param name="targets">Array of targets for the <see cref="CanEditMultipleObjects"/> attribute editor.</param>
-        protected virtual void GetCustomPropertyDrawerDictionary(in Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
+        protected virtual void GetCustomPropertyDrawerDictionary(Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
         {
             dict.Add("m_ElementCount", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
             {
