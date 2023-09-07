@@ -20,12 +20,15 @@ namespace BXFW.ScriptEditor
 
             // ValueAnimatorBase.Sequence.Duration
             height += EditorGUIUtility.singleLineHeight + PADDING;
-            
+
+            // GUI.Button = ValueAnimatorBase.Sequence.Clear();
+            height += EditorGUIUtility.singleLineHeight + PADDING;
+
             foreach (var visibleProp in property.GetVisibleChildren())
             {
                 height += EditorGUI.GetPropertyHeight(visibleProp) + PADDING;
             }
-
+            
             return height;
         }
 
@@ -53,6 +56,8 @@ namespace BXFW.ScriptEditor
 
             property.isExpanded = EditorGUI.Foldout(GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
+            var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().Value;
+
             if (!property.isExpanded)
                 return;
 
@@ -67,14 +72,23 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.FloatField(
                     GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight),
-                    "Total Duration", ((ValueAnimatorBase.Sequence)property.GetTarget().Value).Duration
+                    new GUIContent("Total Duration", "The length (in seconds) that this animation will take."),
+                    targetValue.Duration
                 );
+            }
+
+            if (GUI.Button(GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Clear Frames"))
+            {
+                Undo.RecordObject(property.serializedObject.targetObject, "Clear Frames");
+
+                targetValue.Clear();
             }
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
                 EditorGUI.PropertyField(GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
             }
+
             EditorGUI.indentLevel--;
 
             EditorGUI.EndProperty();

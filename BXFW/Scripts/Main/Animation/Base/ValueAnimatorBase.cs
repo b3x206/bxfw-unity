@@ -37,6 +37,11 @@ namespace BXFW
             /// Duration of this sequence.
             /// </summary>
             public virtual float Duration => FrameCount * frameMS;
+
+            /// <summary>
+            /// Clears all sprites in sequence.
+            /// </summary>
+            public abstract void Clear();
         }
 
         /// <summary>

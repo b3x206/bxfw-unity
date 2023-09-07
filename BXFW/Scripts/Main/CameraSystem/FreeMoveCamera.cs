@@ -107,43 +107,43 @@ namespace BXFW
                     (Quaternion.AngleAxis(CurrentRotationX, Vector3.up) * Quaternion.AngleAxis(CurrentRotationY, -Vector3.right));
 
                 // Move player
-                Vector3 MoveVec = Vector3.zero;
+                Vector3 inputVector = Vector3.zero;
                 if (InputMoveForward)
                 {
-                    MoveVec += Vector3.forward;
+                    inputVector += Vector3.forward;
                 }
                 if (InputMoveBackward)
                 {
-                    MoveVec += Vector3.back;
+                    inputVector += Vector3.back;
                 }
                 if (InputMoveLeft)
                 {
-                    MoveVec += Vector3.left;
+                    inputVector += Vector3.left;
                 }
                 if (InputMoveRight)
                 {
-                    MoveVec += Vector3.right;
+                    inputVector += Vector3.right;
                 }
                 // Ascend / Descend
                 if (InputMoveDescend)
                 {
-                    MoveVec += Vector3.down;
+                    inputVector += Vector3.down;
                 }
                 if (InputMoveAscend)
                 {
-                    MoveVec += Vector3.up;
+                    inputVector += Vector3.up;
                 }
                 // Normalize movement to make 'r = 1' and to make diagonal movements consistent
-                MoveVec = MoveVec.normalized;
+                inputVector = inputVector.normalized;
 
                 Vector3 MoveTranslate;
                 if (InputMoveBoost)
                 {
-                    MoveTranslate = (BoostedCameraMoveSpeedAdd + CameraMoveSpeed) * Time.deltaTime * MoveVec;
+                    MoveTranslate = (BoostedCameraMoveSpeedAdd + CameraMoveSpeed) * Time.deltaTime * inputVector;
                 }
                 else
                 {
-                    MoveTranslate = CameraMoveSpeed * Time.deltaTime * MoveVec;
+                    MoveTranslate = CameraMoveSpeed * Time.deltaTime * inputVector;
                 }
 
                 // Adjust Move Speed
@@ -152,7 +152,6 @@ namespace BXFW
                     if (Input.mouseScrollDelta != Vector2.zero)
                     {
                         CameraMoveSpeed = Mathf.Clamp(CameraMoveSpeed + Input.mouseScrollDelta.y, 1f, float.MaxValue);
-                        Debug.Log(string.Format("[CameraDebugMove::Update] Set Move speed to : {0}", CameraMoveSpeed));
                     }
                 }
 

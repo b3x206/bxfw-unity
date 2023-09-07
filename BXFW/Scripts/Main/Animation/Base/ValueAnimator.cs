@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace BXFW
 {
@@ -16,7 +17,7 @@ namespace BXFW
         [Serializable]
         public class ValueAnim : Sequence
         {
-            public override int FrameCount => valueFrames.Length;
+            public override int FrameCount => valueFrames == null ? 0 : valueFrames.Length;
 
             /// <summary>
             /// Animation frames of given animator.
@@ -29,6 +30,11 @@ namespace BXFW
             {
                 get => valueFrames[index];
                 set => valueFrames[index] = value;
+            }
+
+            public override void Clear()
+            {
+                valueFrames = new TValue[0];
             }
         }
 
@@ -82,6 +88,11 @@ namespace BXFW
         /// </summary>
         public bool IsPlaying { get; private set; } = false;
         /// <summary>
+        /// Returns whether if '<see cref="GatherInitialValue"/>' was called once atleast.
+        /// <br>Used to validate <see cref="initialValue"/> if there's none.</br>
+        /// </summary>
+        public bool IsInitialized { get; private set; } = false;
+        /// <summary>
         /// Current frame of the animation.
         /// </summary>
         public int CurrentFrame { get; private set; } = 0;
@@ -95,6 +106,25 @@ namespace BXFW
         /// <br>The <see cref="AnimatedValue"/> is set to this when the animation is <see cref="Stop"/></br>
         /// </summary> 
         public TValue initialValue;
+
+        /// <summary>
+        /// Returns whether if the initial value is null.
+        /// <br>This is only needed internally as unity objects don't work with normal null comparison,
+        /// but the other scripts accessing this class can use the <typeparamref name="TValue"/>'s equality comparer.</br>
+        /// </summary>
+        protected virtual bool InitialValueIsNull
+        {
+            get
+            {
+                if (initialValue is Object initialUnityObject)
+                {
+                    return initialUnityObject == null;
+                }
+
+                // Normal object comparison
+                return initialValue == null;
+            }
+        }
 
         // -- Abstract Class
         /// <summary>
@@ -122,6 +152,7 @@ namespace BXFW
         public void GatherInitialValue()
         {
             initialValue = AnimatedValue;
+            IsInitialized = true;
         }
 
         protected virtual void Update()
@@ -276,8 +307,16 @@ namespace BXFW
             IsPlaying = false;
             isUpdateAnimatorStop = false;
             CurrentFrame = 0;
-            
-            // Set value to initial
+
+            // Set value to initial (if initialized)
+            if (InitialValueIsNull)
+            {
+                if (!IsInitialized)
+                {
+                    GatherInitialValue();
+                }
+            }
+
             AnimatedValue = initialValue;
         }
     }
