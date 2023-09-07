@@ -12,8 +12,8 @@ namespace BXFW
         [Header("Camera Reference")]
         public Transform playerTransform;
         private Vector3 m_followTargetPos;
-        public CameraUpdateMode lookUpdateMode = CameraUpdateMode.Update;
-        public CameraUpdateMode moveUpdateMode = CameraUpdateMode.FixedUpdate;
+        public BehaviourUpdateMode lookUpdateMode = BehaviourUpdateMode.Update;
+        public BehaviourUpdateMode moveUpdateMode = BehaviourUpdateMode.FixedUpdate;
 
         [Header("Camera Settings")] // Input settings
         [SerializeField] private bool m_UseRawInputLook = true;
@@ -41,18 +41,18 @@ namespace BXFW
 
         private void Update()
         {
-            if (lookUpdateMode != CameraUpdateMode.FixedUpdate)
+            if (lookUpdateMode != BehaviourUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.deltaTime);
 
-            if (moveUpdateMode != CameraUpdateMode.FixedUpdate)
+            if (moveUpdateMode != BehaviourUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.deltaTime);
         }
         private void FixedUpdate()
         {
-            if (lookUpdateMode == CameraUpdateMode.FixedUpdate)
+            if (lookUpdateMode == BehaviourUpdateMode.FixedUpdate)
                 CameraLookUpdate(Time.fixedDeltaTime);
 
-            if (moveUpdateMode == CameraUpdateMode.FixedUpdate)
+            if (moveUpdateMode == BehaviourUpdateMode.FixedUpdate)
                 CameraMoveUpdate(Time.fixedDeltaTime);
         }
 
