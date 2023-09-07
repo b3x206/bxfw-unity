@@ -15,14 +15,14 @@ namespace BXFW.ScriptEditor
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            // This line is pain?
-            // Unity editor GUI is pain.
-            bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
+            bool drawPosClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
 
-            // Atleast this ui is 'not very dynamic'
-            return (DrawXYZClamp ? EditorGUIUtility.singleLineHeight * 6 : EditorGUIUtility.singleLineHeight * 3) + 12;
+            return (drawPosClamp ? EditorGUIUtility.singleLineHeight * 6 : EditorGUIUtility.singleLineHeight * 3) + 12;
         }
 
+        /// <summary>
+        /// Returns a single rect sized property rect.
+        /// </summary>
         private Rect GetPropertyRect(Rect parentRect, int index)
         {
             return new Rect(parentRect.x, parentRect.y + (18 * index), parentRect.width, 22f);
@@ -39,11 +39,11 @@ namespace BXFW.ScriptEditor
                 EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.Position)));
                 EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.EulerRotation)));
 
-                EditorGUI.indentLevel++;
-                EditorGUI.PropertyField(GetPropertyRect(position, 3), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosXClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 4), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosYClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 5), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosZClamp)));
-                EditorGUI.indentLevel--;
+                // indent by 15
+                Rect indentRect = new Rect(position) { x = position.x + 15f, width = position.width - 15f };
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 3), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosXClamp)));
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 4), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosYClamp)));
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 5), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosZClamp)));
             }
             else
             {
@@ -64,20 +64,21 @@ namespace BXFW.ScriptEditor
             // Variable
             var targets = base.targets.Cast<FollowCamera>().ToArray();
             var showMixed = EditorGUI.showMixedValue;
-            var StyleLabel = new GUIStyle
+            var styleLabel = new GUIStyle
             {
                 alignment = TextAnchor.UpperCenter,
                 fontStyle = FontStyle.Bold
             };
-            StyleLabel.normal.textColor = Color.white;
-            var inspectorDict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
+            styleLabel.normal.textColor = Color.white;
+
+            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
             if (targets.Any(cam => cam.UseFollowVecInstead))
-                inspectorDict.Add(nameof(FollowCamera.FollowTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(FollowCamera.FollowTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
             if (targets.Any(cam => cam.FollowTransform != null && !cam.UseFollowVecInstead))
-                inspectorDict.Add(nameof(FollowCamera.FollowVector3), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(FollowCamera.FollowVector3), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
 
             // Base Inspector
-            serializedObject.DrawCustomDefaultInspector(inspectorDict);
+            serializedObject.DrawCustomDefaultInspector(dict);
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
             int currentCameraOffsetIndexTest = targets[0].CurrentCameraOffsetIndex;
@@ -102,7 +103,7 @@ namespace BXFW.ScriptEditor
             EditorGUI.showMixedValue = showMixed;
             
             // Custom Inspector
-            GUILayout.Label($"---- Current Index : {(multipleHasDifferentOffset ? "~" : currentCameraOffsetIndexTest.ToString())}", StyleLabel);
+            GUILayout.Label($"---- Current Index : {(multipleHasDifferentOffset ? "~" : currentCameraOffsetIndexTest.ToString())}", styleLabel);
             if (GUILayout.Button("Set Camera Position Offset From Position"))
             {
                 Undo.IncrementCurrentGroup();

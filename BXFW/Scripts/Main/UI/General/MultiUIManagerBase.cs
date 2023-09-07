@@ -77,7 +77,8 @@ namespace BXFW.UI
         /// (and not reset the ref object) just set the <see cref="ElementCount"/> to zero.
         /// </br>
         /// </summary>
-        public abstract void ResetElements();
+        /// <param name="clearChildTransform">Clears everything in child transform.</param>
+        public abstract void ResetElements(bool clearChildTransform = false);
 
 #if UNITY_EDITOR
         /// <summary>
@@ -88,7 +89,7 @@ namespace BXFW.UI
         protected override void Reset()
         {
             base.Reset();
-            ResetElements();
+            ResetElements(true);
         }
 #endif
     }

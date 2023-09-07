@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
 using Object = UnityEngine.Object;
+using System.Linq;
 
 namespace BXFW.Tweening.Next
 {
@@ -28,15 +29,19 @@ namespace BXFW.Tweening.Next
         {
             if (BXSTween.MainRunner == null)
             {
-                // Spawn object
-                BXSTweenUnityRunner runner = new GameObject("BXSTween").AddComponent<BXSTweenUnityRunner>();
-
                 // Initialize the static things
-                BXSTween.Initialize(runner, new Logger(Debug.Log, Debug.LogWarning, Debug.LogError, Debug.LogException));
-                runner.OnRunnerStart?.Invoke();
+                BXSTween.Initialize(() =>
+                {
+                    // Spawn object
+                    BXSTweenUnityRunner runner = new GameObject("BXSTween").AddComponent<BXSTweenUnityRunner>();
+                    runner.OnRunnerStart?.Invoke();
 
-                // Add it to 'DontDestroyOnLoad'
-                DontDestroyOnLoad(runner.gameObject);
+                    // Add it to 'DontDestroyOnLoad'
+                    DontDestroyOnLoad(runner.gameObject);
+
+                    // Return it as this is the getter if the main IBXSTweenRunner is null
+                    return runner;
+                }, new Logger(Debug.Log, Debug.LogWarning, Debug.LogError, Debug.LogException));
             }
         }
 
@@ -46,6 +51,12 @@ namespace BXFW.Tweening.Next
         private class ObjectRegistry : IComparable<ObjectRegistry>
         {
             public Object unityObject;
+
+            public ObjectRegistry() { }
+            public ObjectRegistry(Object assignObject)
+            {
+                unityObject = assignObject;
+            }
 
             public int CompareTo(ObjectRegistry other)
             {
@@ -60,7 +71,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// List of the registered objects.
         /// </summary>
-        private SortedList<ObjectRegistry> idObjectRegistries = new SortedList<ObjectRegistry>();
+        private readonly SortedList<ObjectRegistry> m_idObjectRegistries = new SortedList<ObjectRegistry>();
 
         public TDispatchObject GetObjectFromID<TDispatchObject>(int id)
             where TDispatchObject : class
@@ -68,11 +79,11 @@ namespace BXFW.Tweening.Next
             if (id == BXSTween.NoID)
                 return null;
 
-            int index = idObjectRegistries.FindIndex((reg) => GetIDFromObject(reg.unityObject) == id);
+            int index = m_idObjectRegistries.FindIndex(reg => GetIDFromObject(reg.unityObject) == id);
             if (index < 0)
                 return null;
 
-            return idObjectRegistries[index].unityObject as TDispatchObject;
+            return m_idObjectRegistries[index].unityObject as TDispatchObject;
         }
 
         public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject)
@@ -81,10 +92,21 @@ namespace BXFW.Tweening.Next
             Object idUnityObject = (idObject as Object);
             if (idUnityObject != null)
             {
+                if (m_idObjectRegistries.All(reg => reg.unityObject != idUnityObject))
+                {
+                    m_idObjectRegistries.Add(new ObjectRegistry(idUnityObject));
+                }
+
                 return idUnityObject.GetInstanceID();
             }
 
             return BXSTween.NoID;
+        }
+
+        public void Kill()
+        {
+            OnRunnerExit?.Invoke(false);
+            Destroy(gameObject);
         }
 
         private void Update()
@@ -99,12 +121,6 @@ namespace BXFW.Tweening.Next
         private void OnApplicationQuit()
         {
             OnRunnerExit?.Invoke(true);
-        }
-
-        public void Kill()
-        {
-            OnRunnerExit?.Invoke(false);
-            Destroy(gameObject);
         }
     }
 }

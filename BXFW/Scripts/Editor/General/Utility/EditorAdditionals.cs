@@ -431,23 +431,27 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
 
             // Get the attribute type for target PropertyDrawer's CustomPropertyDrawer target type
-            Type attributeTargetType = (Type)typeof(CustomPropertyDrawer).GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
+            Type attributeTargetType = (Type)typeof(CustomPropertyDrawer)
+                .GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
+            // Check if the CustomPropertyDrawer is for an attribute
             if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
                 throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
 
-            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(SceneView)).             // Internal class is contained in the same assembly (UnityEditor.CoreModule)
-                GetType("UnityEditor.ScriptAttributeUtility", true).                             // Internal class that has dictionary for all custom PropertyDrawer's
-                GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static). // Utility method to get type from the internal class
-                Invoke(null, new object[] { requester.fieldInfo.FieldType });                    // Call with the type parameter. It will return a type that needs instantiation using Activator.
+            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(PropertyDrawer))         // Internal class is contained in the same assembly (UnityEditor.CoreModule)
+                .GetType("UnityEditor.ScriptAttributeUtility", true)                             // Internal class that has dictionary for all custom PropertyDrawer's
+                .GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static) // Utility method to get type from the internal class
+                .Invoke(null, new object[] { requester.fieldInfo.FieldType });                   // Call with the type parameter. It will return a type that needs instantiation using Activator.
 
             // Ignore this, this means that there's no 'PropertyDrawer' implemented.
             if (propertyDrawerType == null)
                 return null;
 
+            // PropertyDrawer's don't inherit UnityEngine.Object
             PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
             {
-                // Leave m_Attribute as is, there's no need to access that.
+                // Leave m_Attribute as is, there's no need to access that (as this is most likely not a custom attribute property drawer)
                 typeof(PropertyDrawer).GetField("m_FieldInfo", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(resultDrawer, requester.fieldInfo);
             }
 
@@ -462,6 +466,7 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public static void RepaintInspector(SerializedObject obj)
         {
+            // Undocumented class = ActiveEditorTracker (Exists since 2017.1)
             foreach (var i in ActiveEditorTracker.sharedTracker.activeEditors)
             {
                 if (i.serializedObject != obj)
@@ -554,7 +559,6 @@ namespace BXFW.Tools.Editor
             obj.UpdateIfRequiredOrScript();
 
             // Loop through properties and create one field (including children) foreach top level property.
-            // Why unity? includeChildren = 'expanded'
             SerializedProperty property = obj.GetIterator();
             bool expanded = true;
             while (property.NextVisible(expanded))
@@ -696,7 +700,8 @@ namespace BXFW.Tools.Editor
                     // Use '.Copy' for making 'Enumerable.ToArray' work
                     // This is due to yield return'd value will be always be the same 'currentProperty' if we don't copy it
                     // But for a linear read of this IEnumerable without laying it out to an array, it will be fine
-                    // tl;dr : basically copy the value to make it different
+
+                    // tl;dr : basically copy the value to make it different instead of a 'currentProperty' pass by value.
                     using SerializedProperty copyProp = currentProperty.Copy();
                     yield return copyProp;
                 }
@@ -704,50 +709,6 @@ namespace BXFW.Tools.Editor
             }
         }
 
-        [Flags]
-        public enum EditorListOption
-        {
-            None = 0,
-            ListSize = 1,
-            ListLabel = 2,
-            Default = ListSize | ListLabel
-        }
-        /// <summary>
-        /// Shows an array inspector (using unity default).
-        /// </summary>
-        public static void ShowEditorList(SerializedProperty list, EditorListOption options = EditorListOption.Default)
-        {
-            bool showListLabel = (options & EditorListOption.ListLabel) != 0, showListSize = (options & EditorListOption.ListSize) != 0;
-
-            if (showListLabel)
-            {
-                GUILayout.BeginHorizontal();
-                EditorGUILayout.PropertyField(list);
-                EditorGUI.indentLevel += 1;
-            }
-
-            if (!showListLabel || list.isExpanded)
-            {
-                if (showListSize)
-                {
-                    EditorGUILayout.PropertyField(list.FindPropertyRelative("Array.size"));
-                    if (showListLabel)
-                    {
-                        GUILayout.EndHorizontal();
-                    }
-                }
-
-                for (int i = 0; i < list.arraySize; i++)
-                {
-                    EditorGUILayout.PropertyField(list.GetArrayElementAtIndex(i));
-                }
-            }
-
-            if (showListLabel)
-            {
-                EditorGUI.indentLevel -= 1;
-            }
-        }
         /// <summary>
         /// Create array with fields.
         /// This is a more primitive array drawer, but it works.

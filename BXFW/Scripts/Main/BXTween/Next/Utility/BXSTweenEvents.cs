@@ -1,5 +1,3 @@
-using UnityEngine.Events;
-
 namespace BXFW.Tweening.Next.Events
 {
     /// <summary>
@@ -62,9 +60,4 @@ namespace BXFW.Tweening.Next.Events
     /// <param name="time">Time for this tween. This parameter is linearly interpolated.</param>
     /// <returns>The eased value.</returns>
     public delegate float BXSEaseAction(float time);
-
-    /// <summary>
-    /// A unity event that takes a <see cref="BXSTweenable"/>.
-    /// </summary>
-    public class BXSTweenUnityAction : UnityEvent<BXSTweenable> { }
 }

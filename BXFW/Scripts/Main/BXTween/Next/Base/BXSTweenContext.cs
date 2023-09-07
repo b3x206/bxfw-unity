@@ -142,6 +142,7 @@ namespace BXFW.Tweening.Next
             return context.IsValid;
         }
 
+        // - Daisy Chain Setters
         /// <summary>
         /// Sets up context. Do this if your context is not <see cref="IsValid"/>.
         /// <br/>
@@ -149,15 +150,26 @@ namespace BXFW.Tweening.Next
         /// <paramref name="startValueGetter"/> or <paramref name="setter"/>.</br>
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        public void SetupContext(BXSGetterAction<TValue> startValueGetter, TValue endValue, BXSSetterAction<TValue> setter)
+        public BXSTweenContext<TValue> SetupContext(BXSGetterAction<TValue> startValueGetter, TValue endValue, BXSSetterAction<TValue> setter)
         {
             SetStartValue(startValueGetter).SetEndValue(endValue).SetSetter(setter);
+            return this;
+        }
+        /// <summary>
+        /// Sets up context.
+        /// <br>A shortcut method for setting the setter and the start+end values.</br>
+        /// </summary>
+        public BXSTweenContext<TValue> SetupContext(TValue startValue, TValue endValue, BXSSetterAction<TValue> setter)
+        {
+            SetStartValue(startValue).SetEndValue(endValue).SetSetter(setter);
+            return this;
         }
 
-        // - Daisy Chain Setters
         /// <summary>
         /// Sets the start value from the getter <see cref="GetterAction"/>.
+        /// <br>This can only be successfully called if there's a <see cref="GetterAction"/>, otherwise it will throw <see cref="NullReferenceException"/>.</br>
         /// </summary>
+        /// <exception cref="NullReferenceException"/>
         public BXSTweenContext<TValue> SetStartValue()
         {
             if (GetterAction == null)
@@ -179,7 +191,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the starting value.
-        /// <br>This also effects the tween while running.</br>
+        /// <br>This effects the tween while running.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetStartValue(TValue value)
         {
@@ -188,7 +200,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the ending value.
-        /// <br>This also effects the tween while running.</br>
+        /// <br>This effects the tween while running.</br>
         /// </summary>
         /// <param name="setRelative">Whether to set the end value as a relative one. Calls <see cref="SetIsEndRelative(bool)"/>.</param>
         public BXSTweenContext<TValue> SetEndValue(TValue value, bool setRelative = false)

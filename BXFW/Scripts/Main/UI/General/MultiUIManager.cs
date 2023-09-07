@@ -43,7 +43,7 @@ namespace BXFW.UI
         /// List of the contained elements.
         /// <br>When you override <see cref="GenerateElements"/>, don't forget to add to this array.</br>
         /// </summary>
-        [SerializeField] protected List<TElement> uiElements = new List<TElement>();
+        [SerializeField] protected List<TElement> m_Elements = new List<TElement>();
         /// <summary>
         /// List of the contained elements, in a read-only form.
         /// <br>Even though the '<see cref="ElementCount"/>' is set to zero, this will always contain 1 object.</br>
@@ -52,7 +52,7 @@ namespace BXFW.UI
         {
             get
             {
-                return uiElements;
+                return m_Elements;
             }
         }
         /// <summary>
@@ -64,7 +64,7 @@ namespace BXFW.UI
         {
             get
             {
-                return uiElements[index];
+                return m_Elements[index];
             }
         }
 
@@ -93,11 +93,14 @@ namespace BXFW.UI
         /// </param>
         public TElement CreateUIElement(bool useReferenceElement = true)
         {
-            int createIndex = uiElements.Count;
-            TElement element = OnCreateElement(useReferenceElement ? uiElements[ReferenceElementIndex] : null);
-            
+            int createIndex = m_Elements.Count;
+            if (useReferenceElement)
+                useReferenceElement = m_Elements.Count > 0; // Check eligibility of using an reference element
+
+            TElement element = OnCreateElement(useReferenceElement ? m_Elements[ReferenceElementIndex] : null);
+
             // Add to list + events
-            uiElements.Add(element);
+            m_Elements.Add(element);
             onCreateElementEvent?.Invoke(createIndex, element);
             // Transform stuff (because the child will be scaled weirdly)
             element.transform.SetParent(transform);
@@ -109,7 +112,7 @@ namespace BXFW.UI
                 int idxOfClone = elemName.IndexOf("(Clone)");
                 if (idxOfClone != -1)
                 {
-                    element.gameObject.name = elemName.Remove(elemName.IndexOf("(Clone)"));
+                    element.gameObject.name = elemName.Remove(idxOfClone);
                 }
             }
 
@@ -124,11 +127,11 @@ namespace BXFW.UI
         {
             // The generation should always retain the first element as an inactive one.
             // Removal loop
-            while (uiElements.Count > ElementCount)
+            while (m_Elements.Count > ElementCount)
             {
-                if (uiElements.Count <= 1)
+                if (m_Elements.Count <= 1)
                 {
-                    if (uiElements.Count < 0 || uiElements[0] == null)
+                    if (m_Elements.Count < 0 || m_Elements[0] == null)
                     {
                         // Null array and or null element
                         // Stop destruction after clearing the array
@@ -137,15 +140,15 @@ namespace BXFW.UI
                     }
 
                     // Disable the last object and stop the destruction
-                    uiElements[0].gameObject.SetActive(false);
+                    m_Elements[0].gameObject.SetActive(false);
                     break;
                 }
 
-                if (uiElements[uiElements.Count - 1] != null)
+                if (m_Elements[m_Elements.Count - 1] != null)
                 {
                     // We need to use DestroyImmediate here as there's no need for the reference
                     // Otherwise the script gets stuck at an infinite loop and dies.
-                    GameObject destroyObject = uiElements[uiElements.Count - 1].gameObject;
+                    GameObject destroyObject = m_Elements[m_Elements.Count - 1].gameObject;
 
                     // We record the 'Undo' on the editor script anyways
                     DestroyImmediate(destroyObject);
@@ -159,18 +162,18 @@ namespace BXFW.UI
                 CleanupElementsList();
             }
             // Add loop
-            while (uiElements.Count < ElementCount)
+            while (m_Elements.Count < ElementCount)
             {
                 // Set first element to be activated
-                if (uiElements.Count == 1)
+                if (m_Elements.Count == 1)
                 {
-                    if (uiElements[0] == null)
+                    if (m_Elements[0] == null)
                     {
                         CleanupElementsList();
                         continue;
                     }
 
-                    uiElements[0].gameObject.SetActive(true);
+                    m_Elements[0].gameObject.SetActive(true);
                 }
 
                 CreateUIElement();
@@ -178,15 +181,15 @@ namespace BXFW.UI
             // Check if the element count is 1, enable the 'uiElements[0]' from here
             // This is because the 'Add loop' doesn't work when the previous 'ElementCount' is zero.
             // (first element is always in 'uiElements' unless you call ResetElements)
-            if (uiElements.Count == 1)
+            if (m_Elements.Count == 1)
             {
-                if (uiElements[0] == null)
+                if (m_Elements[0] == null)
                 {
                     CleanupElementsList();
                     CreateUIElement();
                 }
-                
-                uiElements[0].gameObject.SetActive(ElementCount > 0);
+
+                m_Elements[0].gameObject.SetActive(ElementCount > 0);
             }
         }
         /// <summary>
@@ -202,13 +205,13 @@ namespace BXFW.UI
         /// (and not reset the ref object) just set the <see cref="ElementCount"/> to zero.
         /// </br>
         /// </summary>
-        public override void ResetElements()
+        public override void ResetElements(bool clearChildTransform = false)
         {
             ElementCount = 0;
             // Destroy first object
-            if (uiElements.Count >= 1 && uiElements[0] != null)
+            if (m_Elements.Count >= 1 && m_Elements[0] != null)
             {
-                GameObject destroyObject = uiElements[0].gameObject;
+                GameObject destroyObject = m_Elements[0].gameObject;
 #if UNITY_EDITOR
                 // Playing check
                 if (Application.isPlaying)
@@ -221,32 +224,49 @@ namespace BXFW.UI
 #endif
             }
 
-            uiElements.Clear();
+            // Clear the child transform
+            if (clearChildTransform)
+            {
+                while (transform.childCount > 0)
+                {
+                    GameObject destroyObject = transform.GetChild(0).gameObject;
+#if UNITY_EDITOR
+                    if (Application.isPlaying)
+                        Destroy(destroyObject);
+                    else
+                        DestroyImmediate(destroyObject);
+#else
+                    Destroy(destroyObject);
+#endif
+                }
+            }
+
+            m_Elements.Clear();
             // Since the 'ElementCount' is 0, set the object to be disabled by default.
             CreateUIElement(false).gameObject.SetActive(false);
         }
 
         /// <summary>
-        /// Removes nulls from the list <see cref="uiElements"/>.
+        /// Removes nulls from the list <see cref="m_Elements"/>.
         /// </summary>
         protected void CleanupElementsList()
         {
-            uiElements.RemoveAll(elem => elem == null);
+            m_Elements.RemoveAll(elem => elem == null);
         }
 
         public IEnumerator<TElement> GetEnumerator()
         {
-            return uiElements.GetEnumerator();
+            return m_Elements.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return uiElements.GetEnumerator();
+            return m_Elements.GetEnumerator();
         }
 
         public bool Equals(IEnumerable<TElement> other)
         {
-            return Enumerable.SequenceEqual(uiElements, other);
+            return Enumerable.SequenceEqual(m_Elements, other);
         }
     }
 }

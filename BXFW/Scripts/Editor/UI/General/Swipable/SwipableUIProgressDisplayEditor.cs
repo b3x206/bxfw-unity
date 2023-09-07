@@ -17,7 +17,7 @@ namespace BXFW.ScriptEditor
         {
             base.GetCustomPropertyDrawerDictionary(dict, targets);
 
-            // Omit these built-in UI's
+            // Omit these built-in UI's (because this value is meant to be not changed manually)
             dict["m_ElementCount"] = OMIT_ACTION;
 
             // Get targets to be casted IEnumerable

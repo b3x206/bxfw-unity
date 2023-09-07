@@ -1,3 +1,4 @@
+using BXFW.Tweening.Next.Events;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -44,8 +45,8 @@ namespace BXFW.Tweening.Next
             // Stuff like il2cpp does compilation aot, which does not allocate garbage when a code is run for the first time
             // Note : don't initialize anything related with 'BXSTween' here as it is still not completely constructed
 #if ENABLE_MONO
-            // Do this so that the jit is generated beforehand and so that
-            // the first started tween acceesing this class doesn't allocate much garbage.
+            // Do this so that the jit is generated beforehand and so that the
+            // first started tween acceesing this class doesn't allocate much garbage.
             Type bxTwEaseType = typeof(BXTweenEase);
             RuntimeHelpers.RunClassConstructor(bxTwEaseType.TypeHandle);
 #endif
@@ -53,16 +54,54 @@ namespace BXFW.Tweening.Next
 
         // -- Runtime
         /// <summary>
-        /// The <see cref="BXSTween"/> runner.
-        /// <br>This controls the running operations. To set this value to something else use the </br>
+        /// The <see cref="BXSTween"/> runner, but it's nullable one.
         /// </summary>
-        public static IBXSTweenRunner MainRunner { get; private set; }
+        private static IBXSTweenRunner m_MainRunner;
+        /// <summary>
+        /// Action used to create a <see cref="IBXSTweenRunner"/>.
+        /// </summary>
+        private static BXSGetterAction<IBXSTweenRunner> m_GetMainRunnerAction;
+        /// <summary>
+        /// The <see cref="BXSTween"/> runner.
+        /// <br>If the <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> was called validly once by this then this value will not be null if requested.</br>
+        /// <br>This controls the running operations. To set this value to something else use the <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> method.</br>
+        /// </summary>
+        public static IBXSTweenRunner MainRunner
+        {
+            get
+            {
+                if (m_MainRunner == null)
+                {
+                    if (NeedsInitialize)
+                        return null;
+
+                    Initialize(m_GetMainRunnerAction, MainLogger);
+                }
+
+                return m_MainRunner;
+            }
+        }
+        /// <summary>
+        /// Whether if the BXSTween needs it's <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> called.
+        /// <br>After calling <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> once will make this false</br>
+        /// </summary>
+        public static bool NeedsInitialize => m_GetMainRunnerAction == null || MainLogger == null;
 
         /// <summary>
         /// The <see cref="BXSTween"/> logger.
         /// <br>Only to be used by BXSTween classes and the <see cref="IBXSTweenRunner"/> initializing this class.</br>
         /// </summary>
         internal static Logger MainLogger { get; private set; }
+        /// <summary>
+        /// Sets a logger.
+        /// </summary>
+        public static void SetLogger(Logger logger)
+        {
+            if (logger == null)
+                throw new ArgumentNullException(nameof(logger), "[BXSTween::SetLogger] Given argument was null.");
+
+            MainLogger = logger;
+        }
 
         /// <summary>
         /// The list of all running tweens.
@@ -74,28 +113,23 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/> with logger <paramref name="logger"/>.
         /// </summary>
-        public static void Initialize(IBXSTweenRunner runner, Logger logger)
+        /// <param name="getRunnerAction">Create the runner in this method. This is called when the BXSTween is uninitialized but.</param>
+        public static void Initialize(BXSGetterAction<IBXSTweenRunner> getRunnerAction, Logger logger)
         {
+            if (getRunnerAction == null)
+                throw new ArgumentNullException(nameof(getRunnerAction), "[BXSTween::Initialize] Given parameter is null.");
+            if (logger == null)
+                throw new ArgumentNullException(nameof(logger), "[BXSTween::Initialize] Given parameter is null.");
+
             // Call this first to call all events on the 'OnRunnerExit'
             MainRunner?.Kill();
 
-            // Set the 'MainRunner'
-            MainRunner = runner;
             // Hook the tween runner
-            HookTweenRunner(runner);
+            m_MainRunner = getRunnerAction();
+            HookTweenRunner(m_MainRunner);
 
             // Hook the logger
             SetLogger(logger);
-        }
-        /// <summary>
-        /// Sets a logger.
-        /// </summary>
-        public static void SetLogger(Logger logger)
-        {
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger), "[BXSTween::SetLogger] Given argument was null.");
-
-            MainLogger = logger;
         }
 
         /// <summary>
@@ -346,9 +380,11 @@ namespace BXFW.Tweening.Next
             if (cleanup)
             {
                 StopAllTweens();
+                m_GetMainRunnerAction = null;
+                MainLogger = null;
             }
 
-            MainRunner = null;
+            m_MainRunner = null;
         }
         #endregion
     }

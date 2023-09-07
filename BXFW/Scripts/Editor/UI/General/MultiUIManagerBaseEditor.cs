@@ -127,7 +127,7 @@ namespace BXFW.ScriptEditor
                         Undo.RecordObject(target, string.Empty);
                         Undo.RecordObject(target.gameObject, string.Empty);
 
-                        target.ResetElements();
+                        target.ResetElements(false);
                     }
 
                     Undo.CollapseUndoOperations(undoGroup);
@@ -141,7 +141,7 @@ namespace BXFW.ScriptEditor
 
             // MultiUIManager<TElement>
             // (for the time being don't draw this array)
-            dict.Add("uiElements", OMIT_ACTION);
+            dict.Add("m_Elements", OMIT_ACTION);
 
             // InteractableMultiUIManager<TElement>
             dict.Add("interactable", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>

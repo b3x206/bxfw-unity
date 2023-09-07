@@ -42,11 +42,12 @@ namespace BXFW.UI
             targetSwipableUI.OnMenuCountChanged -= OnMenuCountChanged;
         }
 
+        // -- Used for tweening
         private void SetAllChildExceptIndex(Color disabled, Color enabled, int enabledIndex)
         {
-            for (int i = 0; i < uiElements.Count; i++)
+            for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = uiElements[i];
+                var img = m_Elements[i];
                 if (img == null)
                 {
                     CleanupElementsList();
@@ -58,9 +59,9 @@ namespace BXFW.UI
         }
         private void SetAllChildExceptIndex(Sprite disabled, Sprite enabled, int enabledIndex)
         {
-            for (int i = 0; i < uiElements.Count; i++)
+            for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = uiElements[i];
+                var img = m_Elements[i];
                 if (img == null)
                 {
                     CleanupElementsList();
@@ -92,7 +93,7 @@ namespace BXFW.UI
                     {
                         if (!colorFadeTween.IsValid)
                         {
-                            colorFadeTween.SetStartValue(() => 0f).SetEndValue(1f);
+                            colorFadeTween.SetStartValue(0f).SetEndValue(1f);
                         }
 
                         // Since prevMenuIndex is changed after this tween is started, it will change the incorrect tweens color.
@@ -106,7 +107,7 @@ namespace BXFW.UI
                             );
 
                             // Change the previous image seperately
-                            uiElements[prevMenuPersistentIndex].color = Color.Lerp(activeColor, disabledColor, f);
+                            m_Elements[prevMenuPersistentIndex].color = Color.Lerp(activeColor, disabledColor, f);
                         });
                         colorFadeTween.Play();
                     }
@@ -153,7 +154,7 @@ namespace BXFW.UI
             }
 
             createImage.transform.SetParent(transform);
-            createImage.name = $"ProgressImage{uiElements.Count}";
+            createImage.name = $"ProgressImage{m_Elements.Count}";
 
             return createImage;
         }
