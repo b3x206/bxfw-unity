@@ -111,7 +111,7 @@ namespace BXFW
         /// <summary>
         /// Draws an arc.
         /// </summary>
-        /// <param name="origin">World point origin point of the arc sphere. Defines the direction the arc is pointing.</param>
+        /// <param name="origin">World point origin point of the arc.</param>
         /// <param name="rotation">Rotation of this arc.</param>
         /// <param name="distance">Distance relative to the origin.</param>
         /// <param name="arcAngle">The size of the arc, in degrees. Converted to radians by <see cref="Mathf.Deg2Rad"/>.</param>
@@ -125,7 +125,6 @@ namespace BXFW
             // because i am still stuck in how to do for loops
             int segments = 48;
             int halfSegments = segments / 2;
-
 
             // Draw origin line for initial
             Vector3 prevPosition = origin + (rotation * new Vector3(
@@ -142,7 +141,7 @@ namespace BXFW
             {
                 // initial line is already drawn
                 // since lerp only goes from -0.49.. -> 0.5, the arc angle will be completed.
-                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.5
+                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.49..
                 float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
                 float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
                 Vector3 arcToPosition = origin + (rotation * new Vector3(c, s) * distance);
@@ -159,7 +158,7 @@ namespace BXFW
                 Mathf.Sin(arcAngle / 2f * Mathf.Deg2Rad)
             ) * distance);
 
-            // Draw origin line + normal for the last line
+            // Draw normal + origin line for the last time
             Gizmos.DrawLine(prevPosition, lastPosition);
             if (drawLinesFromOrigin)
             { 
@@ -194,15 +193,16 @@ namespace BXFW
 
             var restoreColor = GUI.color;
             GUI.color = color;
-            if (textStyle == null)
-                textStyle = GUI.skin.label;
+            textStyle ??= GUI.skin.label;
 
             var view = SceneView.currentDrawingSceneView;
             Vector3 screenPos = view.camera.WorldToScreenPoint(worldPos);
 
             if (cullText)
             {
-                if (screenPos.y < 0 || screenPos.y > Screen.height || screenPos.x < 0 || screenPos.x > Screen.width || screenPos.z < 0 || 
+                if (screenPos.y < 0 || screenPos.y > Screen.height ||
+                    screenPos.x < 0 || screenPos.x > Screen.width ||
+                    screenPos.z < 0 || 
                     (textStyle != null && textStyle.fontSize <= 0))
                 {
                     GUI.color = restoreColor;
@@ -313,11 +313,11 @@ namespace BXFW
             DrawText(text, worldPos, Color.white, null, 0f, 0f, true);
         }
 
-        internal static Vector3 TransformByPixel(Vector3 position, float x, float y)
+        private static Vector3 TransformByPixel(Vector3 position, float x, float y)
         {
             return TransformByPixel(position, new Vector3(x, y));
         }
-        internal static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
+        private static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
         {
 #if UNITY_EDITOR
             Camera cam = SceneView.currentDrawingSceneView.camera;

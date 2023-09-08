@@ -1,28 +1,7 @@
 ﻿using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace BXFW
 {
-    /// <summary>
-    /// This determines which UnityEngine update to use.
-    /// <br><see cref="Update"/>      = Updates in MonoBehaviour.Update     </br>
-    /// <br><see cref="LateUpdate"/>  = Updates in MonoBehaviour.LateUpdate </br>
-    /// <br><see cref="FixedUpdate"/> = Updates in MonoBehaviour.FixedUpdate</br>
-    /// <br/>
-    /// <br>This setting enumeration on scripts depends on how your target is moving or what purpose the behaviour will serve.</br>
-    /// <br>For example, if you are following a transform with <see cref="Rigidbody"/> class on it, use <see cref="FixedUpdate"/> mode.</br>
-    /// <br>If you are following a transform that is being tweened or just moves with the MonoBehaviour.Update() method,
-    /// you can use <see cref="Update"/> or <see cref="LateUpdate"/> mode.</br>
-    /// <br>Basically at it's core, this depends on which method the target is being updates.
-    /// This value matching with the target's update method will minimize jittery movement + following.</br>
-    /// </summary>
-    public enum BehaviourUpdateMode
-    {
-        Update,
-        LateUpdate,
-        FixedUpdate,
-    }
-
     /// <summary>
     /// Following camera.
     /// <br>Tracks the <see cref="FollowTransform"/> smoothly.</br>
@@ -47,8 +26,8 @@ namespace BXFW
                 return CameraOffsetTargets[CurrentCameraOffsetIndex];
             }
         }
-        [Range(.05f, 50f), FormerlySerializedAs("Rotation_Damp")] public float RotationDamp = 2f;
-        [Range(.05f, 50f), FormerlySerializedAs("Move_Damp")] public float MoveDamp = 2f;
+        [Range(.05f, 50f)] public float RotationDamp = 2f;
+        [Range(.05f, 50f)] public float MoveDamp = 2f;
 
         /// <summary>
         /// An offset for the camera following.
@@ -88,7 +67,7 @@ namespace BXFW
         { CurrentCameraOffsetIndex = Offset; }
 
         // ** Variables (Hidden)
-        private Camera _CamComponent;
+        private Camera m_CamComponent;
         /// <summary>
         /// Camera component attached to this 'FollowCamera'.
         /// </summary>
@@ -96,10 +75,10 @@ namespace BXFW
         {
             get
             {
-                if (_CamComponent == null)
-                    _CamComponent = GetComponent<Camera>();
+                if (m_CamComponent == null)
+                    m_CamComponent = GetComponent<Camera>();
 
-                return _CamComponent;
+                return m_CamComponent;
             }
         }
 

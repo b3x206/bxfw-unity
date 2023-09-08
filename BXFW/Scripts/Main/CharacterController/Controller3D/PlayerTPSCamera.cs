@@ -90,12 +90,12 @@ namespace BXFW
             if (lookVerticalAngleRange != MinMaxValue.Zero)
             {
                 // Get Rotation to apply
-                Vector3 CurrentRotationEuler = Additionals.EditorEulerRotation(transform.eulerAngles);
+                Vector3 currentRotationEuler = Additionals.EditorEulerRotation(transform.eulerAngles);
                 // Clamp vertical look
-                CurrentRotationEuler.x = lookVerticalAngleRange.ClampBetween(CurrentRotationEuler.x);
-                CurrentRotationEuler.z = 0f;
+                currentRotationEuler.x = lookVerticalAngleRange.ClampBetween(currentRotationEuler.x);
+                currentRotationEuler.z = 0f;
                 // Apply clamped Rotation
-                transform.localRotation = Quaternion.Euler(CurrentRotationEuler);
+                transform.localRotation = Quaternion.Euler(currentRotationEuler);
             }
         }
 
@@ -120,17 +120,17 @@ namespace BXFW
             if (playerTransform != null && lookVerticalAngleRange != MinMaxValue.Zero)
             {
                 Vector3 lookDir = (transform.position - playerTransform.position).normalized;
-                lookDir.y = 0f;
                 if (lookDir == Vector3.zero)
                 {
                     lookDir = Vector3.forward;
                 }
+                lookDir.y = 0f;
 
-                Quaternion centerRotation = Quaternion.LookRotation(lookDir, Vector3.up) *
-                    //Quaternion.AngleAxis(90f, Vector3.right);
-                    Quaternion.AngleAxis(-90f, Vector3.up);
-
+                // Look towards inverted target transform
+                Quaternion centerRotation = Quaternion.LookRotation(lookDir, Vector3.up) * Quaternion.AngleAxis(-90f, Vector3.up);
+                // Move rotation to be centered
                 centerRotation *= Quaternion.AngleAxis((lookVerticalAngleRange.Min + lookVerticalAngleRange.Max) / 2f, Vector3.forward);
+
                 GizmoUtility.DrawArc(playerTransform.position, centerRotation, distanceFromTarget, lookVerticalAngleRange.Size());
             }
         }

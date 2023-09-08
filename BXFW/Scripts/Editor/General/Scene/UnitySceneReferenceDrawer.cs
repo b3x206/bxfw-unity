@@ -61,25 +61,28 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(UnitySceneReference))]
     internal class UnitySceneReferenceDrawer : PropertyDrawer
     {
-        private SceneAsset sceneAsset;
-        private SerializedProperty sceneGUID;
-        private SerializableGUID SceneGUIDValue 
-        { 
-            get { return (SerializableGUID)sceneGUID.GetTarget().Value; }
+        private SceneAsset m_targetSceneAsset;
+        private SerializedProperty m_sceneGUIDProperty;
+        private SerializedProperty m_sceneIndexProperty;
+        private SerializableGUID SceneGUIDValue => (SerializableGUID)m_sceneGUIDProperty.GetTarget().Value;
+        private bool ShowOtherGUI => SceneGUIDValue != default;
+
+        // -- Utility
+        private void GatherRelativeProperties(SerializedProperty property)
+        {
+            m_sceneIndexProperty = property.FindPropertyRelative("sceneIndex");
+            m_sceneGUIDProperty = property.FindPropertyRelative("sceneGUID");
         }
         private void SetSceneGUIDValue(SerializedProperty property, SerializableGUID value)
         {
             // Passed 'property' param is the parent. (UnitySceneReference)
-            var guidFieldInfo = sceneGUID.GetTarget(); // This is the field info we need to set
+            var guidFieldInfo = m_sceneGUIDProperty.GetTarget(); // This is the field info we need to set
 
             // Serialize the stuff we do (otherwise it doesn't serialize, as we use a EditorGUI.ObjectField)
             // Can record entire parent object, as it's probably just the script.
             Undo.RecordObject(property.serializedObject.targetObject, "set scene");
             guidFieldInfo.Key.SetValue(property.GetTarget().Value, value);
         }
-        private SerializedProperty sceneIndex;
-
-        private bool ShowOtherGUI => SceneGUIDValue != default;
         private bool ShowWarningGUI(SerializedProperty property)
         {
             return ShowWarningGUI((UnitySceneReference)property.GetTarget().Value);
@@ -89,20 +92,16 @@ namespace BXFW.ScriptEditor
             return ShowOtherGUI && !target.SceneLoadable;
         }
 
-        private void GatherRelativeProperties(SerializedProperty property)
-        {
-            sceneIndex = property.FindPropertyRelative("sceneIndex");
-            sceneGUID = property.FindPropertyRelative("sceneGUID");
-        }
+        // -- GUI
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             GatherRelativeProperties(property);
-            sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(SceneGUIDValue));
+            m_targetSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(SceneGUIDValue));
 
             return (EditorGUIUtility.singleLineHeight + 2) * (1 + (ShowWarningGUI(property) ? 3.8f : 0));
         }
 
-        private float currentY;
+        private float m_currentY;
         public Rect GetFieldRect(Rect pos, SerializedProperty property, float padding = 2f)
         {
             return GetFieldRect(pos, EditorGUI.GetPropertyHeight(property), padding);
@@ -115,12 +114,12 @@ namespace BXFW.ScriptEditor
             Rect r = new Rect
             {
                 x = pos.x,
-                y = currentY + (padding / 2f),
+                y = m_currentY + (padding / 2f),
                 width = pos.width,
                 height = height - (padding / 2f)
             };
 
-            currentY += height;
+            m_currentY += height;
             return r;
         }
 
@@ -129,7 +128,7 @@ namespace BXFW.ScriptEditor
             EditorGUI.BeginProperty(position, label, property);
             GatherRelativeProperties(property);
             UnitySceneReference target = (UnitySceneReference)property.GetTarget().Value;
-            currentY = position.y;
+            m_currentY = position.y;
 
             Rect scAssetGUIAreaRect = GetFieldRect(position);
             float scAssetGUIareaWidth = scAssetGUIAreaRect.width; // prev width
@@ -139,7 +138,7 @@ namespace BXFW.ScriptEditor
             {
                 scAssetGUIAreaRect.width = scAssetGUIareaWidth * scAssetGUISmallerWidth;
             }
-            sceneAsset = (SceneAsset)EditorGUI.ObjectField(scAssetGUIAreaRect, "Scene Asset", sceneAsset, typeof(SceneAsset), false);
+            m_targetSceneAsset = (SceneAsset)EditorGUI.ObjectField(scAssetGUIAreaRect, "Scene Asset", m_targetSceneAsset, typeof(SceneAsset), false);
             if (ShowOtherGUI)
             {
                 scAssetGUIAreaRect.x += scAssetGUIareaWidth * scAssetGUISmallerWidth;
@@ -151,7 +150,7 @@ namespace BXFW.ScriptEditor
                 GUI.enabled = gEnabled;
             }
 
-            string scenePath = AssetDatabase.GetAssetPath(sceneAsset);
+            string scenePath = AssetDatabase.GetAssetPath(m_targetSceneAsset);
             GUID sceneGUID = AssetDatabase.GUIDFromAssetPath(scenePath);
             // Register the 'SceneAsset'
             if (SceneGUIDValue != sceneGUID)
@@ -182,7 +181,7 @@ namespace BXFW.ScriptEditor
 
                         // Assign and log the index
                         EditorBuildSettings.scenes = scenes.ToArray();
-                        sceneIndex.intValue = EditorBuildSettings.scenes.Length - 1;
+                        m_sceneIndexProperty.intValue = EditorBuildSettings.scenes.Length - 1;
                         Debug.Log($"[UnitySceneReference] Assigned scene to index {EditorBuildSettings.scenes.Length - 1}.");
                     }
                 }
