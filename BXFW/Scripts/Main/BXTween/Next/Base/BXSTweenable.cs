@@ -208,18 +208,6 @@ namespace BXFW.Tweening.Next
         private float m_Speed = 1f;
 
         /// <summary>
-        /// Whether if this tween is relative to it's ending value.
-        /// <br>If this is true, the tween should calculate it's ending value as <c>StartValue + EndValue</c>.</br>
-        /// <br>Setting this value will also get the <c>StartValue</c> everytime <see cref="Play"/> is called.</br>
-        /// </summary>
-        public bool IsEndValueRelative => m_IsEndValueRelative;
-        /// <summary>
-        /// <inheritdoc cref="IsEndValueRelative"/> <br/><c>[Tweenable Internal, Serialized]</c>
-        /// </summary>
-        [SerializeField]
-        protected bool m_IsEndValueRelative;
-
-        /// <summary>
         /// Whether the easing should be clamped between 0-1.
         /// </summary>
         public bool Clamp01EasingSetter => m_Clamp01EasingSetter;
@@ -383,7 +371,7 @@ namespace BXFW.Tweening.Next
         public float CurrentElapsed { get; protected internal set; }
         /// <summary>
         /// The elapsed loops that this tween has.
-        /// <br>Only decrements until the 0.</br>
+        /// <br>Only increments until the target <see cref="LoopCount"/>.</br>
         /// </summary>
         public int LoopsElapsed { get; protected internal set; } = 0;
         /// <summary>
@@ -480,7 +468,6 @@ namespace BXFW.Tweening.Next
             m_Ease = tweenable.m_Ease;
             m_EaseCurve = tweenable.m_EaseCurve;
             m_Speed = tweenable.m_Speed;
-            m_IsEndValueRelative = tweenable.m_IsEndValueRelative;
             m_Clamp01EasingSetter = tweenable.m_Clamp01EasingSetter;
 
             m_TickType = tweenable.m_TickType;
@@ -649,7 +636,6 @@ namespace BXFW.Tweening.Next
                 .Append(pSep).Append(" EaseCurve=").Append(m_EaseCurve)
                 .Append(pSep).Append(" Speed=").Append(m_Speed)
                 .Append(pSep).Append(" IgnoreTimeScale=").Append(m_IgnoreTimeScale)
-                .Append(pSep).Append(" EndValueRelative=").Append(m_IsEndValueRelative)
                 .Append(pSep).Append(" Clamp01Easing=").Append(m_Clamp01EasingSetter)
                 .Append(pSep).Append(" TickType=").Append(m_TickType)
                 .Append(pSep).Append(" ID=").Append(m_ID)

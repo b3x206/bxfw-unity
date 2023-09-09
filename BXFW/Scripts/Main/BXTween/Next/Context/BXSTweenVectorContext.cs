@@ -11,8 +11,7 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenVector2Context : BXSTweenContext<Vector2>
     {
         public override BXSLerpAction<Vector2> LerpAction => Vector2.LerpUnclamped;
-        public override BXSMathAction<Vector2> AddValueAction => (Vector2 lhs, Vector2 rhs) => lhs + rhs;
-
+        
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>
@@ -59,7 +58,6 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenVector3Context : BXSTweenContext<Vector3>
     {
         public override BXSLerpAction<Vector3> LerpAction => Vector3.LerpUnclamped;
-        public override BXSMathAction<Vector3> AddValueAction => (Vector3 lhs, Vector3 rhs) => lhs + rhs;
 
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
@@ -107,8 +105,7 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenVector4Context : BXSTweenContext<Vector4>
     {
         public override BXSLerpAction<Vector4> LerpAction => Vector4.LerpUnclamped;
-        public override BXSMathAction<Vector4> AddValueAction => (Vector4 lhs, Vector4 rhs) => lhs + rhs;
-
+        
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

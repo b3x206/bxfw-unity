@@ -10,8 +10,7 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenFloatContext : BXSTweenContext<float>
     {
         public override BXSLerpAction<float> LerpAction => (float a, float b, float t) => a + ((b - a) * t);
-        public override BXSMathAction<float> AddValueAction => (float lhs, float rhs) => lhs + rhs;
-
+        
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

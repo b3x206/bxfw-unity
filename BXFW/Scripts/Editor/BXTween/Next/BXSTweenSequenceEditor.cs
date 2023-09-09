@@ -21,7 +21,6 @@ namespace BXFW.Tweening.Next.Editor
             $"m_{nameof(BXSTweenable.Clamp01EasingSetter)}",
             $"m_{nameof(BXSTweenable.Speed)}",
             $"m_{nameof(BXSTweenable.LoopType)}",
-            $"m_{nameof(BXSTweenable.IsEndValueRelative)}",
         };
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

@@ -11,8 +11,7 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenColorContext : BXSTweenContext<Color>
     {
         public override BXSLerpAction<Color> LerpAction => Color.LerpUnclamped;
-        public override BXSMathAction<Color> AddValueAction => (Color lhs, Color rhs) => lhs + rhs;
-
+        
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

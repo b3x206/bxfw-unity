@@ -11,8 +11,7 @@ namespace BXFW.Tweening.Next
     public sealed class BXSTweenQuaternionContext : BXSTweenContext<Quaternion>
     {
         public override BXSLerpAction<Quaternion> LerpAction => Quaternion.SlerpUnclamped;
-        public override BXSMathAction<Quaternion> AddValueAction => (Quaternion lhs, Quaternion rhs) => lhs * rhs;
-
+        
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

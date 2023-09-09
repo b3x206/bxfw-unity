@@ -25,34 +25,11 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public TValue EndValue { get; protected set; }
         /// <summary>
-        /// The targeted absolute end value for the tween.
-        /// <br>This is only relevant when this tween <see cref="BXSTweenable.IsEndValueRelative"/>, otherwise this is equal to the <see cref="EndValue"/>.</br>
-        /// </summary>
-        public TValue AbsoluteEndValue { get; protected set; }
-        /// <summary>
         /// When called, switches the <see cref="StartValue"/> and <see cref="EndValue"/>.
         /// </summary>
         protected override void OnSwitchTargetValues()
         {
-            // EndValue is StartValue
-            // StartValue is EndValue (this is called because the valeus has to switch)
-            // So switch it regardless of value safety.
-            if (IsEndValueRelative)
-            {
-                // Set the 'AbsoluteEndValue' to start value (without changing the 'EndValue')
-                // ---------------
-                // Do this because
-                // A : We don't have an 'AbsoluteStartValue',
-                // B : Yoyo tweens expect the values to be switched
-                // And C : Relative tweens use the 'EndValue' as to be added to the 'StartValue', so it is the actual value
-                // FIXME : This apporach may have issues + bugs, fix it using by creating an 'AbsoluteStartValue'.
-                (StartValue, AbsoluteEndValue) = (AbsoluteEndValue, StartValue);
-            }
-            else
-            {
-                (StartValue, EndValue) = (EndValue, StartValue);
-                GetAbsoluteEndValue();
-            }            
+            (StartValue, EndValue) = (EndValue, StartValue);
         }
 
         /// <summary>
@@ -64,16 +41,6 @@ namespace BXFW.Tweening.Next
         /// The setter action, called when the tweening is being done.
         /// </summary>
         public BXSSetterAction<TValue> SetterAction { get; protected set; }
-        /// <summary>
-        /// Gathers the <see cref="EndValue"/>.
-        /// </summary>
-        protected void GetAbsoluteEndValue()
-        {
-            if (m_IsEndValueRelative)
-                AbsoluteEndValue = AddValueAction(StartValue, EndValue);
-            else
-                AbsoluteEndValue = EndValue;
-        }
 
         // -- Interpolation
         /// <summary>
@@ -81,10 +48,6 @@ namespace BXFW.Tweening.Next
         /// <br>This expects an unclamped interpolation action.</br>
         /// </summary>
         public abstract BXSLerpAction<TValue> LerpAction { get; }
-        /// <summary>
-        /// An action used for adding two <typeparamref name="TValue"/>'s to each other.
-        /// </summary>
-        public abstract BXSMathAction<TValue> AddValueAction { get; }
 
         // - Overrides
         /// <summary>
@@ -100,8 +63,7 @@ namespace BXFW.Tweening.Next
         /// Returns whether if this class was overriden correctly.
         /// Used in <see cref="IsValid"/>.
         /// </summary>
-        public bool HasGenericActions =>
-            LerpAction != null && AddValueAction != null;
+        public bool HasGenericActions => LerpAction != null;
 
         /// <summary>
         /// The tick type of a sequence is always to be run at the variable mode.
@@ -116,7 +78,7 @@ namespace BXFW.Tweening.Next
             // Check easing clamping
             float easedTime = EvaluateEasing(t);
 
-            SetterAction(LerpAction(StartValue, AbsoluteEndValue, easedTime));
+            SetterAction(LerpAction(StartValue, EndValue, easedTime));
         }
 
         // -- Methods
@@ -131,7 +93,6 @@ namespace BXFW.Tweening.Next
 
             StartValue = tweenableAsContext.StartValue;
             EndValue = tweenableAsContext.EndValue;
-            AbsoluteEndValue = tweenableAsContext.AbsoluteEndValue;
             GetterAction = tweenableAsContext.GetterAction;
             SetterAction = tweenableAsContext.SetterAction;
         }
@@ -203,10 +164,9 @@ namespace BXFW.Tweening.Next
         /// <br>This effects the tween while running.</br>
         /// </summary>
         /// <param name="setRelative">Whether to set the end value as a relative one. Calls <see cref="SetIsEndRelative(bool)"/>.</param>
-        public BXSTweenContext<TValue> SetEndValue(TValue value, bool setRelative = false)
+        public BXSTweenContext<TValue> SetEndValue(TValue value)
         {
             EndValue = value;
-            SetIsEndRelative(setRelative);
 
             return this;
         }
@@ -325,22 +285,6 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetSpeed(float speed)
         {
             Speed = speed;
-
-            return this;
-        }
-
-        /// <summary>
-        /// Sets whether if the <see cref="EndValue"/> is relative.
-        /// <br>
-        /// If this is the case, every time the tween is started or repeated,
-        /// the <see cref="EndValue"/> will be assumed as it is relative additively to the <see cref="StartValue"/>.
-        /// <br>Basically relative EndValue =&gt; <see cref="StartValue"/> + <see cref="EndValue"/>.</br>
-        /// </br>
-        /// </summary>
-        public BXSTweenContext<TValue> SetIsEndRelative(bool isRelative)
-        {
-            m_IsEndValueRelative = isRelative;
-            GetAbsoluteEndValue();
 
             return this;
         }
@@ -567,8 +511,6 @@ namespace BXFW.Tweening.Next
             }
 
             base.Play();
-
-            GetAbsoluteEndValue();
         }
     }
 }
