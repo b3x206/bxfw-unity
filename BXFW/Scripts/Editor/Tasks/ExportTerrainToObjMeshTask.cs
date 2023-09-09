@@ -26,15 +26,15 @@ namespace BXFW.Tools.Editor
     {
         public SaveFormat saveFormat = SaveFormat.Triangles;
         public SaveResolution saveResolution = SaveResolution.Half;
-
         public TerrainData targetTerrain;
-        private Vector3 targetObjectPosition;
-        private string fileName;
+        
+        private Vector3 targetObjectPosition; // Offset for the verts
+        private string saveFileName;
 
-        private int tCount;
-        private int counter;
-        private int totalCount;
-        private const int PROGRESS_UPDATE_INTERVAL = 8192;
+        private int elapsedCount;    // Elapsed count
+        private int totalCount;      // Total mesh quad/tri count
+        private int progressCounter; // Counts the progress
+        private const int PROGRESS_COUNT_INTERVAL = 8192; // progress count interval
 
         /// <summary>
         /// Assigns <see cref="targetTerrain"/> if it's <see langword="null"/>.
@@ -73,8 +73,14 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public override bool GetWarning()
         {
-            fileName = EditorUtility.SaveFilePanel("[ExportTerrainToObj] Export .obj file into", string.Empty, "Terrain", "obj");
-            return !string.IsNullOrWhiteSpace(fileName);
+            if (!Init())
+            {
+                EditorUtility.DisplayDialog("Info", "No terrain was assigned to this 'ExportTerrainObjMeshTask'. Doing nothing.", "Ok");
+                return false;
+            }
+
+            saveFileName = EditorUtility.SaveFilePanel("[ExportTerrainToObj] Export .obj file into", string.Empty, "Terrain", "obj");
+            return !string.IsNullOrWhiteSpace(saveFileName);
         }
 
         /// <summary>
@@ -154,15 +160,15 @@ namespace BXFW.Tools.Editor
             CultureInfo prevCulture = Thread.CurrentThread.CurrentCulture;
 
             // Export to .obj
-            var sw = new StreamWriter(fileName);
+            var sw = new StreamWriter(saveFileName);
             try
             {
                 sw.WriteLine("# Unity terrain OBJ File");
 
                 // Write vertices
                 Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-                counter = tCount = 0;
-                totalCount = ((tVertices.Length * 2) + (saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / PROGRESS_UPDATE_INTERVAL;
+                progressCounter = elapsedCount = 0;
+                totalCount = ((tVertices.Length * 2) + (saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / PROGRESS_COUNT_INTERVAL;
                 for (var i = 0; i < tVertices.Length; i++)
                 {
                     UpdateProgress();
@@ -214,23 +220,23 @@ namespace BXFW.Tools.Editor
             }
             catch (Exception err)
             {
-                Debug.LogError(string.Format("[Terrain2Obj] Error saving file: {0}\n StackTrace : {1}", err.Message, err.StackTrace));
+                Debug.LogError(string.Format("[ExportTerrainToObj::Run] Error saving file: {0}\n StackTrace : {1}", err.Message, err.StackTrace));
             }
 
             sw.Close();
             targetTerrain = null;
             Thread.CurrentThread.CurrentCulture = prevCulture;
 
-            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving file to disc.", "This might take a while...", 1f);
+            EditorUtility.DisplayProgressBar("[ExportTerrainToObj::Run] Saving file to disc.", "This might take a while...", 1f);
             EditorUtility.ClearProgressBar();
         }
         private void UpdateProgress()
         {
-            if (counter++ != PROGRESS_UPDATE_INTERVAL)
+            if (progressCounter++ != PROGRESS_COUNT_INTERVAL)
                 return;
 
-            counter = 0;
-            EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving...", "", Mathf.InverseLerp(0, totalCount, ++tCount));
+            progressCounter = 0;
+            EditorUtility.DisplayProgressBar("[ExportTerrainToObj::Run] Saving...", "", Mathf.InverseLerp(0, totalCount, ++elapsedCount));
         }
     }
 }

@@ -7,7 +7,7 @@ using BXFW.Tools.Editor;
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(CameraCapture)), CanEditMultipleObjects]
-    public class CameraCaptureInspector : Editor
+    public class CameraCaptureEditor : Editor
     {
         public override void OnInspectorGUI()
         {

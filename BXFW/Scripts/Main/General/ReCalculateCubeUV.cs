@@ -11,8 +11,14 @@ namespace BXFW
     public class ReCalculateCubeUV : MonoBehaviour
     {
         // -- Variables
-        private Vector3 currentCalcScale;
-        public string CubeMeshName = "Cube_InstUV";
+        /// <summary>
+        /// Last size that was calculated for this cube's scaled UV.
+        /// </summary>
+        private Vector3 m_currentCalcScale;
+        /// <summary>
+        /// The mesh name for the calculated UV.
+        /// </summary>
+        public string cubeMeshName = "Cube_InstUV";
 
         #region Utility
         /// <summary>
@@ -22,7 +28,7 @@ namespace BXFW
         public void SetupCalculateMesh()
         {
             // Check whether re-calculation is necessary.
-            if (currentCalcScale == transform.localScale)
+            if (m_currentCalcScale == transform.localScale)
                 return;
             if (CheckForDefaultSize())
                 return;
@@ -77,10 +83,10 @@ namespace BXFW
         /// <returns>Generated cube.</returns>
         public Mesh GetCalculateMesh()
         {
-            currentCalcScale = transform.lossyScale;
+            m_currentCalcScale = transform.lossyScale;
             var mesh = GetMesh();
             mesh.uv = SetupUvMap(mesh.uv);
-            mesh.name = CubeMeshName;
+            mesh.name = cubeMeshName;
 
             return mesh;
         }
@@ -91,9 +97,9 @@ namespace BXFW
         /// <returns>The appopriate mesh uv's for uniform texture scaling through the cube.</returns>
         private Vector2[] SetupUvMap(Vector2[] meshUVs)
         {
-            var width = currentCalcScale.x;
-            var depth = currentCalcScale.z;
-            var height = currentCalcScale.y;
+            var width = m_currentCalcScale.x;
+            var depth = m_currentCalcScale.z;
+            var height = m_currentCalcScale.y;
 
             if (meshUVs.Length != 24)
             {
@@ -147,26 +153,18 @@ namespace BXFW
         /// <returns>Whether we have a default object.</returns>
         private bool CheckForDefaultSize()
         {
-            if (currentCalcScale != Vector3.one)
+            if (m_currentCalcScale != Vector3.one)
                 return false;
 
-            // ... This probably could be replaced with Resources.GetBuiltinResource<Mesh>("Cube.fbx") and setting the sharedMesh null then setting it this value ...
-            // ... but whatever it works ...
-            // > This script is goofy because it's one of the older ones.
-            // Create a primitive cube and get it's mesh.
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
             // Set the 'MeshFilter' mesh null instead of destroying a component that we can reuse?
-            // DestroyImmediate(GetComponent<MeshFilter>());
             if (!TryGetComponent(out MeshFilter filter))
             {
                 filter = gameObject.AddComponent<MeshFilter>();
             }
             filter.sharedMesh = null; // Remove mesh to avoid manipulation of immutable asset (otherwise setting a 'sharedMesh' will set the existing mesh data)
-            filter.sharedMesh = cube.GetComponent<MeshFilter>().sharedMesh;
-            DestroyImmediate(cube);
+            filter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 
-            // Object is now default size.
+            // Object is now default sized cube while the size is default
             return true;
         }
         #endregion

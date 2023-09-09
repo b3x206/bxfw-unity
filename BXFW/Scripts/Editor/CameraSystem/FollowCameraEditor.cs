@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using UnityEditor;
 using UnityEngine;
 using BXFW.Tools.Editor;
@@ -72,10 +73,10 @@ namespace BXFW.ScriptEditor
             styleLabel.normal.textColor = Color.white;
 
             var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
-            if (targets.Any(cam => cam.UseFollowVecInstead))
-                dict.Add(nameof(FollowCamera.FollowTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-            if (targets.Any(cam => cam.FollowTransform != null && !cam.UseFollowVecInstead))
-                dict.Add(nameof(FollowCamera.FollowVector3), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            if (targets.Any(cam => cam.useFollowPositionInstead))
+                dict.Add(nameof(FollowCamera.followTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            if (targets.Any(cam => cam.followTransform != null && !cam.useFollowPositionInstead))
+                dict.Add(nameof(FollowCamera.followPosition), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
 
             // Base Inspector
             serializedObject.DrawCustomDefaultInspector(dict);
@@ -111,11 +112,11 @@ namespace BXFW.ScriptEditor
                 int undoID = Undo.GetCurrentGroup();
                 foreach (var target in targets)
                 {
-                    var FollowPosition = target.FollowTransform == null ? target.FollowVector3 : target.FollowTransform.position;
+                    var FollowPosition = target.followTransform == null ? target.followPosition : target.followTransform.position;
                     Undo.RecordObject(target.transform, string.Empty);
 
-                    target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].Position = target.transform.position - FollowPosition;
-                    target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation = target.transform.rotation.eulerAngles;
+                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].Position = target.transform.position - FollowPosition;
+                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation = target.transform.rotation.eulerAngles;
                 }
                 Undo.CollapseUndoOperations(undoID);
             }
@@ -126,11 +127,11 @@ namespace BXFW.ScriptEditor
                 int undoID = Undo.GetCurrentGroup();
                 foreach (var target in targets)
                 {
-                    var FollowPosition = target.FollowTransform == null ? target.FollowVector3 : target.FollowTransform.position;
+                    var FollowPosition = target.followTransform == null ? target.followPosition : target.followTransform.position;
                     Undo.RecordObject(target.transform, string.Empty);
 
-                    target.transform.position = target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].Position + FollowPosition;
-                    target.transform.rotation = Quaternion.Euler(target.CameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation);
+                    target.transform.position = target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].Position + FollowPosition;
+                    target.transform.rotation = Quaternion.Euler(target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation);
                 }
                 Undo.CollapseUndoOperations(undoID);
             }

@@ -68,7 +68,7 @@ namespace BXFW.ScriptEditor
             indentedPosition.x -= indentDiffScale;
             indentedPosition.width += indentDiffScale;
 
-            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+            using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
             {
                 EditorGUI.FloatField(
                     GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight),

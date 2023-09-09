@@ -140,16 +140,16 @@ namespace BXFW
             for (int i = -halfSegments + 1; i < halfSegments; i++)
             {
                 // initial line is already drawn
-                // since lerp only goes from -0.49.. -> 0.5, the arc angle will be completed.
+                // since lerp only goes from -0.49.. -> 0.49, the center arc lines will be drawn.
                 float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.49..
                 float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
                 float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
-                Vector3 arcToPosition = origin + (rotation * new Vector3(c, s) * distance);
+                Vector3 arcNextPosition = origin + (rotation * new Vector3(c, s) * distance);
 
                 // Primary line
-                Gizmos.DrawLine(prevPosition, arcToPosition);
+                Gizmos.DrawLine(prevPosition, arcNextPosition);
 
-                prevPosition = arcToPosition;
+                prevPosition = arcNextPosition;
             }
 
             // Final line

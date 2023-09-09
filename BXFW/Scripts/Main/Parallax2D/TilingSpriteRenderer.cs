@@ -6,6 +6,7 @@ namespace BXFW
 {
     /// <summary>
     /// Generates a tiled series of sprites, using <see cref="GameObject"/>s and <see cref="SpriteRenderer"/>s.
+    /// <br>This method prevents overdraw instead of using the 'Full Rect' for tiling <see cref="SpriteRenderer"/>s.</br>
     /// </summary>
     [ExecuteAlways]
     public class TilingSpriteRenderer : MonoBehaviour
@@ -14,13 +15,13 @@ namespace BXFW
         public bool CameraResize = false;
         public Camera ResizeTargetCamera;
 
-        [SerializeField] private int _SortOrder = 0;
+        [SerializeField] private int m_SortOrder = 0;
         public int SortOrder
         {
-            get { return _SortOrder; }
+            get { return m_SortOrder; }
             set
             {
-                _SortOrder = value;
+                m_SortOrder = value;
 
                 if (tiledSpriteObjs.Values.Count <= 0)
                     return;
@@ -271,7 +272,6 @@ namespace BXFW
                 gridY = 1;
 
                 // Calculate bounds, split bounds and ceil the value. (to avoid spaces)
-                // TODO : Use SpriteMaskComponent.bounds for proper auto tiling
                 gridX = (Mathf.CeilToInt(transform.lossyScale.x / TiledSprite.bounds.size.x) * 2) - gridX;
                 gridY = (Mathf.CeilToInt(transform.lossyScale.y / TiledSprite.bounds.size.y) * 2) - gridY;
             }
@@ -280,11 +280,6 @@ namespace BXFW
             if ((gridX <= 0 || gridY <= 0) && !AutoTile)
                 return false; // No grid
 
-            bool tileRightOrUp(int currTile)
-            {
-                return (currTile % 2) == 1;
-            }
-
             // Grid count
             int gX = ((AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? gridX : 1;
             int gY = ((AllowGridAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? gridY : 1;
@@ -292,27 +287,29 @@ namespace BXFW
             for (int y = 0; y < gY; y++)
             {
                 int x;
-
-                var ListTile = new SpriteRendererList(gridX);
+                var rendererList = new SpriteRendererList(gridX);
+                bool tileUp = y % 2 == 1;
 
                 for (x = 0; x < gX; x++)
                 {
+                    bool tileRight = x % 2 == 1;
+
                     SpriteRenderer sRend = new GameObject($"Tile({x}, {y})").AddComponent<SpriteRenderer>();
                     sRend.transform.SetParent(CorrectScaledParent);
                     sRend.sprite = TiledSprite;
-                    sRend.sortingOrder = _SortOrder;
+                    sRend.sortingOrder = m_SortOrder;
                     sRend.transform.localPosition = new Vector3(
-                        sRend.bounds.size.x * Mathf.CeilToInt(x / 2f) * (tileRightOrUp(x) ? 1f : -1f),
-                        sRend.bounds.size.y * Mathf.CeilToInt(y / 2f) * (tileRightOrUp(y) ? 1f : -1f)
+                        sRend.bounds.size.x * Mathf.CeilToInt(x / 2f) * (tileRight ? 1f : -1f),
+                        sRend.bounds.size.y * Mathf.CeilToInt(y / 2f) * (tileUp ? 1f : -1f)
                     );
 
                     sRend.transform.localScale = Vector3.one;
 
-                    ListTile.Add(sRend);
+                    rendererList.Add(sRend);
                     allRendererObjects.Add(sRend);
                 }
 
-                tiledSpriteObjs.Add(y, ListTile);
+                tiledSpriteObjs.Add(y, rendererList);
             }
 
             // Set renderable colors

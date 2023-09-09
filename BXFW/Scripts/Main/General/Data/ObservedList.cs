@@ -10,7 +10,7 @@ namespace BXFW
 {
     /// <summary>
     /// Contains virtual methods to override to create a observed list.
-    /// <br>Note : This doesn't handle the events. Instead it calls a method, for other reasons.</br>
+    /// <br>Note : This doesn't handle the events. Instead it calls a method.</br>
     /// </summary>
     [Serializable]
     public abstract class ObservedListBase<T> : IList<T>
@@ -154,33 +154,33 @@ namespace BXFW
     [Serializable]
     public class ObservedList<T> : ObservedListBase<T>
     {
-        public delegate void ChangedDelegate(int index, T oldValue, T newValue);
-        public delegate void AddRemoveDelegate(int index, T updatedElement);
-        public delegate void AddRemoveRangeDelegate(int index, IEnumerable<T> updatedElement);
+        public delegate void ChangedAction(int index, T oldValue, T newValue);
+        public delegate void AddRemoveAction(int index, T updatedElement);
+        public delegate void AddRemoveRangeAction(int index, IEnumerable<T> updatedElement);
 
         /// <summary>
         /// Called when the list content is changed.
         /// <br>This is (usually) invoked by <see cref="this[int]"/>'s setter.</br>
         /// </summary>
-        public event ChangedDelegate OnChanged;
+        public event ChangedAction OnChanged;
         /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Add(T)"/> is called.
         /// <br>For multiple adds, use <see cref="OnAddRange"/> instead.</br>
         /// </summary>
-        public event AddRemoveDelegate OnAdd;
+        public event AddRemoveAction OnAdd;
         /// <summary>
         /// Called when multiple objects are added to this array.
         /// </summary>
-        public event AddRemoveRangeDelegate OnAddRange;
+        public event AddRemoveRangeAction OnAddRange;
         /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Remove(T)"/> is called.
         /// <br>For multiple removals, use <see cref="OnRemoveRange"/> instead.</br>
         /// </summary>
-        public event AddRemoveDelegate OnRemove;
+        public event AddRemoveAction OnRemove;
         /// <summary>
         /// Called when multiple objects are removed from this array.
         /// </summary>
-        public event AddRemoveRangeDelegate OnRemoveRange;
+        public event AddRemoveRangeAction OnRemoveRange;
         /// <summary>
         /// Called when anything happens to a list.
         /// <br>This includes adding and removing, unlike the <see cref="OnChanged"/> event.</br>

@@ -15,8 +15,8 @@ namespace BXFW.ScriptEditor
             // Draw 'serialized objects'
             Tools.Editor.EditorAdditionals.DrawCustomDefaultInspector(serializedObject, new Dictionary<string, KeyValuePair<Tools.Editor.MatchGUIActionOrder, System.Action>>
             {
-                // isEnabled is private variable.
-                { "isEnabled", new KeyValuePair<Tools.Editor.MatchGUIActionOrder, System.Action>(Tools.Editor.MatchGUIActionOrder.OmitAndInvoke, () =>
+                // m_IsEnabled is private variable.
+                { "m_IsEnabled", new KeyValuePair<Tools.Editor.MatchGUIActionOrder, System.Action>(Tools.Editor.MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
                         EditorGUI.BeginChangeCheck();
 
