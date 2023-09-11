@@ -46,6 +46,10 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// The linear interpolation method to override for the setter of this <typeparamref name="TValue"/> context.
         /// <br>This expects an unclamped interpolation action.</br>
+        /// <br/>
+        /// TODO : Maybe turn this into an abstract method because this allocates gc when accessed first time
+        /// <br/>
+        /// (ok i know jit gc is normal but this allocates some random gc as well)
         /// </summary>
         public abstract BXSLerpAction<TValue> LerpAction { get; }
 

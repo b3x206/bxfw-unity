@@ -249,8 +249,8 @@ namespace BXFW.Tweening.Next
             }
             deltaTime *= tween.Speed;
 
-            bool isFirstRun = tween.LoopsElapsed == tween.StartingLoopCount;
-
+            bool isFirstRun = tween.LoopsElapsed == 0;
+            
             // Delay
             if (tween.DelayElapsed < 1f)
             {

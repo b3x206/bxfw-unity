@@ -223,7 +223,7 @@ namespace BXFW.Tweening.Next
         public TickType TickType => m_TickType;
         /// <summary>
         /// The actual tick type, depending on the <see cref="BXSTween.MainRunner"/>'s <see cref="IBXSTweenRunner.SupportsFixedTick"/>.
-        /// <br>Always returns <see cref="TickType.Variable"/> if it isn't supported.</br>
+        /// <br>Always returns <see cref="TickType.Variable"/> if fixed tick isn't supported.</br>
         /// </summary>
         public virtual TickType ActualTickType
         {
@@ -369,6 +369,26 @@ namespace BXFW.Tweening.Next
         /// <br>This value only resets when the <see cref="Reset"/> is called, which is done by the stop action.</br>
         /// </summary>
         public float CurrentElapsed { get; protected internal set; }
+        /// <summary>
+        /// The total elapsed for the main tween.
+        /// <br>This includes the loops, excludes delays.</br>
+        /// </summary>
+        public float TotalElapsed
+        {
+            get
+            {
+                float elapsedValue = CurrentElapsed;
+                if (StartingLoopCount > 0)
+                {
+                    float loopPartElapsed = 1f / (StartingLoopCount + 1);
+                    elapsedValue *= loopPartElapsed; // Get current elapsed value by loop part
+                    elapsedValue += loopPartElapsed * LoopsElapsed; // Add the elapsed loop count
+                }
+
+                return elapsedValue;
+            }
+        }
+
         /// <summary>
         /// The elapsed loops that this tween has.
         /// <br>Only increments until the target <see cref="LoopCount"/>.</br>

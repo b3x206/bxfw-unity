@@ -69,8 +69,13 @@ namespace BXFW.Tweening.Next
         {
             get
             {
-                RunnableTween lastContext = m_RunnableTweens.LastOrDefault();
-                return lastContext != null ? lastContext.priority : -1;
+                if (m_RunnableTweens.Count > 0)
+                {
+                    RunnableTween lastContext = m_RunnableTweens[m_RunnableTweens.Count - 1];
+                    return lastContext.priority;
+                }
+
+                return -1;
             }
         }
         /// <summary>
@@ -152,9 +157,9 @@ namespace BXFW.Tweening.Next
             base.Stop();
             
             // Stop everything
-            foreach (var runnable in m_RunnableTweens)
+            for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
-                runnable.tween.Stop();
+                m_RunnableTweens[i].tween.Stop();
             }
         }
         /// <summary>
@@ -334,7 +339,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public bool Contains(BXSTweenable item)
         {
-            return m_RunnableTweens.Any((runnable) => runnable.tween == item);
+            return m_RunnableTweens.Any(runnable => runnable.tween == item);
         }
         /// <summary>
         /// Copies internal tweenables array to <paramref name="array"/>.
@@ -429,9 +434,13 @@ namespace BXFW.Tweening.Next
         public float PriorityDuration(int priority)
         {
             float longestDuration = -1f;
-            foreach (var runnable in m_RunnableTweens.Where(rt => rt.priority == priority))
+            for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
-                float duration = runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount, 0) + 1) + runnable.tween.Delay;
+                var runnable = m_RunnableTweens[i];
+                if (runnable.priority != priority)
+                    continue;
+
+                float duration = runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount + 1, 0) + 1) + runnable.tween.Delay;
                 if (duration > longestDuration)
                 {
                     longestDuration = duration;
@@ -469,9 +478,11 @@ namespace BXFW.Tweening.Next
         /// </summary>
         private void RunTweensInPriority(int priority)
         {
-            foreach (var runnable in m_RunnableTweens.Where(rt => rt.priority == priority))
+            for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
-                runnable.tween.Play();
+                var runnable = m_RunnableTweens[i];
+                if (runnable.priority == priority)
+                    runnable.tween.Play();
             }
         }
 
