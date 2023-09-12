@@ -8,22 +8,22 @@ namespace BXFW
     [RequireComponent(typeof(TilingSpriteRenderer))]
     public class ParallaxBackgroundObj : MonoBehaviour
     {
-        private float Length;
-        private Vector2 StartPos;
-        public float ParallaxEffectAmount;
-        public ParallaxBackgroundGroup ParentGroup;
+        private float m_length;
+        private Vector2 m_startPos;
+        public float parallaxEffectAmount;
+        public ParallaxBackgroundGroup parentGroup;
 
-        public TilingSpriteRenderer TilingSpriteRendererComponent
+        public TilingSpriteRenderer TilingRendererComponent
         { 
-            get { return tilingSpriteRendComp; } 
+            get { return m_TilingRendererComponent; } 
         }
-        [SerializeField] private TilingSpriteRenderer tilingSpriteRendComp;
+        [SerializeField] private TilingSpriteRenderer m_TilingRendererComponent;
 
         public void InitilazeTilingSpriteRenderer(Sprite rendSprite)
         {
-            if (!TryGetComponent(out tilingSpriteRendComp))
+            if (!TryGetComponent(out m_TilingRendererComponent))
             {
-                tilingSpriteRendComp = gameObject.AddComponent<TilingSpriteRenderer>();
+                m_TilingRendererComponent = gameObject.AddComponent<TilingSpriteRenderer>();
             }
 
             if (rendSprite == null)
@@ -32,23 +32,24 @@ namespace BXFW
                 return;
             }
 
-            TilingSpriteRendererComponent.TiledSprite = rendSprite;
-            TilingSpriteRendererComponent.AllowGridAxis = TransformAxis2D.XAxis;
-            TilingSpriteRendererComponent.ResizeTargetCamera = ParentGroup.TargetCamera;
-            TilingSpriteRendererComponent.CameraResize = true;
-            TilingSpriteRendererComponent.AutoTile = true;
+            TilingRendererComponent.TiledSprite = rendSprite;
+            TilingRendererComponent.AllowGridAxis = TransformAxis2D.XAxis;
+            TilingRendererComponent.AutoTile = true;
+
+            TilingRendererComponent.cameraResize = true;
+            TilingRendererComponent.resizeTargetCamera = parentGroup.targetCamera;
         }
 
         private void Start()
         {
-            if (ParentGroup.TargetCamera == null)
+            if (parentGroup.targetCamera == null)
             {
-                Debug.LogError($"[ParallaxBackground] A parent with name \"{ParentGroup.name}\" doesn't have a target camera assigned.");
+                Debug.LogError($"[ParallaxBackground] A parent with name \"{parentGroup.name}\" doesn't have a target camera assigned.");
             }
 
-            StartPos.x = transform.position.x;
-            StartPos.y = transform.position.y;
-            Length = TilingSpriteRendererComponent.SingleBounds.size.x;
+            m_startPos.x = transform.position.x;
+            m_startPos.y = transform.position.y;
+            m_length = TilingRendererComponent.SingleBounds.size.x;
         }
 
         private void Update()
@@ -58,34 +59,34 @@ namespace BXFW
         public void Scroll()
         {
             Vector3 positionDelta = Vector3.zero;
-            if ((ParentGroup.ScrollAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis)
+            if ((parentGroup.scrollAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis)
             {
                 float Temp =
-                    ParentGroup.TargetCamera.transform.position.x *
-                    (1 - ParallaxEffectAmount);
+                    parentGroup.targetCamera.transform.position.x *
+                    (1 - parallaxEffectAmount);
                 float Dist =
-                    ParentGroup.TargetCamera.transform.position.x *
-                    ParallaxEffectAmount;
+                    parentGroup.targetCamera.transform.position.x *
+                    parallaxEffectAmount;
 
                 positionDelta.x += Dist;
 
-                if (Temp > StartPos.x + Length) StartPos.x += Length;
-                else if (Temp < StartPos.x - Length) StartPos.x -= Length;
+                if (Temp > m_startPos.x + m_length) m_startPos.x += m_length;
+                else if (Temp < m_startPos.x - m_length) m_startPos.x -= m_length;
             }
-            if ((ParentGroup.ScrollAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis)
+            if ((parentGroup.scrollAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis)
             {
                 // Follow the camera position in Y too
                 //float yTemp = ParentGroup.TargetCamera.transform.position.y *
                 //    (1 - ParallaxEffectAmount);
                 // Note that we don't need to restart / tile on Y parallax, so the yTemp can be commented
                 // Both axis parallax works the same.
-                float yDist = ParentGroup.TargetCamera.transform.position.y *
-                    ParallaxEffectAmount;
+                float yDist = parentGroup.targetCamera.transform.position.y *
+                    parallaxEffectAmount;
 
                 positionDelta.y += yDist;
             }
 
-            transform.position = new Vector3(StartPos.x + positionDelta.x, StartPos.y + positionDelta.y, transform.position.z);
+            transform.position = new Vector3(m_startPos.x + positionDelta.x, m_startPos.y + positionDelta.y, transform.position.z);
         }
     }
 }

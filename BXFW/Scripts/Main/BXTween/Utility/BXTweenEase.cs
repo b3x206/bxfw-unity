@@ -95,6 +95,14 @@ namespace BXFW.Tweening
             { EaseType.ExponentialInOut, ExponentialInOut }
         };
 
+        /// <summary>
+        /// Returns a eased in value.
+        /// </summary>
+        public static float EaseValue(float time, EaseType easing)
+        {
+            return Methods[easing](time);
+        }
+
         #region Ease Methods
         // Note : All ease methods are unclamped.
         private static float Linear(float t)

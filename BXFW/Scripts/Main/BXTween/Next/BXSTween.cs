@@ -11,13 +11,8 @@ namespace BXFW.Tweening.Next
     /// 
     /// Rule #1 = NO TIMERS OR COROUTINES (timer is coroutine anyways)
     /// Only functions that update things in the <see cref="RunningTweens"/> array.
-    /// Rule #2 = idk (maybe avoid stuff like virtual methods becuase vtable overhead?)
-    /// 
-    /// TODO : A lot of things
-    /// But first to decide what things i am gonna do.
-    /// Probably it is so that 'BXSTweenable' implementing context can have a lot of features and controlability and the rest will be more normal.
-    /// * Error handling for running tweens so that those tweens wouldn't hang the main running thread
-    /// * A logger class for BXFW (general purpose)
+    /// Rule #2 = Fix any GC.Alloc you see if it's fixable
+    /// (Note : Mono.JIT is not fixable unless il2cpp compiled, but can be mitigated)
     /// 
     /// ---------
     /// <summary>

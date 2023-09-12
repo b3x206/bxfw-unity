@@ -8,27 +8,28 @@ namespace BXFW
         /// <summary>
         /// List of the generated backgrounds.
         /// </summary>
-        public List<ParallaxBackgroundObj> ParallaxBGObjs = new List<ParallaxBackgroundObj>();
+        public List<ParallaxBackgroundObj> m_Backgrounds = new List<ParallaxBackgroundObj>();
         /// <summary>
-        /// Shorthand variable for <see cref="List{T}.Count"/> of <see cref="ParallaxBGObjs"/>.
+        /// Shorthand variable for <see cref="List{T}.Count"/> of <see cref="m_Backgrounds"/>.
         /// </summary>
-        public int ChildAmount => ParallaxBGObjs.Count;
+        public int ChildLength => m_Backgrounds.Count;
 
-        public bool UseGlobalGroupColor = false;
-        [SerializeField] private Color _GroupColor = Color.white;
+        public bool useGlobalGroupColor = false;
+        [SerializeField] private Color m_GroupColor = Color.white;
         /// <summary>
         /// The global color for the current group.
         /// </summary>
         public Color GroupColor
         {
-            get { return _GroupColor; }
+            get { return m_GroupColor; }
             set
             {
-                _GroupColor = value;
+                m_GroupColor = value;
 
-                if (!UseGlobalGroupColor) return;
+                if (!useGlobalGroupColor)
+                    return;
 
-                foreach (var obj in ParallaxBGObjs)
+                foreach (var obj in m_Backgrounds)
                 {
                     if (obj == null)
                     {
@@ -36,19 +37,19 @@ namespace BXFW
                         continue;
                     }
 
-                    obj.TilingSpriteRendererComponent.Color = _GroupColor;
+                    obj.TilingRendererComponent.Color = m_GroupColor;
                 }
             }
         }
-        public TransformAxis2D ScrollAxis = TransformAxis2D.XAxis;
-        public Camera TargetCamera;
+        public TransformAxis2D scrollAxis = TransformAxis2D.XAxis;
+        public Camera targetCamera;
 
         private void Awake()
         {
-            if (TargetCamera == null)
+            if (targetCamera == null)
             {
-                Debug.LogWarning($"[ParallaxBackground] You didn't assign a target camera in GameObject with name : \"{name}\". Assigning main camera instead.");
-                TargetCamera = Camera.main;
+                Debug.LogWarning($"[ParallaxBackground] No target camera assigned in GameObject with name : \"{name}\". Assigning Camera.main instead.");
+                targetCamera = Camera.main;
             }
         }
     }

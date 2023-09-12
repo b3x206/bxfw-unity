@@ -3,9 +3,16 @@ using UnityEngine.UI;
 
 namespace BXFW.UI
 {
+    /// <summary>
+    /// A grid <see cref="LayoutGroup"/> that flexes it's elements to fit accordingly.
+    /// <br>Unlike <see cref="GridLayoutGroup"/>, this acts inline with the other unity ugui layout group elements.</br>
+    /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public class FGridLayout : LayoutGroup
+    public class FlexGridLayout : LayoutGroup
     {
+        /// <summary>
+        /// Fitting type for the <see cref="FlexGridLayout"/>.
+        /// </summary>
         public enum FitType
         {
             Uniform = 0,
@@ -29,7 +36,7 @@ namespace BXFW.UI
         /// <summary>
         /// Returns the <see cref="RectTransform"/> that this layout group uses.
         /// </summary>
-        public RectTransform RectTransform { get { return base.rectTransform; } }
+        public RectTransform RectTransform { get { return rectTransform; } }
 
         public override void CalculateLayoutInputHorizontal()
         {
@@ -54,12 +61,12 @@ namespace BXFW.UI
             float parentWidth = rectTransform.rect.width;
             float parentHeight = rectTransform.rect.height;
 
-            float cellWidth = (parentWidth / (float)Columns) -
-                ((Spacing.x / (float)Columns) * (Columns - 1)) -
+            float cellWidth = (parentWidth / Columns) -
+                ((Spacing.x / Columns) * (Columns - 1)) -
                 (padding.left / (float)Columns) - (padding.right / (float)Columns);
 
-            float cellHeight = (parentHeight / (float)Rows) -
-                ((Spacing.y / (float)Rows) * (Rows - 1)) -
+            float cellHeight = (parentHeight / Rows) -
+                ((Spacing.y / Rows) * (Rows - 1)) -
                 (padding.top / (float)Rows) - (padding.bottom / (float)Rows);
 
             CellSize.x = fitX ? cellWidth : CellSize.x;
@@ -87,7 +94,6 @@ namespace BXFW.UI
                 SetChildAlongAxis(item, 1, yPos, CellSize.y);
             }
         }
-
         public override void CalculateLayoutInputVertical()
         { }
         public override void SetLayoutHorizontal()
