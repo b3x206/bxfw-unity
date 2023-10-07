@@ -63,7 +63,7 @@ namespace BXFW
                     // Get Rotation to apply
                     // This is the exact same euler you see on editor view.
                     // This fixes the dumb unity issue. (Clamp values being inconsistent with editor values)
-                    Vector3 camRotationEuler = Additionals.EditorEulerRotation(transform.eulerAngles);
+                    Vector3 camRotationEuler = MathUtility.EditorEulerRotation(transform.eulerAngles);
 
                     // X, Y and Z Clamps
                     camRotationEuler.x = xRotationRange.ClampBetween(camRotationEuler.x);

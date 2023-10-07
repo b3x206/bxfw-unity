@@ -215,7 +215,7 @@ namespace BXFW.ScriptEditor
             Rect modifyValueRect = modifyIndex >= 0 && (currentInteractedProperty?.Equals(property) ?? false) ? new Rect(
                 Mathf.Lerp(
                     dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth,
-                    Additionals.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
+                    MathUtility.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
                 position.y + (DraggableBoxModifyValueHeight / 2f),
                 DraggableBoxModifyValueWidth,
                 DraggableBoxModifyValueHeight
@@ -274,7 +274,7 @@ namespace BXFW.ScriptEditor
             for (int i = 0; i < target.Count; i++)
             {
                 // Draw actual target's values
-                float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, Additionals.Map(0f, 1f, target.Min, target.Max, target[i]));
+                float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, MathUtility.Map(0f, 1f, target.Min, target.Max, target[i]));
                 Rect draggableRect = new Rect(xPosition, position.y + (position.height / 5f), DraggableBoxWidth, position.height);
                 // Draw a GUI seperately
                 GUI.Box(draggableRect, new GUIContent(string.Empty, $"value={target[i]}\nindex={i}"), GUI.skin.horizontalSliderThumb);
@@ -376,7 +376,7 @@ namespace BXFW.ScriptEditor
                                 xPosition = Mathf.Clamp(e.mousePosition.x - draggableRect.width, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth);
 
                                 // Map the dragging position correctly
-                                target[dragIndex] = Additionals.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
+                                target[dragIndex] = MathUtility.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
                             }
                             break;
 

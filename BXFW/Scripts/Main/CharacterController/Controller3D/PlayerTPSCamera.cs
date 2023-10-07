@@ -90,12 +90,12 @@ namespace BXFW
             if (lookVerticalAngleRange != MinMaxValue.Zero)
             {
                 // Get Rotation to apply
-                Vector3 currentRotationEuler = Additionals.EditorEulerRotation(transform.eulerAngles);
+                Vector3 camRotationEuler = MathUtility.EditorEulerRotation(transform.eulerAngles);
                 // Clamp vertical look
-                currentRotationEuler.x = lookVerticalAngleRange.ClampBetween(currentRotationEuler.x);
-                currentRotationEuler.z = 0f;
+                camRotationEuler.x = lookVerticalAngleRange.ClampBetween(camRotationEuler.x);
+                camRotationEuler.z = 0f;
                 // Apply clamped Rotation
-                transform.localRotation = Quaternion.Euler(currentRotationEuler);
+                transform.localRotation = Quaternion.Euler(camRotationEuler);
             }
         }
 
