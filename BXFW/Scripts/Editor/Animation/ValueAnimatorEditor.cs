@@ -95,36 +95,46 @@ namespace BXFW.ScriptEditor
         }
     }
 
-    [CustomEditor(typeof(ValueAnimatorBase))]
+    [CustomEditor(typeof(ValueAnimatorBase), true)]
     public class ValueAnimatorEditor : Editor
     {
-        public override void OnInspectorGUI()
+        protected virtual void GetCustomPropertyDrawerDictionary(Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>> dict)
         {
             var target = base.target as ValueAnimatorBase;
-            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>>
-            {
-                { 
-                    "m_CurrentAnimIndex", new KeyValuePair<MatchGUIActionOrder, System.Action>(MatchGUIActionOrder.OmitAndInvoke,
-                    () =>
+            dict.Add("m_CurrentAnimIndex", new KeyValuePair<MatchGUIActionOrder, System.Action>(
+                MatchGUIActionOrder.OmitAndInvoke,
+                () =>
+                {
+                    EditorGUI.BeginChangeCheck();
+
+                    EditorGUILayout.BeginHorizontal();
+                    var animIndexSet = EditorGUILayout.IntField(
+                        new GUIContent("Current Animation Index", "Sets the index from 'animation' array."),
+                        target.CurrentAnimIndex
+                    );
+                    if (GUILayout.Button("+", GUILayout.Width(20)))
                     {
-                        EditorGUI.BeginChangeCheck();
+                        animIndexSet++;
+                    }
+                    if (GUILayout.Button("-", GUILayout.Width(20)))
+                    {
+                        animIndexSet--;
+                    }
+                    EditorGUILayout.EndHorizontal();
 
-                        EditorGUILayout.BeginHorizontal();
-                        var animIndexSet = EditorGUILayout.IntField(
-                            new GUIContent("Current Animation Index", "Sets the index from 'animation' array."),
-                            target.CurrentAnimIndex
-                        );
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(target, "set CurrentAnimIndex");
+                        target.CurrentAnimIndex = animIndexSet;
+                    }
+                })
+            );
+        }
 
-                        EditorGUILayout.EndHorizontal();
-
-                        if (EditorGUI.EndChangeCheck())
-                        {
-                            Undo.RecordObject(target, "set CurrentAnimIndex");
-                            target.CurrentAnimIndex = animIndexSet;
-                        }
-                    })
-                },
-            };
+        public override void OnInspectorGUI()
+        {
+            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>>();
+            GetCustomPropertyDrawerDictionary(dict);
 
             serializedObject.DrawCustomDefaultInspector(dict);
         }

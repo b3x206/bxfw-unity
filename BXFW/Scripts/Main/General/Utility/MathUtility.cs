@@ -68,10 +68,28 @@ namespace BXFW
 
             return cPoint0 + (v2 * 0.5f) + (pd2 * d);
         }
+
         /// <summary>
-        /// Returns the biggest axis in the <paramref name="target"/>.
+        /// Returns the largest axis in the <paramref name="target"/>.
         /// </summary>
-        public static float GetBiggestAxis(this Vector3 target)
+        public static float MaxAxis(this Vector4 target)
+        {
+            // This is faster than 'for looping' the Vector4
+            if (target.x > target.y && target.x > target.z && target.x > target.w)
+                return target.x;
+            if (target.y > target.x && target.y > target.z && target.y > target.w)
+                return target.y;
+            if (target.z > target.x && target.z > target.y && target.z > target.w)
+                return target.z;
+            if (target.w > target.x && target.w > target.y && target.w > target.z)
+                return target.w;
+
+            return target.x;
+        }
+        /// <summary>
+        /// Returns the largest axis in the <paramref name="target"/>.
+        /// </summary>
+        public static float MaxAxis(this Vector3 target)
         {
             if (target.x > target.y && target.x > target.z)
                 return target.x;
@@ -83,9 +101,9 @@ namespace BXFW
             return target.x;
         }
         /// <summary>
-        /// Returns the biggest axis in the <paramref name="target"/>.
+        /// Returns the largest axis in the <paramref name="target"/>.
         /// </summary>
-        public static float GetBiggestAxis(this Vector2 target)
+        public static float MaxAxis(this Vector2 target)
         {
             if (target.x > target.y)
                 return target.x;
@@ -94,10 +112,27 @@ namespace BXFW
 
             return target.x;
         }
+
         /// <summary>
         /// Returns the smallest axis in the <paramref name="target"/>.
         /// </summary>
-        public static float GetSmallestAxis(this Vector3 target)
+        public static float MinAxis(this Vector4 target)
+        {
+            if (target.x < target.y && target.x < target.z && target.x < target.w)
+                return target.x;
+            if (target.y < target.x && target.y < target.z && target.y < target.w)
+                return target.y;
+            if (target.z < target.x && target.z < target.y && target.z < target.w)
+                return target.z;
+            if (target.w < target.x && target.w < target.y && target.w < target.z)
+                return target.w;
+
+            return target.x;
+        }
+        /// <summary>
+        /// Returns the smallest axis in the <paramref name="target"/>.
+        /// </summary>
+        public static float MinAxis(this Vector3 target)
         {
             if (target.x < target.y && target.x < target.z)
                 return target.x;
@@ -111,7 +146,7 @@ namespace BXFW
         /// <summary>
         /// Returns the smallest axis in the <paramref name="target"/>.
         /// </summary>
-        public static float GetSmallestAxis(this Vector2 target)
+        public static float MinAxis(this Vector2 target)
         {
             if (target.x < target.y)
                 return target.x;
@@ -120,6 +155,33 @@ namespace BXFW
 
             return target.x;
         }
+
+        #region Obsolete
+        /// <inheritdoc cref="MaxAxis"/>
+        [Obsolete("Use 'value.MaxAxis();' instead.", false)]
+        public static float GetBiggestAxis(this Vector3 target)
+        {
+            return target.MaxAxis();
+        }
+        /// <inheritdoc cref="MaxAxis"/>
+        [Obsolete("Use 'value.MaxAxis();' instead.", false)]
+        public static float GetBiggestAxis(this Vector2 target)
+        {
+            return target.MaxAxis();
+        }
+        /// <inheritdoc cref="MinAxis"/>
+        [Obsolete("Use 'value.MinAxis();' instead.", false)]
+        public static float GetSmallestAxis(this Vector3 target)
+        {
+            return target.MinAxis();
+        }
+        /// <inheritdoc cref="MinAxis"/>
+        [Obsolete("Use 'value.MinAxis();' instead.", false)]
+        public static float GetSmallestAxis(this Vector2 target)
+        {
+            return target.MinAxis();
+        }
+        #endregion
 
         /// <summary>
         /// Get the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
@@ -278,17 +340,17 @@ namespace BXFW
         /// <summary>
         /// Fixes euler rotation to Unity Editor type of values instead of the code based setting values.
         /// </summary>
-        public static Vector3 EditorEulerRotation(Vector3 eulerRot)
+        public static Vector3 EditorEulerRotation(Vector3 euler)
         {
             // The editor view for the rotation constraints are rolled between -180f~180f
             // Instead of going between 0f~360f if you use transform.Rotate or anything similar
-            Vector3 TransformEulerFixed = new Vector3(
-                eulerRot.x > 180f ? eulerRot.x - 360f : eulerRot.x,
-                eulerRot.y > 180f ? eulerRot.y - 360f : eulerRot.y,
-                eulerRot.z > 180f ? eulerRot.z - 360f : eulerRot.z
+            Vector3 editorEuler = new Vector3(
+                euler.x > 180f ? euler.x - 360f : euler.x,
+                euler.y > 180f ? euler.y - 360f : euler.y,
+                euler.z > 180f ? euler.z - 360f : euler.z
             );
 
-            return TransformEulerFixed;
+            return editorEuler;
         }
 
         // ------------------
@@ -318,6 +380,7 @@ namespace BXFW
         }
         /// <summary>
         /// Returns the scaling values from the matrix.
+        /// <br>Does not work properly with <b>negatively</b> scaled matrices.</br>
         /// </summary>
         public static Vector3 GetScale(this Matrix4x4 matrix)
         {

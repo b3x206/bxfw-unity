@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections;
@@ -8,6 +9,7 @@ using UnityEditor;
 using UnityEngine;
 
 using BXFW.Tools.Editor;
+using System.Text.RegularExpressions;
 
 namespace BXFW.ScriptEditor
 {
@@ -669,6 +671,74 @@ namespace BXFW.ScriptEditor
             }
 
             property.stringValue = EditorGUI.TagField(position, label, property.stringValue);
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(EditDisallowCharsAttribute))]
+    public class EditDisallowCharsDrawer : PropertyDrawer
+    {
+        private const float warnHelpBoxRectHeight = 22f;
+        private EditDisallowCharsAttribute Attribute => attribute as EditDisallowCharsAttribute;
+        private const float DR_PADDING = 2f;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float addHeight = 0f;
+
+            if (property.propertyType == SerializedPropertyType.String)
+            {
+                addHeight += EditorGUIUtility.singleLineHeight + DR_PADDING;
+            }
+            else
+            {
+                addHeight += warnHelpBoxRectHeight;
+            }
+
+            return addHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            label = EditorGUI.BeginProperty(position, label, property);
+            position.height -= DR_PADDING;
+            position.y += DR_PADDING / 2f;
+
+            if (property.propertyType == SerializedPropertyType.String)
+            {
+                EditorGUI.BeginChangeCheck();
+                string editString = EditorGUI.TextField(position, label, property.stringValue);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (!string.IsNullOrEmpty(Attribute.disallowText))
+                    {
+                        if (Attribute.isRegex)
+                        {
+                            Regex r = new Regex(Attribute.disallowText, Attribute.regexOpts);
+                            // Remove all matches from the string
+                            property.stringValue = r.Replace(editString, string.Empty);
+                        }
+                        else
+                        {
+                            StringBuilder sb = new StringBuilder(editString);
+                            for (int i = sb.Length - 1; i >= 0; i--)
+                            {
+                                if (Attribute.disallowText.Any(c => c == sb[i]))
+                                {
+                                    sb.Remove(i, 1);
+                                }
+                            }
+                            
+                            property.stringValue = sb.ToString();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                EditorGUI.HelpBox(position, $"Given type isn't valid for property {label.text}. Please pass string as type.", MessageType.Warning);
+            }
+
+            EditorGUI.EndProperty();
         }
     }
 }

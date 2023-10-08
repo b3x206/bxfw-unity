@@ -38,6 +38,10 @@ namespace BXFW
             return array;
         }
 
+        /// <summary>
+        /// Converts the <paramref name="filter"/>'s vertices to the world space, using the same transform attached to the <paramref name="filter"/>.
+        /// <br>The result is outputted in <paramref name="vertsArray"/>.</br>
+        /// </summary>
         public static void VerticesToWorldSpaceNoAlloc(this MeshFilter filter, List<Vector3> vertsArray)
         {
             if (filter == null)

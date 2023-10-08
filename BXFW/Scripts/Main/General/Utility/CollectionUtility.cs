@@ -135,12 +135,9 @@ namespace BXFW
                 moveNextSize = 0;
 
                 // Count manually
-                checked
+                while (enumerator.MoveNext())
                 {
-                    while (enumerator.MoveNext())
-                    {
-                        moveNextSize++;
-                    }
+                    moveNextSize++;
                 }
 
                 // Reset

@@ -220,7 +220,7 @@ namespace BXFW
             m_CorrectScaledParent.localPosition = Vector3.zero;
             m_CorrectScaledParent.localRotation = Quaternion.identity;
             // prevent 0 scale
-            if (Mathf.Approximately(transform.localScale.Abs().GetSmallestAxis(), 0f))
+            if (Mathf.Approximately(transform.localScale.Abs().MinAxis(), 0f))
             {
                 Debug.LogWarning($"[TilingSpriteRenderer::GenerateCorrectScaleParent] Invalid scale '{transform.localScale}' for transform '{name}'. Setting scale to Vector3.one.");
                 transform.localScale = Vector3.one;

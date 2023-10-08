@@ -83,10 +83,10 @@ namespace BXFW
 
     /// <summary>
     /// The additionals class.
+    /// <br>Contains additionals that doesn't exactly fit somewhere, or it is too small that it doesn't have it's own class.</br>
     /// </summary>
     public static class Additionals
     {
-        #region Unity Functions
         // -- GameObject / Transform
         /// <summary>
         /// Get the path of the gameobject.
@@ -196,42 +196,7 @@ namespace BXFW
             rb.AddForce(Mathf.Lerp(0, explosionForce, (1 - explosionDistance)) * explosionDir, mode);
         }
 
-        // -- Mesh + Transform
-        /// <summary>
-        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
-        /// <br>Values are assigned into the 'vertsArray', the 'vertsArray' will be overwritten by <see cref="Mesh.GetVertices(List{Vector3})"/>.</br>
-        /// </summary>
-        [Obsolete("Use 'MeshUtility' instead", false)]
-        public static void VerticesToMatrixSpaceNoAlloc(Mesh mesh, Matrix4x4 matrixSpace, List<Vector3> vertsArray)
-        {
-            MeshUtility.VerticesToMatrixSpaceNoAlloc(mesh, matrixSpace, vertsArray);
-        }
-        /// <summary>
-        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
-        /// <br>Allocates a new <see cref="List{T}"/> every time it's called.</br>
-        /// </summary>
-        [Obsolete("Use 'MeshUtility' instead", false)]
-        public static List<Vector3> VerticesToMatrixSpace(Mesh mesh, Matrix4x4 matrixSpace)
-        {
-            return MeshUtility.VerticesToMatrixSpace(mesh, matrixSpace);
-        }
-
-        // -- Math
-        /// <inheritdoc cref="MathUtility.Map"/>
-        [Obsolete("Use 'MathUtility' instead.", false)]
-        public static float Map(float from, float to, float from2, float to2, float value)
-        {
-            return MathUtility.Map(from, to, from2, to2, value);
-        }
-
-        /// <summary>
-        /// Whether if the <paramref name="mask"/> contains the <paramref name="layer"/>.
-        /// <br>The <paramref name="layer"/> is <b>NOT a bitwise</b> value. Instead it expects values from 1 to 32 (or how many unity layers there are in your version).</br>
-        /// </summary>
-        public static bool ContainsLayer(this LayerMask mask, int layer)
-        {
-            return mask == (mask | (1 << layer));
-        }
+        // --- SpriteRenderer + Camera
         /// <summary>
         /// Resizes an sprite renderer to the size of the <b>orthographic</b> camera fit.
         /// </summary>
@@ -327,11 +292,11 @@ namespace BXFW
                     break;
             }
         }
-        #endregion
 
-        #region Helper Functions
-        // -- Random Utils
-        /// <summary>Returns a random boolean.</summary>
+        // -- Random
+        /// <summary>
+        /// Returns a random boolean.
+        /// </summary>
         public static bool RandomBool()
         {
             // Using floats here is faster and more random.
@@ -339,7 +304,7 @@ namespace BXFW
             return UnityEngine.Random.Range(0f, 1f) > .5f;
         }
 
-        // -- FileSystem Utils
+        // -- FileSystem
         /// <summary>
         /// Copies the given directory.
         /// </summary>
@@ -389,7 +354,7 @@ namespace BXFW
             }
         }
 
-        // -- Type Utils
+        // -- Type
         /// <summary>
         /// Returns whether if the <paramref name="typeName"/> has an integral name.
         /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
@@ -519,10 +484,40 @@ namespace BXFW
                 .GetTypes()
                 .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
         }
-        #endregion
+
+        #region Obsolete
+        // !!--- This entire section is planned to be removed ---!! //
+        // !!--- It will be removed in the beta release       ---!! //
+
+        // -- Mesh + Transform
+        /// <summary>
+        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
+        /// <br>Values are assigned into the 'vertsArray', the 'vertsArray' will be overwritten by <see cref="Mesh.GetVertices(List{Vector3})"/>.</br>
+        /// </summary>
+        [Obsolete("Use 'MeshUtility' instead", false)]
+        public static void VerticesToMatrixSpaceNoAlloc(Mesh mesh, Matrix4x4 matrixSpace, List<Vector3> vertsArray)
+        {
+            MeshUtility.VerticesToMatrixSpaceNoAlloc(mesh, matrixSpace, vertsArray);
+        }
+        /// <summary>
+        /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
+        /// <br>Allocates a new <see cref="List{T}"/> every time it's called.</br>
+        /// </summary>
+        [Obsolete("Use 'MeshUtility' instead", false)]
+        public static List<Vector3> VerticesToMatrixSpace(Mesh mesh, Matrix4x4 matrixSpace)
+        {
+            return MeshUtility.VerticesToMatrixSpace(mesh, matrixSpace);
+        }
+
+        // -- Math
+        /// <inheritdoc cref="MathUtility.Map"/>
+        [Obsolete("Use 'MathUtility' instead.", false)]
+        public static float Map(float from, float to, float from2, float to2, float value)
+        {
+            return MathUtility.Map(from, to, from2, to2, value);
+        }
 
         #region Serializing
-        // !!--- This entire section is planned to be removed ---!! //
 
         #region PlayerPrefs
         [Obsolete("Use the 'PlayerPrefsUtility' class instead", false)]
@@ -862,6 +857,8 @@ namespace BXFW
                 return ms.ToArray();
             }
         }
+        #endregion
+
         #endregion
 
         #endregion

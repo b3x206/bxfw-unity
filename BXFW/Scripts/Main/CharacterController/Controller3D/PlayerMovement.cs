@@ -330,7 +330,7 @@ namespace BXFW
             }
             // Quick workaround for player clipping.
             // If player is grounded but the player still has falling velocity.
-            if (IsGrounded && m_gravityVelocity.GetBiggestAxis() <= 0f && m_internalVelocity.GetBiggestAxis() <= 0f)
+            if (IsGrounded && m_gravityVelocity.MaxAxis() <= 0f && m_internalVelocity.MaxAxis() <= 0f)
             {
                 m_gravityVelocity = -gravity.normalized * DEFAULT_GROUNDED_GRAVITY;
             }

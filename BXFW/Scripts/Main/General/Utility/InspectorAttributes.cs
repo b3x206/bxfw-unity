@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace BXFW
@@ -229,4 +230,31 @@ namespace BXFW
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class TagSelectorAttribute : PropertyAttribute { }
+
+    /// <summary>
+    /// An attribute used in string fields to disallow a set of characters.
+    /// <br>Expects a string, and disallows all characters in the string.</br>
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class EditDisallowCharsAttribute : PropertyAttribute 
+    {
+#if UNITY_EDITOR
+        /// <summary>
+        /// The current list of disallowed characters.
+        /// </summary>
+        public readonly string disallowText;
+        /// <summary>
+        /// Whether to assume that the disallowText is regex?
+        /// </summary>
+        public bool isRegex;
+        /// <summary>
+        /// If the disallow text is regex, the options to use.
+        /// </summary>
+        public RegexOptions regexOpts;
+#endif
+        public EditDisallowCharsAttribute(string disallow)
+        {
+            disallowText = disallow;
+        }
+    }
 }

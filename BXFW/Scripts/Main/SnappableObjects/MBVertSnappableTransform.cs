@@ -154,8 +154,8 @@ namespace BXFW
                 return false;
 
             // there is no better way to check whether the scale is valid for snapping.
-            if (snappableTarget.transform.localScale.GetSmallestAxis() <= 0f ||
-                transform.localScale.GetSmallestAxis() <= 0f)
+            if (snappableTarget.transform.localScale.MinAxis() <= 0f ||
+                transform.localScale.MinAxis() <= 0f)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, snappableTarget.name));
                 return false;

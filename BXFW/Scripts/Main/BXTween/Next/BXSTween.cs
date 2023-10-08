@@ -78,7 +78,7 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Whether if the BXSTween needs it's <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> called.
-        /// <br>After calling <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> once will make this false</br>
+        /// <br>After calling <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> once will make this false.</br>
         /// </summary>
         public static bool NeedsInitialize => m_GetMainRunnerAction == null || MainLogger == null;
 
@@ -109,6 +109,7 @@ namespace BXFW.Tweening.Next
         /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/> with logger <paramref name="logger"/>.
         /// </summary>
         /// <param name="getRunnerAction">Create the runner in this method. This is called when the BXSTween is uninitialized but.</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public static void Initialize(BXSGetterAction<IBXSTweenRunner> getRunnerAction, Logger logger)
         {
             if (getRunnerAction == null)
@@ -145,7 +146,7 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
-        /// Clears the <see cref="BXSTween"/>, this includes the <see cref="MainRunner"/> and <see cref="MainLogger"/>.
+        /// Clears the <see cref="BXSTween"/>, this includes only the <see cref="MainRunner"/>.
         /// </summary>
         public static void Clear()
         {

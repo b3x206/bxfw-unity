@@ -24,9 +24,10 @@ namespace BXFW.Tools.Editor
             "Scripts",
             "3DModel", "Sounds", "Textures"
         };
-        [Tooltip("List of folders to generate.")]
+        // disallow illegal folder chars
+        [Tooltip("List of folders to generate."), EditDisallowChars("?<>:*|\"")]
         public List<string> genFolders;
-        [Tooltip("Root directory to generate the folders into.")]
+        [Tooltip("Root directory to generate the folders into."), EditDisallowChars("?<>:*|\"")]
         public string RootDirectory = string.Empty;
 
         private void OnEnable()

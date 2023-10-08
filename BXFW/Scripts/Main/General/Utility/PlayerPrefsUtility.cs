@@ -115,7 +115,6 @@ namespace BXFW
         /// </summary>
         public static void SetDouble(string key, double value)
         {
-            // apparently c# has reinterpret cast, bruh (but, only for 32 and 64 bit values)
             SetLongInternal(key, BitConverter.DoubleToInt64Bits(value), "Double");
         }
         /// <summary>
@@ -172,6 +171,7 @@ namespace BXFW
                 PlayerPrefs.GetFloat(string.Format("{0}_Y", key), defaultValue.y)
             );
         }
+
         /// <summary>
         /// Sets the three float values of <paramref name="value"/> with <see cref="PlayerPrefs"/>.
         /// </summary>
@@ -204,12 +204,54 @@ namespace BXFW
             );
         }
         /// <summary>
-        /// Returns the values set by <see cref="SetVector2(string, Vector2)"/>
+        /// Returns the values set by <see cref="SetVector3(string, Vector3)"/>
         /// </summary>
         public static Vector3 GetVector3(string key)
         {
             return GetVector3(key, Vector3.zero);
         }
+
+        /// <summary>
+        /// Sets the four float values of <paramref name="value"/> with <see cref="PlayerPrefs"/>.
+        /// </summary>
+        public static void SetVector4(string key, Vector4 value)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                Debug.LogError(string.Format("[PlayerPrefsUtility::SetVector4] Couldn't set the savekey because it is null. Key={0}", key));
+                return;
+            }
+
+            PlayerPrefs.SetFloat(string.Format("{0}_X", key), value.x);
+            PlayerPrefs.SetFloat(string.Format("{0}_Y", key), value.y);
+            PlayerPrefs.SetFloat(string.Format("{0}_Z", key), value.z);
+            PlayerPrefs.SetFloat(string.Format("{0}_W", key), value.w);
+        }
+        /// <inheritdoc cref="GetVector3(string)"/>
+        /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
+        public static Vector4 GetVector4(string key, Vector4 defaultValue)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                Debug.LogError(string.Format("[PlayerPrefsUtility::GetVector4] Couldn't get the savekey because it is null. Key={0}", key));
+                return default;
+            }
+
+            return new Vector4(
+                PlayerPrefs.GetFloat(string.Format("{0}_X", key), defaultValue.x),
+                PlayerPrefs.GetFloat(string.Format("{0}_Y", key), defaultValue.y),
+                PlayerPrefs.GetFloat(string.Format("{0}_Z", key), defaultValue.z),
+                PlayerPrefs.GetFloat(string.Format("{0}_W", key), defaultValue.w)
+            );
+        }
+        /// <summary>
+        /// Returns the values set by <see cref="SetVector4(string, Vector4)"/>
+        /// </summary>
+        public static Vector4 GetVector4(string key)
+        {
+            return GetVector4(key, Vector4.zero);
+        }
+
         /// <summary>
         /// Sets the four float values of <paramref name="value"/> with <see cref="PlayerPrefs"/>.
         /// </summary>
@@ -321,16 +363,28 @@ namespace BXFW
             Type tType = typeof(T);
             if (tType == typeof(Vector2))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_X", key)) && PlayerPrefs.HasKey(string.Format("{0}_Y", key));
+                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key));
             }
             if (tType == typeof(Vector3))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_X", key)) && PlayerPrefs.HasKey(string.Format("{0}_Y", key)) && PlayerPrefs.HasKey(string.Format("{0}_Z", key));
+                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_Z", key));
+            }
+            if (tType == typeof(Vector4))
+            {
+                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_Z", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_W", key));
             }
             if (tType == typeof(Color))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_R", key)) && PlayerPrefs.HasKey(string.Format("{0}_G", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_B", key)) && PlayerPrefs.HasKey(string.Format("{0}_A", key));
+                return PlayerPrefs.HasKey(string.Format("{0}_R", key)) 
+                    && PlayerPrefs.HasKey(string.Format("{0}_G", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_B", key)) 
+                    && PlayerPrefs.HasKey(string.Format("{0}_A", key));
             }
             if (tType == typeof(bool))
             {
@@ -338,11 +392,13 @@ namespace BXFW
             }
             if (tType == typeof(long))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_l32Long", key)) && PlayerPrefs.HasKey(string.Format("{0}_u32Long", key));
+                return PlayerPrefs.HasKey(string.Format("{0}_l32Long", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_u32Long", key));
             }
             if (tType == typeof(double))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_l32Double", key)) && PlayerPrefs.HasKey(string.Format("{0}_u32Double", key));
+                return PlayerPrefs.HasKey(string.Format("{0}_l32Double", key))
+                    && PlayerPrefs.HasKey(string.Format("{0}_u32Double", key));
             }
             if (tType.IsEnum)
             {

@@ -46,10 +46,17 @@ namespace BXFW
     public static class RenderTextureUtility
     {
         #region Quad creation
-        static Mesh quad;
+        private static Mesh quad;
+        /// <summary>
+        /// Returns a Quad mesh.
+        /// <br>
+        /// The created mesh is cached so subsequent calls to this method is slightly faster
+        /// (but mutating the Mesh will have permanent effects until domain reset)
+        /// </br>
+        /// </summary>
         public static Mesh GetQuad()
         {
-            if (quad)
+            if (quad != null)
                 return quad;
 
             Mesh mesh = new Mesh();
@@ -97,33 +104,39 @@ namespace BXFW
             return quad;
         }
 
-        static Shader blitShader;
+        private static Shader blitShader;
+        private const string BLIT_SHADER_NAME = "Sprites/Default";
+        /// <summary>
+        /// Returns the default sprites shader for blitting.
+        /// </summary>
         public static Shader GetBlitShader()
         {
-            if (blitShader)
+            if (blitShader != null)
                 return blitShader;
 
-            const string SHADER_NAME = "Sprites/Default";
-            Shader shader = Shader.Find(SHADER_NAME);
+            Shader shader = Shader.Find(BLIT_SHADER_NAME);
 
             if (!shader)
-                Debug.LogError(string.Format("Shader with name '{0}' is not found, did you forget to include it in the project settings?", SHADER_NAME));
+                Debug.LogError(string.Format("[GetBlitShader] Shader with name '{0}' is not found, did you forget to include it in the project settings?", BLIT_SHADER_NAME));
 
             blitShader = shader;
             return blitShader;
         }
 
-        static Material blitMaterial;
+        private static Material blitMaterial;
+        /// <summary>
+        /// Returns the material created from shader <see cref="GetBlitShader"/>.
+        /// </summary>
         public static Material GetBlitMaterial()
         {
-            if (!blitMaterial)
+            if (blitMaterial == null)
                 blitMaterial = new Material(GetBlitShader());
 
             return blitMaterial;
         }
         #endregion
 
-        static RenderTexture prevRT;
+        private static RenderTexture prevRT;
 
         public static void BeginOrthoRendering(this RenderTexture rt, float zBegin = -100, float zEnd = 100)
         {
