@@ -569,7 +569,7 @@ namespace BXFW.Tweening
             // Unity Editor
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditModeCoroutineRunner.StartCoroutine(IteratorCoroutine);
+                Tools.Editor.EditorCoroutineRunner.StartCoroutine(IteratorCoroutine);
                 return;
             }
 #endif
@@ -631,7 +631,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditModeCoroutineRunner.StopCoroutine(IteratorCoroutine);
+                Tools.Editor.EditorCoroutineRunner.StopCoroutine(IteratorCoroutine);
             }
             else if (_CurrentIteratorCoroutine != null)
 #else
@@ -688,7 +688,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditModeCoroutineRunner.StopCoroutine(IteratorCoroutine);
+                Tools.Editor.EditorCoroutineRunner.StopCoroutine(IteratorCoroutine);
             }
             else if (_CurrentIteratorCoroutine != null)
 #else

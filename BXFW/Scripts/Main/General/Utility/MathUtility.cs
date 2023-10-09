@@ -5,7 +5,7 @@ namespace BXFW
 {
     /// <summary>
     /// Transformation axis, can be used for positioning, (euler) rotation or scaling.
-    /// <br>This class is used to define a direction in 3D, without needing the Vector3.</br>
+    /// <br>This class is used to define a direction in 3D, without needing the Vector3 (and it's potential unwanted inbetween values).</br>
     /// </summary>
     [Flags]
     public enum TransformAxis
@@ -108,6 +108,36 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Gives a bezier interpolated value between <paramref name="point0"/> and <paramref name="point1"/> 
+        /// influenced by <paramref name="handle0"/> and <paramref name="handle1"/>.
+        /// </summary>
+        /// <param name="point0">First main point of the bezier.</param>
+        /// <param name="handle0">Handle for the first point.</param>
+        /// <param name="point1">Second main point.</param>
+        /// <param name="handle1">Handle for the second point.</param>
+        /// <param name="t">The time value to interpolate by, unclamped.</param>
+        /// <returns>The position value interpolated by <paramref name="t"/>.</returns>
+        public static Vector3 BezierInterpolate(Vector3 point0, Vector3 handle0, Vector3 point1, Vector3 handle1, float t)
+        {
+            // Pow
+            float tt = t * t;
+            float ttt = t * tt;
+            float u = 1.0f - t;
+            float uu = u * u;
+            float uuu = u * uu;
+
+            // Point 0
+            Vector3 B = uuu * point0;
+            // Handle(s)
+            B += 3.0f * uu * t * handle0;
+            B += 3.0f * u * tt * handle1;
+            // Point 1
+            B += ttt * point1;
+
+            return B;
+        }
+
+        /// <summary>
         /// Returns the largest axis in the <paramref name="target"/>.
         /// </summary>
         public static float MaxAxis(this Vector4 target)
@@ -196,25 +226,25 @@ namespace BXFW
 
         #region Obsolete
         /// <inheritdoc cref="MaxAxis"/>
-        [Obsolete("Use 'value.MaxAxis();' instead.", false)]
+        [Obsolete("Use 'value.MaxAxis()' instead.", false)]
         public static float GetBiggestAxis(this Vector3 target)
         {
             return target.MaxAxis();
         }
         /// <inheritdoc cref="MaxAxis"/>
-        [Obsolete("Use 'value.MaxAxis();' instead.", false)]
+        [Obsolete("Use 'value.MaxAxis()' instead.", false)]
         public static float GetBiggestAxis(this Vector2 target)
         {
             return target.MaxAxis();
         }
         /// <inheritdoc cref="MinAxis"/>
-        [Obsolete("Use 'value.MinAxis();' instead.", false)]
+        [Obsolete("Use 'value.MinAxis()' instead.", false)]
         public static float GetSmallestAxis(this Vector3 target)
         {
             return target.MinAxis();
         }
         /// <inheritdoc cref="MinAxis"/>
-        [Obsolete("Use 'value.MinAxis();' instead.", false)]
+        [Obsolete("Use 'value.MinAxis()' instead.", false)]
         public static float GetSmallestAxis(this Vector2 target)
         {
             return target.MinAxis();
@@ -241,6 +271,55 @@ namespace BXFW
             return current.SettedAxisVector(axisConstraint, setCurrent);
         }
         #endregion
+
+        /// <summary>
+        /// Returns the given <see cref="Vector3"/> direction value from <paramref name="axis"/>.
+        /// </summary>
+        public static Vector3 GetDirection(this TransformAxis axis)
+        {
+            switch (axis)
+            {
+                case TransformAxis.None:
+                    return Vector3.zero;
+                case TransformAxis.XAxis:
+                    return Vector3.right;
+                case TransformAxis.YAxis:
+                    return Vector3.up;
+                case TransformAxis.ZAxis:
+                    return Vector3.forward;
+
+                case TransformAxis.XAxis | TransformAxis.YAxis:
+                    return new Vector3(1f, 0f, 1f);
+                case TransformAxis.YAxis | TransformAxis.ZAxis:
+                    return new Vector3(0f, 1f, 1f);
+                case TransformAxis.XAxis | TransformAxis.ZAxis:
+                    return new Vector3(1f, 0f, 1f);
+
+                default:
+                case TransformAxis.XYZAxis:
+                    return Vector3.one;
+
+            }
+        }
+        /// <summary>
+        /// Returns the given <see cref="Vector2"/> direction value from <paramref name="axis"/>.
+        /// </summary>
+        public static Vector2 GetDirection(this TransformAxis2D axis)
+        {
+            switch (axis)
+            {
+                case TransformAxis2D.None:
+                    return Vector2.zero;
+                case TransformAxis2D.XAxis:
+                    return Vector2.right;
+                case TransformAxis2D.YAxis:
+                    return Vector2.up;
+
+                default:
+                case TransformAxis2D.XYAxis:
+                    return Vector2.one;
+            }
+        }
 
         /// <summary>
         /// Get the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
@@ -415,7 +494,7 @@ namespace BXFW
         /// <summary>
         /// Returns the <paramref name="quaternion"/> with the constrainted euler angles of given axis <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Quaternion EulerAxisQuaternion(this Quaternion quaternion, TransformAxis axisConstraint)
+        public static Quaternion AxisQuaternion(this Quaternion quaternion, TransformAxis axisConstraint)
         {
             return Quaternion.Euler(quaternion.eulerAngles.AxisVector(axisConstraint));
         }

@@ -11,7 +11,7 @@ namespace BXFW.Tools.Editor
     /// <summary>
     /// Execute coroutines in edit mode.
     /// </summary>
-    public static class EditModeCoroutineRunner
+    public static class EditorCoroutineRunner
     {
         #region Execution
         private struct EditorCoroutine : IEnumerable
@@ -35,7 +35,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Default static constructor assigning execution to update.
         /// </summary>
-        static EditModeCoroutineRunner()
+        static EditorCoroutineRunner()
         {
             EditorApplication.update += Update;
         }

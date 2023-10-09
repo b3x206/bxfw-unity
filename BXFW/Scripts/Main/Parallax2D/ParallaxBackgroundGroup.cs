@@ -3,16 +3,20 @@ using UnityEngine;
 
 namespace BXFW
 {
+    /// <summary>
+    /// Contains the <see cref="ParallaxBackgroundLayer"/>'s backgrounds list + nicely manages those.
+    /// <br>Most of the things + setup are done in the editor for the group.</br>
+    /// </summary>
     public class ParallaxBackgroundGroup : MonoBehaviour
     {
         /// <summary>
         /// List of the generated backgrounds.
         /// </summary>
-        public List<ParallaxBackgroundObj> m_Backgrounds = new List<ParallaxBackgroundObj>();
+        public List<ParallaxBackgroundLayer> Backgrounds = new List<ParallaxBackgroundLayer>();
         /// <summary>
-        /// Shorthand variable for <see cref="List{T}.Count"/> of <see cref="m_Backgrounds"/>.
+        /// Shorthand variable for <see cref="List{T}.Count"/> of <see cref="Backgrounds"/>.
         /// </summary>
-        public int ChildLength => m_Backgrounds.Count;
+        public int ChildLength => Backgrounds.Count;
 
         public bool useGlobalGroupColor = false;
         [SerializeField] private Color m_GroupColor = Color.white;
@@ -29,7 +33,7 @@ namespace BXFW
                 if (!useGlobalGroupColor)
                     return;
 
-                foreach (var obj in m_Backgrounds)
+                foreach (var obj in Backgrounds)
                 {
                     if (obj == null)
                     {

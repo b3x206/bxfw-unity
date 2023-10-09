@@ -6,7 +6,7 @@ namespace BXFW
     /// Represents a scrollable by camera movement, parallaxed <see cref="TilingSpriteRenderer"/>.
     /// </summary>
     [RequireComponent(typeof(TilingSpriteRenderer))]
-    public class ParallaxBackgroundObj : MonoBehaviour
+    public class ParallaxBackgroundLayer : MonoBehaviour
     {
         private float m_length;
         private Vector2 m_startPos;

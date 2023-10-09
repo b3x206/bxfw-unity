@@ -164,7 +164,7 @@ namespace BXFW
             filter.sharedMesh = null; // Remove mesh to avoid manipulation of immutable asset (otherwise setting a 'sharedMesh' will set the existing mesh data)
             filter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 
-            // Object is now default sized cube while the size is default
+            // Object is now default sized cube while the size is Vector3.one
             return true;
         }
         #endregion

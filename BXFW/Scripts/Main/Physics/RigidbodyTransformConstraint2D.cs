@@ -15,8 +15,8 @@ namespace BXFW
         /// <summary>
         /// Initial body capacity.
         /// </summary>
-        private const int BODY_CAPACITY = 8;
-        private readonly Dictionary<Rigidbody2D, Transform> bodiesEntered = new Dictionary<Rigidbody2D, Transform>(BODY_CAPACITY);
+        private const int BODY_CAPACITY = 64;
+        private readonly Dictionary<Rigidbody2D, Transform> m_bodiesEntered = new Dictionary<Rigidbody2D, Transform>(BODY_CAPACITY);
         
         private void Awake()
         {
@@ -24,16 +24,23 @@ namespace BXFW
             Collider.isTrigger = true;
         }
 
+        // Note + TODO : These events won't reliably detect bodies entering or not
+        // To fix this there are a few approaches :
+        // A : GameObject.FindObjectsOfType<Rigidbody2D>(), but this is VERY inefficient
+        // B : Register Rigidbodies+Colliders that will interact with this
+        // .. The interaction will be polled in Update, because this class tries to prevent input based physics mistakes
+        // .. (i.e phasing through something that the player moves)
+        // C : idk find better methods
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (!collision.TryGetComponent(out Rigidbody2D rb))
                 return;
 
             // This body already exists.
-            if (bodiesEntered.ContainsKey(rb))
+            if (m_bodiesEntered.ContainsKey(rb))
                 return;
 
-            bodiesEntered.Add(rb, rb.transform.parent);
+            m_bodiesEntered.Add(rb, rb.transform.parent);
             rb.transform.SetParent(transform);
         }
         private void OnTriggerExit2D(Collider2D collision)
@@ -41,8 +48,8 @@ namespace BXFW
             if (!collision.TryGetComponent(out Rigidbody2D rb))
                 return;
 
-            rb.transform.SetParent(bodiesEntered[rb]);
-            bodiesEntered.Remove(rb);
+            rb.transform.SetParent(m_bodiesEntered[rb]);
+            m_bodiesEntered.Remove(rb);
         }
     }
 }

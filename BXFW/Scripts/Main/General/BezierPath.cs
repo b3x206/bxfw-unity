@@ -110,30 +110,6 @@ namespace BXFW
             }
         }
 
-        /// <summary>
-        /// Calculates bezier path interpolation according to the given values.
-        /// </summary>
-        private static Vector3 BezierPathCalculation(Vector3 p0, Vector3 h0, Vector3 p1, Vector3 h1, float t)
-        {
-            // This works fine with all Vector2's and Vector3's
-
-            // Power
-            float tt = t * t;
-            float ttt = t * tt;
-            float u = 1.0f - t;
-            float uu = u * u;
-            float uuu = u * uu;
-
-            // Point 1
-            Vector3 B = uuu * p0;
-            // Handle(s)
-            B += 3.0f * uu * t * h0;
-            B += 3.0f * u * tt * h1;
-            // Point 2
-            B += ttt * p1;
-
-            return B;
-        }
 
         /// <summary>
         /// List of the generated path points.
@@ -272,7 +248,7 @@ namespace BXFW
 
                 if (s == 0)
                 {
-                    PathPoints.Add(BezierPathCalculation(p0, h0, p1, h1, 0.0f));
+                    PathPoints.Add(MathUtility.BezierInterpolate(p0, h0, p1, h1, 0.0f));
                 }
 
                 // p should be <= for last point check
@@ -284,7 +260,7 @@ namespace BXFW
                 {
                     float t = (1.0f / (GeneratePointCount / PerPointSegments)) * p;
 
-                    Vector3 point = BezierPathCalculation(p0, h0, p1, h1, t);
+                    Vector3 point = MathUtility.BezierInterpolate(p0, h0, p1, h1, t);
                     PathPoints.Add(point);
                 }
             }

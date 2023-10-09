@@ -128,7 +128,7 @@ namespace BXFW
         /// <summary>
         /// Name of the field assigned into.
         /// </summary>
-        public readonly string BoolFieldName;
+        public readonly string boolFieldName;
 #endif
         /// <summary>
         /// A bool to whether to invert the draw condition field or not.
@@ -138,7 +138,7 @@ namespace BXFW
         public InspectorConditionalDrawAttribute(string boolFieldName)
         {
 #if UNITY_EDITOR
-            BoolFieldName = boolFieldName;
+            this.boolFieldName = boolFieldName;
 #endif
         }
     }
@@ -233,7 +233,7 @@ namespace BXFW
 
     /// <summary>
     /// An attribute used in string fields to disallow a set of characters.
-    /// <br>Expects a string, and disallows all characters in the string.</br>
+    /// <br>Expects a <see cref="string"/>, and disallows all characters in the <see cref="string"/>.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class EditDisallowCharsAttribute : PropertyAttribute 

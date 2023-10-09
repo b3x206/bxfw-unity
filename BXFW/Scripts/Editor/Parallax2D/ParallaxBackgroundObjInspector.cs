@@ -3,7 +3,7 @@ using UnityEditor;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(ParallaxBackgroundObj))]
+    [CustomEditor(typeof(ParallaxBackgroundLayer))]
     public class ParallaxBackgroundObjInspector : Editor
     {
         public override void OnInspectorGUI()

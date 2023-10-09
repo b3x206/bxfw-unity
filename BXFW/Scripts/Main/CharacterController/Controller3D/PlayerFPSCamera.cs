@@ -54,7 +54,7 @@ namespace BXFW
         {
             if (headXRotationLimit != MinMaxValue.Zero)
             {
-                Quaternion centerRotation = transform.rotation.EulerAxisQuaternion(TransformAxis.YAxis) * Quaternion.AngleAxis(-90f, Vector3.up);
+                Quaternion centerRotation = transform.rotation.AxisQuaternion(TransformAxis.YAxis) * Quaternion.AngleAxis(-90f, Vector3.up);
                 // Move rotation to be centered
                 centerRotation *= Quaternion.AngleAxis((headXRotationLimit.Min + headXRotationLimit.Max) / 2f, Vector3.forward);
 

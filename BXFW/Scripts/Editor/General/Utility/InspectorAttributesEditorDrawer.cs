@@ -135,11 +135,11 @@ namespace BXFW.ScriptEditor
             // This also resets 'drawField'
             var parentPair = property.GetParentOfTargetField();
             // Try getting the FieldInfo
-            FieldInfo targetBoolFieldInfo = fieldInfo.DeclaringType.GetField(Attribute.BoolFieldName, TARGET_FLAGS);
+            FieldInfo targetBoolFieldInfo = fieldInfo.DeclaringType.GetField(Attribute.boolFieldName, TARGET_FLAGS);
             if (targetBoolFieldInfo == null)
             {
                 // Try getting the PropertyInfo
-                PropertyInfo targetBoolPropertyInfo = fieldInfo.DeclaringType.GetProperty(Attribute.BoolFieldName, TARGET_FLAGS);
+                PropertyInfo targetBoolPropertyInfo = fieldInfo.DeclaringType.GetProperty(Attribute.boolFieldName, TARGET_FLAGS);
 
                 if (targetBoolPropertyInfo == null)
                 {
@@ -176,7 +176,7 @@ namespace BXFW.ScriptEditor
             if (drawWarning)
             {
                 label = EditorGUI.BeginProperty(position, label, property);
-                EditorGUI.HelpBox(position, string.Format("[ConditionalDrawAttribute] Attribute has incorrect target '{0}' for value '{1}'.", Attribute.BoolFieldName, label.text), MessageType.Warning);
+                EditorGUI.HelpBox(position, string.Format("[ConditionalDrawAttribute] Attribute has incorrect target '{0}' for value '{1}'.", Attribute.boolFieldName, label.text), MessageType.Warning);
                 EditorGUI.EndProperty();
                 return;
             }

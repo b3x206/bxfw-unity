@@ -360,8 +360,7 @@ namespace BXFW
         /// </summary>
         public static bool IsTypeNameNumerical(string typeName)
         {
-            return IsTypeNameInteger(typeName) ||
-                IsTypeNameFloat(typeName);
+            return IsTypeNameInteger(typeName) || IsTypeNameFloat(typeName);
         }
 
         /// <summary>

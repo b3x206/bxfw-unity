@@ -56,13 +56,13 @@ namespace BXFW
         /// </summary>
         [InspectorLine(.4f, .4f, .4f), Header("Input")]
         public bool useInternalInputMove = true;
-        public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
-        public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
-        public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
-        public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
-        public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
-        public CustomInputEvent moveJumpInput     = new KeyCode[] { KeyCode.Space };
-        public CustomInputEvent moveCrouchInput   = new KeyCode[] { KeyCode.LeftControl };
+        public CustomInputEvent moveForwardInput  = new CustomInputEvent(true, new KeyCode[] { KeyCode.W, KeyCode.UpArrow });
+        public CustomInputEvent moveBackwardInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.S, KeyCode.DownArrow });
+        public CustomInputEvent moveLeftInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.A, KeyCode.LeftArrow });
+        public CustomInputEvent moveRightInput    = new CustomInputEvent(true, new KeyCode[] { KeyCode.D, KeyCode.RightArrow });
+        public CustomInputEvent moveRunInput      = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftShift });
+        public CustomInputEvent moveJumpInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.Space });
+        public CustomInputEvent moveCrouchInput   = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftControl });
         /// <summary>
         /// Given external input movement to the player.
         /// <br>Can be used to give the <see cref="PlayerMovement"/> scripted movement or attaching your own input implementation.</br>
@@ -188,17 +188,19 @@ namespace BXFW
         /// </summary>
         private float m_tpsRotateVelocity;
 
-        // TODO : Fix 'CustomInputEvent' polling.
-        //private void Update()
-        //{
-        //    moveForwardInput.Poll();
-        //    moveBackwardInput.Poll();
-        //    moveLeftInput.Poll();
-        //    moveRightInput.Poll();
-        //    moveCrouchInput.Poll();
-        //    moveJumpInput.Poll();
-        //    moveRunInput.Poll();
-        //}
+        private void Update()
+        {
+            if (!useInternalInputMove)
+                return;
+
+            moveForwardInput.Poll();
+            moveBackwardInput.Poll();
+            moveLeftInput.Poll();
+            moveRightInput.Poll();
+            moveCrouchInput.Poll();
+            moveJumpInput.Poll();
+            moveRunInput.Poll();
+        }
         private void FixedUpdate()
         {
             // Don't move.

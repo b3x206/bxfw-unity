@@ -117,11 +117,11 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Cleans the <see cref="ParallaxBackgroundGroup.m_Backgrounds"/>. <b>(from null variables.)</b>
+        /// Cleans the <see cref="ParallaxBackgroundGroup.Backgrounds"/>. <b>(from null variables.)</b>
         /// </summary>
         private void CleanBGObjectArray()
         {
-            InspectedBGObj.m_Backgrounds.RemoveAll((d) => d == null);
+            InspectedBGObj.Backgrounds.RemoveAll((d) => d == null);
         }
 
         private void OnGUI()
@@ -258,7 +258,7 @@ namespace BXFW
                             int BGLayer = BGOrderStart - InspectedBGObj.ChildLength;
 
                             var ParentSet = new GameObject($"BGHolderGroup{InspectedBGObj.ChildLength}");
-                            var pObj = ParentSet.AddComponent<ParallaxBackgroundObj>();
+                            var pObj = ParentSet.AddComponent<ParallaxBackgroundLayer>();
 
                             ParentSet.transform.SetParent(InspectedBGObj.transform);
                             pObj.parallaxEffectAmount = ParallaxBGArray[i].Key;
@@ -283,7 +283,7 @@ namespace BXFW
                             pObj.TilingRendererComponent.AutoTile = false;
                             pObj.TilingRendererComponent.GridX = BGSpriteRendererTileX;
 
-                            InspectedBGObj.m_Backgrounds.Add(pObj);
+                            InspectedBGObj.Backgrounds.Add(pObj);
                         }
 
                         Debug.Log("[ParallaxBackgroundEditor] Created background(s).");
@@ -314,14 +314,14 @@ namespace BXFW
                         }
 
                         // Check if this Container object already is registered
-                        if (Container.TryGetComponent(out ParallaxBackgroundObj objComponent))
+                        if (Container.TryGetComponent(out ParallaxBackgroundLayer objComponent))
                         {
-                            for (int i = 0; i < InspectedBGObj.m_Backgrounds.Count; i++)
+                            for (int i = 0; i < InspectedBGObj.Backgrounds.Count; i++)
                             {
-                                if (objComponent == InspectedBGObj.m_Backgrounds[i])
+                                if (objComponent == InspectedBGObj.Backgrounds[i])
                                 {
-                                    Debug.Log($"[ParallaxBGEditor] There is already a parallax object with name \"{InspectedBGObj.m_Backgrounds[i].name}\", updated settings.");
-                                    InspectedBGObj.m_Backgrounds.Remove(InspectedBGObj.m_Backgrounds[i]);
+                                    Debug.Log($"[ParallaxBGEditor] There is already a parallax object with name \"{InspectedBGObj.Backgrounds[i].name}\", updated settings.");
+                                    InspectedBGObj.Backgrounds.Remove(InspectedBGObj.Backgrounds[i]);
                                     break;
                                 }
                             }
@@ -350,12 +350,12 @@ namespace BXFW
                         }
 
                         // Destroy previous objects.
-                        while (Container.TryGetComponent(out ParallaxBackgroundObj obj))
+                        while (Container.TryGetComponent(out ParallaxBackgroundLayer obj))
                         {
                             DestroyImmediate(obj);
                         }
 
-                        var pObj = Container.gameObject.AddComponent<ParallaxBackgroundObj>();
+                        var pObj = Container.gameObject.AddComponent<ParallaxBackgroundLayer>();
                         pObj.parallaxEffectAmount = BGLayerPrlxAmount;
                         pObj.parentGroup = InspectedBGObj;
 
@@ -382,7 +382,7 @@ namespace BXFW
                             BGOrderStart = (-5) - InspectedBGObj.ChildLength;
                         }
 
-                        InspectedBGObj.m_Backgrounds.Add(pObj);
+                        InspectedBGObj.Backgrounds.Add(pObj);
                         Debug.Log("[ParallaxBackgroundEditor] Added background.");
                     }
                     #endregion
@@ -391,7 +391,7 @@ namespace BXFW
                     var InspectedObjSO = new SerializedObject(InspectedBGObj);
                     // Create array field "readonly"
                     GUI.enabled = false;
-                    EditorGUILayout.PropertyField(InspectedObjSO.FindProperty(nameof(ParallaxBackgroundGroup.m_Backgrounds)), true);
+                    EditorGUILayout.PropertyField(InspectedObjSO.FindProperty(nameof(ParallaxBackgroundGroup.Backgrounds)), true);
                     GUI.enabled = true;
 
                     GUILayout.BeginHorizontal();
@@ -402,7 +402,7 @@ namespace BXFW
                             "Are you sure you wanna destroy the parallax backgrounds?\n",
                             "Yes", "No"))
                         {
-                            foreach (var obj in InspectedBGObj.m_Backgrounds)
+                            foreach (var obj in InspectedBGObj.Backgrounds)
                             {
                                 if (obj == null)
                                     return;
@@ -410,7 +410,7 @@ namespace BXFW
                                 DestroyImmediate(obj.gameObject);
                             }
 
-                            InspectedBGObj.m_Backgrounds.Clear();
+                            InspectedBGObj.Backgrounds.Clear();
                         }
                     }
                     if (GUILayout.Button("Clear List"))
@@ -419,7 +419,7 @@ namespace BXFW
                             "Are you sure you wanna clean the parallax backgrounds?\nInfo : The background gameobjects are not destroyed.",
                             "Yes", "No"))
                         {
-                            foreach (var obj in InspectedBGObj.m_Backgrounds)
+                            foreach (var obj in InspectedBGObj.Backgrounds)
                             {
                                 if (obj == null)
                                     return;
@@ -427,7 +427,7 @@ namespace BXFW
                                 DestroyImmediate(obj);
                             }
 
-                            InspectedBGObj.m_Backgrounds.Clear();
+                            InspectedBGObj.Backgrounds.Clear();
                         }
                     }
                     if (GUILayout.Button("Remove Nulls"))
