@@ -1,8 +1,8 @@
 using System;
+using System.Linq;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
 using Object = UnityEngine.Object;
-using System.Linq;
 
 namespace BXFW.Tweening.Next
 {

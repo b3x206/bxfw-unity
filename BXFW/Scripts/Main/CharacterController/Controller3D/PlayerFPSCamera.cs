@@ -11,18 +11,17 @@ namespace BXFW
         [SerializeField] private Transform m_playerTransform;
 
         [Header("Camera Settings")]
-        /// Note about RawMouseLook : Keep it true as default, otherwise mouse movement could be jerky.
+        // Note about RawMouseLook : Keep it true as default, otherwise mouse movement could be jerky.
         [SerializeField] private bool m_UseRawInputLook = true;
         public bool UseRawInputLook { get => m_UseRawInputLook; set => m_UseRawInputLook = value; }
         [SerializeField] private float m_LookSensitivity = 100f;
         public float LookSensitivity { get => m_LookSensitivity; set => m_LookSensitivity = value; }
 
         [Header("Camera Constraints")]
-        [Tooltip("The limit is splitted to 2 before acting as input")]
-        [SerializeField] private float m_headRotationLimit = 180f;
+        public MinMaxValue headXRotationLimit = new MinMaxValue(-85f, 85f);
         public MouseInputAxis currentAxes = MouseInputAxis.MouseX | MouseInputAxis.MouseY;
-        private float m_xRotation = 0f;
 
+        private float m_currentXRotation = 0f;
         private void Update()
         {
             if (currentAxes != MouseInputAxis.None)
@@ -45,11 +44,23 @@ namespace BXFW
             {
                 float mouseY = (m_UseRawInputLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * m_LookSensitivity * Time.smoothDeltaTime;
 
-                m_xRotation -= mouseY;
-                m_xRotation = Mathf.Clamp(m_xRotation, -m_headRotationLimit / 2f, m_headRotationLimit / 2f);
-
-                transform.localRotation = Quaternion.AngleAxis(m_xRotation, Vector3.right);
+                m_currentXRotation = headXRotationLimit.ClampBetween(m_currentXRotation - mouseY);
+                transform.localRotation = Quaternion.AngleAxis(m_currentXRotation, Vector3.right);
             }
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (headXRotationLimit != MinMaxValue.Zero)
+            {
+                Quaternion centerRotation = transform.rotation.EulerAxisQuaternion(TransformAxis.YAxis) * Quaternion.AngleAxis(-90f, Vector3.up);
+                // Move rotation to be centered
+                centerRotation *= Quaternion.AngleAxis((headXRotationLimit.Min + headXRotationLimit.Max) / 2f, Vector3.forward);
+
+                GizmoUtility.DrawArc(transform.position, centerRotation, 1f, headXRotationLimit.Size());
+            }
+        }
+#endif
     }
 }

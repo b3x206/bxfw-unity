@@ -9,8 +9,7 @@ namespace BXFW.Data
 {
     /// <summary>
     /// Parses localized text asset.
-    /// <br>Note : This is 'Not' recommended to be used in this state, use an actual localization library.</br>
-    /// <br>This is more of an 'experimental' thing.</br>
+    /// <br>While i did release prod games with this localization system, it is still not recommended for this to be used.</br>
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
@@ -33,19 +32,17 @@ namespace BXFW.Data
             public ParseException(string msg) : base(msg)
             { }
 
-            public ParseException(string msg, Exception innerExcept) : base(msg, innerExcept)
-            { }
-
-            public ParseException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext ctx) : base(info, ctx)
+            public ParseException(string msg, Exception innerException) : base(msg, innerException)
             { }
         }
-
+        
+        // inside 'SurroundChar' tokens
         public const char NewLineChar = '\n';
         public const char SpaceChar = ' ';
         public const char TabChar = '\t';
-        public const char VTabChar = '\v';
+        public const char VerticalTabChar = '\v';
         public const char EscapeChar = '\\';
-
+        // tokens
         public const char CommentChar = ';';
         public const char LocaleDefSeperateChar = ',';
         public const char SurroundChar = '"';
@@ -61,8 +58,7 @@ namespace BXFW.Data
         {
             if (listKeys.Count < listValues.Count)
             {
-                Debug.LogError(string.Format("[LocalizedAssetParser::CreateDictFromLists] Key list has less elements than value list. It should be equal or less. K:{0} < V:{1}", listKeys.Count, listValues.Count));
-                return null;
+                throw new ArgumentException(string.Format("[LocalizedAssetParser::CreateDictFromLists] Key list has less elements than value list. It should be equal or less. K:{0} < V:{1}", listKeys.Count, listValues.Count));
             }
 
             var dict = new Dictionary<TKey, TValue>(listKeys.Count);
@@ -168,7 +164,7 @@ namespace BXFW.Data
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                // Pragma + comment lines
+                // -- Pragma + comment lines
                 // NOTE : Only comment lines starting with ';' is ignored.
                 {
                     int trimCount = line.IndexOfNonWhitespace();    // index does not contain the rest of the line
@@ -185,7 +181,7 @@ namespace BXFW.Data
                         {
                             // Push pragma and continue
                             string splitString = line.Substring(indexOfPragmaDef + PragmaDefString.Length + 1);
-                            string[] pragmaKeyValue = splitString.Split(SpaceChar, VTabChar, TabChar);
+                            string[] pragmaKeyValue = splitString.Split(SpaceChar, VerticalTabChar, TabChar);
                             // because for some reason string.Split loves to add random empty stuff.
                             pragmaKeyValue = pragmaKeyValue.Where((s) => !string.IsNullOrWhiteSpace(s)).ToArray();
 
@@ -204,27 +200,25 @@ namespace BXFW.Data
                     }
                 }
 
+                // -- Main Parsing
                 // Split string BEFORE '=>' char sequence (get id)
                 // Omit '=>'
-                string TextID = line.Substring(0, line.IndexOf(TextIDDefChar)).Trim();
-
+                string textID = line.Substring(0, line.IndexOf(TextIDDefChar)).Trim();
                 // Split string AFTER '=>' char sequence (omit char sequence)
-                string LocaleDefStringLine = line.Substring(line.IndexOf(TextIDDefChar) + TextIDDefChar.Length + 1).Trim();
+                string idLocaleDefs = line.Substring(line.IndexOf(TextIDDefChar) + TextIDDefChar.Length + 1).Trim();
+
                 // Definitions split ([0]='en="bla bla"' [1]='tr="bla bla"')
-                string[] LocaleDefsSplit = LocaleDefStringLine.Split(LocaleDefSeperateChar);
+                string[] localeDefsSplit = idLocaleDefs.Split(LocaleDefSeperateChar, StringSplitOptions.RemoveEmptyEntries);
 
                 // Parsed data (pass length for optimization)
-                var listLocaleLang = new List<string>(LocaleDefsSplit.Length); // Parsed language definitions     : 'en, tr, de, ...'
-                var listLocaleData = new List<string>(LocaleDefsSplit.Length); // Parsed language definition data : '"bla bla", "seyler", ...'
+                var listLocaleLang = new List<string>(localeDefsSplit.Length); // Parsed language definitions     : 'en, tr, de, ...'
+                var listLocaleData = new List<string>(localeDefsSplit.Length); // Parsed language definition data : '"bla bla", "seyler", ...'
 
-                foreach (string localeKeyValueString in LocaleDefsSplit)
+                foreach (string localeKeyValueString in localeDefsSplit)
                 {
-                    if (string.IsNullOrWhiteSpace(localeKeyValueString))
-                    {
-                        // log here in some sort of debug mode?
-                        // not really necessary as whitespace is ignored.
-                        continue;
-                    }
+                    // No need to check this as split is now set to remove empty entries.
+                    //if (string.IsNullOrWhiteSpace(localeKeyValueString))
+                    //    continue;
 
                     // There should be exactly 2 values (on substring)
                     // Use consistent index of & trim from space
@@ -242,7 +236,7 @@ namespace BXFW.Data
 
                     if (!localeValue.Contains(SurroundChar))
                     {
-                        throw new ParseException(string.Format("[LocalizedAssetParser::Parse] Parsed line {0} with key \"{1}\" is not valid. [Not surrounded in \"'s properly]. Line Parsed : \n{2}", i + 1, TextID, line));
+                        throw new ParseException(string.Format("[LocalizedAssetParser::Parse] Parsed line {0} with key \"{1}\" is not valid. [Not surrounded in \"'s properly]. Line Parsed : \n{2}", i + 1, textID, line));
                     }
 
                     // -- Reading the localeData contained in quotation --
@@ -336,7 +330,7 @@ namespace BXFW.Data
                         continue;
                     }
 
-                    currentAsset.Add(new LocalizedTextData(TextID, CreateDictFromLists(listLocaleLang, listLocaleData), globalPragmaSettings));
+                    currentAsset.Add(new LocalizedTextData(textID, CreateDictFromLists(listLocaleLang, listLocaleData), globalPragmaSettings));
                 }
             }
 
@@ -349,24 +343,42 @@ namespace BXFW.Data
         /// </summary>
         /// <returns>The resulting string to be written.</returns>
         /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentException"/>
         public static string Save(List<LocalizedTextData> assets)
         {
             if (assets == null)
                 throw new ArgumentNullException("[LocalizedAssetParser::Save] Error while saving : argument named 'assets' passed is null.");
             if (assets.Count <= 0)
-            {
-                Debug.LogWarning("[LocalizedAssetParser::Save] Given save list is empty.");
-                return string.Empty;
-            }
+                throw new ArgumentException("[LocalizedAssetParser::Save] Given save list is empty (Count <= 0).");
 
             // Save using the string builder.
             // Approximate capacity of the 'StringBuilder' is the length of the dictionary strings.
-            int stringAllocSize = 0;
-            assets.ForEach((LocalizedTextData t) => { stringAllocSize += t.StringSize; });
-            StringBuilder sb = new StringBuilder(stringAllocSize);
+            int stringAllocSize = assets.Sum((tData) => tData.StringSize);
+            var sb = new StringBuilder(stringAllocSize);
+            var writtenPragmas = new Dictionary<string, string>(assets.Count);
 
             foreach (LocalizedTextData text in assets)
             {
+                // -- Pragma Def
+                foreach (KeyValuePair<string, string> pragma in text.PragmaDefinitions)
+                {
+                    if (string.IsNullOrWhiteSpace(pragma.Key) || string.IsNullOrWhiteSpace(pragma.Value))
+                    {
+                        continue;
+                    }
+
+                    // Insert to string builder if the pragma does not exist.
+                    if (!writtenPragmas.TryGetValue(pragma.Key, out string _))
+                    {
+                        writtenPragmas.Add(pragma.Key, pragma.Value);
+                        sb.Insert(0, string.Format(
+                            "{0}{1} {2} {3}{4}", 
+                            PragmaDefChar, PragmaDefString, pragma.Key, pragma.Value, NewLineChar
+                        ));
+                    }
+                }
+
+                // -- Actual string
                 // Append the textID + TextIDChar define
                 // It looks like : TEXT_ID => 
                 sb.Append(string.Format("{0} {1} ", text.TextID, TextIDDefChar));

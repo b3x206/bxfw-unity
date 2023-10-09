@@ -4,6 +4,44 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
+    /// Transformation axis, can be used for positioning, (euler) rotation or scaling.
+    /// <br>This class is used to define a direction in 3D, without needing the Vector3.</br>
+    /// </summary>
+    [Flags]
+    public enum TransformAxis
+    {
+        None = 0,
+
+        XAxis = 1 << 0,
+        YAxis = 1 << 1,
+        ZAxis = 1 << 2,
+
+        [Obsolete("This value of TransformAxis is no longer used, use (XAxis | YAxis) instead.")]
+        XYAxis = XAxis | YAxis,
+        [Obsolete("This value of TransformAxis is no longer used, use (YAxis | ZAxis) instead.")]
+        YZAxis = YAxis | ZAxis,
+        [Obsolete("This value of TransformAxis is no longer used, use (XAxis | ZAxis) instead.")]
+        XZAxis = XAxis | ZAxis,
+
+        // This will exist because 'TransformAxis2D' also has it.
+        XYZAxis = XAxis | YAxis | ZAxis
+    }
+
+    /// <summary>
+    /// Transform axis for positioning, used in 2D space.
+    /// </summary>
+    [Flags]
+    public enum TransformAxis2D
+    {
+        None = 0,
+
+        XAxis = 1 << 0,
+        YAxis = 1 << 1,
+
+        XYAxis = XAxis | YAxis
+    }
+
+    /// <summary>
     /// Contains general purpose math utility.
     /// <br>This class both contains float and vector math utils.</br>
     /// </summary>
@@ -181,14 +219,35 @@ namespace BXFW
         {
             return target.MinAxis();
         }
+
+        [Obsolete("Use 'Vector3.AxisVector(axisConstraint)' instead", false)]
+        public static Vector3 GetAxisVector(this TransformAxis axisConstraint, Vector3 current)
+        {
+            return current.AxisVector(axisConstraint);
+        }
+        [Obsolete("Use 'Vector3.SettedAxisVector(Vector3)' instead", false)]
+        public static Vector3 SetAxisVector(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
+        {
+            return current.SettedAxisVector(axisConstraint, setCurrent);
+        }
+        [Obsolete("Use 'Vector3.AxisVector(Vector2)' instead", false)]
+        public static Vector2 GetAxisVector(this TransformAxis2D axisConstraint, Vector2 current)
+        {
+            return current.AxisVector(axisConstraint);
+        }
+        [Obsolete("Use 'Vector3.SettedAxisVector(Vector2)' instead", false)]
+        public static Vector2 SetAxisVector(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
+        {
+            return current.SettedAxisVector(axisConstraint, setCurrent);
+        }
         #endregion
 
         /// <summary>
         /// Get the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector3 GetAxisVector(this TransformAxis axisConstraint, Vector3 current)
+        public static Vector3 AxisVector(this Vector3 target, TransformAxis axisConstraint)
         {
-            Vector3 v = current;
+            Vector3 v = target;
             switch (axisConstraint)
             {
                 case TransformAxis.None:
@@ -206,14 +265,14 @@ namespace BXFW
                     v.x = 0f;
                     v.y = 0f;
                     break;
-                case TransformAxis.XYAxis:
-                    v.z = 0f;
-                    break;
-                case TransformAxis.YZAxis:
+                case TransformAxis.YAxis | TransformAxis.ZAxis:
                     v.x = 0f;
                     break;
-                case TransformAxis.XZAxis:
+                case TransformAxis.XAxis | TransformAxis.ZAxis:
                     v.y = 0f;
+                    break;
+                case TransformAxis.XAxis | TransformAxis.YAxis:
+                    v.z = 0f;
                     break;
 
                 default:
@@ -226,49 +285,50 @@ namespace BXFW
         /// <summary>
         /// Sets or removes the <see cref="Vector3"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector3 SetAxisVector(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
+        public static Vector3 SettedAxisVector(this Vector3 target, TransformAxis axisConstraint, Vector3 valueSet)
         {
-            Vector3 v = current;
+            Vector3 v = target;
             switch (axisConstraint)
             {
                 case TransformAxis.None:
                     return Vector3.zero;
 
                 case TransformAxis.XAxis:
-                    v.x = setCurrent.x;
+                    v.x = valueSet.x;
                     break;
                 case TransformAxis.YAxis:
-                    v.y = setCurrent.y;
+                    v.y = valueSet.y;
                     break;
                 case TransformAxis.ZAxis:
-                    v.z = setCurrent.z;
+                    v.z = valueSet.z;
                     break;
-                case TransformAxis.XYAxis:
-                    v.x = setCurrent.x;
-                    v.y = setCurrent.y;
+                case TransformAxis.XAxis | TransformAxis.YAxis:
+                    v.x = valueSet.x;
+                    v.y = valueSet.y;
                     break;
-                case TransformAxis.YZAxis:
-                    v.y = setCurrent.y;
-                    v.z = setCurrent.z;
+                case TransformAxis.YAxis | TransformAxis.ZAxis:
+                    v.y = valueSet.y;
+                    v.z = valueSet.z;
                     break;
-                case TransformAxis.XZAxis:
-                    v.x = setCurrent.x;
-                    v.z = setCurrent.z;
+                case TransformAxis.XAxis | TransformAxis.ZAxis:
+                    v.x = valueSet.x;
+                    v.z = valueSet.z;
                     break;
 
                 default:
                 case TransformAxis.XYZAxis:
-                    return setCurrent;
+                    return valueSet;
             }
 
             return v;
         }
+ 
         /// <summary>
         /// Get the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector2 GetAxisVector(this TransformAxis2D axisConstraint, Vector2 current)
+        public static Vector2 AxisVector(this Vector2 target, TransformAxis2D axisConstraint)
         {
-            Vector3 v = current;
+            Vector3 v = target;
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
@@ -291,24 +351,24 @@ namespace BXFW
         /// <summary>
         /// Sets or removes the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Vector2 SetAxisVector(this TransformAxis2D axisConstraint, Vector2 current, Vector2 value)
+        public static Vector2 SettedAxisVector(this Vector2 target, TransformAxis2D axisConstraint, Vector2 valueSet)
         {
-            Vector3 v = current;
+            Vector3 v = target;
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
                     return Vector2.zero;
 
                 case TransformAxis2D.XAxis:
-                    v.x = value.x;
+                    v.x = valueSet.x;
                     break;
                 case TransformAxis2D.YAxis:
-                    v.y = value.y;
+                    v.y = valueSet.y;
                     break;
                 default:
                 case TransformAxis2D.XYAxis:
-                    v.x = value.x;
-                    v.y = value.y;
+                    v.x = valueSet.x;
+                    v.y = valueSet.y;
                     break;
             }
 
@@ -351,6 +411,13 @@ namespace BXFW
             );
 
             return editorEuler;
+        }
+        /// <summary>
+        /// Returns the <paramref name="quaternion"/> with the constrainted euler angles of given axis <paramref name="axisConstraint"/>.
+        /// </summary>
+        public static Quaternion EulerAxisQuaternion(this Quaternion quaternion, TransformAxis axisConstraint)
+        {
+            return Quaternion.Euler(quaternion.eulerAngles.AxisVector(axisConstraint));
         }
 
         // ------------------
@@ -403,6 +470,13 @@ namespace BXFW
         /// Sets a matrix to <paramref name="transform"/>.
         /// <br>Not 100% accurate.</br>
         /// </summary>
+        /// <param name="space">
+        /// The space to set the matrix on.
+        /// If the matrix was gathered using <br/>
+        /// <br><see cref="Transform.worldToLocalMatrix"/> = use the space mode <see cref="Space.World"/> as this is the matrix for the children.</br>
+        /// <br><see cref="Transform.localToWorldMatrix"/> = use the space mode <see cref="Space.Self"/> as this is the world matrix.</br>
+        /// <br><b>NOTE + TODO : </b> This could be inverted or completely wrong as i did not test it.</br>
+        /// </param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
         public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.World)

@@ -335,7 +335,9 @@ namespace BXFW.Tweening.Next
         {
             runner.OnRunnerExit += OnTweenRunnerExit;
             runner.OnRunnerTick += OnTweenRunnerTick;
-            runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+            
+            if (runner.SupportsFixedTick)
+                runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
         }
 
         private static void OnTweenRunnerTick(IBXSTweenRunner runner)

@@ -13,29 +13,10 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace BXFW
 {
     /// <summary>
-    /// Transform Axis.
-    /// <br>(Used in few helper methods.)</br>
-    /// </summary>
-    public enum TransformAxis
-    {
-        None = 0,
-
-        XAxis,
-        YAxis,
-        ZAxis,
-
-        XYAxis,
-        YZAxis,
-        XZAxis,
-
-        // All Axis
-        XYZAxis
-    }
-
-    /// <summary>
     /// Quaternion axis.
     /// Isn't used for anything useful.
     /// </summary>
+    [Obsolete("This class is pointless, but it could be still used (if this class exists for something useful). Will get removed.")]
     public enum QuatAxis
     {
         // P(4,0)
@@ -63,22 +44,6 @@ namespace BXFW
 
         // P(4,4)
         XYZWAxis = 15
-    }
-
-    /// <summary>
-    /// Transform axis, used in 2D space.
-    /// <br>NOTE : This is an axis value for position.
-    /// For rotation, please use the <see cref="TransformAxis"/> (or <see cref="QuatAxis"/>).</br>
-    /// </summary>
-    [Flags]
-    public enum TransformAxis2D
-    {
-        None = 0,
-
-        XAxis = 1 << 0,
-        YAxis = 1 << 1,
-
-        XYAxis = XAxis | YAxis
     }
 
     /// <summary>
@@ -484,6 +449,33 @@ namespace BXFW
                 .GetTypes()
                 .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
         }
+        
+        // -- Serialization (?)
+        /// <summary>
+        /// Returns a byte array from an object.
+        /// </summary>
+        /// <param name="obj">Object that has the <see cref="SerializableAttribute"/>.</param>
+        /// <returns>Object as serializd byte array.</returns>
+        public static byte[] ObjectToByteArray(object obj)
+        {
+            // Can't convert null object.
+            if (obj is null)
+            {
+                throw new ArgumentNullException("[Additionals::ObjectToByteArray] The given object is null.");
+            }
+            // Require SerializableAttribute
+            if (obj.GetType().GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
+            {
+                throw new ArgumentException(string.Format("[Additionals::ObjectToByteArray] Given object '{0}' with type '{1}' does not have the [System.Serializable] attribute.", obj, obj.GetType()));
+            }
+
+            BinaryFormatter bf = new BinaryFormatter();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                bf.Serialize(ms, obj);
+                return ms.ToArray();
+            }
+        }
 
         #region Obsolete
         // !!--- This entire section is planned to be removed ---!! //
@@ -651,7 +643,7 @@ namespace BXFW
         /// <param name="serializableObject">The object itself.</param>
         /// <param name="filePath">The file path to save.</param>
         /// <param name="OverWrite">Should we overwrite our save?</param>
-        [Obsolete("Binary serialization is unsafe", true)]
+        [Obsolete("Binary serialization is unsafe, use JSON or something text based", true)]
         public static void BSave<T>(T serializableObject, string filePath, bool OverWrite = false)
         {
             // Make sure the generic is serializable.
@@ -753,7 +745,7 @@ namespace BXFW
         /// <typeparam name="ExpectT">The expected type. If you get it wrong you will get an exception.</typeparam>
         /// <param name="filePath">File path to load from.</param>
         /// <returns>Data that is loaded. NOTE : Please don't invoke/parse/do anything with this data.</returns>
-        [Obsolete("Binary serialization is unsafe", true)]
+        [Obsolete("Binary serialization is unsafe, use JSON or something text based", true)]
         public static ExpectT BLoad<ExpectT>(string filePath)
         {
             // Require attribute.
@@ -784,7 +776,7 @@ namespace BXFW
         /// <typeparam name="ExpectT">The expected type. If you get it wrong you will get an exception.</typeparam>
         /// <param name="fileContents">The content of the folder to make data from. Make sure the file is utf8.</param>
         /// <returns></returns>
-        [Obsolete("Binary serialization is unsafe", true)]
+        [Obsolete("Binary serialization is unsafe, use JSON or something text based", true)]
         public static ExpectT BLoad<ExpectT>(char[] fileContents)
         {
             // Require attribute.
@@ -807,7 +799,7 @@ namespace BXFW
         /// <typeparam name="ExpectT"></typeparam>
         /// <param name="fileContents">The content of the folder to make data from.</param>
         /// <returns></returns>
-        [Obsolete("Binary serialization is unsafe", true)]
+        [Obsolete("Binary serialization is unsafe, use JSON or something text based", true)]
         public static ExpectT BLoad<ExpectT>(byte[] fileContents)
         {
             // Require attribute.
@@ -830,32 +822,6 @@ namespace BXFW
             }
 
             return DSerObj;
-        }
-
-        /// <summary>
-        /// Returns a byte array from an object.
-        /// </summary>
-        /// <param name="obj">Object that has the <see cref="SerializableAttribute"/>.</param>
-        /// <returns>Object as serializd byte array.</returns>
-        public static byte[] ObjectToByteArray(object obj)
-        {
-            if (obj is null)
-            {
-                throw new ArgumentNullException("[Additionals::ObjectToByteArray] The given object is null.");
-            }
-
-            // Require attribute.
-            if (obj.GetType().GetCustomAttributes(typeof(SerializableAttribute), true).Length <= 0)
-            {
-                throw new ArgumentException(string.Format("[Additionals::ObjectToByteArray] Given type '{0}' does not have the [System.Serializable] attribute.", obj));
-            }
-
-            BinaryFormatter bf = new BinaryFormatter();
-            using (MemoryStream ms = new MemoryStream())
-            {
-                bf.Serialize(ms, obj);
-                return ms.ToArray();
-            }
         }
         #endregion
 

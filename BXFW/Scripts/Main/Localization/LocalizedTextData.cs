@@ -61,19 +61,19 @@ namespace BXFW.Data
         {
             get
             {
-                int sizeValues = 0;
-                int sizeKeys = 0;
-
-                foreach (var value in m_LocaleDatas.Values)
+                int sizeLocaleData = 0;
+                int sizePragma = 0;
+                
+                foreach (var pragma in PragmaDefinitions)
                 {
-                    sizeValues += value.Length;
+                    sizePragma += pragma.Key.Length + pragma.Value.Length;
                 }
-                foreach (var key in m_LocaleDatas.Keys)
+                foreach (var localeDef in m_LocaleDatas)
                 {
-                    sizeKeys += key.Length;
+                    sizeLocaleData += localeDef.Key.Length + localeDef.Value.Length;
                 }
 
-                return sizeValues + sizeKeys;
+                return sizeLocaleData + sizePragma;
             }
         }
 
