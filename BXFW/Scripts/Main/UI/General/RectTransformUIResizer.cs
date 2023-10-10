@@ -24,7 +24,8 @@ namespace BXFW.UI
                     {
                         Debug.LogWarning($"[RectTransformUIResizer::(get)Target] Target with name \"{target.name}\" has custom anchor. Only use anchors that has equal max & min values.");
 #if UNITY_EDITOR
-                        UnityEditor.Undo.RecordObject(this, $"modify anchors of {target.name}");
+                        if (!Application.isPlaying)
+                            UnityEditor.Undo.RecordObject(this, $"modify anchors of {target.name}");
                         target.anchorMin = target.anchorMax;
 #else
                         target.anchorMin = target.anchorMax; // Set this randomly (will probably anchor to somewhere random)

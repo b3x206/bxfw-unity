@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace BXFW
 {
@@ -45,11 +45,12 @@ namespace BXFW
         /// <summary>
         /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
         /// </summary>
-        public bool Snappable_IsSetup { get; private set; } = false;
+        public bool IsSetup { get; private set; } = false;
 
+        /// <inheritdoc cref="SnapPoints"/>
         private Dictionary<SnapPoint, Transform> m_SnapPoints;
         /// <summary>
-        /// Snap points that are assigned on <see cref="InitSetupSnapTransform()"/>
+        /// Snap points that are assigned on <see cref="SetupSnapTransform()"/>
         /// </summary>
         public Dictionary<SnapPoint, Transform> SnapPoints
         {
@@ -57,31 +58,37 @@ namespace BXFW
             {
                 if (m_SnapPoints == null)
                 {
-                    InitSetupSnapTransform();
+                    SetupSnapTransform();
                 }
 
                 return m_SnapPoints;
             }
-            private set
-            {
-                m_SnapPoints = value;
-            }
         }
 
+        /// <summary>
+        /// An action called when any of the <see cref="SnapTransform"/> methods were called.
+        /// </summary>
         protected Action OnSnapTransformCall;
+        /// <summary>
+        /// An action called when any of the <see cref="AlignTransform"/> methods were called.
+        /// </summary>
         protected Action OnAlignTransformCall;
-
-        public void InitSetupSnapTransform()
+        
+        /// <summary>
+        /// Sets up the snap transform.
+        /// </summary>
+        public void SetupSnapTransform()
         {
-            if (Snappable_IsSetup) return;
+            if (IsSetup)
+                return;
 
-            SnapPoints = new Dictionary<SnapPoint, Transform>();
+            m_SnapPoints = new Dictionary<SnapPoint, Transform>();
 
             // Weird, but this might happen on very edge situations.
             // (Like calling 'Destroy()' at the same time on this method or having a 'new Transform transform' variable)
             if (transform == null)
             {
-                Debug.LogError(string.Format("[SnappableCubeTransform::SetupTransform] Transform is null. Please setup the script properly on class \"{0}\".", GetType().FullName));
+                Debug.LogError(string.Format("[SnappableCubeTransform::SetupTransform] Transform is null. Object : \"{0}\".", GetType().FullName));
                 return;
             }
 
@@ -216,7 +223,7 @@ namespace BXFW
             SnapPoints.Add(SnapPoint.ObjCenter, tURC);
             #endregion
 
-            Snappable_IsSetup = true;
+            IsSetup = true;
         }
 
         #region Extension Functions
@@ -226,16 +233,23 @@ namespace BXFW
         /// <param name="transformTarget">Transform target. The default object to move.</param>
         /// <param name="pointThis">Snap point for object that calls this method.</param>
         /// <param name="pointTarget">Snap point for target.</param>
-        /// <param name="snapTarget">Given Snap. Change this to swap the object to move.</param>
+        /// <param name="snapTarget">
+        /// The snap object target => 
+        /// <br><see langword="true"/> = This method will move &amp; snap the <paramref name="transformTarget"/>.</br>
+        /// <br><see langword="false"/> = This method will move &amp; snap the <see cref="Component.transform"/>.</br>
+        /// </param>
         /// <returns>Whether if the SnapTransform operation was successful.</returns>
         public bool SnapTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+                return false;
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
-            if (!transformTarget.Snappable_IsSetup) transformTarget.InitSetupSnapTransform();
+            if (!IsSetup)
+                SetupSnapTransform();
+            if (!transformTarget.IsSetup)
+                transformTarget.SetupSnapTransform();
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -245,31 +259,30 @@ namespace BXFW
             /// 4: Place this gameobject to the target corner,
             /// 5: Unparent the platform.
             /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
+            var snapHelper = new GameObject("SnapHelper").transform;
 
             // Difference here is that we snap the target object instead of this object.
             if (snapTarget)
             {
-                var PrevParent = transformTarget.transform.parent;
+                var prevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
-                transformTarget.transform.SetParent(SnapHelper);
-                SnapHelper.position = SnapPoints[pointThis].position;
-                transformTarget.transform.SetParent(PrevParent);
+                snapHelper.position = transformTarget.SnapPoints[pointTarget].position;
+                transformTarget.transform.SetParent(snapHelper);
+                snapHelper.position = SnapPoints[pointThis].position;
+                transformTarget.transform.SetParent(prevParent);
             }
             else
             {
-                var PrevParent = transform.parent;
+                var prevParent = transform.parent;
 
-                SnapHelper.position = SnapPoints[pointThis].position;
-                transform.SetParent(SnapHelper);
-                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
-                transform.SetParent(PrevParent);
+                snapHelper.position = SnapPoints[pointThis].position;
+                transform.SetParent(snapHelper);
+                snapHelper.position = transformTarget.SnapPoints[pointTarget].position;
+                transform.SetParent(prevParent);
             }
 
-            Destroy(SnapHelper.gameObject);
-            if (OnSnapTransformCall != null)
-                OnSnapTransformCall();
+            Destroy(snapHelper.gameObject);
+            OnSnapTransformCall?.Invoke();
 
             return true;
         }
@@ -282,10 +295,12 @@ namespace BXFW
         public bool SnapTransform(Transform transformTarget, SnapPoint pointThis, Vector3 transformTargetPosOffset = default)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+                return false;
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
+            if (!IsSetup)
+                SetupSnapTransform();
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -295,136 +310,77 @@ namespace BXFW
             /// 4: Place this gameobject to the target corner,
             /// 5: Unparent the platform.
             /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
+            var snapHelper = new GameObject("SnapHelper").transform;
 
             // Difference here is that we snap the target object instead of this object.
-            var PrevParent = transformTarget.transform.parent;
+            var prevParent = transformTarget.transform.parent;
 
-            SnapHelper.position = transformTarget.position + transformTargetPosOffset;
-            transformTarget.transform.SetParent(SnapHelper);
-            SnapHelper.position = SnapPoints[pointThis].position;
-            transformTarget.transform.SetParent(PrevParent);
+            snapHelper.position = transformTarget.position + transformTargetPosOffset;
+            transformTarget.transform.SetParent(snapHelper);
+            snapHelper.position = SnapPoints[pointThis].position;
+            transformTarget.transform.SetParent(prevParent);
 
-            Destroy(SnapHelper.gameObject);
-            if (OnSnapTransformCall != null)
-                OnSnapTransformCall();
+            Destroy(snapHelper.gameObject);
+            OnSnapTransformCall?.Invoke();
 
             return true;
         }
 
         /// <summary>
-        /// NOTE : This method is not tested. Please test before using.
-        /// TODO (would be nice for more platform variety).
+        /// Aligns two <see cref="MBCubeSnappableTransform"/>s to each other depending on the point.
         /// </summary>
-        /// <param name="transformTarget"></param>
-        /// <param name="pointTarget"></param>
+        /// <param name="transformTarget">Target to align or be aligned into depending on <paramref name="alignTarget"/></param>
+        /// <param name="pointTarget">Point of <paramref name="transformTarget"/> to align into.</param>
         /// <param name="alignAxis"></param>
-        /// <param name="alignToTarget"></param>
+        /// <param name="alignTarget"></param>
         /// <param name="customTargetDist"></param>
         /// <returns></returns>
         public bool AlignTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget,
-            Vector3 alignAxis, bool alignToTarget = true, float? customTargetDist = null)
+            Vector3 alignAxis, bool alignTarget = true, float customTargetDist = 0f)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null || alignAxis == Vector3.zero) return false;
+            if (transformTarget == null || alignAxis == Vector3.zero) 
+                return false;
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
-            if (!transformTarget.Snappable_IsSetup) transformTarget.InitSetupSnapTransform();
+            if (!IsSetup)
+                SetupSnapTransform();
+            if (!transformTarget.IsSetup)
+                transformTarget.SetupSnapTransform();
 
-            /// -- Create snap helper --
-            /// --> So here's the way snap helper works:
-            /// 1: Create the gameobject,
-            /// 2: Put this gameobject to the same place as the corner of the platform,
-            /// 3: Parent the platform to this gameobject,
-            /// 4: Place this gameobject to the target corner,
-            /// 5: Unparent the platform.
-            /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
-
-            if (alignToTarget)
+            // -- Alignment
+            var snapHelper = new GameObject("SnapHelper").transform;
+            if (alignTarget)
             {
-                var PrevParent = transformTarget.transform.parent;
+                var prevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
-                transformTarget.transform.SetParent(SnapHelper);
+                snapHelper.position = transformTarget.SnapPoints[pointTarget].position;
+                transformTarget.transform.SetParent(snapHelper);
 
                 // -- Setup axis stuff
-                var sHelperPosSet = new Vector3();
                 var snappableSPointPos = SnapPoints[pointThis].position;
-                if (alignAxis.x > 0)
-                {
-                    sHelperPosSet.x = snappableSPointPos.x;
-                }
-                else if (alignAxis.x < 0)
-                {
-                    sHelperPosSet.x = -snappableSPointPos.x;
-                }
-
-                if (alignAxis.y > 0)
-                {
-                    sHelperPosSet.y = snappableSPointPos.y;
-                }
-                else if (alignAxis.y < 0)
-                {
-                    sHelperPosSet.y = -snappableSPointPos.y;
-                }
-
-                if (alignAxis.z > 0)
-                {
-                    sHelperPosSet.z = snappableSPointPos.z;
-                }
-                else if (alignAxis.z < 0)
-                {
-                    sHelperPosSet.z = -snappableSPointPos.z;
-                }
-
-                SnapHelper.position = sHelperPosSet; // Snappable_SnapPoints[pointParent].position;
-                transformTarget.transform.SetParent(PrevParent);
+                var sHelperPosSet = Vector3.Scale(snappableSPointPos, alignAxis.SignVector());
+                
+                snapHelper.position = sHelperPosSet; // Snappable_SnapPoints[pointParent].position;
+                transformTarget.transform.SetParent(prevParent);
             }
             else
             {
                 var PrevParent = transform.parent;
 
-                SnapHelper.position = SnapPoints[pointThis].position;
-                transform.SetParent(SnapHelper);
+                snapHelper.position = SnapPoints[pointThis].position;
+                transform.SetParent(snapHelper);
+                
                 // -- Setup axis stuff
-                var sHelperPosSet = new Vector3();
                 var snappableSPointPos = transformTarget.SnapPoints[pointThis].position;
-                if (alignAxis.x > 0)
-                {
-                    sHelperPosSet.x = snappableSPointPos.x;
-                }
-                else if (alignAxis.x < 0)
-                {
-                    sHelperPosSet.x = -snappableSPointPos.x;
-                }
+                var sHelperPosSet = Vector3.Scale(snappableSPointPos, alignAxis.SignVector());
 
-                if (alignAxis.y > 0)
-                {
-                    sHelperPosSet.y = snappableSPointPos.y;
-                }
-                else if (alignAxis.y < 0)
-                {
-                    sHelperPosSet.y = -snappableSPointPos.y;
-                }
-
-                if (alignAxis.z > 0)
-                {
-                    sHelperPosSet.z = snappableSPointPos.z;
-                }
-                else if (alignAxis.z < 0)
-                {
-                    sHelperPosSet.z = -snappableSPointPos.z;
-                }
-
-                SnapHelper.position = sHelperPosSet; // transformTarget.Snappable_SnapPoints[pointParent].position;
+                snapHelper.position = sHelperPosSet; // transformTarget.Snappable_SnapPoints[pointParent].position;
                 transform.SetParent(PrevParent);
             }
 
-            Destroy(SnapHelper.gameObject);
-            if (OnAlignTransformCall != null)
-                OnAlignTransformCall();
+            Destroy(snapHelper.gameObject);
+            OnAlignTransformCall?.Invoke();
 
             return true;
         }

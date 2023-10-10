@@ -48,7 +48,7 @@ namespace BXFW.UI
                 return GetTargetSize() + new Vector2(paddingX, paddingY);
             }
         }
-        private RectTransform _rectTransform;
+        private RectTransform m_RectTransform;
         /// <summary>
         /// Rect transform attached to this <see cref="Component.gameObject"/>.
         /// </summary>
@@ -56,10 +56,10 @@ namespace BXFW.UI
         {
             get
             {
-                if (_rectTransform == null)
-                    _rectTransform = GetComponent<RectTransform>();
+                if (m_RectTransform == null)
+                    m_RectTransform = GetComponent<RectTransform>();
 
-                return _rectTransform;
+                return m_RectTransform;
             }
         }
 

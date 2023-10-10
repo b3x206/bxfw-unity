@@ -14,8 +14,8 @@ namespace BXFW.UI
         /// Whether if to allow resizing of rect after the initial <see cref="Awake"/> calculation.
         /// </summary>
         public bool AllowResize = true;
-        private float mOffsetTop = 0f;
-        private float mOffsetBottom = 0f;
+        private float m_OffsetTop = 0f;
+        private float m_OffsetBottom = 0f;
 
         private void Awake()
         {
@@ -43,20 +43,21 @@ namespace BXFW.UI
             var safeArea = Screen.safeArea;
 
             if (heightOffsetTop >= 0f)
-                mOffsetTop = heightOffsetTop;
+                m_OffsetTop = heightOffsetTop;
             if (heightOffsetBottom >= 0f)
-                mOffsetBottom = heightOffsetBottom;
+                m_OffsetBottom = heightOffsetBottom;
 
             // Is portrait || Square
+            // Offset the safe area
             if (Screen.height >= Screen.width)
             {
-                safeArea.yMax -= mOffsetTop;
-                safeArea.yMin += mOffsetBottom;
+                safeArea.yMax -= m_OffsetTop;
+                safeArea.yMin += m_OffsetBottom;
             }
             else
             {
-                safeArea.xMin += mOffsetTop;
-                safeArea.yMin -= mOffsetBottom;
+                safeArea.xMin += m_OffsetTop;
+                safeArea.yMin -= m_OffsetBottom;
             }
 
             var anchorMin = safeArea.position;

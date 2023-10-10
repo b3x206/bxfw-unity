@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace BXFW
 {
@@ -18,10 +18,15 @@ namespace BXFW
         /// </summary>
         public int ChildLength => Backgrounds.Count;
 
+        /// <summary>
+        /// The global group color to use.
+        /// <br>This allows the <see cref="GroupColor"/> to be able to change colors of all layers.</br>
+        /// </summary>
         public bool useGlobalGroupColor = false;
         [SerializeField] private Color m_GroupColor = Color.white;
         /// <summary>
         /// The global color for the current group.
+        /// <br>Has no effect on layers if <see cref="useGlobalGroupColor"/> is <see langword="false"/>.</br>
         /// </summary>
         public Color GroupColor
         {
@@ -45,7 +50,13 @@ namespace BXFW
                 }
             }
         }
+        /// <summary>
+        /// The axis to scroll / parallax on.
+        /// </summary>
         public TransformAxis2D scrollAxis = TransformAxis2D.XAxis;
+        /// <summary>
+        /// Target camera to parallax relatively.
+        /// </summary>
         public Camera targetCamera;
 
         private void Awake()

@@ -455,6 +455,27 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Returns the sign vector of this vector.
+        /// <br>This calls <see cref="Math.Sign(float)"/> for all axis and returns a new vector of that.</br>
+        /// <br>Can be used to easily create a vector (that is defining an axis 
+        /// but inbetween axis are ignored) to multiply with.</br>
+        /// </summary>
+        public static Vector3 SignVector(this Vector3 target)
+        {
+            return new Vector3(Math.Sign(target.x), Math.Sign(target.y), Math.Sign(target.z));
+        }
+        /// <summary>
+        /// Returns the sign vector of this vector.
+        /// <br>This calls <see cref="Math.Sign(float)"/> for all axis and returns a new vector of that.</br>
+        /// <br>Can be used to easily create a vector (that is defining an axis 
+        /// but inbetween axis are ignored) to multiply with.</br>
+        /// </summary>
+        public static Vector2 SignVector(this Vector2 target)
+        {
+            return new Vector2(Math.Sign(target.x), Math.Sign(target.y));
+        }
+
+        /// <summary>
         /// Converts <see cref="Vector2"/> to positive values.
         /// </summary>
         public static Vector2 Abs(this Vector2 v)
