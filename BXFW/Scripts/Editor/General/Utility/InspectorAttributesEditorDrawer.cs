@@ -33,16 +33,16 @@ namespace BXFW.ScriptEditor
                 return targetAttribute.spriteBoxRectHeight;
             }
         }
-        private KeyValuePair<FieldInfo, object> target;
+        private PropertyTargetInfo target;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float addHeight = 0f;
-            if (target.Key == null)
+            if (target.fieldInfo == null)
                 target = property.GetTarget();
 
             // Draw an object field for sprite property
-            if (target.Key.FieldType != typeof(Sprite))
+            if (target.fieldInfo.FieldType != typeof(Sprite))
             {
                 // Same story, calling 'GetPropertyHeight' before drawing gui or not allowing to dynamically change height while drawing is dumb
                 addHeight += warnHelpBoxRectHeight;
@@ -57,11 +57,11 @@ namespace BXFW.ScriptEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (target.Key == null)
+            if (target.fieldInfo == null)
                 target = property.GetTarget();
 
             // Draw an object field for sprite property
-            if (target.Key.FieldType != typeof(Sprite))
+            if (target.fieldInfo.FieldType != typeof(Sprite))
             {
                 EditorGUI.HelpBox(position,
                     string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
@@ -149,12 +149,12 @@ namespace BXFW.ScriptEditor
                 }
                 else
                 {
-                    drawField = (bool)targetBoolPropertyInfo.GetValue(parentPair.Value);
+                    drawField = (bool)targetBoolPropertyInfo.GetValue(parentPair.value);
                 }
             }
             else
             {
-                drawField = (bool)targetBoolFieldInfo.GetValue(parentPair.Value);
+                drawField = (bool)targetBoolFieldInfo.GetValue(parentPair.value);
             }
 
             // A no fail condition
@@ -272,9 +272,12 @@ namespace BXFW.ScriptEditor
         {
             float addHeight = 0f;
 
-            propertyParentTypeArray = property.GetParentOfTargetField().Key.FieldType.GetInterfaces().Any(i => i == typeof(IEnumerable) || i == typeof(IEnumerable<>));
-            // (lol typeof(string).Assembly, they are in the same assembly so idc)
-            propertyTypeValid = (propertyParentTypeArray && property.GetPropertyType().GetInterfaces().Any(i => i == typeof(IComparable) || i == typeof(IComparable<>))) 
+            propertyParentTypeArray = property.GetParentOfTargetField().fieldInfo.FieldType
+                .GetInterfaces()
+                .Any(i => i == typeof(IEnumerable) || i == typeof(IEnumerable<>));
+            propertyTypeValid = (propertyParentTypeArray && property.GetPropertyType()
+                .GetInterfaces()
+                .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>))) 
                 || property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
 
             // Since we can't intercept the 'OnGUI' of the parent array (this PropertyDrawer will be shown per element, we will just get the parent array)
@@ -331,7 +334,7 @@ namespace BXFW.ScriptEditor
                 // Get the IEnumerable interface type
                 Type arrayEnumerableType = null;
                 {
-                    Type[] ints = parentArrayPair.Key.FieldType.GetInterfaces();
+                    Type[] ints = parentArrayPair.fieldInfo.FieldType.GetInterfaces();
                     foreach (Type type in ints)
                     {
                         // Calling 'GetGenericTypeDefinition' makes the type open.
@@ -374,7 +377,7 @@ namespace BXFW.ScriptEditor
                     }
 
                     EditorUtility.SetDirty(property.serializedObject.targetObject); // undoless 'something changed'
-                    parentArrayPair.Key.SetValue(parentObject, parentArrayList.ToIEnumerableType(arrayEnumerableType));
+                    parentArrayPair.fieldInfo.SetValue(parentObject, parentArrayList.ToIEnumerableType(arrayEnumerableType));
                 }
 
                 if (property.propertyType == SerializedPropertyType.Float)
@@ -422,7 +425,7 @@ namespace BXFW.ScriptEditor
 
                         parentArrayList.Sort(Comparer<object>.Default);
                         // Set the entire array to avoid issues (as IEnumerable)
-                        parentArrayPair.Key.SetValue(parentObject, parentArrayList.ToIEnumerableType(arrayEnumerableType));
+                        parentArrayPair.fieldInfo.SetValue(parentObject, parentArrayList.ToIEnumerableType(arrayEnumerableType));
                     }
                 }
             }

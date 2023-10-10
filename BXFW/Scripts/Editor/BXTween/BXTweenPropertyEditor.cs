@@ -66,7 +66,7 @@ namespace BXFW.ScriptEditor
             property.isExpanded = EditorGUI.Foldout(rectFoldout, property.isExpanded, label);
 
             // Current property index drawing 
-            var targetValue = (BXTweenPropertyBase)property.GetTarget().Value;
+            var targetValue = (BXTweenPropertyBase)property.GetTarget().value;
             
             bool useTwCurve = false;
             if (targetValue != null)

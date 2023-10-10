@@ -69,8 +69,9 @@ namespace BXFW.ScriptEditor
             if (EditorGUI.EndChangeCheck())
             {
                 // Re-generate path because something was changed
+                // FIXME : This won't work on struct parents, the path will be generated in runtime instead
                 Undo.RecordObject(property.serializedObject.targetObject, "set value");
-                ((BezierPath)property.GetTarget().Value).UpdatePath();
+                ((BezierPath)property.GetTarget().value).UpdatePath();
             }
 
             EditorGUI.indentLevel--;

@@ -59,12 +59,12 @@ namespace BXFW.ScriptEditor
     /// Draws the property inspector for the <see cref="UnitySceneReference"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(UnitySceneReference))]
-    internal class UnitySceneReferenceDrawer : PropertyDrawer
+    public class UnitySceneReferenceDrawer : PropertyDrawer
     {
         private SceneAsset m_targetSceneAsset;
         private SerializedProperty m_sceneGUIDProperty;
         private SerializedProperty m_sceneIndexProperty;
-        private SerializableGUID SceneGUIDValue => (SerializableGUID)m_sceneGUIDProperty.GetTarget().Value;
+        private SerializableGUID SceneGUIDValue => (SerializableGUID)m_sceneGUIDProperty.GetTarget().value;
         private bool ShowOtherGUI => SceneGUIDValue != default;
 
         // -- Utility
@@ -81,11 +81,11 @@ namespace BXFW.ScriptEditor
             // Serialize the stuff we do (otherwise it doesn't serialize, as we use a EditorGUI.ObjectField)
             // Can record entire parent object, as it's probably just the script.
             Undo.RecordObject(property.serializedObject.targetObject, "set scene");
-            guidFieldInfo.Key.SetValue(property.GetTarget().Value, value);
+            guidFieldInfo.fieldInfo.SetValue(property.GetTarget().value, value);
         }
         private bool ShowWarningGUI(SerializedProperty property)
         {
-            return ShowWarningGUI((UnitySceneReference)property.GetTarget().Value);
+            return ShowWarningGUI((UnitySceneReference)property.GetTarget().value);
         }
         private bool ShowWarningGUI(UnitySceneReference target)
         {
@@ -127,7 +127,7 @@ namespace BXFW.ScriptEditor
         {
             EditorGUI.BeginProperty(position, label, property);
             GatherRelativeProperties(property);
-            UnitySceneReference target = (UnitySceneReference)property.GetTarget().Value;
+            UnitySceneReference target = (UnitySceneReference)property.GetTarget().value;
             m_currentY = position.y;
 
             Rect scAssetGUIAreaRect = GetFieldRect(position);

@@ -56,7 +56,7 @@ namespace BXFW.ScriptEditor
 
             property.isExpanded = EditorGUI.Foldout(GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
-            var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().Value;
+            var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().value;
 
             if (!property.isExpanded)
                 return;

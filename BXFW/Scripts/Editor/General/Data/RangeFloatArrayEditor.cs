@@ -1,8 +1,8 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEditor;
 using BXFW.Tools.Editor;
-using System;
 
 namespace BXFW.ScriptEditor
 {
@@ -16,7 +16,7 @@ namespace BXFW.ScriptEditor
     {
         private static RangeFloatArray GetTarget(SerializedProperty targetProperty)
         {
-            return (RangeFloatArray)targetProperty.GetTarget().Value;
+            return (RangeFloatArray)targetProperty.GetTarget().value;
         }
         private const float DR_PADDING = 2f;
 

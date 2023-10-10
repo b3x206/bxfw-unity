@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEditor;
 using BXFW.Data;
 using BXFW.Tools.Editor;
+using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace BXFW.ScriptEditor
 {
@@ -79,7 +79,7 @@ namespace BXFW.ScriptEditor
             // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
             // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
             var targetPair = property.GetTarget();
-            var target = targetPair.Value as LocalizedTextData;
+            var target = targetPair.value as LocalizedTextData;
             var gEnabled = GUI.enabled;
 
             Rect initialFoldoutRect = GetPropertyRect(position);

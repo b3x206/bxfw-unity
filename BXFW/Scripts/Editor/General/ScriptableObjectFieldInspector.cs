@@ -176,7 +176,7 @@ namespace BXFW
             // Set value
             // If the parent is an array, set the target index into the 'obj'
             var parentTargetPair = property.GetParentOfTargetField();
-            object parent = parentTargetPair.Value;
+            object parent = parentTargetPair.value;
 
             if (obj != null)
             {

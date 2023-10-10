@@ -93,7 +93,7 @@ namespace BXFW.Tweening.Next.Editor
                     using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
                     {
                         // Draw a read-only property
-                        EditorGUI.FloatField(GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Total Duration", ((BXSTweenable)property.GetTarget().Value).Duration);
+                        EditorGUI.FloatField(GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Total Duration", ((BXSTweenable)property.GetTarget().value).Duration);
                     }
 
                     continue;

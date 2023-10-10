@@ -12,7 +12,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValue))]
     public class MinMaxValueEditor : PropertyDrawer
     {
-        private readonly List<KeyValuePair<FieldInfo, object>> targetPairs = new List<KeyValuePair<FieldInfo, object>>();
+        private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
         private const float PADDING = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -35,7 +35,7 @@ namespace BXFW.ScriptEditor
             // Do this becuase this is still technically not a property field GUI drawer
             property.GetTargetsNoAlloc(targetPairs);
             var firstValuePair = targetPairs.First();
-            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValue)p.Value) != ((MinMaxValue)firstValuePair.Value));
+            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValue)p.value) != ((MinMaxValue)firstValuePair.value));
 
             //Rect vectorsRect = new Rect(position) { x = position.x + labelRect.width, width = position.width - labelRect.width };
             //Rect minRect = new Rect(vectorsRect) { width = vectorsRect.width / 2f };
@@ -44,7 +44,7 @@ namespace BXFW.ScriptEditor
             //EditorGUI.PropertyField(minRect, property.FindPropertyRelative("m_Min"), new GUIContent("Min"));
             //EditorGUI.PropertyField(maxRect, property.FindPropertyRelative("m_Max"), new GUIContent("Max"));
 
-            Vector2 v = EditorGUI.Vector2Field(position, label, (MinMaxValue)firstValuePair.Value);
+            Vector2 v = EditorGUI.Vector2Field(position, label, (MinMaxValue)firstValuePair.value);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -54,7 +54,7 @@ namespace BXFW.ScriptEditor
                 using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
 
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = firstValuePair.Key.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = firstValuePair.fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2(
@@ -82,7 +82,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValueInt))]
     public class MinMaxValueIntEditor : PropertyDrawer
     {
-        private readonly List<KeyValuePair<FieldInfo, object>> targetPairs = new List<KeyValuePair<FieldInfo, object>>();
+        private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
         private const float PADDING = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -99,10 +99,10 @@ namespace BXFW.ScriptEditor
 
             property.GetTargetsNoAlloc(targetPairs);
             var firstValuePair = targetPairs.First();
-            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValueInt)p.Value) != ((MinMaxValueInt)firstValuePair.Value));
+            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValueInt)p.value) != ((MinMaxValueInt)firstValuePair.value));
 
             EditorGUI.BeginChangeCheck();
-            Vector2Int v = EditorGUI.Vector2IntField(position, label, (MinMaxValueInt)firstValuePair.Value);
+            Vector2Int v = EditorGUI.Vector2IntField(position, label, (MinMaxValueInt)firstValuePair.value);
             if (EditorGUI.EndChangeCheck())
             {
                 Vector2Int setValue = v;
@@ -110,7 +110,7 @@ namespace BXFW.ScriptEditor
                 using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
 
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = firstValuePair.Key.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = firstValuePair.fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2Int(

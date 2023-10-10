@@ -331,12 +331,14 @@ namespace BXFW
         /// </summary>
         /// <param name="transformTarget">Target to align or be aligned into depending on <paramref name="alignTarget"/></param>
         /// <param name="pointTarget">Point of <paramref name="transformTarget"/> to align into.</param>
-        /// <param name="alignAxis"></param>
-        /// <param name="alignTarget"></param>
-        /// <param name="customTargetDist"></param>
-        /// <returns></returns>
-        public bool AlignTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget,
-            Vector3 alignAxis, bool alignTarget = true, float customTargetDist = 0f)
+        /// <param name="alignAxis">Axis to align on. This axis does not specify magnitude and 
+        /// only the sign of the axis are taken to account.</param>
+        /// <param name="alignTarget">
+        /// The align object target => 
+        /// <br><see langword="true"/> = This method will move &amp; snap the <paramref name="transformTarget"/>.</br>
+        /// <br><see langword="false"/> = This method will move &amp; snap the <see cref="Component.transform"/>.</br>
+        /// </param>
+        public bool AlignTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, Vector3 alignAxis, bool alignTarget = true)
         {
             // Check target. (if null do nothing)
             if (transformTarget == null || alignAxis == Vector3.zero) 

@@ -63,7 +63,7 @@ namespace BXFW.ScriptEditor
                 Undo.RecordObject(property.serializedObject.targetObject, "set element in sorted array");
                 property.serializedObject.ApplyModifiedProperties();
 
-                SortedListBase listBase = property.GetTarget().Value as SortedListBase;
+                SortedListBase listBase = property.GetTarget().value as SortedListBase;
 
                 // Eh, this is fine. It doesn't hinder the ability of 'ReorderableList'
                 // setting it's values, it's just not clamped the cool way.
