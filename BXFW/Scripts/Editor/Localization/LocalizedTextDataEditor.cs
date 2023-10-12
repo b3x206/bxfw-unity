@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEditor;
-using BXFW.Data;
-using BXFW.Tools.Editor;
 using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
+using BXFW.Data;
+using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
@@ -36,12 +36,6 @@ namespace BXFW.ScriptEditor
         private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
         {
             var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
-            //if (currentPropY == -1f)
-            //{
-            //    // First call
-            //    currentPropY = parentRect.y;
-            //}
-
             Rect r = new Rect(parentRect.x, parentRect.y + currentPropY, parentRect.width, propHeight);
             // Add height later
             currentPropY += propHeight;
@@ -61,7 +55,7 @@ namespace BXFW.ScriptEditor
 
             position.height -= PADDING;
             position.y += PADDING / 2f;
-            currentPropY = -1f;
+            currentPropY = 0f;
 
             // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
             // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
@@ -85,14 +79,6 @@ namespace BXFW.ScriptEditor
 
             // Gather currently edited locale value
             string editedLocaleValue = property.GetString(KEY_EDIT_LOCALE, LocalizedTextData.DefaultLocale); // default
-            //if (!editedLocales.TryGetValue(GetPropertyKey(property), out string savedEditedLocaleValue))
-            //{
-            //    // Set saved value.
-            //    editedLocales.Add(GetPropertyKey(property), editedLocaleValue);
-            //    savedEditedLocaleValue = editedLocaleValue;
-            //}
-            //// Get saved Value
-            //editedLocaleValue = savedEditedLocaleValue;
             // Add to target if it does not exist
             if (!target.LocaleDatas.ContainsKey(editedLocaleValue))
             {
@@ -117,7 +103,7 @@ namespace BXFW.ScriptEditor
             if (EditorGUI.DropdownButton(new Rect(dropdownRect) { width = dropdownRect.width - 35 }, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
             {
                 var addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
-                addableLanguageList.Sort((CultureInfo x, CultureInfo y) => { return x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName); });
+                addableLanguageList.Sort((CultureInfo x, CultureInfo y) => x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName));
                 GenericMenu menu = new GenericMenu();
 
                 menu.AddItem(new GUIContent("Cancel"), false, () => { });
@@ -133,7 +119,6 @@ namespace BXFW.ScriptEditor
                         {
                             // Switch the currently edited locale.
                             property.SetString(KEY_EDIT_LOCALE, idValuePair.Key);
-                            //editedLocales[GetPropertyKey(property)] = idValuePair.Key;
                             editedLocaleValue = idValuePair.Key;
                             EditorAdditionals.RepaintAll();
                             EditorGUIUtility.editingTextField = false;
@@ -150,7 +135,6 @@ namespace BXFW.ScriptEditor
                     menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), false, () =>
                     {
                         Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
-                        //editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
                         property.SetString(KEY_EDIT_LOCALE, info.TwoLetterISOLanguageName);
                         target.LocaleDatas.Add(info.TwoLetterISOLanguageName, string.Empty);
                         EditorAdditionals.RepaintAll();
@@ -171,7 +155,6 @@ namespace BXFW.ScriptEditor
                 target.LocaleDatas.Remove(editedLocaleValue);
                 // Set edited locale value
                 editedLocaleValue = target.LocaleDatas.Keys.First();
-                //editedLocales[GetPropertyKey(property)] = editedLocaleValue;
                 property.SetString(KEY_EDIT_LOCALE, editedLocaleValue);
             }
             GUI.enabled = gEnabled;

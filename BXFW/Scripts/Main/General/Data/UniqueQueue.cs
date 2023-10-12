@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace BXFW
 {
     /// <summary>
-    /// A queue that only holds unique items.
+    /// A <see cref="Queue{T}"/> that only holds unique items.
     /// <br>Memory usage is higher because it uses a <see cref="HashSet{T}"/> to check whether the Enqueue'd element is unique or not.</br>
     /// </summary>
     public class UniqueQueue<T> : IEnumerable<T>, IEnumerable, IReadOnlyCollection<T>, ICollection

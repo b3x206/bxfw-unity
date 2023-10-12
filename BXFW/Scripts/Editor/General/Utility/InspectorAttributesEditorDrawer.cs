@@ -4,18 +4,15 @@ using System.Linq;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using UnityEditor;
 using UnityEngine;
 
 using BXFW.Tools.Editor;
-using System.Text.RegularExpressions;
 
 namespace BXFW.ScriptEditor
 {
-    // TODO : Do this (very cool)
-    // https://forum.unity.com/threads/drawing-a-field-using-multiple-property-drawers.479377/
-
     /// <summary>
     /// Draws the '<see cref="Texture2D"/>' inspector for sprites.
     /// <br>Limitations -> Doesn't support scene objects.</br>

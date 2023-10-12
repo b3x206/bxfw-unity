@@ -11,9 +11,11 @@ using System.Linq;
 
 namespace BXFW.Tools.Editor
 {
+    /// --
     /// Since you can't directly intercept the unity serializer of editor,
     /// you cannot bind your custom new datas to <see cref="SerializedProperty"/>ies.
     /// This class provides a hack to do this.
+    /// --
     /// <summary>
     /// Manages the ability to bind custom serialized property datas to <see cref="SerializedProperty"/>ies.
     /// <br>Creates a <see cref="ScriptableObjectSingleton{T}"/> to use on editor.</br>
