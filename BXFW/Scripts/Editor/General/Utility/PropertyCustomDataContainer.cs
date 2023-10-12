@@ -5,7 +5,7 @@ namespace BXFW.Tools.Editor
     /// </summary>
     public class PropertyCustomDataContainer : ScriptableObjectSingleton<PropertyCustomDataContainer>
     {
-        public SerializableDictionary<string, int> savedIntValues = new SerializableDictionary<string, int>();
+        public SerializableDictionary<string, long> savedIntValues = new SerializableDictionary<string, long>();
         public SerializableDictionary<string, string> savedStringValues = new SerializableDictionary<string, string>();
     }
 }
