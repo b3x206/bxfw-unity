@@ -49,20 +49,7 @@ namespace BXFW.ScriptEditor
             return r;
         }
 
-        private string GetPropertyKey(SerializedProperty property)
-        {
-            return string.Format("{0}::{1}",
-                property.serializedObject.targetObject.name ?? property.serializedObject.targetObject.GetInstanceID().ToString(),
-                property.propertyPath);
-        }
-        /// <summary>
-        /// The currently edited locale for that <see cref="SerializedProperty"/>.
-        /// TODO : A persistent way of binding custom datas to <see cref="SerializedProperty"/>ies.
-        /// <br/>
-        /// <br>BXFW.Tools.Editor.SerializedPropertyCustomData[SerializedProperty prop].Get&lt;TObject&gt;(string dataName)?</br>
-        /// <br>Use a json-alike thing (not very much type safe or we could bind type names to bind data to ensure?)</br>
-        /// </summary>
-        private readonly Dictionary<string, string> editedLocales = new Dictionary<string, string>();
+        private static readonly string KEY_EDIT_LOCALE = $"{nameof(LocalizedTextDataEditor)}::EditedLocale";
         private static GUIStyle placeholderStyle;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -97,15 +84,15 @@ namespace BXFW.ScriptEditor
             position.width -= INDENT;
 
             // Gather currently edited locale value
-            string editedLocaleValue = LocalizedTextData.DefaultLocale; // default
-            if (!editedLocales.TryGetValue(GetPropertyKey(property), out string savedEditedLocaleValue))
-            {
-                // Set saved value.
-                editedLocales.Add(GetPropertyKey(property), editedLocaleValue);
-                savedEditedLocaleValue = editedLocaleValue;
-            }
-            // Get saved Value
-            editedLocaleValue = savedEditedLocaleValue;
+            string editedLocaleValue = property.GetString(KEY_EDIT_LOCALE, LocalizedTextData.DefaultLocale); // default
+            //if (!editedLocales.TryGetValue(GetPropertyKey(property), out string savedEditedLocaleValue))
+            //{
+            //    // Set saved value.
+            //    editedLocales.Add(GetPropertyKey(property), editedLocaleValue);
+            //    savedEditedLocaleValue = editedLocaleValue;
+            //}
+            //// Get saved Value
+            //editedLocaleValue = savedEditedLocaleValue;
             // Add to target if it does not exist
             if (!target.LocaleDatas.ContainsKey(editedLocaleValue))
             {
@@ -145,7 +132,8 @@ namespace BXFW.ScriptEditor
                         menu.AddItem(new GUIContent(string.Format("{0} (exists)", idValuePair.Key)), idValuePair.Key == editedLocaleValue, () =>
                         {
                             // Switch the currently edited locale.
-                            editedLocales[GetPropertyKey(property)] = idValuePair.Key;
+                            property.SetString(KEY_EDIT_LOCALE, idValuePair.Key);
+                            //editedLocales[GetPropertyKey(property)] = idValuePair.Key;
                             editedLocaleValue = idValuePair.Key;
                             EditorAdditionals.RepaintAll();
                             EditorGUIUtility.editingTextField = false;
@@ -162,7 +150,8 @@ namespace BXFW.ScriptEditor
                     menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), false, () =>
                     {
                         Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
-                        editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
+                        //editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
+                        property.SetString(KEY_EDIT_LOCALE, info.TwoLetterISOLanguageName);
                         target.LocaleDatas.Add(info.TwoLetterISOLanguageName, string.Empty);
                         EditorAdditionals.RepaintAll();
                         EditorGUIUtility.editingTextField = false;
@@ -182,7 +171,8 @@ namespace BXFW.ScriptEditor
                 target.LocaleDatas.Remove(editedLocaleValue);
                 // Set edited locale value
                 editedLocaleValue = target.LocaleDatas.Keys.First();
-                editedLocales[GetPropertyKey(property)] = editedLocaleValue;
+                //editedLocales[GetPropertyKey(property)] = editedLocaleValue;
+                property.SetString(KEY_EDIT_LOCALE, editedLocaleValue);
             }
             GUI.enabled = gEnabled;
 

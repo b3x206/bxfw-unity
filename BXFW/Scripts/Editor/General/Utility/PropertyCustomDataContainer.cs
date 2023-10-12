@@ -7,5 +7,11 @@ namespace BXFW.Tools.Editor
     {
         public SerializableDictionary<string, long> savedIntValues = new SerializableDictionary<string, long>();
         public SerializableDictionary<string, string> savedStringValues = new SerializableDictionary<string, string>();
+
+        public void Reset()
+        {
+            savedIntValues.Clear();
+            savedStringValues.Clear();
+        }
     }
 }

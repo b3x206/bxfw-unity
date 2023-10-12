@@ -1,9 +1,13 @@
 using System;
+using System.Text;
+using System.Reflection;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
+using System.Linq;
 
 namespace BXFW.Tools.Editor
 {
@@ -16,12 +20,17 @@ namespace BXFW.Tools.Editor
     /// </summary>
     public static class SerializedPropertyCustomData
     {
-        // -- Singletons
+        // -- Singleton
         private static PropertyCustomDataContainer m_MainContainer;
         private const string MAIN_CONTAINER_FOLDER = "Editor"; // Folder for the 'ScriptableObjectSingleton{T}'
         private const string MAIN_CONTAINER_FILE_NAME = "SPropertyCustomData.asset";
         /// <summary>
+        /// Limit of maximum values that can be contained in dictionary.
+        /// </summary>
+        public static int containerDictionarySizeLimit = short.MaxValue;
+        /// <summary>
         /// The singleton dictionary container.
+        /// <br>Directly editing this is not recommended.</br>
         /// </summary>
         public static PropertyCustomDataContainer MainContainer
         {
@@ -31,7 +40,7 @@ namespace BXFW.Tools.Editor
                 if (m_MainContainer == null)
                 {
                     m_MainContainer = PropertyCustomDataContainer.Instance;
-                    
+
                     if (m_MainContainer == null)
                     {
                         m_MainContainer = PropertyCustomDataContainer.CreateEditorInstance(MAIN_CONTAINER_FOLDER, MAIN_CONTAINER_FILE_NAME);
@@ -44,38 +53,92 @@ namespace BXFW.Tools.Editor
 
         // -- ID Binding
         /// <summary>
+        /// The sha1 generator used.
+        /// </summary>
+        private static readonly SHA1Managed m_sha = new SHA1Managed();
+        /// <summary>
+        /// Returns the SHA1 hash of given <paramref name="s"/>.
+        /// <br>This is used to bind id's.</br>
+        /// </summary>
+        private static string StringHash(string s)
+        {
+            byte[] hash = m_sha.ComputeHash(Encoding.Default.GetBytes(s));
+            StringBuilder sb = new StringBuilder(hash.Length);
+
+            foreach (var b in hash)
+            {
+                // will return 2 char hex representation.
+                sb.Append(Convert.ToString(b, 16));
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// If this is <see langword="true"/> then the key won't be hashed and can be inspected for errors.
+        /// </summary>
+        public static bool keyDebugMode = false;
+        /// <summary>
         /// The object / key property identifier seperator used.
         /// </summary>
         public const string OBJ_IDENTIFIER_PROPERTY_SEP = "::";
         /// <summary>
+        /// Returns the local file identifier for the <paramref name="target"/>.
+        /// </summary>
+        private static long GetLocalFileIdentifier(UnityEngine.Object target)
+        {
+            // Get the required field, this gives the InspectorMode enum field
+            PropertyInfo inspectorModeInfo = typeof(SerializedObject).GetProperty("inspectorMode", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Check if target is prefab
+            var prefabObject = PrefabUtility.GetCorrespondingObjectFromSource(target);
+            // If the target is prefab, we also need it's parent's id times int.MaxValue and the local id.
+            // For getting the proper id.
+            // But for the time being leave as is because prefabs are ok (as those are not exactly scenes)
+
+            using SerializedObject serializedObject = new SerializedObject(prefabObject != null ? prefabObject : target);
+            // Setting this enables the 'm_LocalIdentifierInFile' field
+            inspectorModeInfo.SetValue(serializedObject, InspectorMode.Debug, null);
+
+            // Get the field normally
+            SerializedProperty localIdProp = serializedObject.FindProperty("m_LocalIdentfierInFile");
+            return localIdProp.longValue;
+        }
+        /// <summary>
         /// Returns the GUID + fileID combined of <paramref name="target"/>.
         /// <br>If the <paramref name="target"/> is a component or a GameObject, the scene GUID + the fileID of the objects are combined.</br>
         /// <br>If the <paramref name="target"/> is not a scene object (i.e ScriptableObject or an asset importer thing), the file already has it's own GUID + fileID.</br>
+        /// <br/>
+        /// <br>This is then hashed using SHA1 if debug mode is disabled.</br>
         /// </summary>
         private static string GetUnityObjectIdentifier(UnityEngine.Object target)
         {
+            string result;
+
             // Assume that the property's target object is atleast a component
             if (target is Component c)
             {
-                // Cannot get 'LocalFileIdentifier' directly so have to assert a 'Try' method.
-                Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(c.gameObject, out string _, out long fileID), "[SerializedPropertyCustomData::GetUnityObjectIdentifier] => TryGetGUIDAndLocalFileIdentifier is false.");
-                return $"{AssetDatabase.AssetPathToGUID(c.gameObject.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
+                // Can get 'LocalFileIdentifier' directly apparently
+                result = $"{AssetDatabase.AssetPathToGUID(c.gameObject.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{GetLocalFileIdentifier(c)}";
             }
             // The target value we are looking for is a GameObject though
             // Could make this code more compact but at the cost of slight performance
             // Plus this works probably fine so it's ok.
             else if (target is GameObject o)
             {
-                Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o, out string _, out long fileID), "[SerializedPropertyCustomData::GetUnityObjectIdentifier] => TryGetGUIDAndLocalFileIdentifier is false.");
-                return $"{AssetDatabase.AssetPathToGUID(o.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
+                result = $"{AssetDatabase.AssetPathToGUID(o.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{GetLocalFileIdentifier(o)}";
             }
             // If this is not the case, assume it's a local filesystem asset. (can be ScriptableObject)
             // In that case use the object's own GUID
             else
             {
+                // This one should assert! (as it's a local filesystem asset instead of a virtual thing existing in scene)
+                // Use the normal method for local assets
                 Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out string guid, out long fileID), "[SerializedPropertyCustomData::GetUnityObjectIdentifier] => TryGetGUIDAndLocalFileIdentifier is false.");
-                return $"{guid}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
+                result = $"{guid}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
             }
+
+            return !keyDebugMode ? StringHash(result) : result;
         }
 
         /// <summary>
@@ -93,8 +156,7 @@ namespace BXFW.Tools.Editor
 or don't call this if the 'property.serializedObject.isEditingMultipleObjects' is true.", nameof(property));
             }
 
-            UnityEngine.Object targetObject = property.serializedObject.targetObject;
-            return GetUnityObjectIdentifier(targetObject);
+            return GetUnityObjectIdentifier(property.serializedObject.targetObject);
         }
         /// <summary>
         /// <inheritdoc cref="GetPropertyString(SerializedProperty)"/>
@@ -155,32 +217,162 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
                 strings.Add(GetUnityObjectIdentifier(targetObject));
             }
         }
-        
+
         // -- Data Binding + Adding
         // FIXME : Generalize the way of getting a keyed data seperation? or this is fine (but still fragile)
         /// <summary>
         /// General purpose no-alloc list container.
         /// </summary>
         private static readonly List<string> m_noAllocPropertyStrings = new List<string>();
+        // - Generic Impl
         /// <summary>
         /// Returns whether if the 'SerializedProperty' target object contains the key.
         /// <br>For 'SerializedProperties' that are editing multiple objects it returns whether if the all targets contain the key.</br>
         /// </summary>
-        public static bool HasDataKey(this SerializedProperty property, string key)
+        private static bool HasDataKey<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key)
         {
             foreach (var propertyTarget in property.serializedObject.targetObjects)
             {
                 string saveKey = $"{GetUnityObjectIdentifier(propertyTarget)}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}";
 
-                if (!MainContainer.savedIntValues.ContainsKey(saveKey))
-                    return false;
-                if (!MainContainer.savedStringValues.ContainsKey(saveKey))
+                if (!targetDict.ContainsKey(saveKey))
                     return false;
             }
 
             return true;
         }
+        /// <summary>
+        /// Returns a saved value from given dictionary.
+        /// <br>If the string key does not exist, it will return <see langword="null"/>.</br>
+        /// <br/>
+        /// <br><see cref="ArgumentException"/> = Thrown when the <paramref name="property"/> is editing multiple objects and same key has different values.</br>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        private static T GetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key)
+        {
+            // 'Get' methods should not throw if all the values are the same on the list.
+            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
 
+            T initialValue = targetDict.GetValueOrDefault($"{m_noAllocPropertyStrings[0]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
+            // Ensure all values with keys are the same
+            for (int i = 1; i < m_noAllocPropertyStrings.Count; i++)
+            {
+                T propValue = targetDict.GetValueOrDefault($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
+                if (EqualityComparer<T>.Default.Equals(propValue, initialValue))
+                {
+                    throw new ArgumentException($"[SerializedPropertyCustomData::Get{typeof(T).Name}] Different value values on a multi edit 'SerializedProperty' with key : {key}, Values were {propValue} != {initialValue}", nameof(property));
+                }
+            }
+
+            // Values are same, can safely return.
+            return initialValue;
+        }
+        /// <summary>
+        /// Returns the list of saved values from given dictionary.
+        /// <br>The corresponding objects of <see cref="SerializedObject.targetObjects"/> are sequential to the given list.</br>
+        /// </summary>
+        private static T[] GetMultiValues<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key)
+        {
+            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
+
+            T[] values = new T[m_noAllocPropertyStrings.Count];
+            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
+            {
+                values[i] = targetDict.GetValueOrDefault($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
+            }
+
+            return values;
+        }
+
+        /// <summary>
+        /// Sets a value to <paramref name="targetDict"/> using <paramref name="property"/> + <paramref name="key"/> as the key.
+        /// <br>If the <paramref name="property"/> is editing multiple objects all keys are set to the same value.</br>
+        /// </summary>
+        private static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key, T value)
+        {
+            if (property == null || property.IsDisposed())
+                throw new ArgumentNullException(nameof(property), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.");
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentNullException(nameof(key), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given key is null.");
+
+            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
+
+            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
+            {
+                string propertyKey = $"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}";
+                if (targetDict.ContainsKey(propertyKey))
+                {
+                    targetDict[propertyKey] = value;
+                }
+                else
+                {
+                    // Ensure that the dictionary is in size limit
+                    if (targetDict.Count >= containerDictionarySizeLimit)
+                    {
+                        targetDict.Remove(targetDict.First().Key);
+                    }
+                    // Then add the value as Dictionary.Remove's removal order is undefined.
+                    targetDict.Add(propertyKey, value);
+                }
+            }
+        }
+        /// <summary>
+        /// Sets a value to <paramref name="targetDict"/> using <paramref name="property"/> + <paramref name="key"/> as the key.
+        /// <br>If the <paramref name="property"/> is editing multiple objects the <paramref name="keyReturnPredicate"/> will be used to refer to other objects.</br>
+        /// </summary>
+        private static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, Func<int, string> keyReturnPredicate, T value)
+        {
+            if (property == null || property.IsDisposed())
+                throw new ArgumentNullException(nameof(property), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.");
+            if (keyReturnPredicate == null)
+                throw new ArgumentNullException(nameof(keyReturnPredicate), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given keyReturnPredicate is null.");
+
+            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
+
+            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
+            {
+                string predicateValue = keyReturnPredicate(i);
+                if (string.IsNullOrWhiteSpace(predicateValue))
+                {
+                    throw new NullReferenceException($"[SerializedPropertyCustomData::Set{typeof(T).Name}] Key predicate returned null string at index {i}.");
+                }
+
+                string propertyKey = $"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{keyReturnPredicate(i)}";
+                if (targetDict.ContainsKey(propertyKey))
+                {
+                    targetDict[propertyKey] = value;
+                }
+                else
+                {
+                    if (targetDict.Count >= containerDictionarySizeLimit)
+                    {
+                        targetDict.Remove(targetDict.First().Key);
+                    }
+
+                    targetDict.Add(propertyKey, value);
+                }
+            }
+        }
+        /// <inheritdoc cref="SetValue{T}(in SerializableDictionary{string, T}, SerializedProperty, Func{int, string}, T)"/>
+        public static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, Func<UnityEngine.Object, string> keyReturnPredicate, T value)
+        {
+            SetValue(targetDict, property, (int i) => keyReturnPredicate(property.serializedObject.targetObjects[i]), value);
+        }
+
+        /// <summary>
+        /// Clears all binded datas.
+        /// </summary>
+        public static void Clear()
+        {
+            MainContainer.Reset();
+        }
+
+        // - Typed Impl
+        /// <inheritdoc cref="HasDataKey{T}(in SerializableDictionary{string, T}, SerializedProperty, string)"/>
+        public static bool HasStringKey(this SerializedProperty property, string key)
+        {
+            return HasDataKey(MainContainer.savedStringValues, property, key);
+        }
         /// <summary>
         /// Returns a saved string value.
         /// <br>If the string key does not exist, it will return <see langword="null"/>.</br>
@@ -190,22 +382,15 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         /// <exception cref="ArgumentException"/>
         public static string GetString(this SerializedProperty property, string key)
         {
-            // 'Get' methods should not throw if all the values are the same on the list.
-            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
+            return GetValue(MainContainer.savedStringValues, property, key);
+        }
+        /// <inheritdoc cref="GetString(SerializedProperty, string)"/>
+        public static string GetString(this SerializedProperty property, string key, string defaultValue)
+        {
+            if (!HasStringKey(property, key))
+                return defaultValue;
 
-            string initialValue = MainContainer.savedStringValues.GetValueOrDefault($"{m_noAllocPropertyStrings[0]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
-            // Ensure all values with keys are the same
-            for (int i = 1; i < m_noAllocPropertyStrings.Count; i++)
-            {
-                var propString = MainContainer.savedStringValues.GetValueOrDefault($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
-                if (propString != initialValue)
-                {
-                    throw new ArgumentException($"[SerializedPropertyCustomData::GetString] Different value values on a multi edit 'SerializedProperty' with key : {key}, Values were {propString} != {initialValue}", nameof(property));
-                }
-            }
-
-            // Values are same, can safely return.
-            return initialValue;
+            return GetValue(MainContainer.savedStringValues, property, key);
         }
         /// <summary>
         /// Returns the list of saved string values.
@@ -213,34 +398,15 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         /// </summary>
         public static string[] GetMultiStrings(this SerializedProperty property, string key)
         {
-            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
-
-            string[] values = new string[m_noAllocPropertyStrings.Count];
-            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
-            {
-                values[i] = MainContainer.savedStringValues.GetValueOrDefault($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}");
-            }
-
-            return values;
+            return GetMultiValues(MainContainer.savedStringValues, property, key);
         }
-
         /// <summary>
         /// Sets a string to <paramref name="property"/>.
         /// <br>If the <paramref name="property"/> is editing multiple objects all keys are set to the same value.</br>
         /// </summary>
         public static void SetString(this SerializedProperty property, string key, string value)
         {
-            if (property == null || property.IsDisposed())
-                throw new ArgumentNullException(nameof(property), "[SerializedPropertyCustomData::SetString] Given property is either null or disposed.");
-            if (string.IsNullOrEmpty(key))
-                throw new ArgumentNullException(nameof(key), "[SerializedPropertyCustomData::SetString] Given key is null.");
-
-            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
-            
-            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
-            {
-                MainContainer.savedStringValues.Add($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}", value);
-            }
+            SetValue(MainContainer.savedStringValues, property, key, value);
         }
         /// <summary>
         /// Sets a string to <paramref name="property"/>.
@@ -248,23 +414,66 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         /// </summary>
         public static void SetString(this SerializedProperty property, Func<int, string> keyReturnPredicate, string value)
         {
-            if (property == null || property.IsDisposed())
-                throw new ArgumentNullException(nameof(property), "[SerializedPropertyCustomData::SetString] Given property is either null or disposed.");
-            if (keyReturnPredicate == null)
-                throw new ArgumentNullException(nameof(keyReturnPredicate), "[SerializedPropertyCustomData::SetString] Given keyReturnPredicate is null.");
-
-            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
-
-            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
-            {
-                MainContainer.savedStringValues.Add($"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{keyReturnPredicate(i)}", value);
-            }
-
+            SetValue(MainContainer.savedStringValues, property, keyReturnPredicate, value);
         }
         /// <inheritdoc cref="SetString(SerializedProperty, Func{int, string}, string)"/>
         public static void SetString(this SerializedProperty property, Func<UnityEngine.Object, string> keyReturnPredicate, string value)
         {
-            SetString(property, (int i) => keyReturnPredicate(property.serializedObject.targetObjects[i]), value);
+            SetValue(MainContainer.savedStringValues, property, keyReturnPredicate, value);
+        }
+
+        /// <inheritdoc cref="HasDataKey{T}(in SerializableDictionary{string, T}, SerializedProperty, string)"/>
+        public static bool HasLongKey(this SerializedProperty property, string key)
+        {
+            return HasDataKey(MainContainer.savedIntValues, property, key);
+        }
+        /// <summary>
+        /// Returns a saved long value.
+        /// <br>If the string key does not exist, it will return <see langword="null"/>.</br>
+        /// <br/>
+        /// <br><see cref="ArgumentException"/> = Thrown when the <paramref name="property"/> is editing multiple objects and same key has different values.</br>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public static long GetLong(this SerializedProperty property, string key)
+        {
+            return GetValue(MainContainer.savedIntValues, property, key);
+        }
+        /// <inheritdoc cref="GetLong(SerializedProperty, string)"/>
+        public static long GetLong(this SerializedProperty property, string key, long defaultValue)
+        {
+            if (!HasLongKey(property, key))
+                return defaultValue;
+
+            return GetValue(MainContainer.savedIntValues, property, key);
+        }
+        /// <summary>
+        /// Returns the list of saved long values.
+        /// <br>The corresponding objects of <see cref="SerializedObject.targetObjects"/> are sequential to the given list.</br>
+        /// </summary>
+        public static long[] GetMultiLongs(this SerializedProperty property, string key)
+        {
+            return GetMultiValues(MainContainer.savedIntValues, property, key);
+        }
+        /// <summary>
+        /// Sets a long to <paramref name="property"/>.
+        /// <br>If the <paramref name="property"/> is editing multiple objects all keys are set to the same value.</br>
+        /// </summary>
+        public static void SetLong(this SerializedProperty property, string key, long value)
+        {
+            SetValue(MainContainer.savedIntValues, property, key, value);
+        }
+        /// <summary>
+        /// Sets a long to <paramref name="property"/>.
+        /// <br>If the <paramref name="property"/> is editing multiple objects the <paramref name="keyReturnPredicate"/> will be used to refer to other objects.</br>
+        /// </summary>
+        public static void SetLong(this SerializedProperty property, Func<int, string> keyReturnPredicate, long value)
+        {
+            SetValue(MainContainer.savedIntValues, property, keyReturnPredicate, value);
+        }
+        /// <inheritdoc cref="SetString(SerializedProperty, Func{int, string}, string)"/>
+        public static void SetLong(this SerializedProperty property, Func<UnityEngine.Object, string> keyReturnPredicate, long value)
+        {
+            SetValue(MainContainer.savedIntValues, property, keyReturnPredicate, value);
         }
     }
 }
