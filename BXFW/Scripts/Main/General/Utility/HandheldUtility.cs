@@ -10,7 +10,6 @@ namespace BXFW
     public static class HandheldUtility
     {
         // -- Common utility
-
         // These 2 methods still target android but it also works with most handheld related stuff.
         /// <summary>
         /// Returns the keyboard height ratio to the screen display height.

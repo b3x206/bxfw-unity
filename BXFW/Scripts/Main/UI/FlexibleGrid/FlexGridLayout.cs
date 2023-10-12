@@ -25,11 +25,11 @@ namespace BXFW.UI
 
         [Space]
         public FitType fitType;
-        public int Rows;
-        public int Columns;
+        public int rows;
+        public int columns;
         [Space]
-        public Vector2 CellSize;
-        public Vector2 Spacing;
+        public Vector2 cellSize;
+        public Vector2 spacing;
         public bool fitX = true;
         public bool fitY = true;
 
@@ -45,53 +45,53 @@ namespace BXFW.UI
             if (fitType == FitType.Width || fitType == FitType.Height || fitType == FitType.Uniform)
             {
                 float sqrRt = Mathf.Sqrt(transform.childCount);
-                Rows = Mathf.CeilToInt(sqrRt);
-                Columns = Mathf.CeilToInt(sqrRt);
+                rows = Mathf.CeilToInt(sqrRt);
+                columns = Mathf.CeilToInt(sqrRt);
             }
 
             if (fitType == FitType.Height || fitType == FitType.FixedRows)
             {
-                Rows = Mathf.CeilToInt(transform.childCount / (float)Rows);
+                rows = Mathf.CeilToInt(transform.childCount / (float)rows);
             }
             if (fitType == FitType.Width || fitType == FitType.FixedColumns)
             {
-                Columns = Mathf.CeilToInt(transform.childCount / (float)Columns);
+                columns = Mathf.CeilToInt(transform.childCount / (float)columns);
             }
 
             float parentWidth = rectTransform.rect.width;
             float parentHeight = rectTransform.rect.height;
 
-            float cellWidth = (parentWidth / Columns) -
-                ((Spacing.x / Columns) * (Columns - 1)) -
-                (padding.left / (float)Columns) - (padding.right / (float)Columns);
+            float cellWidth = (parentWidth / columns) -
+                ((spacing.x / columns) * (columns - 1)) -
+                (padding.left / (float)columns) - (padding.right / (float)columns);
 
-            float cellHeight = (parentHeight / Rows) -
-                ((Spacing.y / Rows) * (Rows - 1)) -
-                (padding.top / (float)Rows) - (padding.bottom / (float)Rows);
+            float cellHeight = (parentHeight / rows) -
+                ((spacing.y / rows) * (rows - 1)) -
+                (padding.top / (float)rows) - (padding.bottom / (float)rows);
 
-            CellSize.x = fitX ? cellWidth : CellSize.x;
-            CellSize.y = fitY ? cellHeight : CellSize.y;
+            cellSize.x = fitX ? cellWidth : cellSize.x;
+            cellSize.y = fitY ? cellHeight : cellSize.y;
 
             // Invalid value clamping (this method is called OnValidate [hah that fits])
-            if (Columns <= 0) 
-                Columns = 1;
-            if (Rows <= 0)
-                Rows = 1;
+            if (columns <= 0) 
+                columns = 1;
+            if (rows <= 0)
+                rows = 1;
 
             int columnCount;
             int rowCount;
             for (int i = 0; i < rectChildren.Count; i++)
             {
-                columnCount = i % Columns;
-                rowCount = i / Columns;
+                columnCount = i % columns;
+                rowCount = i / columns;
 
                 RectTransform item = rectChildren[i];
 
-                float xPos = (CellSize.x * columnCount) + (Spacing.x * columnCount) + padding.left;
-                float yPos = (CellSize.y * rowCount) + (Spacing.y * rowCount) + padding.top;
+                float xPos = (cellSize.x * columnCount) + (spacing.x * columnCount) + padding.left;
+                float yPos = (cellSize.y * rowCount) + (spacing.y * rowCount) + padding.top;
 
-                SetChildAlongAxis(item, 0, xPos, CellSize.x);
-                SetChildAlongAxis(item, 1, yPos, CellSize.y);
+                SetChildAlongAxis(item, 0, xPos, cellSize.x);
+                SetChildAlongAxis(item, 1, yPos, cellSize.y);
             }
         }
         public override void CalculateLayoutInputVertical()

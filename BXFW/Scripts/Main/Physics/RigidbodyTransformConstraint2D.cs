@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// -- Obsolete : To be removed, the bxfw-legacy branch will still contain this
+// While bxfw-legacy will still have breaking changes, i will try to fix it as much as possible. (or it will simply be the main branch)
 namespace BXFW
 {
     /// Works by simply registring rigidbodies to this moving transform.
@@ -8,7 +11,7 @@ namespace BXFW
     /// Constraints any rigidbody entering it's space to that transform.
     /// <br>This allows the rigidbody to freely move, while still moving with that transform.</br>
     /// </summary>
-    [RequireComponent(typeof(Collider2D))]
+    [RequireComponent(typeof(Collider2D)), Obsolete("This class is useless, find other physics methods to get the desired latching effect.", false)]
     public class RigidbodyTransformConstraint2D : MonoBehaviour
     {
         public Collider2D Collider { get; private set; }

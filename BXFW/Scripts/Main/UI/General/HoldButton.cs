@@ -15,11 +15,11 @@ namespace BXFW.UI
         public class ButtonEvent : UnityEvent { }
 
         [Header(":: Settings")]
-        public bool Clickable = true;
-        public bool Holdable = true;
-        public float HoldTime = .3f;
+        public bool clickable = true;
+        public bool holdable = true;
+        public float holdTime = .3f;
         [Tooltip("Whether if the holding should ignore Time.timeScale. (Use Time.unscaledDeltaTime)")]
-        public bool IgnoreTimeScale = false;
+        public bool ignoreTimeScale = false;
 
         [Header(":: Events")]
         public ButtonEvent OnClickEvent;
@@ -49,7 +49,7 @@ namespace BXFW.UI
 
             if (!isHoldEvent)
             {
-                if (Clickable)
+                if (clickable)
                 {
                     OnClickEvent?.Invoke();
                 }
@@ -63,7 +63,7 @@ namespace BXFW.UI
         // Tick hold timer
         private void Update()
         {
-            if (!Holdable)
+            if (!holdable)
                 return;
 
             // Hold update
@@ -73,8 +73,8 @@ namespace BXFW.UI
                 return;
             }
 
-            holdTimer += IgnoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
-            if (holdTimer >= HoldTime)
+            holdTimer += ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
+            if (holdTimer >= holdTime)
             {
                 OnHoldEvent?.Invoke();
 

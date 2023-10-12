@@ -36,7 +36,9 @@ namespace BXFW.ScriptEditor
             {
                 Instance = CreateInstance<BasicDropdown>();
             }
-
+            // ... :
+            // Instance.ShowAsDropDown(parentRect, size);
+            
             Instance.position = new Rect(Instance.position) { x = parentRect.xMin, y = parentRect.yMax, size = size };
             Instance.onGUICall = onGUICall;
             // void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)

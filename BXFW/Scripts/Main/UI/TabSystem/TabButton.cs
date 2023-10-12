@@ -176,7 +176,7 @@ namespace BXFW.UI
             ParentTabSystem.OnTabButtonsClicked?.Invoke(transform.GetSiblingIndex());
 
             ParentTabSystem.CurrentSelectedTab = this;
-            ParentTabSystem.UpdateButtonAppearances();
+            ParentTabSystem.UpdateElementsAppearance();
         }
 
         // -- Visual Updates
@@ -327,7 +327,7 @@ namespace BXFW.UI
             while (T <= 1.0f)
             {
                 T += Time.deltaTime / Duration;
-                ButtonBackgroundImage.color = Color.Lerp(CurrentPrevColor, Target, Mathf.SmoothStep(0, 1, T));
+                ButtonBackgroundImage.color = Color.Lerp(CurrentPrevColor, Target, Mathf.SmoothStep(0f, 1f, T));
                 yield return null;
             }
 

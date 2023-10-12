@@ -35,8 +35,7 @@ namespace BXFW.ScriptEditor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float addHeight = 0f;
-            if (target.fieldInfo == null)
-                target = property.GetTarget();
+            target = property.GetTarget();
 
             // Draw an object field for sprite property
             if (target.fieldInfo.FieldType != typeof(Sprite))
@@ -76,7 +75,7 @@ namespace BXFW.ScriptEditor
             {
                 if (property.objectReferenceValue != null)
                 {
-                    Undo.RecordObject(property.objectReferenceValue, "Inspector");
+                    Undo.RecordObject(property.objectReferenceValue, "set sprite");
                 }
 
                 property.objectReferenceValue = setValue;

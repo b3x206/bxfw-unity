@@ -110,7 +110,6 @@ namespace BXFW
             }
         }
 
-
         /// <summary>
         /// List of the generated path points.
         /// </summary>

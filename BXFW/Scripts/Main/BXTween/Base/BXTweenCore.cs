@@ -12,6 +12,10 @@ using static BXFW.Tweening.BXTween;
 /// of doing stuff) change the code if there is a bug. Or i could add support to unity Dots system, if i feel enough interest to it.
 /// For the time being, it works fine enough™ so yeah, this will do.
 /// 
+/// Uh me after few months, i was an idiot
+/// I rewrote the entire BXTween (as BXSTween) because BXTween was missing some features and i tried to add those in a hacky way
+/// Now the code feels trashed.
+/// 
 /// (alright bye)
 /// 
 /// <remarks>
@@ -61,6 +65,8 @@ using static BXFW.Tweening.BXTween;
 /// Uh, replace this with a BXSimpleTween that is similar to this, but less features, more control over the update method and get rid of coroutines (lower gc.alloc)?
 /// Basically just have delegates that do the most of the stuff.
 /// Because this is not really a complete tweening solution, so go with the simpler tweening option.
+/// Note : The simpler tweening may or may not have extension methods. So for the time being just bear with this tween.
+/// -- TODO + Obsolete : BXTween (while won't immediately get obsoleted and will be phased out slowly) to BXSTween migration is starting
 /// TODO 2 :
 /// Oh and also, add a 'CompilationDefineConstraints' class for defining define constraints for things if the file exists
 /// (and it can disable BXTween with '#if' statement)

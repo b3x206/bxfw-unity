@@ -35,7 +35,7 @@ namespace BXFW.UI
         public class ElementEvent : UnityEvent<TElement> { }
 
         /// <summary>
-        /// Called when an element is created through <see cref="CreateUIElement"/>.
+        /// Called when an element is created through <see cref="InternalCreateUIElement"/>.
         /// </summary>
         public IndexedElementEvent onCreateElementEvent;
 
@@ -91,7 +91,15 @@ namespace BXFW.UI
         /// Whether to use a reference element that already exists.
         /// <br>To change the element that is being referred, use the <see cref="MultiUIManagerBase.ReferenceElementIndex"/>.</br>
         /// </param>
-        public TElement CreateUIElement(bool useReferenceElement = true)
+        /// <remarks>
+        /// <b>NOTE : </b>This method DOES NOT increment <see cref="MultiUIManagerBase.m_ElementCount"/>
+        /// (m_ElementCount is treated as a target value!)
+        /// <br>It is meant to be used as an <b>helper</b> method to allow creation + management of values.</br>
+        /// <br>For an user creation method, use <see cref="CreateUIElement(bool)"/>.</br>
+        /// <br>To remove UI elements decrement <see cref="MultiUIManagerBase.ElementCount"/> by any amount you want (it is clamped anyways)</br>
+        /// <br>This method does only modify the <see cref="m_Elements"/> list and it's count.</br>
+        /// </remarks>
+        protected TElement InternalCreateUIElement(bool useReferenceElement = true)
         {
             int createIndex = m_Elements.Count;
             if (useReferenceElement)
@@ -117,6 +125,46 @@ namespace BXFW.UI
             }
 
             return element;
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="InternalCreateUIElement(bool)"/>
+        /// <br/>
+        /// <br>Calling this directly will increment 'm_ElementCount' by 1.</br>
+        /// </summary>
+        /// <param name="useReferenceElement">
+        /// <inheritdoc cref="InternalCreateUIElement(bool)"/>
+        /// </param>
+        public TElement CreateUIElement(bool useReferenceElement = true)
+        {
+            InternalCreateUIElement(useReferenceElement);
+            // Increment element count after just in case if an exception is thrown
+            m_ElementCount++;
+            return m_Elements[m_Elements.Count - 1];
+        }
+
+        /// <summary>
+        /// A destroy immediate wrapper that respects editor operations and other things.
+        /// <br>In standalone runtimes, this just does <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/>.</br>
+        /// <br>Unless the object needs to be immediately destroyed during generation, use <see cref="UnityEngine.Object.Destroy"/> instead.</br>
+        /// </summary>
+        /// <param name="target">Target to immediately destroy.</param>
+        protected void ManagerDestroyImmediate(UnityEngine.Object target)
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                // Destroy forever (no Undo stack saving)
+                DestroyImmediate(target);
+            }
+            else
+            {
+                // Editor destroy (usable if the group was being recorded and was collapsed)
+                UnityEditor.Undo.DestroyObjectImmediate(target);
+            }
+#else
+            DestroyImmediate(target);
+#endif
         }
 
         /// <summary>
@@ -150,8 +198,11 @@ namespace BXFW.UI
                     // Otherwise the script gets stuck at an infinite loop and dies.
                     GameObject destroyObject = m_Elements[m_Elements.Count - 1].gameObject;
 
-                    // We record the 'Undo' on the editor script anyways
-                    DestroyImmediate(destroyObject);
+                    // Uhh, so using 'DestroyImmediate' that is not on 'Undo' is a bad idea (in editor)
+                    // It crashed unity so, yeah -_-
+                    // When this gets called from unity editor we can choose which destruction we want to choose anyways
+                    // So yeah.
+                    ManagerDestroyImmediate(destroyObject);
                 }
                 else // Null elements exist on the list, cleanup
                 {
@@ -176,7 +227,7 @@ namespace BXFW.UI
                     m_Elements[0].gameObject.SetActive(true);
                 }
 
-                CreateUIElement();
+                InternalCreateUIElement();
             }
             // Check if the element count is 1, enable the 'uiElements[0]' from here
             // This is because the 'Add loop' doesn't work when the previous 'ElementCount' is zero.
@@ -186,7 +237,7 @@ namespace BXFW.UI
                 if (m_Elements[0] == null)
                 {
                     CleanupElementsList();
-                    CreateUIElement();
+                    InternalCreateUIElement();
                 }
 
                 m_Elements[0].gameObject.SetActive(ElementCount > 0);
@@ -217,7 +268,7 @@ namespace BXFW.UI
                 if (Application.isPlaying)
                     Destroy(destroyObject);
                 else
-                    DestroyImmediate(destroyObject);
+                    ManagerDestroyImmediate(destroyObject);
 #else
                 // No need for that on built games
                 Destroy(destroyObject);
@@ -234,7 +285,7 @@ namespace BXFW.UI
                     if (Application.isPlaying)
                         Destroy(destroyObject);
                     else
-                        DestroyImmediate(destroyObject);
+                        ManagerDestroyImmediate(destroyObject);
 #else
                     Destroy(destroyObject);
 #endif
@@ -243,7 +294,7 @@ namespace BXFW.UI
 
             m_Elements.Clear();
             // Since the 'ElementCount' is 0, set the object to be disabled by default.
-            CreateUIElement(false).gameObject.SetActive(false);
+            InternalCreateUIElement(false).gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -258,7 +309,13 @@ namespace BXFW.UI
         {
             return m_Elements.GetEnumerator();
         }
-
+        public override IEnumerable<Component> IterableElements()
+        {
+            foreach (TElement elem in m_Elements)
+            {
+                yield return elem;
+            }
+        }
         IEnumerator IEnumerable.GetEnumerator()
         {
             return m_Elements.GetEnumerator();
