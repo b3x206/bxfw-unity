@@ -71,7 +71,6 @@ namespace BXFW.ScriptEditor
                 {
                     // RegisterCompleteObjectUndo does not immediately add the object into the Undo list
                     // So do this to avoid bugs, as this needs to be done after the undo list was updated.
-
                     EditorApplication.delayCall += () =>
                     {
                         PrefabUtility.RecordPrefabInstancePropertyModifications(manager);

@@ -10,7 +10,7 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenMatrix4x4Context : BXSTweenContext<Matrix4x4>
     {
-        public override BXSLerpAction<Matrix4x4> LerpAction => BXTweenCustomLerp.MatrixLerpUnclamped;
+        public override BXSLerpAction<Matrix4x4> LerpAction => MathUtility.LerpUnclamped;
         
         /// <summary>
         /// Makes a blank context. Has no duration or anything.

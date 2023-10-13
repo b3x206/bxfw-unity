@@ -314,11 +314,16 @@ namespace BXFW.Tweening
             ctx.StopTween();
         }
 
+        private static int IntLerpUnclamped(int from, int to, float time)
+        {
+            return (int)Mathf.LerpUnclamped(from, to, time);
+        }
+
         // The other 'To' methods return an iterator so the coroutines can be manually managed
         // The generic one is also usable to public, as long as you supply your own lerp method.
         public IEnumerator To(BXTweenCTX<int> ctx)
         {
-            yield return GenericTo(ctx, BXTweenCustomLerp.IntLerpUnclamped);
+            yield return GenericTo(ctx, IntLerpUnclamped);
         }
         public IEnumerator To(BXTweenCTX<float> ctx)
         {
@@ -342,7 +347,7 @@ namespace BXFW.Tweening
         }
         public IEnumerator To(BXTweenCTX<Matrix4x4> ctx)
         {
-            yield return GenericTo(ctx, BXTweenCustomLerp.MatrixLerpUnclamped);
+            yield return GenericTo(ctx, MathUtility.LerpUnclamped);
         }
     }
 }

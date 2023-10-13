@@ -106,7 +106,6 @@ namespace BXFW
 
             return cPoint0 + (v2 * 0.5f) + (pd2 * d);
         }
-
         /// <summary>
         /// Gives a bezier interpolated value between <paramref name="point0"/> and <paramref name="point1"/> 
         /// influenced by <paramref name="handle0"/> and <paramref name="handle1"/>.
@@ -605,6 +604,30 @@ namespace BXFW
                 default:
                     throw new ArgumentException(string.Format("[Additionals::SetMatrix] Failed setting matrix : Parameter 'space={0}' is invalid.", space));
             }
+        }
+
+        /// <summary>
+        /// Interpolates a Matrix4x4.
+        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
+        /// </summary>
+        public static Matrix4x4 Lerp(Matrix4x4 src, Matrix4x4 dest, float time)
+        {
+            return LerpUnclamped(src, dest, Mathf.Clamp01(time));
+        }
+        /// <summary>
+        /// Interpolates a Matrix4x4. (Unclamped)
+        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
+        /// </summary>
+        public static Matrix4x4 LerpUnclamped(Matrix4x4 src, Matrix4x4 dest, float time)
+        {
+            Matrix4x4 ret = new Matrix4x4();
+
+            for (int i = 0; i < 16; i++)
+            {
+                ret[i] = Mathf.LerpUnclamped(src[i], dest[i], time);
+            }
+
+            return ret;
         }
     }
 }

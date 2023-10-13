@@ -152,7 +152,9 @@ namespace BXFW.UI
         protected void ManagerDestroyImmediate(UnityEngine.Object target)
         {
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            // I'm a dumbass
+            // only destroy without undo while playing bro
+            if (Application.isPlaying)
             {
                 // Destroy forever (no Undo stack saving)
                 DestroyImmediate(target);

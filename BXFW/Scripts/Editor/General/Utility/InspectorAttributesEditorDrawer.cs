@@ -59,9 +59,11 @@ namespace BXFW.ScriptEditor
             // Draw an object field for sprite property
             if (target.fieldInfo.FieldType != typeof(Sprite))
             {
-                EditorGUI.HelpBox(position,
+                EditorGUI.HelpBox(
+                    position,
                     string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
-                    MessageType.Warning);
+                    MessageType.Warning
+                );
                 return;
             }
 
