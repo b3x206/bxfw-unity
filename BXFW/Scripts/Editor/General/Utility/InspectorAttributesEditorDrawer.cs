@@ -336,7 +336,7 @@ namespace BXFW.ScriptEditor
                     foreach (Type type in ints)
                     {
                         // Calling 'GetGenericTypeDefinition' makes the type open.
-                        bool breakOnType = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>) || type == typeof(IEnumerable);
+                        bool breakOnType = (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)) || type == typeof(IEnumerable);
 
                         // Get the type for 'GetEnumerator'ing manually
                         if (breakOnType)

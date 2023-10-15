@@ -149,8 +149,6 @@ namespace BXFW
             get { return m_WishDir; }
         }
 
-        /////////// ------------
-        /////////// Private Vars
         /// NOTE :
         /// ******** Adding velocity variable rules ********
         /// 1 : Create a private or public variable
@@ -158,7 +156,6 @@ namespace BXFW
         ///         m_             ]--> Used for private fields.
         ///         [velocityName] ]--> Name of the velocity (in camelCase).
         /// 2 : Apply the velocity to <see cref="m_internalVelocity"/>.
-
         /// <summary>The internal velocity, applied to the actual movement.</summary>
         [SerializeField, ReadOnlyView] private Vector3 m_internalVelocity;
         /// <summary><c>[External Velocity]</c> Total velocity changed by other scripts.</summary>

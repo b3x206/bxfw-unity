@@ -297,7 +297,6 @@ namespace BXFW
                 default:
                 case TransformAxis.XYZAxis:
                     return Vector3.one;
-
             }
         }
         /// <summary>

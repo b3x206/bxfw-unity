@@ -440,7 +440,9 @@ namespace BXFW.Tweening.Next
                 if (runnable.priority != priority)
                     continue;
 
-                float duration = runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount + 1, 0) + 1) + runnable.tween.Delay;
+                // LoopCount = 0 and 1 = play once, beyond that is play multiple times
+                // Infinite loops will be only waited out once per their duration and it won't be stopped.
+                float duration = (runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount + 1, 0) + 1)) + runnable.tween.Delay;
                 if (duration > longestDuration)
                 {
                     longestDuration = duration;

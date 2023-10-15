@@ -480,7 +480,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-
         /// <see cref="SpriteRenderer"/>
         public static BXTweenCTX<Color> BXTwColor(this SpriteRenderer target, Color LastValue, float Duration)
         {

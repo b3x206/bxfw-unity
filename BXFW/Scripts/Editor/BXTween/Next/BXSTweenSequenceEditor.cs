@@ -57,9 +57,9 @@ namespace BXFW.Tweening.Next.Editor
         }
         private Rect GetPropertyRect(Rect baseRect, float height)
         {
-            baseRect.height = height;                // set to target height
-            baseRect.y += m_currentY + PADDING / 2f; // offset by Y
-            m_currentY += height + PADDING;          // add Y offset
+            baseRect.height = height;                  // set to target height
+            baseRect.y += m_currentY + (PADDING / 2f); // offset by Y
+            m_currentY += height + PADDING;            // add Y offset
 
             return baseRect;
         }

@@ -1,16 +1,15 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEditor;
+using UnityEngine.Assertions;
 using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
-    // H moment : 
-    // https://discussions.unity.com/t/how-to-edit-array-list-property-with-custom-propertydrawer/218416/2
-    // You can’t make a PropertyDrawer for arrays or generic lists themselves. […] On the plus side, elements inside arrays and lists do work with PropertyDrawers.
-    // This was meant to be an PropertyDrawer for an array, but i will just create a custom class.
-
+    /// <summary>
+    /// Draws an inspector for <see cref="RangeFloatArray"/>.
+    /// !! TODO : Needs big refactor
+    /// </summary>
     [CustomPropertyDrawer(typeof(RangeFloatArray))]
     internal class RangeFloatArrayDrawer : PropertyDrawer
     {
@@ -24,10 +23,16 @@ namespace BXFW.ScriptEditor
         {
             return EditorGUIUtility.singleLineHeight + DR_PADDING;
         }
-
+        /// <summary>
+        /// Returns the length of the <paramref name="number"/> when it's converted to an integer.
+        /// </summary>
+        /// <param name="number"></param>
+        /// <returns></returns>
         private static int NumberRepresentationLength(float number)
         {
-            // Double with optional 3 precision numbers
+            // Could get the number length depending on how many times it gets divided by 10
+            // but that only works for the integral part + it probably could be slower than ToString
+            // non-scientific-notated double/float with optional 3 precision numbers
             return number.ToString("G.###").Length;
         }
 
@@ -87,7 +92,6 @@ namespace BXFW.ScriptEditor
             public PropertyID(SerializedProperty prop)
             {
                 propPath = string.Format("{0}{1}{2}", prop.serializedObject.targetObject.name, PROP_PARENT_PREFIX, prop.propertyPath);
-
             }
             //public PropertyID(SerializedProperty prop, RangeFloatArray target)
             //{

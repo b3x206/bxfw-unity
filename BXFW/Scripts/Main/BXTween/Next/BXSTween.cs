@@ -34,18 +34,18 @@ namespace BXFW.Tweening.Next
         public const int NoID = 0;
 
         // -- Prepare
+#if ENABLE_MONO
         static BXSTween()
         {
             // Only do the initialization of other classes in jit runtimes
             // Stuff like il2cpp does compilation aot, which does not allocate garbage when a code is run for the first time
             // Note : don't initialize anything related with 'BXSTween' here as it is still not completely constructed
-#if ENABLE_MONO
             // Do this so that the jit is generated beforehand and so that the
             // first started tween acceesing this class doesn't allocate much garbage.
             Type bxTwEaseType = typeof(BXTweenEase);
             RuntimeHelpers.RunClassConstructor(bxTwEaseType.TypeHandle);
-#endif
         }
+#endif
 
         // -- Runtime
         /// <summary>
@@ -238,7 +238,7 @@ namespace BXFW.Tweening.Next
                 case TickType.Fixed:
                     deltaTime = runner.FixedUnscaledDeltaTime;
                     break;
-            };
+            }
             if (!tween.IgnoreTimeScale)
             {
                 deltaTime *= runner.TimeScale;

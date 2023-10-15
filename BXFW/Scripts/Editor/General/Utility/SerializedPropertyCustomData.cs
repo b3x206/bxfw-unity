@@ -111,7 +111,6 @@ namespace BXFW.Tools.Editor
         /// <br>If the <paramref name="target"/> is a component or a GameObject, the scene GUID + the fileID of the objects are combined.</br>
         /// <br>If the <paramref name="target"/> is not a scene object (i.e ScriptableObject or an asset importer thing), the file already has it's own GUID + fileID.</br>
         /// <br/>
-        /// <br>This is then hashed using SHA1 if debug mode is disabled.</br>
         /// </summary>
         private static string GetUnityObjectIdentifier(UnityEngine.Object target)
         {
@@ -140,15 +139,17 @@ namespace BXFW.Tools.Editor
                 result = $"{guid}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
             }
 
-            return !keyDebugMode ? StringHash(result) : result;
+            return result;
         }
 
         /// <summary>
-        /// Returns a unique property identity string depending on the;
+        /// Returns a unique property identity string, usable to get an id depending on the;
         /// <br>A : The scene that this <paramref name="property"/> is contained in (and it's GUID).</br>
-        /// <br>B : The object that this <paramref name="property"/> is contained in.</br>
-        /// <br>C : And the <see cref="SerializedProperty.propertyPath"/> of <paramref name="property"/>.</br>
-        /// <br>These are combined to return a unique fingerprint of the property (not hashed).</br>
+        /// <br>B : The FileID of object/component that this <paramref name="property"/> is contained in.</br>
+        /// <br>C : And the property path of this current <paramref name="property"/>.</br>
+        /// <br>These are combined to return a unique fingerprint of the property.</br>
+        /// <br/>
+        /// <br>This is then hashed using SHA1 if debug mode is disabled.</br>
         /// </summary>
         public static string GetPropertyString(SerializedProperty property)
         {
@@ -158,7 +159,8 @@ namespace BXFW.Tools.Editor
 or don't call this if the 'property.serializedObject.isEditingMultipleObjects' is true.", nameof(property));
             }
 
-            return GetUnityObjectIdentifier(property.serializedObject.targetObject);
+            string result = $"{GetUnityObjectIdentifier(property.serializedObject.targetObject)}{property.propertyPath}";
+            return !keyDebugMode ? StringHash(result) : result;
         }
         /// <summary>
         /// <inheritdoc cref="GetPropertyString(SerializedProperty)"/>

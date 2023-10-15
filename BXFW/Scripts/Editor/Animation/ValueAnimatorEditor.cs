@@ -32,6 +32,12 @@ namespace BXFW.ScriptEditor
             return height;
         }
 
+        // !! TODO : Create a 'AutoRectPropertyDrawer' class that you can inherit from and it contains omitting, other things, etc.)
+        // Current class list that repeats this code is :
+        // - ValueAnimatorEditor.cs
+        // - BXSTweenSequenceEditor.cs
+        // - BezierPathEditor.cs
+
         /// <summary>
         /// The current Y elapsed for this property field.
         /// </summary>
@@ -42,9 +48,9 @@ namespace BXFW.ScriptEditor
         }
         private Rect GetPropertyRect(Rect baseRect, float height)
         {
-            baseRect.height = height;                // set to target height
-            baseRect.y += m_currentY + PADDING / 2f; // offset by Y
-            m_currentY += height + PADDING;          // add Y offset
+            baseRect.height = height;                  // set to target height
+            baseRect.y += m_currentY + (PADDING / 2f); // offset by Y
+            m_currentY += height + PADDING;            // add Y offset
 
             return baseRect;
         }
