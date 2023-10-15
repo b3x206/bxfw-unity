@@ -22,7 +22,7 @@ namespace BXFW.UI
         /// </summary>
         public Content(Sprite image)
         {
-            this.sprite = image;
+            sprite = image;
         }
 
         /// <summary>
@@ -36,10 +36,10 @@ namespace BXFW.UI
         /// <summary>
         /// Creates a tab button content with a text & image.
         /// </summary>
-        public Content(string text, Sprite sprite)
+        public Content(string text, Sprite image)
         {
             this.text = text;
-            this.sprite = sprite;
+            sprite = image;
         }
     }
 }

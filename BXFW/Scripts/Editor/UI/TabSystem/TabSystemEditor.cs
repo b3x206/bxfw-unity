@@ -12,9 +12,8 @@ using BXFW.Tools.Editor;
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(TabSystem)), CanEditMultipleObjects]
-    public class TabSystemEditor : MultiUIManagerBaseEditor
+    public sealed class TabSystemEditor : MultiUIManagerBaseEditor
     {
-        //////////// Object Creation
         [MenuItem("GameObject/UI/Tab System")]
         public static void CreateTabSystem(MenuCommand Command)
         {

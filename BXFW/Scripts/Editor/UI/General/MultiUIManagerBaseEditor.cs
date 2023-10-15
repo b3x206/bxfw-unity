@@ -19,7 +19,7 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Omits the drawn value in the dictionary.
         /// </summary>
-        protected static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null);
+        protected static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = EditorAdditionals.OMIT_ACTION;
         /// <summary>
         /// List of GameObjects existing on the MultiUIManager.
         /// <br>Used to be able to register objects that were just created into the Undo stack.</br>

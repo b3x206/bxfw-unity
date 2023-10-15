@@ -21,18 +21,18 @@ namespace BXFW.ScriptEditor
             }
             if (!targets.All(m => m.useInternalInputMove))
             {
-                dict.Add(nameof(PlayerMovement.moveForwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveBackwardInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveLeftInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveRightInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveCrouchInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveJumpInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.moveRunInput), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.moveForwardInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveBackwardInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveLeftInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveRightInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveCrouchInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveJumpInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveRunInput), EditorAdditionals.OMIT_ACTION);
             }
             if (!targets.All(m => m.UseGravity))
             {
-                dict.Add(nameof(PlayerMovement.gravity), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dict.Add(nameof(PlayerMovement.groundMask), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(PlayerMovement.gravity), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.groundMask), EditorAdditionals.OMIT_ACTION);
             }
             if (targets.Any(m => m.currentCameraView != PlayerMovement.CamViewType.TPS && m.currentCameraView != PlayerMovement.CamViewType.FreeRelativeCam))
             {

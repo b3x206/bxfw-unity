@@ -68,23 +68,22 @@ namespace BXFW
             Vector3 positionDelta = Vector3.zero;
             if ((parentGroup.scrollAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis)
             {
-                float Temp = parentGroup.targetCamera.transform.position.x * (1f - parallaxEffectAmount);
-                float Dist = parentGroup.targetCamera.transform.position.x * parallaxEffectAmount;
+                float temp = parentGroup.targetCamera.transform.position.x * (1f - parallaxEffectAmount);
+                float dist = parentGroup.targetCamera.transform.position.x * parallaxEffectAmount;
 
-                positionDelta.x += Dist;
+                positionDelta.x += dist;
 
-                if (Temp > m_startPos.x + m_length)
+                if (temp > m_startPos.x + m_length)
                     m_startPos.x += m_length;
-                else if (Temp < m_startPos.x - m_length)
+                else if (temp < m_startPos.x - m_length)
                     m_startPos.x -= m_length;
             }
             if ((parentGroup.scrollAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis)
             {
-                // Follow the camera position in Y too
-                //float yTemp = ParentGroup.TargetCamera.transform.position.y *
-                //    (1 - ParallaxEffectAmount);
-                // Note that we don't need to restart / tile on Y parallax, so the 'yTemp' reset value can be commented
-                // Both axis parallax works the same.
+                // -- Follow the camera position in Y too
+                // float yTemp = ParentGroup.TargetCamera.transform.position.y * (1f - ParallaxEffectAmount);
+                // * Note that we don't need to restart / tile on Y parallax, so the 'yTemp' reset value can be commented
+                // * Both axis parallax works the same.
                 float yDist = parentGroup.targetCamera.transform.position.y * parallaxEffectAmount;
 
                 positionDelta.y += yDist;

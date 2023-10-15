@@ -80,6 +80,7 @@ namespace BXFW
                 for (int j = 0; j < jLen; j++)
                 {
                     tgt[i][j] = new TDest[kLen];
+
                     for (int k = 0; k < kLen; k++)
                         tgt[i][j][k] = converter(src[i, j, k]);
                 }
@@ -96,20 +97,13 @@ namespace BXFW
         /// <returns>Randomly selected enum.</returns>
         /// <exception cref="InvalidCastException">Thrown when the type isn't enum. (<see cref="Type.IsEnum"/> is false)</exception>
         public static T GetRandomEnum<T>(T[] enumExceptionList = null)
-#if CSHARP_7_3_OR_NEWER
             where T : Enum
-#endif
         {
-#if !CSHARP_7_3_OR_NEWER
-            if (!typeof(T).IsEnum)
-                throw new InvalidCastException(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
-#endif
-
             List<T> enumList = new List<T>(Enum.GetValues(typeof(T)).Cast<T>());
             if (enumExceptionList.Length >= enumList.Count)
             {
 #if UNITY_5_3_OR_NEWER
-                Debug.LogWarning(string.Format("[Additionals::GetRandomEnum] EnumToIgnore list is longer than array, returning 'default'. Bool : {0} >= {1}", enumExceptionList.Length, enumList.Count));
+                Debug.LogWarning(string.Format("[CollectionUtility::GetRandomEnum] EnumToIgnore list is longer than array, returning 'default'. Bool : {0} >= {1}", enumExceptionList.Length, enumList.Count));
 #endif
                 return default;
             }
@@ -166,7 +160,7 @@ namespace BXFW
                 current++;
             }
 
-            throw new IndexOutOfRangeException(string.Format("[Additionals::GetRandom] Failed getting random : rngValue '{0}' was not in range of array sized '{1}'.", rngValue, current));
+            throw new IndexOutOfRangeException(string.Format("[CollectionUtility::GetRandom] Failed getting random : rngValue '{0}' was not in range of array sized '{1}'.", rngValue, current));
         }
         /// <summary>
         /// Returns a random value from an IEnumerable.
@@ -175,9 +169,9 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
         {
             if (values == null)
-                throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
             if (predicate == null)
-                throw new ArgumentNullException(nameof(predicate), "[Additionals::GetRandom] Failed to get random.");
+                throw new ArgumentNullException(nameof(predicate), "[CollectionUtility::GetRandom] 'predicate' is null.");
 
             IEnumerable<T> GetValuesFiltered()
             {
@@ -198,7 +192,7 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values)
         {
             if (values == null)
-                throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
 
             // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
             int valuesSize = -1;
@@ -235,7 +229,6 @@ namespace BXFW
             // Create a filtered List?
             // .. this will GC.Alloc ..
             // I take 'GetEnumerator' over 'new List' with undefined size.
-            // List<T> valuesCopy = new List<T>();
             return GetRandom((IEnumerable<T>)values, predicate);
         }
 
@@ -344,7 +337,7 @@ namespace BXFW
         public static IEnumerable<TResult> Cast<TResult, TParam>(this IEnumerable<TParam> enumerable, Func<TParam, TResult> converter)
         {
             if (converter == null)
-                throw new NullReferenceException("[Additionals::Cast] Given 'converter' parameter is null.");
+                throw new NullReferenceException("[CollectionUtility::Cast] Given 'converter' parameter is null.");
 
             foreach (TParam t in enumerable)
                 yield return converter(t);
@@ -366,7 +359,9 @@ namespace BXFW
             }
         }
 
-        /// <summary>Resize array.</summary>
+        /// <summary>
+        /// Resizes an IList array.
+        /// </summary>
         /// <param name="newT">
         /// The instance of a new generic.
         /// This is added due to '<typeparamref name="T"/>' not being a '<see langword="new"/> <typeparamref name="T"/>()' able type.
@@ -384,7 +379,7 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Resize array.
+        /// Resizes an IList array.
         /// </summary>
         public static void Resize<T>(this IList<T> list, int sz) where T : new()
         {

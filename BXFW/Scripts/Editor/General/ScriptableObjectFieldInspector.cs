@@ -590,7 +590,7 @@ namespace BXFW
             bool gEnabled = GUI.enabled;
 
             // Drag-Drop gui.
-            EditorAdditionals.MakeDroppableAreaGUI(onDragAcceptAction: () =>
+            EditorAdditionals.MakeDroppableAreaGUI(() =>
             {
                 if (DebugMode)
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Dragged object stats => Length:{0}, Object:{1}", DragAndDrop.objectReferences.Length, DragAndDrop.objectReferences[0].GetType().BaseType));

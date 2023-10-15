@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.ProjectWindowCallback;
+using UnityEditor.PackageManager.Requests;
 
 namespace BXFW.Tools.Editor
 {
@@ -541,8 +542,58 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
+        /// Return the target property drawer for <paramref name="targetType"/>.
+        /// <br>This method throws <see cref="ArgumentException"/> if no property drawers were found.</br>
+        /// </summary>
+        public static PropertyDrawer GetPropertyDrawerFromType(Type targetType)
+        {
+            if (targetType == null)
+                throw new ArgumentNullException(nameof(targetType), "[EditorAdditionals::GetTargetPropertyDrawer] Given Type argument is null.");
+
+            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(PropertyDrawer))         // Internal class is contained in the same assembly (UnityEditor.CoreModule)
+                .GetType("UnityEditor.ScriptAttributeUtility", true)                             // Internal class that has dictionary for all custom PropertyDrawer's
+                .GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static) // Utility method to get type from the internal class
+                .Invoke(null, new object[] { targetType });                                      // Call with the type parameter. It will return a type that needs instantiation using Activator.
+
+            if (propertyDrawerType == null)
+                throw new ArgumentException($"[EditorAdditionals::GetTargetPropertyDrawer] Given type {targetType} has no property drawer. Ensure the type is valid and serializable by unity.", nameof(targetType));
+
+            // PropertyDrawer's don't inherit UnityEngine.Object and thus can be created normally
+            return (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
+        }
+        /// <summary>
+        /// Return the target property drawer for <paramref name="targetType"/>.
+        /// This method catches the thrown exceptions of <see cref="GetPropertyDrawerFromType(Type)"/>.
+        /// </summary>
+        public static bool TryGetPropertyDrawerFromType(Type targetType, out PropertyDrawer drawer)
+        {
+            drawer = null;
+
+            try
+            {
+                drawer = GetPropertyDrawerFromType(targetType);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+        /// <inheritdoc cref="GetPropertyDrawerFromType(Type)"/>
+        public static PropertyDrawer GetPropertyDrawerFromType<T>()
+        {
+            return GetPropertyDrawerFromType(typeof(T));
+        }
+        /// <inheritdoc cref="TryGetPropertyDrawerFromType(Type, out PropertyDrawer)"/>
+        public static bool TryGetPropertyDrawerFromType<T>(out PropertyDrawer drawer)
+        {
+            return TryGetPropertyDrawerFromType(typeof(T), out drawer);
+        }
+
+        /// <summary>
         /// Get the property drawer for the field type that you are inspecting.
-        /// <br>Very useful for <c>Attribute</c> targeting PropertyDrawers.</br>
+        /// <br>Very useful for <c><see cref="Attribute"/></c> targeting PropertyDrawers.</br>
         /// <br>Will throw <see cref="InvalidOperationException"/> if called from a property drawer that's target is an actual non-attribute class.</br>
         /// </summary>
         /// TODO : Maybe create a new 'PropertyDrawer' class named 'AttributePropertyDrawer' with better enforcement?
@@ -551,6 +602,8 @@ namespace BXFW.Tools.Editor
             if (requester == null)
                 throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
 
+            // -- Assert the requester to be a property drawer for an attribute
+            // - This is done to not get the same property drawer as the requester which may cause an overflow
             // Get the attribute type for target PropertyDrawer's CustomPropertyDrawer target type
             Type attributeTargetType = (Type)typeof(CustomPropertyDrawer)
                 .GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -559,17 +612,10 @@ namespace BXFW.Tools.Editor
             if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
                 throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
 
-            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(PropertyDrawer))         // Internal class is contained in the same assembly (UnityEditor.CoreModule)
-                .GetType("UnityEditor.ScriptAttributeUtility", true)                             // Internal class that has dictionary for all custom PropertyDrawer's
-                .GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static) // Utility method to get type from the internal class
-                .Invoke(null, new object[] { requester.fieldInfo.FieldType });                   // Call with the type parameter. It will return a type that needs instantiation using Activator.
-
-            // Ignore this, this means that there's no 'PropertyDrawer' implemented.
-            if (propertyDrawerType == null)
+            if (!TryGetPropertyDrawerFromType(requester.fieldInfo.FieldType, out PropertyDrawer resultDrawer))
                 return null;
 
-            // PropertyDrawer's don't inherit UnityEngine.Object
-            PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
+            //PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
             {
                 // Leave m_Attribute as is, there's no need to access that (as this is most likely not a custom attribute property drawer)
@@ -656,15 +702,16 @@ namespace BXFW.Tools.Editor
         /// If passed <see langword="null"/> this method will act like <see cref="UnityEditor.Editor.DrawDefaultInspector"/>.
         /// </param>
         /// <example>
-        /// // Info : The Generic '/\' is replaced with '[]'.
-        /// serializedObject.DrawDefaultInspector(new Dictionary[string, KeyValuePair[MatchGUIActionOrder, Action]] 
+        /// <![CDATA[
+        /// serializedObject.DrawDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> 
         /// {
-        ///     { nameof(FromAnyClass.ElementNameYouWant), new KeyValuePair[MatchGUIActionOrder, System.Action](MatchGUIActionOrder.Before, () => 
+        ///     { nameof(FromAnyClass.ElementNameYouWant), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => 
         ///         {
         ///             // Write your commands here.
         ///         })
         ///     }
         /// });
+        /// ]]>
         /// </example>
         /// <returns><see cref="EditorGUI.EndChangeCheck"/> (whether if a field was modified inside this method)</returns>
         public static bool DrawCustomDefaultInspector(this SerializedObject obj, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent)
@@ -744,7 +791,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Omit action for <see cref="DrawCustomDefaultInspector(SerializedObject, Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}})"/>.
         /// </summary>
-        public static readonly KeyValuePair<MatchGUIActionOrder, Action> OmitAction = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null);
+        public static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null);
 
         /// <summary>
         /// Returns whether if this 'SerializedObject' is disposed.
@@ -837,6 +884,7 @@ namespace BXFW.Tools.Editor
         /// <param name="obj">Serialized object of target.</param>
         /// <param name="arrayName">Array field name.</param>
         /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other methods.</param>
+        [Obsolete("Use 'EditorGUIAdditionals' instead of this", false)]
         public static void UnityArrayGUI(this SerializedObject obj, string arrayName, Action<int> onArrayFieldDrawn = null)
         {
             UnityArrayGUI(obj, true, arrayName, onArrayFieldDrawn);
@@ -848,6 +896,7 @@ namespace BXFW.Tools.Editor
         /// <param name="obj">Serialized object of target.</param>
         /// <param name="arrayName">Array field name.</param>
         /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other 'UnityArrayGUI' methods.</param>
+        [Obsolete("Use 'EditorGUIAdditionals' instead of this", false)]
         public static bool UnityArrayGUI(this SerializedObject obj, bool toggle, string arrayName, Action<int> onArrayFieldDrawn = null)
         {
             // Get size of array
@@ -866,7 +915,8 @@ namespace BXFW.Tools.Editor
                     throw new NullReferenceException(string.Format("[EditorAdditionals::UnityArrayGUI] The drawn property at index {0} does not exist. This should not happen.", i));
 
                 EditorGUILayout.PropertyField(prop);
-
+                // Do callback, which is actually pointless if the user knows about 'PropertyFields'
+                // TODO : Deprecate the callback?
                 onArrayFieldDrawn?.Invoke(i);
             }
 
@@ -883,6 +933,7 @@ namespace BXFW.Tools.Editor
         /// <param name="label">Label to draw for the array.</param>
         /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
         /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
+        [Obsolete("This unserialized array drawing method will be deprecated and a interface array reference will be used.", false)]
         public static bool UnityArrayGUICustom<T>(bool toggle, GUIContent label, ref T[] array, Action<int> onArrayFieldDrawn)
             where T : new()
         {
@@ -907,6 +958,7 @@ namespace BXFW.Tools.Editor
         /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
         /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
         /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
+        [Obsolete("Use 'EditorGUIAdditionals' instead of this", false)]
         public static bool UnityArrayGUICustom<T>(bool toggle, ref T[] array, Action<int> onArrayFieldDrawn)
             where T : new()
         {

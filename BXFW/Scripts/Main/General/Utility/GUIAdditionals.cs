@@ -6,8 +6,7 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// GUI additionals.
-    /// Provides GUI related utils.
+    /// GUI additionals, provides GUI related drawing methods.
     /// </summary>
     public static class GUIAdditionals
     {
@@ -210,7 +209,7 @@ namespace BXFW
         private static GUIStyle PlotSmallerFontStyle;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
-        /// <br>The plotting is not accurate and does ignores some of the characteristics of certain functions
+        /// <br>The plotting is not accurate and does ignore some of the characteristics of certain functions
         /// (i.e <see cref="Mathf.Tan(float)"/>), but it looks good enough for a rough approximation.</br>
         /// <br/>
         /// <br>Note : This calls <see cref="DrawLine(Vector2, Vector2, float)"/> lots of times instead of doing something optimized.</br>
@@ -269,7 +268,6 @@ namespace BXFW
 
             // Labels have a reserved 'PLOT_TEXT_PADDING' width
             // TODO : Add a 'showLabels' parameter
-
             Rect plotPosition = new Rect
             {
                 x = position.x + PLOT_TEXT_PADDING_X,

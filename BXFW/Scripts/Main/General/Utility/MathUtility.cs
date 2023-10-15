@@ -514,7 +514,7 @@ namespace BXFW
         /// <summary>
         /// Returns the <paramref name="quaternion"/> with the constrainted euler angles of given axis <paramref name="axisConstraint"/>.
         /// </summary>
-        public static Quaternion AxisQuaternion(this Quaternion quaternion, TransformAxis axisConstraint)
+        public static Quaternion AxisEulerQuaternion(this Quaternion quaternion, TransformAxis axisConstraint)
         {
             return Quaternion.Euler(quaternion.eulerAngles.AxisVector(axisConstraint));
         }

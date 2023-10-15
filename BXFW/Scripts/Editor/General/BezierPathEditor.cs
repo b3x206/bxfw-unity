@@ -4,9 +4,8 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
-    // TODO : Add a 'BezierPathDrawerEditWindow' thing for allowing easier drawing to the scene and random places.
-    // This is a long term TODO
-
+    // * TODO : Add a 'BezierPathDrawerEditWindow' thing for allowing easier drawing to the scene and random places.
+    // This is a long term plan.
     /// <summary>
     /// Updates the path whenever a change happens.
     /// </summary>

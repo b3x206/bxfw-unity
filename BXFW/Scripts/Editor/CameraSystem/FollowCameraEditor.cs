@@ -74,9 +74,9 @@ namespace BXFW.ScriptEditor
 
             var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
             if (targets.Any(cam => cam.useFollowPositionInstead))
-                dict.Add(nameof(FollowCamera.followTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(FollowCamera.followTransform), EditorAdditionals.OMIT_ACTION);
             if (targets.Any(cam => cam.followTransform != null && !cam.useFollowPositionInstead))
-                dict.Add(nameof(FollowCamera.followPosition), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                dict.Add(nameof(FollowCamera.followPosition), EditorAdditionals.OMIT_ACTION);
 
             // Base Inspector
             serializedObject.DrawCustomDefaultInspector(dict);
