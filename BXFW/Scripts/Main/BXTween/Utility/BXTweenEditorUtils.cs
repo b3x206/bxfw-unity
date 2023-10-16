@@ -168,26 +168,5 @@ namespace BXFW.Tweening.Editor
         }
     }
     #endregion
-
-    internal static class BXTweenEditorUtils
-    {
-        /// <summary>
-        /// <b>EDITOR ONLY :</b> Prints all variables (properties) using <see cref="Debug.Log(object)"/>.
-        /// </summary>
-        [Obsolete("Use the Window>BXTween>Settings's debug view on the inspector instead of this", true)]
-        internal static void PrintAllVariables<T>(this BXTweenCTX<T> ctx)
-        {
-            Debug.Log(BXTweenStrings.LogRich(string.Format("[BXTweenCTX({0})] Printing all variables (using reflection). P = Property, F = Field.", typeof(T).Name)));
-
-            foreach (var v in typeof(T).GetProperties())
-            {
-                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("[P]<b>{0}</b>:::{1} = {2}", v.Name, v.PropertyType, v.GetValue(ctx))));
-            }
-            foreach (var v in typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                Debug.Log(BXTweenStrings.LogDiagRich(string.Format("[F]<b>{0}</b>:::{1} = {2}", v.Name, v.FieldType, v.GetValue(ctx))));
-            }
-        }
-    }
 }
 #endif

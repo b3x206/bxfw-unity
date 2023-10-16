@@ -39,7 +39,7 @@ namespace BXFW.Tweening.Next
 
     /// <summary>
     /// A class that defines what a tweenable is.
-    /// <br>Any class inheriting from this moves a value from <c>a-&gt;b</c>.</br>
+    /// <br>Any class inheriting from this moves/receives a value from <c>a-&gt;b</c>.</br>
     /// </summary>
     [Serializable]
     public abstract class BXSTweenable
@@ -218,7 +218,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// The targeted ticking type.
         /// <br>Note : Usage of this depends on whether the <see cref="BXSTween.MainRunner"/> supporting <see cref="IBXSTweenRunner.SupportsFixedTick"/>.</br>
-        /// <br>(basically setting this may not change the <see cref="BXSTweenable"/> behaviour, use the <see cref="ActualTickType"/> method)</br>
+        /// <br>(basically setting this may not change the <see cref="BXSTweenable"/> behaviour, use the <see cref="ActualTickType"/> property)</br>
         /// </summary>
         public TickType TickType => m_TickType;
         /// <summary>
@@ -416,7 +416,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// The parent tweenable this tween has set.
         /// </summary>
-        public BXSTweenable ParentTweenable { get; protected set; }
+        public BXSTweenable ParentTweenable { get; protected internal set; }
         // - Starting
         /// <summary>
         /// The duration when the <see cref="Play"/> is called.

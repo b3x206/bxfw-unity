@@ -57,15 +57,15 @@ namespace BXFW.UI
             }
         }
 
-        [SerializeField] private bool mInteractable = true;
+        [SerializeField] private bool m_Interactable = true;
         /// <summary>
         /// Whether if this button is interactable.
         /// <br>Note : The parent tab system's interactability overrides this buttons.</br>
         /// </summary>
         public bool Interactable
         {
-            get { return ParentTabSystem.Interactable && mInteractable; }
-            set { mInteractable = value; }
+            get { return ParentTabSystem.Interactable && m_Interactable; }
+            set { m_Interactable = value; }
         }
 
         [Header(":: Tab Button Reference")]
@@ -87,12 +87,12 @@ namespace BXFW.UI
         {
             if (ParentTabSystem == null)
             {
-                Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Will try to get it.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Will try to get it.", this.GetPath()), this);
                 var parentTab = GetComponentInParent<TabSystem>();
 
                 if (parentTab == null)
                 {
-                    Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Failed to get component.", this.GetPath()));
+                    Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Failed to get component.", this.GetPath()), this);
                     return;
                 }
 
@@ -292,7 +292,8 @@ namespace BXFW.UI
         #region Color Fading
         private void TweenColorFade(Color Target, float Duration)
         {
-            if (!gameObject.activeInHierarchy) return; // Do not start coroutines if the object isn't active.
+            if (!gameObject.activeInHierarchy)
+                return; // Do not start coroutines if the object isn't active.
 
             StartCoroutine(CoroutineTweenColorFade(Target, Duration));
         }

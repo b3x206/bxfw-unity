@@ -123,6 +123,8 @@ namespace BXFW.Tweening.Next
             // Hook the tween runner
             m_MainRunner = getRunnerAction();
             HookTweenRunner(m_MainRunner);
+            // Get the delegates
+            m_GetMainRunnerAction = getRunnerAction;
 
             // Hook the logger
             SetLogger(logger);

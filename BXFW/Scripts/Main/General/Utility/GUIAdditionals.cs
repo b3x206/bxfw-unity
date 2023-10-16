@@ -13,6 +13,7 @@ namespace BXFW
         /// <summary>
         /// Hashes contained in the <see cref="GUI"/> class, 
         /// for use with <see cref="GUIUtility.GetControlID(int, FocusType, Rect)"/>.
+        /// <br>This is not the exact same hashlist unity internally uses, this is for custom uses.</br>
         /// </summary>
         public static class HashList
         {
@@ -24,6 +25,68 @@ namespace BXFW
             public static readonly int SliderHash = "Slider".GetHashCode();
             public static readonly int BeginGroupHash = "BeginGroup".GetHashCode();
             public static readonly int ScrollViewHash = "scrollView".GetHashCode();
+        }
+
+        private const string JBMONO_FONT_NAME = "Jetbrains Mono";
+        private const string CONSOLAS_FONT_NAME = "Consolas";
+        private const string COURIER_FONT_NAME = "Courier";
+        /// <summary>
+        /// Name of the selected monospace font.
+        /// </summary>
+        private static string MonospaceFontName
+        {
+            get
+            {
+                string[] fonts = Font.GetOSInstalledFontNames();
+                string selected;
+                if (fonts.Any(name => name == JBMONO_FONT_NAME))
+                {
+                    selected = JBMONO_FONT_NAME;
+                }
+                else if (fonts.Any(name => name == CONSOLAS_FONT_NAME))
+                {
+                    selected = CONSOLAS_FONT_NAME;
+                }
+                else
+                {
+                    selected = COURIER_FONT_NAME;
+                }
+
+                return selected;
+            }
+        }
+        private static Font m_MonospaceFont;
+        /// <summary>
+        /// A monospace font loaded (and cached) from the system fonts.
+        /// <br>This will go in this preference order =&gt; Jetbrains Mono, Consolas and will use Courier if all fails.</br>
+        /// </summary>
+        public static Font MonospaceFont
+        {
+            get
+            {
+                if (m_MonospaceFont == null)
+                {
+                    m_MonospaceFont = Font.CreateDynamicFontFromOSFont(MonospaceFontName, 12);
+                }
+
+                return m_MonospaceFont;
+            }
+        }
+        private static int m_MonospaceFontSize = 12;
+        /// <summary>
+        /// Generation size of the monospace font.
+        /// </summary>
+        public static int MonospaceFontSize
+        {
+            get
+            {
+                return m_MonospaceFontSize;
+            }
+            set
+            {
+                m_MonospaceFontSize = Math.Clamp(value, 1, int.MaxValue);
+                m_MonospaceFont = Font.CreateDynamicFontFromOSFont(MonospaceFontName, m_MonospaceFontSize);
+            }
         }
 
         private static bool isBeingDragged = false; // Since we only have one mouse cursor lol

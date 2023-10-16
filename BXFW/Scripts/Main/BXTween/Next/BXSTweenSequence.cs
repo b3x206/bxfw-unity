@@ -268,6 +268,7 @@ namespace BXFW.Tweening.Next
                 return;
             }
 
+            tween.ParentTweenable = this;
             m_RunnableTweens.Add(new RunnableTween(LastPriority, tween));
         }
         /// <summary>

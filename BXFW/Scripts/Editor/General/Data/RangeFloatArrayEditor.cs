@@ -52,7 +52,7 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Returns the length of the <paramref name="number"/> when it's converted to an integer.
         /// </summary>
-        private static int NumberRepresentationLength(float number)
+        private static int NumberStringLength(float number)
         {
             // Could get the number length depending on how many times it gets divided by 10
             // but that only works for the integral part + it probably could be slower than ToString
@@ -108,8 +108,8 @@ namespace BXFW.ScriptEditor
             // {val1} --o--o--o-- {val2} [+][-]
 
             // Draw the sized box
-            float minTextWidth = TextValueInitialWidth + (NumberRepresentationLength(target.Min) * TextValueCharWidth);
-            float maxTextWidth = TextValueInitialWidth + (NumberRepresentationLength(target.Max) * TextValueCharWidth);
+            float minTextWidth = TextValueInitialWidth + (NumberStringLength(target.Min) * TextValueCharWidth);
+            float maxTextWidth = TextValueInitialWidth + (NumberStringLength(target.Max) * TextValueCharWidth);
             // Compensate for padding?
             Rect dragAreaBoxRect = new Rect(
                 position.x + minTextWidth + HORIZONTAL_PADDING,
@@ -249,7 +249,7 @@ namespace BXFW.ScriptEditor
 
                 // Only call/check event(s) for single used GUI knob element
                 // Note : Using the event and the 'modifyIndex or dragIndex' being different also prevents that.
-                if (!usedEvent && string.IsNullOrEmpty(interactedPropertyID) || interactedPropertyID == currentPropertyID)
+                if (!usedEvent && (string.IsNullOrEmpty(interactedPropertyID) || interactedPropertyID == currentPropertyID))
                 {
                     // Intercept events manually
                     switch (e.type)
@@ -393,10 +393,8 @@ namespace BXFW.ScriptEditor
             }
 
             // -- Local Globals
-            RangeFloatArray target = property.GetTarget().value as RangeFloatArray;
             // Current event
             Event e = Event.current;
-            string currentPropertyID = SerializedPropertyCustomData.GetIDString(property);
             // e.type == Layout gives incorrect positioning
             // This makes the popup window jitter.
             if (e.type == EventType.Repaint)
