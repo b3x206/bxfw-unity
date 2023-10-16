@@ -22,11 +22,8 @@ namespace BXFW.Tweening.Next
             tweenable = target;
         }
         public BXSWaitForTween(BXSTweenable target, bool waitWhilePausing)
+            : this(target)
         {
-            if (target == null)
-                throw new ArgumentNullException(nameof(target), "[BXSWaitForTween::ctor()] Given BXSTweenable target cannot be null.");
-
-            tweenable = target;
             this.waitWhilePausing = waitWhilePausing;
         }
     }

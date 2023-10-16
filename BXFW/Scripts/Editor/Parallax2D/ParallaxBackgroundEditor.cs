@@ -166,8 +166,8 @@ namespace BXFW
         // -- Page 0
         [SerializeField] private LayerRegistry[] parallaxLayers = new LayerRegistry[0];
         // -- Page 1
-        [SerializeField, NonReorderable] private SpriteRenderer[] ParallaxObjects = new SpriteRenderer[0];
-        [SerializeField] private Transform Container;
+        [SerializeField] private SpriteRenderer[] layerSpriteObjects = new SpriteRenderer[0];
+        [SerializeField] private Transform container;
 
         [SerializeField] private int layerRendererXTileCount = 5;
         [Range(0f, 1f), SerializeField] private float layerParallaxAmount = 0f;
@@ -323,10 +323,10 @@ namespace BXFW
 
             if (modifyBGLayer)
             {
-                EditorGUIAdditionals.DrawArray(so, nameof(ParallaxObjects));
+                EditorGUIAdditionals.DrawArray(so, nameof(layerSpriteObjects));
             }
 
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(Container)));
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(container)));
             EditorGUILayout.Space();
 
             // Add parallax object
@@ -334,14 +334,14 @@ namespace BXFW
             {
                 var BGLayer = layerOrderStart - targetGroup.ChildLength;
 
-                if (Container == null)
+                if (container == null)
                 {
                     Debug.LogWarning("[ParallaxBGEditor] There is no container.");
                     return;
                 }
 
                 // Check if this Container object already is registered
-                if (Container.TryGetComponent(out ParallaxBackgroundLayer objComponent))
+                if (container.TryGetComponent(out ParallaxBackgroundLayer objComponent))
                 {
                     for (int i = 0; i < targetGroup.Backgrounds.Count; i++)
                     {
@@ -356,17 +356,17 @@ namespace BXFW
 
                 if (modifyBGLayer)
                 {
-                    if (ParallaxObjects == null)
+                    if (layerSpriteObjects == null)
                     {
                         Debug.LogWarning("[ParallaxBGEditor] There is no background object.");
                         return;
                     }
-                    if (ParallaxObjects.Length < 0)
+                    if (layerSpriteObjects.Length < 0)
                     {
                         Debug.LogWarning("[ParallaxBGEditor] There is no background object added.");
                         return;
                     }
-                    if (ParallaxObjects.Any(x => x == null))
+                    if (layerSpriteObjects.Any(x => x == null))
                     {
                         Debug.LogWarning("[ParallaxBGEditor] There is blank/null background objects.");
                         return;
@@ -374,12 +374,12 @@ namespace BXFW
                 }
 
                 // Destroy previous objects.
-                while (Container.TryGetComponent(out ParallaxBackgroundLayer obj))
+                while (container.TryGetComponent(out ParallaxBackgroundLayer obj))
                 {
                     DestroyImmediate(obj);
                 }
 
-                var pObj = Container.gameObject.AddComponent<ParallaxBackgroundLayer>();
+                var pObj = container.gameObject.AddComponent<ParallaxBackgroundLayer>();
                 pObj.parallaxEffectAmount = layerParallaxAmount;
                 pObj.parentGroup = targetGroup;
 
@@ -388,14 +388,14 @@ namespace BXFW
                     switch (layerSortMethod)
                     {
                         case BackgroundLayerSortMethod.SpriteRendererIndex:
-                            foreach (SpriteRenderer r in ParallaxObjects)
+                            foreach (SpriteRenderer r in layerSpriteObjects)
                             {
                                 r.sortingOrder = BGLayer;
                             }
                             break;
                         case BackgroundLayerSortMethod.ZAxisCoords:
-                            Container.transform.position
-                                = new Vector3(Container.transform.position.x, Container.transform.position.y,
+                            container.transform.position
+                                = new Vector3(container.transform.position.x, container.transform.position.y,
                                 setZOrderPositionAsPositive ? BGLayer : -BGLayer);
                             break;
                     }

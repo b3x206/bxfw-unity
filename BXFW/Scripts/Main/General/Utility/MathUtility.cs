@@ -575,10 +575,12 @@ namespace BXFW
         /// <br><see cref="Transform.localToWorldMatrix"/> = use the space mode <see cref="Space.Self"/> as this is the world matrix.</br>
         /// <br><b>NOTE + TODO : </b> This could be inverted or completely wrong as i did not test it.</br>
         /// </param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"/>
         public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.World)
         {
+            if (transform == null)
+                throw new ArgumentNullException(nameof(transform), "[MathUtility::SetMatrix] Passed parameter was null.");
+
             matrix.Deconstruct(out Vector3 position, out Quaternion rotation, out Vector3 scale);
 
             switch (space)
@@ -611,7 +613,7 @@ namespace BXFW
         /// </summary>
         public static Matrix4x4 Lerp(Matrix4x4 src, Matrix4x4 dest, float time)
         {
-            return LerpUnclamped(src, dest, Mathf.Clamp01(time));
+            return LerpUnclamped(src, dest, Math.Clamp(time, 0f, 1f));
         }
         /// <summary>
         /// Interpolates a Matrix4x4. (Unclamped)

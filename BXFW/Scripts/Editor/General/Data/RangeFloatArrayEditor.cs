@@ -1,33 +1,57 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
-using UnityEngine.Assertions;
 using BXFW.Tools.Editor;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BXFW.ScriptEditor
 {
     /// <summary>
     /// Draws an inspector for <see cref="RangeFloatArray"/>.
-    /// !! TODO : Needs big refactor
     /// </summary>
     [CustomPropertyDrawer(typeof(RangeFloatArray))]
-    internal class RangeFloatArrayDrawer : PropertyDrawer
+    public class RangeFloatArrayDrawer : PropertyDrawer
     {
-        private static RangeFloatArray GetTarget(SerializedProperty targetProperty)
-        {
-            return (RangeFloatArray)targetProperty.GetTarget().value;
-        }
-        private const float DR_PADDING = 2f;
+        // -- Settings
+        /// <summary>
+        /// Padding applied to the GUI.
+        /// <br>The padded area will be subtracted from the <see cref="OnGUI(Rect, SerializedProperty, GUIContent)"/>'s position parameter.</br>
+        /// </summary>
+        private const float PADDING = 2f;
+        /// <summary>
+        /// Padding between horizontal GUI elements.
+        /// </summary>
+        private const float HORIZONTAL_PADDING = 3f;
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            return EditorGUIUtility.singleLineHeight + DR_PADDING;
-        }
+        /// <summary>
+        /// Increment/Decrement element count button's width.
+        /// </summary>
+        private const float IncDecElemBtnWidth = 20f;
+        /// <summary>
+        /// Width of the drag area's boxes.
+        /// </summary>
+        private const float DraggableBoxWidth = 6f;
+        /// <summary>
+        /// Width of the 'modify value' box.
+        /// </summary>
+        private const float DraggableBoxModifyValueWidth = 60f;
+        private const float DraggableBoxModifyValueHeight = 52.5f;
+        /// <summary>
+        /// Initial width of the min/max value displays.
+        /// </summary>
+        private const float TextValueInitialWidth = 40f;
+        /// <summary>
+        /// Width (in percentage) for the property name.
+        /// </summary>
+        private const float PropNameWidthPercent = .3f;
+
+        /// <summary>
+        /// Size of the shown text value(s), calculated per character.
+        /// <br>Yes, the default unity editor font is not monospace, but idc, as i will use <see cref="TextAlignment.Center"/> for GUI purposes.</br>
+        /// </summary>
+        private const float TextValueCharWidth = 6f;
         /// <summary>
         /// Returns the length of the <paramref name="number"/> when it's converted to an integer.
         /// </summary>
-        /// <param name="number"></param>
-        /// <returns></returns>
         private static int NumberRepresentationLength(float number)
         {
             // Could get the number length depending on how many times it gets divided by 10
@@ -36,116 +60,50 @@ namespace BXFW.ScriptEditor
             return number.ToString("G.###").Length;
         }
 
+        // -- State
         /// <summary>
-        /// Padding between GUI elements.
+        /// String identification used for the previously interacted property.
+        /// <br>Gathered using <see cref="SerializedPropertyCustomData.GetIDString(SerializedProperty)"/>.</br>
         /// </summary>
-        private const float ElemPadding = 3f;
+        private string interactedPropertyID;
         /// <summary>
-        /// Increment/Decrement element count button's width.
+        /// Hack for getting the correct rect in repaint but not in layout
+        /// Setting the 'position' parameter during the EventType.Layout does not seem to break stuff
         /// </summary>
-        private const float IncDecElemBtnWidth = 20f;
+        private Rect previousRepaintRect;
+        /// <summary>
+        /// Index that is being dragged in the fake slider handle.
+        /// </summary>
+        private int dragIndex = -1;
+        /// <summary>
+        /// Index that is being modified by the BasicDropdown.
+        /// </summary>
+        private int modifyIndex = -1;
 
-        /// <summary>
-        /// Width of the drag area's boxes.
-        /// </summary>
-        private const float DraggableBoxWidth = 6f;
-        /// <summary>
-        /// Width of the 'modify value' box.
-        /// </summary>
-        private const float DraggableBoxModifyValueWidth = 50f;
-        private const float DraggableBoxModifyValueHeight = 60f;
-        /// <summary>
-        /// Minimum value between the value slidables.
-        /// <br>The slidables will clip if the mouse position and the slidable distance is greater than this value * 2f.</br>
-        /// </summary>
-        // Not used as RangeFloatArray.EXISTING_OFFSET works fine.
-        // private const float MinDistBetweenValueSlidables = 3f;
+        private GUIStyle tinyFontBoxStyle;
 
-        /// <summary>
-        /// Initial width of the min/max value displays.
-        /// </summary>
-        private const float TextValueInitialWidth = 40f;
-        /// <summary>
-        /// Size of the shown text value(s), calculated per character.
-        /// <br>Yes, the default unity editor font is not monospace, but idc, as i will use <see cref="TextAlignment.Center"/> for GUI purposes.</br>
-        /// </summary>
-        private const float TextValueCharWidth = 6f;
-
-        /// <summary>
-        /// Width (in percentage) for the property name.
-        /// </summary>
-        private const float PropNameWidthPercent = .3f;
-
-        /// <summary>
-        /// Contains an identification of a SerializedProperty.
-        /// <br>Uses <see cref="SerializedProperty.serializedObject"/>.targetObject.name :: <see cref="SerializedProperty.propertyPath"/></br>
-        /// </summary>
-        private class PropertyID : IEquatable<PropertyID>, IEquatable<SerializedProperty>
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            /// <summary>
-            /// Prefix for the '<see cref="propPath"/>'.
-            /// </summary>
-            private const string PROP_PARENT_PREFIX = "::";
-
-            public readonly string propPath;  // Drawn property path (won't use the actual SerializedProperty as it gets disposed)
-
-            public PropertyID(SerializedProperty prop)
-            {
-                propPath = string.Format("{0}{1}{2}", prop.serializedObject.targetObject.name, PROP_PARENT_PREFIX, prop.propertyPath);
-            }
-            //public PropertyID(SerializedProperty prop, RangeFloatArray target)
-            //{
-            //    propPath = string.Format("{0}{1}{2}", prop.serializedObject.targetObject.name, PROP_PARENT_PREFIX, prop.propertyPath);
-            //    this.target = target;
-            //}
-
-            public bool Equals(PropertyID other)
-            {
-                return propPath == other.propPath;
-            }
-
-            public bool Equals(SerializedProperty other)
-            {
-                string[] splitPath = propPath.Split(PROP_PARENT_PREFIX, StringSplitOptions.None);
-                // Should have the size of 2
-                Assert.IsTrue(splitPath.Length == 2, string.Format("[RangeArrayDrawer::PropertyValues::Equals(SerializedProperty)] Length of 'splitPath' is not 2. propPath is '{0}'.", propPath));
-                return splitPath[0] == other.serializedObject.targetObject.name && splitPath[1] == other.propertyPath;
-            }
+            return EditorGUIUtility.singleLineHeight + PADDING;
         }
 
-        private PropertyID currentInteractedProperty; // Property that has it's events listened, if this is null all are listened else only this matching is listened.
-        private Rect previousRepaintRect; // hack for getting the correct rect in repaint but not in layout
-                                          // Setting the 'position' parameter during the EventType.Layout does not seem to break stuff
-        private int dragIndex = -1;       // Index that is being dragged in the fake slider
-        private int modifyIndex = -1;     // Index that is being modified by the SimpleDropdown
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        /// <summary>
+        /// Draws the rest of the interface.
+        /// </summary>
+        /// <param name="mainPosition">Total size of the OnGUI rect.</param>
+        /// <param name="position">The position to draw this main gui on.</param>
+        private void DrawMainGUI(Rect mainPosition, Rect position, SerializedProperty property)
         {
-            RangeFloatArray target = GetTarget(property);
-
+            RangeFloatArray target = property.GetTarget().value as RangeFloatArray;
             Event e = Event.current;
-            // e.type == Layout gives incorrect positioning
-            // This makes the popup window jitter.
-            if (e.type == EventType.Repaint)
-            {
-                previousRepaintRect = position;
-            }
-            if (e.type == EventType.Layout || e.type == EventType.Used)
-            {
-                position = previousRepaintRect;
-            }
+            string currentPropertyID = SerializedPropertyCustomData.GetIDString(property);
 
-            // top/bottom paddings
-            position.height -= DR_PADDING;
-            position.y += DR_PADDING / 2f;
-
-            EditorGUI.BeginChangeCheck();
-            EditorGUI.LabelField(new Rect(position) { width = position.width * PropNameWidthPercent }, label);
-            float propertyLabelWidth = position.width * PropNameWidthPercent;
-            float setRemainingWidth = position.width * (1f - PropNameWidthPercent);
-            // modify main rect
-            position.x += position.width * PropNameWidthPercent;
-            position.width = setRemainingWidth;
-
+            // This code is awful IMGUI code, yes i know.
+            // But it works. While this may go as a 'Complex Method' it is complex
+            // just because i wanted to create a slider with multiple knobs
+            // --
+            // FIXME : Create a 'Slider' and 'MultiSlider' to GUIAdditionals
+            // -- 
             // | -> content => tooltip = [value]
             // {val1} --o--o--o-- {val2} [+][-]
 
@@ -154,9 +112,9 @@ namespace BXFW.ScriptEditor
             float maxTextWidth = TextValueInitialWidth + (NumberRepresentationLength(target.Max) * TextValueCharWidth);
             // Compensate for padding?
             Rect dragAreaBoxRect = new Rect(
-                position.x + minTextWidth + ElemPadding,
+                position.x + minTextWidth + HORIZONTAL_PADDING,
                 position.y,
-                position.width - (minTextWidth + ElemPadding + maxTextWidth + ElemPadding + ((IncDecElemBtnWidth + ElemPadding) * 2f)),
+                position.width - (minTextWidth + HORIZONTAL_PADDING + maxTextWidth + HORIZONTAL_PADDING + ((IncDecElemBtnWidth + HORIZONTAL_PADDING) * 2f)),
                 position.height
             );
             GUI.Box(dragAreaBoxRect, GUIContent.none, GUI.skin.horizontalSlider);
@@ -169,7 +127,7 @@ namespace BXFW.ScriptEditor
             );
             float minValue = EditorGUI.FloatField(minValueFieldRect, target.Min);
             Rect maxValueFieldRect = new Rect(
-                position.x + minTextWidth + dragAreaBoxRect.width + ElemPadding,
+                position.x + minTextWidth + dragAreaBoxRect.width + HORIZONTAL_PADDING,
                 position.y,
                 maxTextWidth,
                 position.height
@@ -179,7 +137,7 @@ namespace BXFW.ScriptEditor
             // Draw the 'increment/decrement array elements'
             int arrayLength = target.Count;
             Rect incArrayCntRect = new Rect(
-                maxValueFieldRect.x + maxValueFieldRect.width + ElemPadding,
+                maxValueFieldRect.x + maxValueFieldRect.width + HORIZONTAL_PADDING,
                 position.y,
                 IncDecElemBtnWidth,
                 position.height
@@ -189,7 +147,7 @@ namespace BXFW.ScriptEditor
                 arrayLength++;
             }
             Rect decArrayCntRect = new Rect(
-                incArrayCntRect.x + incArrayCntRect.width + ElemPadding,
+                incArrayCntRect.x + incArrayCntRect.width + HORIZONTAL_PADDING,
                 position.y,
                 IncDecElemBtnWidth,
                 position.height
@@ -201,8 +159,9 @@ namespace BXFW.ScriptEditor
 
             // Check if the xIndex thing's indices actually exist
             // Otherwise set them to -1 to avoid errors
-            if ((currentInteractedProperty?.Equals(property) ?? false))
+            if (interactedPropertyID == currentPropertyID)
             {
+                // Bound check the indices
                 if (dragIndex >= target.Count)
                 {
                     dragIndex = -1;
@@ -214,16 +173,15 @@ namespace BXFW.ScriptEditor
             }
 
             // Modify Dropdown UI
-            float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (ElemPadding * 2f)); // The corrected drag area width. !! correction needed !!
-            // Use the last interacted's states.
-            Rect modifyValueRect = modifyIndex >= 0 && (currentInteractedProperty?.Equals(property) ?? false) ? new Rect(
-                Mathf.Lerp(
-                    dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth,
-                    MathUtility.Map(0f, 1f, target.Min, target.Max, target[modifyIndex])) - (DraggableBoxModifyValueWidth / 2f),
-                position.y + (DraggableBoxModifyValueHeight / 2f),
-                DraggableBoxModifyValueWidth,
-                DraggableBoxModifyValueHeight
-            ) : Rect.zero;
+            float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (HORIZONTAL_PADDING * 2f)); // The corrected drag area width. !! correction needed !!
+            Rect modifyValueRect = modifyIndex >= 0 && (interactedPropertyID == currentPropertyID) ?
+            new Rect(
+                x: MathUtility.Map(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, target.Min, target.Max, target[modifyIndex]) - (DraggableBoxModifyValueWidth / 2f),
+                y: position.y + (DraggableBoxModifyValueHeight / 2f),
+                width: DraggableBoxModifyValueWidth,
+                height: DraggableBoxModifyValueHeight
+            ) : default;
+
             if (modifyIndex >= 0)
             {
                 // works slightly better
@@ -234,14 +192,12 @@ namespace BXFW.ScriptEditor
                         if (modifyIndex < 0)
                         {
                             dropdown.Close();
-                            currentInteractedProperty = null;
+                            interactedPropertyID = string.Empty;
                             return;
                         }
 
-                        GUIStyle smallTextStyle = new GUIStyle(GUI.skin.box) { fontSize = 8, alignment = TextAnchor.UpperLeft };
-                        smallTextStyle.normal.textColor = Color.white;
                         EditorGUI.BeginChangeCheck();
-                        GUILayout.Label(new GUIContent($"Modify Index={modifyIndex}"), smallTextStyle);
+                        GUILayout.Label(new GUIContent($"Modify Index={modifyIndex}"), tinyFontBoxStyle);
                         float modified = EditorGUILayout.FloatField(target[modifyIndex]);
                         if (EditorGUI.EndChangeCheck())
                         {
@@ -255,12 +211,12 @@ namespace BXFW.ScriptEditor
                     BasicDropdown.SetPosition(GUIUtility.GUIToScreenRect(modifyValueRect));
                 }
             }
-            else if ((currentInteractedProperty?.Equals(property) ?? false))
+            else if (interactedPropertyID == currentPropertyID)
             {
                 BasicDropdown.HideDropdown();
             }
 
-            // Change checks for the 'Min/Max' values
+            // -- Change checks for the 'Min/Max' values
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
@@ -271,21 +227,29 @@ namespace BXFW.ScriptEditor
                 target.Resize(arrayLength);
             }
 
-            // Draw buttons with the draggable 'circle' buttons
+            // -- Draw draggable 'circle' buttons
             // (like the RangeAttribute thing, clamped between 2 values)
             // Ensure the button values can't be the same
-            bool usedEvent = false;
+            bool usedEvent = false; // This variable checks if any of the knobs used event, only process event once per every knob
             for (int i = 0; i < target.Count; i++)
             {
                 // Draw actual target's values
                 float xPosition = Mathf.Lerp(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, MathUtility.Map(0f, 1f, target.Min, target.Max, target[i]));
                 Rect draggableRect = new Rect(xPosition, position.y + (position.height / 5f), DraggableBoxWidth, position.height);
-                // Draw a GUI seperately
+                Rect draggableTextRect = new Rect()
+                {
+                    x = xPosition - 5f,
+                    y = draggableRect.y - 15f,
+                    height = 15f,
+                    width = 20f
+                };
+                // Draw a GUI seperately + Draw the index in a smaller font towards bottom
                 GUI.Box(draggableRect, new GUIContent(string.Empty, $"value={target[i]}\nindex={i}"), GUI.skin.horizontalSliderThumb);
+                GUI.Box(draggableTextRect, i.ToString(), tinyFontBoxStyle);
 
                 // Only call/check event(s) for single used GUI knob element
-                // This fixes the jankiness partially
-                if (!usedEvent && (currentInteractedProperty?.Equals(property) ?? true))
+                // Note : Using the event and the 'modifyIndex or dragIndex' being different also prevents that.
+                if (!usedEvent && string.IsNullOrEmpty(interactedPropertyID) || interactedPropertyID == currentPropertyID)
                 {
                     // Intercept events manually
                     switch (e.type)
@@ -299,22 +263,41 @@ namespace BXFW.ScriptEditor
                             {
                                 modifyIndex = draggableRect.Contains(e.mousePosition) ? i : -1;
                             }
-                            // Click anywhere else that isn't right click + modifyValue does not contains position, hide the 'modifyIndex'
-                            //else if (!modifyValueRect.Contains(e.mousePosition))
-                            //{
-                            //    modifyIndex = -1;
-                            //}
 
-                            if (position.Contains(e.mousePosition))
+                            if (modifyIndex >= 0)
+                            {
+                                // Set handle here also
+                                interactedPropertyID = SerializedPropertyCustomData.GetIDString(property);
+                            }
+
+                            if (mainPosition.Contains(e.mousePosition))
                             {
                                 // Hide context menu
                                 e.Use();
                                 usedEvent = true;
-                            }
-                            if (modifyIndex >= 0)
-                            {
-                                // Set handle here also
-                                currentInteractedProperty = new PropertyID(property);
+                                // Show custom basic menu if no 'modifyIndex'
+                                if (modifyIndex < 0)
+                                {
+                                    GenericMenu menu = new GenericMenu();
+                                    menu.AddItem(new GUIContent("Scatter Values"), false, () =>
+                                    {
+                                        for (int i = 0; i < target.Count; i++)
+                                        {
+                                            // Set all zero as the target[i] setter sorts
+                                            target[i] = target.Min;
+                                        }
+
+                                        for (int i = target.Count - 1; i >= 0; i--)
+                                        {
+                                            target[i] = Mathf.Lerp(target.Min, target.Max, (float)i / Mathf.Max(1, target.Count - 1));
+                                        }
+                                    });
+                                    menu.AddItem(new GUIContent("Copy Property Path"), false, () =>
+                                    {
+                                        GUIUtility.systemCopyBuffer = property.propertyPath;
+                                    });
+                                    menu.ShowAsContext();
+                                }
                             }
                             break;
                         case EventType.MouseDown:
@@ -343,20 +326,21 @@ namespace BXFW.ScriptEditor
                             if (dragIndex >= 0 || modifyIndex >= 0)
                             {
                                 e.Use();
-                                // Set loop state
                                 usedEvent = true;
+
                                 // Set handle (to ignore other properties)
-                                currentInteractedProperty = new PropertyID(property);
+                                currentPropertyID = property.GetIDString();
                             }
                             break;
                         case EventType.MouseUp:
                             if (dragIndex >= 0)
                             {
                                 e.Use();
-                                // clear handle (interaction is done, stop ignoring)
-                                currentInteractedProperty = null;
-                                dragIndex = -1;
                                 usedEvent = true;
+
+                                // Clear handle (interaction is done)
+                                currentPropertyID = string.Empty;
+                                dragIndex = -1;
                             }
                             break;
 
@@ -369,16 +353,18 @@ namespace BXFW.ScriptEditor
                                 {
                                     // Use the event to make dragging smooth
                                     // Otherwise it's a jittery mess
+                                    // --
+                                    // Now it only lags when we are outside the inspector/component area
+                                    // Idk how can i force the property drawer's window to keep receiving events
                                     e.Use();
                                     usedEvent = true;
                                 }
 
                                 // Set an handle for other properties to not invoke this.
-                                currentInteractedProperty ??= new PropertyID(property);
+                                currentPropertyID ??= property.GetIDString();
 
                                 // Get position + center
                                 xPosition = Mathf.Clamp(e.mousePosition.x - draggableRect.width, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth);
-
                                 // Map the dragging position correctly
                                 target[dragIndex] = MathUtility.Map(target.Min, target.Max, dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, xPosition);
                             }
@@ -389,6 +375,54 @@ namespace BXFW.ScriptEditor
                     }
                 }
             }
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            // -- If the property is editing multiple objects don't allow editing
+            if (property.serializedObject.isEditingMultipleObjects)
+            {
+                EditorGUI.HelpBox(position, "Multi editing of 'RangeFloatArray' is not supported.", MessageType.Warning);
+                return;
+            }
+
+            if (tinyFontBoxStyle == null)
+            {
+                tinyFontBoxStyle = new GUIStyle(GUI.skin.box) { fontSize = 8, alignment = TextAnchor.UpperCenter };
+                tinyFontBoxStyle.normal.textColor = Color.white;
+            }
+
+            // -- Local Globals
+            RangeFloatArray target = property.GetTarget().value as RangeFloatArray;
+            // Current event
+            Event e = Event.current;
+            string currentPropertyID = SerializedPropertyCustomData.GetIDString(property);
+            // e.type == Layout gives incorrect positioning
+            // This makes the popup window jitter.
+            if (e.type == EventType.Repaint)
+            {
+                previousRepaintRect = position;
+            }
+            if (e.type == EventType.Layout || e.type == EventType.Used)
+            {
+                position = previousRepaintRect;
+            }
+            // top/bottom paddings
+            position.height -= PADDING;
+            position.y += PADDING / 2f;
+
+            // -- Label Field
+            EditorGUI.BeginChangeCheck();
+            float propertyLabelWidth = position.width * PropNameWidthPercent;
+            float setRemainingWidth = position.width * (1f - PropNameWidthPercent);
+            EditorGUI.LabelField(new Rect(position) { width = propertyLabelWidth }, label);
+            // modify main rect (TODO : Don't, instead create 'DrawMainUI' function that takes rect)
+
+            Rect mainGUIPosition = position;
+            mainGUIPosition.x += position.width * PropNameWidthPercent;
+            mainGUIPosition.width = setRemainingWidth;
+
+            DrawMainGUI(position, mainGUIPosition, property);
         }
     }
 }

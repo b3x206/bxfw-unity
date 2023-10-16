@@ -10,13 +10,13 @@ namespace BXFW
     public class ScriptableObjectSingleton<T> : ScriptableObject
         where T : ScriptableObject
     {
-        private static T instance;
+        private static T m_Instance;
         public static T Instance
         {
             get
             {
-                if (instance != null)
-                    return instance;
+                if (m_Instance != null)
+                    return m_Instance;
 
                 // If instance isn't loaded, we need to load it.
                 // Simplest way to find instance is to call Resources.LoadAll<>() with a empty directory.
@@ -33,8 +33,8 @@ namespace BXFW
                     Debug.LogWarning(string.Format("[ScriptableObjectSingleton::Instance] There is multiple scriptable object found in resources with type '{0}'. Loading the first one.", typeof(T).Name));
                 }
 
-                instance = soCurrent[0];
-                return instance;
+                m_Instance = soCurrent[0];
+                return m_Instance;
             }
         }
 
@@ -47,12 +47,17 @@ namespace BXFW
         /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory. Handles <see cref="UnityEditor.AssetDatabase"/> related methods.
-        /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called</br>
+        /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called.</br>
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
+        // Yes, this is a terrible workaround to bypass the 'ScriptableObject size is not the same1!1!!' errors
+        // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions
+        public
+#else
+        private
 #endif
-        public static T CreateEditorInstance(string relativeDir, string fileName, bool enforceAssetPrefix = true)
+        static T CreateEditorInstance(string relativeDir, string fileName, bool enforceAssetPrefix = true)
         {
 #if UNITY_EDITOR
             if (Instance != null)
@@ -83,9 +88,10 @@ namespace BXFW
             UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(relativeParentDir, fileName));
             UnityEditor.AssetDatabase.Refresh();
 
-            instance = Instance;
-            return instance;
+            m_Instance = Instance;
+            return m_Instance;
 #else
+            // Now with the terrible workaround this should be only thrown via reflection
             throw new System.InvalidOperationException("[ScriptableObjectSingleton::CreateEditorInstance] Called editor method in runtime!");
 #endif
         }

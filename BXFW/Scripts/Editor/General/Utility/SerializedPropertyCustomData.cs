@@ -55,16 +55,16 @@ namespace BXFW.Tools.Editor
 
         // -- ID Binding
         /// <summary>
-        /// The sha1 generator used.
+        /// The md5 generator used.
         /// </summary>
-        private static readonly SHA1Managed m_sha = new SHA1Managed();
+        private static readonly MD5Cng m_md5 = new MD5Cng();
         /// <summary>
-        /// Returns the SHA1 hash of given <paramref name="s"/>.
+        /// Returns the MD5 hash of given <paramref name="s"/>.
         /// <br>This is used to bind id's.</br>
         /// </summary>
         private static string StringHash(string s)
         {
-            byte[] hash = m_sha.ComputeHash(Encoding.Default.GetBytes(s));
+            byte[] hash = m_md5.ComputeHash(Encoding.Default.GetBytes(s));
             StringBuilder sb = new StringBuilder(hash.Length);
 
             foreach (var b in hash)
@@ -111,6 +111,7 @@ namespace BXFW.Tools.Editor
         /// <br>If the <paramref name="target"/> is a component or a GameObject, the scene GUID + the fileID of the objects are combined.</br>
         /// <br>If the <paramref name="target"/> is not a scene object (i.e ScriptableObject or an asset importer thing), the file already has it's own GUID + fileID.</br>
         /// <br/>
+        /// <br>This is then hashed using MD5 if debug mode is disabled. (as SHA1 string is too long)</br>
         /// </summary>
         private static string GetUnityObjectIdentifier(UnityEngine.Object target)
         {
@@ -139,19 +140,17 @@ namespace BXFW.Tools.Editor
                 result = $"{guid}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
             }
 
-            return result;
+            return !keyDebugMode ? StringHash(result) : result;
         }
 
         /// <summary>
-        /// Returns a unique property identity string, usable to get an id depending on the;
+        /// Returns a unique property identity string, usable to get an id depending on the situation;
         /// <br>A : The scene that this <paramref name="property"/> is contained in (and it's GUID).</br>
         /// <br>B : The FileID of object/component that this <paramref name="property"/> is contained in.</br>
         /// <br>C : And the property path of this current <paramref name="property"/>.</br>
         /// <br>These are combined to return a unique fingerprint of the property.</br>
-        /// <br/>
-        /// <br>This is then hashed using SHA1 if debug mode is disabled.</br>
         /// </summary>
-        public static string GetPropertyString(SerializedProperty property)
+        public static string GetIDString(this SerializedProperty property)
         {
             if (property.serializedObject.isEditingMultipleObjects)
             {
@@ -159,29 +158,29 @@ namespace BXFW.Tools.Editor
 or don't call this if the 'property.serializedObject.isEditingMultipleObjects' is true.", nameof(property));
             }
 
-            string result = $"{GetUnityObjectIdentifier(property.serializedObject.targetObject)}{property.propertyPath}";
-            return !keyDebugMode ? StringHash(result) : result;
+            return $"{GetUnityObjectIdentifier(property.serializedObject.targetObject)}{OBJ_IDENTIFIER_PROPERTY_SEP}{property.propertyPath}";
         }
+
         /// <summary>
-        /// <inheritdoc cref="GetPropertyString(SerializedProperty)"/>
-        /// <br>This calls the <see cref="GetPropertyString(SerializedProperty)"/> to the
-        /// <see cref="SerializedProperty"/>'s <see cref="SerializedObject.targetObjects"/>.</br>
+        /// <inheritdoc cref="GetIDString(SerializedProperty)"/>
+        /// <br>This calls the <see cref="GetUnityObjectIdentifier(UnityEngine.Object)"/> to the
+        /// <see cref="SerializedProperty"/>'s <see cref="SerializedObject.targetObjects"/> and creates a key the same way.</br>
         /// </summary>
-        public static string[] GetMultiPropertyStrings(SerializedProperty property)
+        public static string[] GetMultiIDStrings(this SerializedProperty property)
         {
             // It doesn't matter if we aren't even editing multiple objects in this case
             string[] list = new string[property.serializedObject.targetObjects.Length];
 
-            GetMultiPropertyStringsNoAlloc(property, list);
+            GetMultiIDStringsNoAlloc(property, list);
             return list;
         }
         /// <summary>
-        /// <inheritdoc cref="GetMultiPropertyStrings(SerializedProperty)"/>
+        /// <inheritdoc cref="GetMultiIDStrings(SerializedProperty)"/>
         /// <br/>
         /// <br>This doesn't allocate an array. Note that the 'strings' has to have enough space allocated.</br>
         /// </summary>
         /// <returns>The size of the filled 'strings'.</returns>
-        public static int GetMultiPropertyStringsNoAlloc(SerializedProperty property, string[] strings)
+        public static int GetMultiIDStringsNoAlloc(SerializedProperty property, string[] strings)
         {
             if (strings == null || strings.Length <= 0)
             {
@@ -194,13 +193,13 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
             for (int i = 0; i < Mathf.Min(strings.Length, property.serializedObject.targetObjects.Length); i++)
             {
                 UnityEngine.Object targetObject = property.serializedObject.targetObjects[i];
-                strings[i] = GetUnityObjectIdentifier(targetObject);
+                strings[i] = $"{GetUnityObjectIdentifier(targetObject)}{OBJ_IDENTIFIER_PROPERTY_SEP}{property.propertyPath}";
             }
 
             return property.serializedObject.targetObjects.Length;
         }
         /// <summary>
-        /// <inheritdoc cref="GetMultiPropertyStrings(SerializedProperty)"/>
+        /// <inheritdoc cref="GetMultiIDStrings(SerializedProperty)"/>
         /// <br/>
         /// <br>This clears the <paramref name="strings"/> parameter and refills it again.</br>
         /// </summary>
@@ -215,15 +214,16 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
             }
 
             strings.Clear();
+            strings.Capacity = property.serializedObject.targetObjects.Length;
             for (int i = 0; i < property.serializedObject.targetObjects.Length; i++)
             {
                 UnityEngine.Object targetObject = property.serializedObject.targetObjects[i];
-                strings.Add(GetUnityObjectIdentifier(targetObject));
+                strings.Add($"{GetUnityObjectIdentifier(targetObject)}{OBJ_IDENTIFIER_PROPERTY_SEP}{property.propertyPath}");
             }
         }
 
         // -- Data Binding + Adding
-        // FIXME : Generalize the way of getting a keyed data seperation? or this is fine (but still fragile)
+        // Generic methods of manipulating a dictionary should use '
         /// <summary>
         /// General purpose no-alloc list container.
         /// </summary>
@@ -235,9 +235,12 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         /// </summary>
         private static bool HasDataKey<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key)
         {
-            foreach (var propertyTarget in property.serializedObject.targetObjects)
+            GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
+
+            for (int i = 0; i < m_noAllocPropertyStrings.Count; i++)
             {
-                string saveKey = $"{GetUnityObjectIdentifier(propertyTarget)}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}";
+                // propertyId = m_noAllocPropertyStrings[i];
+                string saveKey = $"{m_noAllocPropertyStrings[i]}{OBJ_IDENTIFIER_PROPERTY_SEP}{key}";
 
                 if (!targetDict.ContainsKey(saveKey))
                     return false;

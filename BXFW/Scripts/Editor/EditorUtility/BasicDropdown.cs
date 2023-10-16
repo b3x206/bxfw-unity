@@ -14,7 +14,7 @@ namespace BXFW.ScriptEditor
     {
         private static readonly Type popupLocationType = typeof(EditorWindow).Assembly.GetType("UnityEditor.PopupLocation");
 
-        // Enum type should be 'PopupLocation'.
+        // Enum type should be 'UnityEditor.PopupLocation'.
         private static Array GetPopupLocations()
         {
             Array retValue = Array.CreateInstance(popupLocationType, 2);
@@ -26,41 +26,56 @@ namespace BXFW.ScriptEditor
 
         private static BasicDropdown Instance;
         private Action<BasicDropdown> onGUICall;
-        public static bool IsBeingShown()
-        {
-            return Instance != null;
-        }
         public static void ShowDropdown(Rect parentRect, Vector2 size, Action<BasicDropdown> onGUICall)
         {
             if (Instance == null)
             {
                 Instance = CreateInstance<BasicDropdown>();
             }
-            // ... :
-            // Instance.ShowAsDropDown(parentRect, size);
             
+            // EditorWindow.ShowAsDropdown's public version tries to be a real dropdown by using mouse unfocus events
+            // With those events it also tries to hook itself to a conceivable parent
+            // This window will require manual management so we can use the window however we like to do
             Instance.position = new Rect(Instance.position) { x = parentRect.xMin, y = parentRect.yMax, size = size };
             Instance.onGUICall = onGUICall;
-            // void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)
+            // internal void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)
             MethodInfo showDropdown = typeof(EditorWindow).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Single(f => f.Name == "ShowAsDropDown" && f.GetParameters().Length == 3);
-            //MethodInfo showDropdown = typeof(EditorWindow).GetMethod("ShowAsDropDown", BindingFlags.Instance | BindingFlags.NonPublic);
             showDropdown.Invoke(Instance, new object[] { parentRect, size, GetPopupLocations() });
         }
+        /// <summary>
+        /// Returns whether if a BasicDropdown is being shown.
+        /// </summary>
+        public static bool IsBeingShown()
+        {
+            return Instance != null;
+        }
+        /// <summary>
+        /// Hides the dropdown.
+        /// <br>If the BasicDropdown instance doesn't exist this does nothing.</br>
+        /// </summary>
         public static void HideDropdown()
         {
-            if (Instance != null)
-            {
-                Instance.Close();
-            }
+            if (Instance == null)
+                return;
+            
+            Instance.Close();
         }
+        /// <summary>
+        /// Sets the position of the window.
+        /// <br>If the BasicDropdown instance doesn't exist this does nothing.</br>
+        /// </summary>
         public static void SetPosition(Rect screenPosition)
         {
+            if (Instance == null)
+                return;
+
             Instance.position = screenPosition;
         }
         private void OnGUI()
         {
             if (onGUICall == null)
             {
+                // Debug.LogWarning("[BasicDropdown::OnGUI] OnGUI call is null, closing window.");
                 Close();
                 return;
             }

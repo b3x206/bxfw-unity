@@ -32,7 +32,7 @@ namespace BXFW.ScriptEditor
             return height;
         }
 
-        // !! TODO : Create a 'AutoRectPropertyDrawer' class that you can inherit from and it contains omitting, other things, etc.)
+        // !! TODO : Create a 'AutoRectPropertyDrawer' class that you can inherit from and it contains this recting, other things, etc.)
         // Current class list that repeats this code is :
         // - ValueAnimatorEditor.cs
         // - BXSTweenSequenceEditor.cs
