@@ -1,4 +1,6 @@
 // TODO : Dithering presets.
+// TODO 2 : Properly credit this + the nothke render texture utils
+// A custom version of https://github.com/gkjohnson/unity-dithered-transparency-shader
 Shader "Custom/Diffuse/Dithered Transparent/Dithered"
 {
     Properties 

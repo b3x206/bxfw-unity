@@ -45,7 +45,7 @@ namespace BXFW.Tweening
 
     /// <summary>
     /// Includes the hard coded ease types.
-    /// To create custom ease curves use the <see cref="AnimationCurve"/>. (in BXTween context field : <see cref="BXTweenCTX{T}.SetCustomCurve(AnimationCurve, bool)"/>.
+    /// To create custom ease curves you can use the <see cref="AnimationCurve"/>.
     /// </summary>
     public static class BXTweenEase
     {
@@ -98,7 +98,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Returns a eased in value.
         /// </summary>
-        public static float EaseValue(float time, EaseType easing)
+        public static float EasedValue(float time, EaseType easing)
         {
             return Methods[easing](time);
         }

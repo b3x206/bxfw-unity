@@ -17,23 +17,11 @@ namespace BXFW.Tools.Editor
         // 'GetKey' / Poll related inputs.
         private readonly HashSet<KeyCode> editorInputBuffer = new HashSet<KeyCode>();
      
-        private static string GetWarn_EventCurrentNull([CallerMemberName] string methodName = "<undefined_method>")
+        private static string GetWarningEventCurrentNull([CallerMemberName] string methodName = "<unknown method>")
         {
             return string.Format("[EditorInput::{0}] Called method while the 'Event.current' is null. Only call this from input polled from 'OnGUI'.", methodName);
         }
 
-        // was planning to use a static event thing, but the unity 'globalEventHandler' doesn't capture mouse clicks
-        // Maybe i could hook the entire unity window (or all created windows) but that won't work at all.
-        //static EditorInput()
-        //{
-        //    // No events on the EditorApplication.update
-        //    // So unity moment
-
-        //    System.Reflection.FieldInfo info = typeof(EditorApplication).GetField("globalEventHandler", System.Reflection.BindingFlags. | System.Reflection.BindingFlags.NonPublic);
-        //    EditorApplication.CallbackFunction value = (EditorApplication.CallbackFunction)info.GetValue(null);
-        //    value += PollEvents;
-        //    info.SetValue(null, value);
-        //}
         public void PollEvents()
         {
             // This is for the 'GetKey' methods without down or up events.
@@ -41,7 +29,7 @@ namespace BXFW.Tools.Editor
             // It will be iterated every EditorApplication globalEventHandler
             if (Event.current == null)
             {
-                Debug.LogWarning(GetWarn_EventCurrentNull());
+                Debug.LogWarning(GetWarningEventCurrentNull());
                 return;
             }
 
@@ -76,7 +64,7 @@ namespace BXFW.Tools.Editor
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning(GetWarn_EventCurrentNull());
+                    Debug.LogWarning(GetWarningEventCurrentNull());
                     return Vector2.zero;
                 }
 
@@ -94,7 +82,7 @@ namespace BXFW.Tools.Editor
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning(GetWarn_EventCurrentNull());
+                    Debug.LogWarning(GetWarningEventCurrentNull());
                     return Vector2.zero;
                 }
 
@@ -110,7 +98,7 @@ namespace BXFW.Tools.Editor
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning(GetWarn_EventCurrentNull());
+                    Debug.LogWarning(GetWarningEventCurrentNull());
                     return false;
                 }
 
@@ -137,7 +125,7 @@ namespace BXFW.Tools.Editor
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning(GetWarn_EventCurrentNull());
+                    Debug.LogWarning(GetWarningEventCurrentNull());
                     return false;
                 }
 
@@ -153,7 +141,7 @@ namespace BXFW.Tools.Editor
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning(GetWarn_EventCurrentNull());
+                    Debug.LogWarning(GetWarningEventCurrentNull());
                     return Vector2.zero;
                 }
 
@@ -177,7 +165,7 @@ namespace BXFW.Tools.Editor
         {
             if (Event.current == null)
             {
-                Debug.LogWarning(GetWarn_EventCurrentNull());
+                Debug.LogWarning(GetWarningEventCurrentNull());
                 return false;
             }
 
@@ -201,7 +189,7 @@ namespace BXFW.Tools.Editor
         {
             if (Event.current == null)
             {
-                Debug.LogWarning(GetWarn_EventCurrentNull());
+                Debug.LogWarning(GetWarningEventCurrentNull());
                 return false;
             }
 

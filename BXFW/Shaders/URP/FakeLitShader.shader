@@ -1,5 +1,5 @@
 ﻿// A fake lit shader with texture and color.
-// Note that this is absolutely NOT PERFORMANT, it is only used for stuff in the GUI.
+// Uses some random shading method i found, is fragment lit.
 Shader "Custom/Unlit/FakeLit"
 {
     Properties

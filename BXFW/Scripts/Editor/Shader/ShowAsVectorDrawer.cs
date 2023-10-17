@@ -31,7 +31,7 @@ namespace BXFW.ScriptEditor
             EditorGUI.showMixedValue = prop.hasMixedValue;
 
             // Get the current given area and subtract from it
-            float labelWidth = position.width * .40f; // 40% of the given area, unity does it like this
+            float labelWidth = EditorGUIUtility.labelWidth;
             // Reserved rect for the label
             Rect labelRect = new Rect(position.x, position.y, labelWidth, position.height);
             // Reserved rect for the vector2 field
@@ -76,7 +76,7 @@ namespace BXFW.ScriptEditor
 
             // act as this is begin horizontal (because unity is acting dumb)
             // Get the current given area and subtract from it
-            float labelWidth = position.width * .40f; // 40% of the given area, unity does it like this
+            float labelWidth = EditorGUIUtility.labelWidth;
             Rect labelRect = new Rect(position.x, position.y, labelWidth, position.height);
             Rect vecfieldRect = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
 

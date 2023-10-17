@@ -1,5 +1,5 @@
-using UnityEditor;
 using UnityEngine;
+using UnityEditor;
 using BXFW.Tweening.Next;
 using System.Reflection;
 using System.Collections.Generic;
@@ -53,9 +53,7 @@ namespace BXFW.Tweening.Editor
             {
                 alignment = TextAnchor.MiddleLeft,
                 stretchWidth = false,
-                // Screen.width returns the inspector window size while in inspector
-                // my reaction to that is : what
-                fixedWidth = Screen.width,
+                fixedWidth = EditorGUIUtility.currentViewWidth,
                 richText = true,
                 fontSize = 11,
                 font = GUIAdditionals.MonospaceFont

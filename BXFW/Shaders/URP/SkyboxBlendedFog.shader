@@ -5,18 +5,21 @@ Shader "Custom/Skybox/Blended Fog"
     {
         _Tint("Tint Color", Color) = (.5, .5, .5, .5)
         _FogTint("Fog Tint", Color) = (.5, .5, .5, .5)
+        [Space]
         _FrontTex("Front (+Z)", 2D) = "white" {}
         _BackTex("Back (-Z)", 2D) = "white" {}
         _LeftTex("Left (+X)", 2D) = "white" {}
         _RightTex("Right (-X)", 2D) = "white" {}
         _UpTex("Up (+Y)", 2D) = "white" {}
         _DownTex("Down (-Y)", 2D) = "white" {}
+        [Space]
         _FrontTex2("2 Front (+Z)", 2D) = "white" {}
         _BackTex2("2 Back (-Z)", 2D) = "white" {}
         _LeftTex2("2 Left (+X)", 2D) = "white" {}
         _RightTex2("2 Right (-X)", 2D) = "white" {}
         _UpTex2("2 Up (+Y)", 2D) = "white" {}
         _DownTex2("2 Down (-Y)", 2D) = "white" {}
+        [Space]
         _FogSide("Side FogMask", 2D) = "white" {}
         _FogBottom("Bottom FogMask", 2D) = "white" {}
     }

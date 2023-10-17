@@ -1,5 +1,4 @@
-// Won't work in unity because the surface shaders are deprecated?
-// why
+// Triplanar uv shader
 Shader "Custom/Lit/TriplanarUVTexture"
 {
     Properties

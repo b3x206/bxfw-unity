@@ -569,8 +569,8 @@ namespace BXFW.Tweening
             // Unity Editor
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditorCoroutineRunner.StartCoroutine(IteratorCoroutine);
-                return;
+                throw new InvalidOperationException("Cannot run tweens in editor");
+                //Tools.Editor.EditorCoroutineRunner.StartCoroutine(IteratorCoroutine);
             }
 #endif
             /// Note : The duration can be 0 or less in <see cref="BXTweenProperty{T}"/>
@@ -631,7 +631,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditorCoroutineRunner.StopCoroutine(IteratorCoroutine);
+                throw new InvalidOperationException("Cannot run tweens in editor");
             }
             else if (_CurrentIteratorCoroutine != null)
 #else
@@ -688,7 +688,7 @@ namespace BXFW.Tweening
             // Unity Editor Stop
             if (!Application.isPlaying && Application.isEditor)
             {
-                Tools.Editor.EditorCoroutineRunner.StopCoroutine(IteratorCoroutine);
+                throw new InvalidOperationException("Cannot run tweens in editor");
             }
             else if (_CurrentIteratorCoroutine != null)
 #else

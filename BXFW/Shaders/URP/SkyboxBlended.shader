@@ -1,16 +1,18 @@
-﻿// Skybox shader with texture blending. 
+﻿// Fixed function skybox shader with texture blending. 
 Shader "Custom/Skybox/Blended" 
 {
     Properties
     {
         _Tint("Tint Color", Color) = (.5, .5, .5, .5)
         _Blend("Blend", Range(0.0,1.0)) = 0.5
+        [Space]
         _FrontTex("Front (+Z)", 2D) = "white" {}
         _BackTex("Back (-Z)", 2D) = "white" {}
         _LeftTex("Left (+X)", 2D) = "white" {}
         _RightTex("Right (-X)", 2D) = "white" {}
         _UpTex("Up (+Y)", 2D) = "white" {}
         _DownTex("Down (-Y)", 2D) = "white" {}
+        [Space]
         _FrontTex2("2 Front (+Z)", 2D) = "white" {}
         _BackTex2("2 Back (-Z)", 2D) = "white" {}
         _LeftTex2("2 Left (+X)", 2D) = "white" {}

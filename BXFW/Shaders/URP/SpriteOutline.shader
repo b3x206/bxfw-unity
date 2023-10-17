@@ -1,4 +1,5 @@
-﻿Shader "Custom/Sprite/Outline"
+﻿// Draws a UV sampled outline (crappy)
+Shader "Custom/Sprite/Outline"
 {
     Properties
     {

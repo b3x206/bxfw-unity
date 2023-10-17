@@ -1,4 +1,3 @@
-// TODO : Add instancing of material properties : See https://docs.unity3d.com/Manual/GPUInstancing.html
 // Fakes glow on objects that already have color gradient on background (basically makes glow strong)
 // TODO 2 : Create a custom 'SpriteRenderer' that sets up the mesh for the glow
 //          Add outline & apply effect to that (for now i failed to do that)

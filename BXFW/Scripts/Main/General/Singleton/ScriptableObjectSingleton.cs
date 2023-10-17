@@ -5,7 +5,7 @@ namespace BXFW
 {
     /// <summary>
     /// Singleton that is for <see cref="ScriptableObject"/>'s.
-    /// <br>Loads asset using <see cref="Resources.Load"/></br>
+    /// <br>Loads asset using <see cref="Resources.Load"/>.</br>
     /// </summary>
     public class ScriptableObjectSingleton<T> : ScriptableObject
         where T : ScriptableObject

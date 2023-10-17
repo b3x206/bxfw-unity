@@ -122,7 +122,8 @@ namespace BXFW
         /// <summary>
         /// The amount of <see cref="Vector3"/>'s to use for the <see cref="PathPoints"/>.
         /// </summary>
-        [SerializeField, Clamp(0, int.MaxValue)] private int m_GeneratePointCount = 100;
+        [SerializeField, Clamp(0, int.MaxValue)]
+        private int m_GeneratePointCount = 100;
         /// <inheritdoc cref="m_GeneratePointCount"/>
         public int GeneratePointCount
         {

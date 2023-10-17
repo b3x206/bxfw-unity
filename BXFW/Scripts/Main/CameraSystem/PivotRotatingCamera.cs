@@ -14,8 +14,10 @@ namespace BXFW
 
         [Header("Camera Clamping")]
         public bool clampCameraRotation = true;
-        [InspectorConditionalDraw(nameof(clampCameraRotation))] public MinMaxValue xRotationRange = new MinMaxValue(-75f, 75f); 
-        [InspectorConditionalDraw(nameof(clampCameraRotation))] public MinMaxValue yRotationRange = new MinMaxValue(-20f, 75f); 
+        [InspectorConditionalDraw(nameof(clampCameraRotation))]
+        public MinMaxValue xRotationRange = new MinMaxValue(-75f, 75f); 
+        [InspectorConditionalDraw(nameof(clampCameraRotation))]
+        public MinMaxValue yRotationRange = new MinMaxValue(-20f, 75f); 
         public float lookSensitivity = 180f;
 
         [Header("Camera Zooming")]
@@ -93,6 +95,7 @@ namespace BXFW
             }
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             if (pivotObj == null)
@@ -102,7 +105,7 @@ namespace BXFW
             Gizmos.DrawWireSphere(pivotObj.position, distanceBetweenPivot);
 
             // Draw a portion of sphere to show possible positions of the camera.
-            // Note : Since i'm stupid, this will only show a good approximation instead of showing actually where is possible
+            // Note : Since i'm stupid, this will only show an approximation instead of showing actually where is possible
             if (clampCameraRotation)
             {
                 // Base arc rotation for X axis
@@ -132,5 +135,6 @@ namespace BXFW
 
             Gizmos.color = gColor;
         }
+#endif
     }
 }

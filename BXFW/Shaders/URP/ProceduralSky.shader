@@ -1,4 +1,4 @@
-﻿// Modified version of the 'BuiltIn Shaders'
+﻿// Modified version of the 'Unity BuiltIn Shaders'
 
 Shader "Custom/Skybox/Procedural Sky"
 {
@@ -84,7 +84,7 @@ Shader "Custom/Skybox/Procedural Sky"
             fixed4 frag (v2f i) : SV_Target
             {
                 // Masks.
-                float maskHorizon = dot(normalize(i.worldPosition), float3(0, 1, 0));
+                float maskHorizon = dot(normalize(i.worldPosition), float3(0.0, 1.0, 0.0));
                 float maskSunDir = dot(normalize(i.worldPosition), _WorldSpaceLightPos0.xyz);
 
                 // Sun disc.
@@ -94,21 +94,21 @@ Shader "Custom/Skybox/Procedural Sky"
                 // Sun halo.
                 float3 sunHaloColor = _SunHaloColor * _SunHaloContribution;
                 float bellCurve = pow(saturate(maskSunDir), _SunHaloExponent * saturate(abs(maskHorizon)));
-                float horizonSoften = 1 - pow(1 - saturate(maskHorizon), 50);
+                float horizonSoften = 1.0 - pow(1.0 - saturate(maskHorizon), 50);
                 sunHaloColor *= saturate(bellCurve * horizonSoften);
 
                 // Horizon line.
-                float3 horizonLineColor = _HorizonLineColor * saturate(pow(1 - abs(maskHorizon), _HorizonLineExponent));
-                horizonLineColor = lerp(0, horizonLineColor, _HorizonLineContribution);
+                float3 horizonLineColor = _HorizonLineColor * saturate(pow(1.0 - abs(maskHorizon), _HorizonLineExponent));
+                horizonLineColor = lerp(0.0, horizonLineColor, _HorizonLineContribution);
 
                 // Sky gradient.
-                float3 skyGradientColor = lerp(_SkyGradientTop, _SkyGradientBottom, pow(1 - saturate(maskHorizon), _SkyGradientExponent));
+                float3 skyGradientColor = lerp(_SkyGradientTop, _SkyGradientBottom, pow(1.0 - saturate(maskHorizon), _SkyGradientExponent));
 
                 // Interpolate all.
                 float3 finalColor = lerp(saturate(sunHaloColor + horizonLineColor + skyGradientColor), _SunDiscColor, maskSun);
 
                 // Apply color frag.
-                return float4(finalColor, 1);
+                return float4(finalColor, 1.0);
             }
             ENDCG
         }
