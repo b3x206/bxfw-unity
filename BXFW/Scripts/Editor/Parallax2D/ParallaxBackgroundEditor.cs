@@ -205,7 +205,7 @@ namespace BXFW
         {
             // This has to be called after an area is created.
             // This call makes other fields undroppable, so only do this in page 0
-            EditorAdditionals.MakeDroppableAreaGUI(() =>
+            EditorGUIAdditionals.MakeDragDropArea(() =>
             {
                 List<Sprite> listSprite = new List<Sprite>(DragAndDrop.paths.Length);
 

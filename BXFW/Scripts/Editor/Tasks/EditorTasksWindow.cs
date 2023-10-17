@@ -7,7 +7,8 @@ using System.Collections.Generic;
 namespace BXFW.Tools.Editor
 {
     /// <summary>
-    /// Generates an editor environment, using given scriptable abstract behaviours.
+    /// Runs editor related scripting tasks, using given abstract 
+    /// <see cref="EditorTask"/> inheriting ScriptableObject behaviours.
     /// </summary>
     public class EditorTasksWindow : EditorWindow
     {

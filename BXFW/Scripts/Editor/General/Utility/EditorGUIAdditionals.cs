@@ -15,6 +15,46 @@ namespace BXFW.Tools.Editor
     public static class EditorGUIAdditionals
     {
         /// <summary>
+        /// Make gui area drag and drop.
+        /// <br>Usage : Use the <see cref="DragAndDrop"/> class for getting event details.</br>
+        /// </summary>
+        public static void MakeDragDropArea(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
+        {
+            var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
+            if (!shouldAcceptDrag)
+                return;
+
+            MakeDragDropArea(onDragAcceptAction, customRect);
+        }
+        /// <summary>
+        /// Make gui area drag and drop.
+        /// <br>This method always accepts drops.</br>
+        /// <br>Usage : <see cref="DragAndDrop.objectReferences"/> is all you need.</br>
+        /// </summary>
+        public static void MakeDragDropArea(Action onDragAcceptAction, Rect? customRect = null)
+        {
+            Event evt = Event.current;
+            switch (evt.type)
+            {
+                case EventType.DragUpdated:
+                case EventType.DragPerform:
+                    Rect dropArea = customRect ?? GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+
+                    if (!dropArea.Contains(evt.mousePosition))
+                        return;
+
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        DragAndDrop.AcceptDrag();
+                        onDragAcceptAction?.Invoke();
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Draw an array to the layouted gui of editor.
         /// <br>
         /// This is a more primitive array drawer (compared to <see cref="UnityEditorInternal.ReorderableList"/> and 
@@ -100,7 +140,7 @@ namespace BXFW.Tools.Editor
         /// <returns>The toggle state.</returns>
         public static bool DrawArray<T>(bool toggle, GUIContent label, in IList<T> array, Action<int> onArrayFieldDrawn)
         {
-            // Edit : type extensions work, wtf? lmao. ha ha.
+            // Edit : type extensions work, but no anonymous delegates or local methods.
             return InternalDrawArrayGUILayout(toggle, label, array.Count, array.ResizeDefault, onArrayFieldDrawn);
         }
         /// <inheritdoc cref="DrawArray{T}(bool, GUIContent, in IList{T}, Action{int})"/>

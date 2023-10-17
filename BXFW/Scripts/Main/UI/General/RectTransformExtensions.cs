@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace BXFW.UI
 {
+    [Obsolete("The RectTransformExtensions class is unused", false)]
     public enum AnchorPresets
     {
         TopLeft,
@@ -27,7 +29,7 @@ namespace BXFW.UI
 
         StretchAll
     }
-
+    [Obsolete("The RectTransformExtensions class is unused", false)]
     public enum PivotPresets
     {
         TopLeft,
@@ -46,6 +48,7 @@ namespace BXFW.UI
     /// <summary>
     /// Extensions for class <see cref="RectTransform"/>.
     /// </summary>
+    [Obsolete("This class is unused", false)]
     public static class RectTransformExtensions
     {
         public static void SetAnchor(this RectTransform source, AnchorPresets align,

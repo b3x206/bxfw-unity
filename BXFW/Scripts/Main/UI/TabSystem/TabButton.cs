@@ -140,7 +140,7 @@ namespace BXFW.UI
             else if (Application.isPlaying && !onValidateCall && !string.IsNullOrWhiteSpace(Content.text))
             {
                 // Print only if tried to set content
-                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonText field in button \"{0}\" is null.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonText field in button \"{0}\" is null.", this.GetPath()), this);
             }
 
             if (ButtonImage != null)
@@ -157,7 +157,7 @@ namespace BXFW.UI
             }
             else if (Application.isPlaying && !onValidateCall && Content.sprite != null)
             {
-                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonImage field in button \"{0}\" is null.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonImage field in button \"{0}\" is null.", this.GetPath()), this);
             }
         }
 #if UNITY_EDITOR
@@ -283,7 +283,7 @@ namespace BXFW.UI
 
                 default:
                     // Reset if no state was assigned.
-                    Debug.LogWarning(string.Format("[TabButton::SetButtonAppearance] No behaviour defined for state : \"{0}\". Reseting instead.", state));
+                    Debug.LogWarning(string.Format("[TabButton::SetButtonAppearance] No behaviour defined for state : \"{0}\". Reseting instead.", state), this);
                     goto case ButtonState.Reset;
             }
         }

@@ -166,7 +166,7 @@ namespace BXFW.Tweening.Editor
                         if (v.GetIndexParameters().Length > 0)
                             continue;
 
-                        GUILayout.Label(string.Format("  [ Property ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType, v.Name, v.GetValue(tween)), detailsLabelStyle);
+                        GUILayout.Label(string.Format("  [ Property ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
                     foreach (var v in tween.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                     {
@@ -174,7 +174,7 @@ namespace BXFW.Tweening.Editor
                         if (v.Name.Contains("k__BackingField"))
                             continue;
 
-                        GUILayout.Label(string.Format("  [ Field    ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType, v.Name, v.GetValue(tween)), detailsLabelStyle);
+                        GUILayout.Label(string.Format("  [ Field    ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
                 }
             }

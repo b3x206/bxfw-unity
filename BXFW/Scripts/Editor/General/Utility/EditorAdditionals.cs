@@ -541,6 +541,7 @@ namespace BXFW.Tools.Editor
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
         }
 
+        // - Normal
         /// <summary>
         /// Return the target property drawer for <paramref name="targetType"/>.
         /// <br>This method throws <see cref="ArgumentException"/> if no property drawers were found.</br>
@@ -580,6 +581,7 @@ namespace BXFW.Tools.Editor
 
             return true;
         }
+        // - Generic
         /// <inheritdoc cref="GetPropertyDrawerFromType(Type)"/>
         public static PropertyDrawer GetPropertyDrawerFromType<T>()
         {
@@ -656,41 +658,20 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Make gui area drag and droppable.
         /// </summary>
+        [Obsolete("Use 'EditorGUIAdditionals.MakeDragDropArea' instead", false)]
         public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
         {
-            var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
-            if (!shouldAcceptDrag)
-                return;
-
-            MakeDroppableAreaGUI(onDragAcceptAction, customRect);
+            EditorGUIAdditionals.MakeDragDropArea(onDragAcceptAction, shouldAcceptDragCheck, customRect);
         }
         /// <summary>
         /// Make gui area drag and drop.
         /// <br>This always accepts drops.</br>
         /// <br>Usage : <see cref="DragAndDrop.objectReferences"/> is all you need.</br>
         /// </summary>
+        [Obsolete("Use 'EditorGUIAdditionals.MakeDragDropArea' instead", false)]
         public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Rect? customRect = null)
         {
-            Event evt = Event.current;
-            switch (evt.type)
-            {
-                case EventType.DragUpdated:
-                case EventType.DragPerform:
-                    Rect dropArea = customRect ??
-                        GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-
-                    if (!dropArea.Contains(evt.mousePosition))
-                        return;
-
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-
-                    if (evt.type == EventType.DragPerform)
-                    {
-                        DragAndDrop.AcceptDrag();
-                        onDragAcceptAction?.Invoke();
-                    }
-                    break;
-            }
+            EditorGUIAdditionals.MakeDragDropArea(onDragAcceptAction, customRect);
         }
 
         /// <summary>

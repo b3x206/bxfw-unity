@@ -8,7 +8,9 @@ using UnityEngine.Events;
 namespace BXFW.UI
 {
     /// <summary>
-    /// Manages multiple objects in an interface nicely.
+    /// Manages multiple objects in UGUI nicely.
+    /// <br>This uses a GameObject based management system, so it is flexible 
+    /// but more fragile compared to just using Renderer or to other similar things.</br>
     /// </summary>
     /// <typeparam name="TElement">Element Component type.</typeparam>
     [RequireComponent(typeof(RectTransform))]
@@ -97,7 +99,7 @@ namespace BXFW.UI
         /// <br>It is meant to be used as an <b>helper</b> method to allow creation + management of values.</br>
         /// <br>For an user creation method, use <see cref="CreateUIElement(bool)"/>.</br>
         /// <br>To remove UI elements decrement <see cref="MultiUIManagerBase.ElementCount"/> by any amount you want (it is clamped anyways)</br>
-        /// <br>This method does only modify the <see cref="m_Elements"/> list and it's count.</br>
+        /// <br>This method does only modify the <see cref="m_Elements"/> list.</br>
         /// </remarks>
         protected TElement InternalCreateUIElement(bool useReferenceElement = true)
         {
@@ -146,7 +148,8 @@ namespace BXFW.UI
         /// <summary>
         /// A destroy immediate wrapper that respects editor operations and other things.
         /// <br>In standalone runtimes, this just does <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/>.</br>
-        /// <br>Unless the object needs to be immediately destroyed during generation, use <see cref="UnityEngine.Object.Destroy"/> instead.</br>
+        /// <br>Unless the object needs to be immediately destroyed during 
+        /// <see cref="GenerateElements"/>, use <see cref="UnityEngine.Object.Destroy"/> instead.</br>
         /// </summary>
         /// <param name="target">Target to immediately destroy.</param>
         protected void ManagerDestroyImmediate(UnityEngine.Object target)
@@ -161,7 +164,7 @@ namespace BXFW.UI
             }
             else
             {
-                // Editor destroy (usable if the group was being recorded and was collapsed)
+                // Editor destroy (Undo stack usable if the group was being recorded and was collapsed)
                 UnityEditor.Undo.DestroyObjectImmediate(target);
             }
 #else
