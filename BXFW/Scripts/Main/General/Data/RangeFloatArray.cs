@@ -183,6 +183,7 @@ namespace BXFW
         public void Insert(int index, float item)
         {
             m_values.Insert(index, item);
+            m_values.Sort();
         }
 
         public bool Remove(float item)

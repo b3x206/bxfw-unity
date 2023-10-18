@@ -20,6 +20,10 @@ namespace BXFW
         where T : ScriptableObject
     {
         /// <summary>
+        /// The order that this command can be called in.
+        /// </summary>
+        public MatchGUIActionOrder Order;
+        /// <summary>
         /// Return the given GUI height. Similar to <see cref="PropertyDrawer.GetPropertyHeight(SerializedProperty, GUIContent)"/>.
         /// <br><c>Param1 [In]  : </c> Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
         /// <br><c>Return [out] : </c> Intended GUI height.</br>
@@ -73,7 +77,7 @@ namespace BXFW
         /// <summary>
         /// Custom commands for the default inspector.
         /// </summary>
-        public virtual Dictionary<string, KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>>> DefaultInspectorCustomCommands => null;
+        public virtual Dictionary<string, DrawGUICommand<T>> DefaultInspectorCustomCommands => null;
         /// <summary>
         /// Scroll position on the reserved rect.
         /// </summary>
@@ -392,15 +396,15 @@ namespace BXFW
                         continue;
                     }
 
-                    KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>> cmd = default;
+                    DrawGUICommand<T> cmd = default;
                     bool hasCustomEditorCommands = DefaultInspectorCustomCommands != null && DefaultInspectorCustomCommands.TryGetValue(prop.name, out cmd);
 
                     if (hasCustomEditorCommands)
                     {
-                        if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
-                            h += (cmd.Value.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
+                        if ((cmd.Order & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Order & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                            h += (cmd.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
 
-                        if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                        if ((cmd.Order & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                             h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
                     }
                     else
@@ -766,19 +770,19 @@ namespace BXFW
                         if (prop.propertyPath == "m_Script")
                             continue;
 
-                        KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>> cmd = default;
+                        DrawGUICommand<T> cmd = default;
                         bool hasCustomEditorCommands = DefaultInspectorCustomCommands != null && DefaultInspectorCustomCommands.TryGetValue(prop.name, out cmd);
 
                         if (hasCustomEditorCommands)
                         {
-                            if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
-                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                            if ((cmd.Order & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
+                                cmd.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.GetGUIHeight(target)));
 
-                            if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            if ((cmd.Order & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                                 EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
 
-                            if ((cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
-                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                            if ((cmd.Order & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                                cmd.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.GetGUIHeight(target)));
                         }
                         else
                         {

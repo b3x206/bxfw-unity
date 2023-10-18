@@ -3,6 +3,7 @@ using UnityEditor;
 using BXFW.Tweening.Next;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BXFW.Tweening.Editor
 {
@@ -53,15 +54,16 @@ namespace BXFW.Tweening.Editor
             {
                 alignment = TextAnchor.MiddleLeft,
                 stretchWidth = false,
-                fixedWidth = EditorGUIUtility.currentViewWidth,
+                //fixedWidth = EditorGUIUtility.currentViewWidth,
+                fixedWidth = 500f,
                 richText = true,
-                fontSize = 11,
+                fontSize = 14,
                 font = GUIAdditionals.MonospaceFont
             };
             detailsLabelStyle ??= new GUIStyle(GUI.skin.label)
             {
                 richText = true,
-                fontSize = 12,
+                fontSize = 14,
                 font = GUIAdditionals.MonospaceFont
             };
             buttonStyle ??= new GUIStyle(GUI.skin.button);
@@ -90,11 +92,12 @@ namespace BXFW.Tweening.Editor
                 return;
             }
 
-            EditorGUILayout.LabelField("[BXSTweenCore]", headerTextStyle, GUILayout.Height(32f));
+            EditorGUILayout.LabelField("[BXSTweenUnityRunner]", headerTextStyle, GUILayout.Height(32f));
 
             // Draw stats from the BXSTween class
-            EditorGUILayout.LabelField(string.Format("Tween Amount (running) = {0}", BXSTween.RunningTweens.Count));
-            EditorGUILayout.LabelField(string.Format("Core Status = {0}", BXSTween.NeedsInitialize ? "Error (Needs Initialize)" : "OK"));
+            EditorGUILayout.LabelField(string.Format("Tween Amount = {0}", BXSTween.RunningTweens.Count));
+            EditorGUILayout.LabelField(string.Format("Sequence Amount = {0}", BXSTween.RunningTweens.Where(t => t is BXSTweenSequence).Count()));
+            EditorGUILayout.LabelField(string.Format("BXSTween Status = {0}", BXSTween.NeedsInitialize ? "Error (Needs Initialize)" : "OK"));
 
             GUI.enabled = gEnabled;
 
@@ -166,7 +169,7 @@ namespace BXFW.Tweening.Editor
                         if (v.GetIndexParameters().Length > 0)
                             continue;
 
-                        GUILayout.Label(string.Format("  [ Property ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
+                        GUILayout.Label(string.Format("  <color=#f3bd28>[ Property ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
                     foreach (var v in tween.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                     {
@@ -174,7 +177,7 @@ namespace BXFW.Tweening.Editor
                         if (v.Name.Contains("k__BackingField"))
                             continue;
 
-                        GUILayout.Label(string.Format("  [ Field    ] <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
+                        GUILayout.Label(string.Format("  <color=#f3bd28>[ Field    ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
                 }
             }
