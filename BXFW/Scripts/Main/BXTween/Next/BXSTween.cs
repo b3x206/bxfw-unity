@@ -1,5 +1,5 @@
-using BXFW.Tweening.Next.Events;
 using System;
+using BXFW.Tweening.Next.Events;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -8,12 +8,6 @@ namespace BXFW.Tweening.Next
     /// BXFW.Tweening.Next roadmap
     /// A tweening engine that can be attached to most things supporting c#.
     /// (but will still require things to do/remove because unity doesn't serialize private/protected's)
-    /// 
-    /// Rule #1 = NO TIMERS OR COROUTINES (timer is coroutine anyways)
-    /// Only functions that update things in the <see cref="RunningTweens"/> array.
-    /// Rule #2 = Fix any GC.Alloc you see if it's fixable
-    /// (Note : Mono.JIT is not fixable unless il2cpp compiled, but can be mitigated)
-    /// 
     /// ---------
     /// <summary>
     /// A simpler tick based tweening engine.
@@ -192,7 +186,7 @@ namespace BXFW.Tweening.Next
                 }
                 tween.EvaluateTween(1f);
                 tween.Stop();
-                
+
                 return;
             }
 
@@ -248,7 +242,7 @@ namespace BXFW.Tweening.Next
             deltaTime *= tween.Speed;
 
             bool isFirstRun = tween.LoopsElapsed == 0;
-            
+
             // Delay
             if (tween.DelayElapsed < 1f)
             {
@@ -291,7 +285,7 @@ namespace BXFW.Tweening.Next
                     MainLogger.LogException($"[BXSTween::RunTweenable] EvaluateTween+OnTickAction in tween '{tween}'\n", e);
                     tween.Stop();
                 }
-                
+
                 tween.CurrentElapsed += deltaTime / tween.StartingDuration;
 
                 return;
@@ -337,7 +331,7 @@ namespace BXFW.Tweening.Next
         {
             runner.OnRunnerExit += OnTweenRunnerExit;
             runner.OnRunnerTick += OnTweenRunnerTick;
-            
+
             if (runner.SupportsFixedTick)
                 runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
         }

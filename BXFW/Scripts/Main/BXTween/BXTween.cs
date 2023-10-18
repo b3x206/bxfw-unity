@@ -45,22 +45,22 @@ namespace BXFW.Tweening
             }
         }
 
-        private static BXTweenSettings currentSettings;
+        private static BXTweenSettings m_CurrentSettings;
         public static BXTweenSettings CurrentSettings
         {
             get
             {
                 // Get singleton
-                if (currentSettings == null)
-                    currentSettings = BXTweenSettings.Instance;
+                if (m_CurrentSettings == null)
+                    m_CurrentSettings = BXTweenSettings.Instance;
 
                 // Still null? Create new settings.
-                if (currentSettings == null)
+                if (m_CurrentSettings == null)
                 {
 #if UNITY_EDITOR
                     // We are still null, create instance at given const resources directory.
                     // Maybe we can add a EditorPref for creation directory?
-                    currentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+                    m_CurrentSettings = BXTweenSettings.CreateEditorInstance(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
                     // Current editor is diagnostic by default, for the creation
                     // This will be here for debug (we can't check current settings whether if it's diagnostic mode because we just created it)
                     Debug.Log(BXTweenStrings.DLog_BXTwSettingsCreatedNew(string.Format("Assets/Resources/{0} | File : {1}", BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)));
@@ -72,7 +72,7 @@ namespace BXFW.Tweening
 #endif
                 }
 
-                return currentSettings;
+                return m_CurrentSettings;
             }
         }
 

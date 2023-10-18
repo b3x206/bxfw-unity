@@ -154,7 +154,7 @@ namespace BXFW
     public class SortedArrayAttribute : PropertyAttribute
     {
         /// <summary>
-        /// If this is true, the array will be asserted to be sorted in reverse.
+        /// If this is true, the array will be asserted to be sorted in reverse instead.
         /// </summary>
         public bool Reverse { get; set; }
         public SortedArrayAttribute()

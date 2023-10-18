@@ -120,6 +120,11 @@ namespace BXFW.Tweening.Next
             }
         }
         /// <summary>
+        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
+        /// </summary>
+        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
+        private EaseType m_Ease = EaseType.QuadOut;
+        /// <summary>
         /// Whether if the 'EaseCurve' should be used.
         /// <br>Setting this will not touch the internal <see cref="m_EaseCurve"/> value.</br>
         /// </summary>
@@ -143,12 +148,6 @@ namespace BXFW.Tweening.Next
         /// </summary>
         [SerializeField]
         private bool m_UseEaseCurve;
-
-        /// <summary>
-        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
-        /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
-        private EaseType m_Ease = EaseType.QuadOut;
         /// <summary>
         /// The internal cached ease function.
         /// <br>Use the <see cref="EaseFunction"/> to ensure a non-null easing function.</br>
@@ -166,7 +165,6 @@ namespace BXFW.Tweening.Next
                 return m_EaseFunction;
             }
         }
-
         /// <summary>
         /// The used ease curve.
         /// <br>If this is non-null the animation curve will be used instead.</br>
