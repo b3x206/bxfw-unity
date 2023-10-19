@@ -101,7 +101,7 @@ namespace BXFW.ScriptEditor
                 }
             }
 
-            dict.Add(nameof(TabSystem.OnTabButtonsClicked), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () =>
+            dict.Add(nameof(TabSystem.onTabButtonClicked), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () =>
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Tab Event", EditorStyles.boldLabel);

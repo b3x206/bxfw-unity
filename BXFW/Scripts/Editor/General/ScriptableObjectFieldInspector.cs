@@ -160,7 +160,7 @@ namespace BXFW
         /// <summary>
         /// Size of a single line height with padding applied.
         /// </summary>
-        protected float SingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
+        protected float PaddedSingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
 
         /// <summary>
         /// Sets value of target safely.
@@ -379,7 +379,7 @@ namespace BXFW
             // Check if object is null (generically)
             // If null, don't 
             if (target == null || !property.isExpanded)
-                return SingleLineHeight;
+                return PaddedSingleLineHeight;
 
             SObject ??= new SerializedObject(target);
             float h = 0f; // instead of using currentY, use a different inline variable
@@ -424,7 +424,7 @@ namespace BXFW
             }
 
             // Add label height
-            h += SingleLineHeight;
+            h += PaddedSingleLineHeight;
 
             return h;
         }
@@ -449,7 +449,7 @@ namespace BXFW
 
             // assuming that the height is added after first rect.
             if (height < 0f)
-                height = SingleLineHeight;
+                height = PaddedSingleLineHeight;
 
             currentY += height + HEIGHT_PADDING;
             return position;
@@ -621,7 +621,7 @@ namespace BXFW
                     // notify the unity that we set a variable and scene is modified
                     EditorUtility.SetDirty(property.serializedObject.targetObject);
                 }
-            }, new Rect(position) { height = SingleLineHeight });
+            }, new Rect(position) { height = PaddedSingleLineHeight });
 
             // Null target gui.
             if (target == null)
@@ -630,7 +630,7 @@ namespace BXFW
                 GUI.Label(position, label);
                 position.x += previousWidth * .4f;
 
-                GUI.enabled = !targetParentIsPrefab;
+                GUI.enabled = GUI.enabled && !targetParentIsPrefab;
 
                 position.width = previousWidth * .45f;
                 if (GUI.Button(position, new GUIContent(
@@ -665,7 +665,7 @@ namespace BXFW
             // buut, it works (and it has suprisingly ok performance) so why touch it?
 
             // -- Property label
-            Rect rInspectorInfo = GetPropertyRect(position, SingleLineHeight); // width is equal to 'previousWidth'
+            Rect rInspectorInfo = GetPropertyRect(position, PaddedSingleLineHeight); // width is equal to 'previousWidth'
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
             const float BTN_FOLDOUT_MIN_WIDTH = .033f;
@@ -817,7 +817,7 @@ namespace BXFW
                         // Save the current GUILayout setting (?)
 
                         // Begin, draw, exit new area
-                        GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
+                        GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
                         customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
 
                         currentCustomInspector.OnInspectorGUI();
@@ -837,7 +837,7 @@ namespace BXFW
 
                         // ok unity, you win. i give up
                         // the button will just select scriptable object if we can't draw the OnInspectorGUI
-                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor),
+                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor),
                             "View on Current Inspector\n(object has custom editor, thus cannot be\n viewed in a nested GUILayout area.)"))
                         {
                             AssetDatabase.OpenAsset(target);

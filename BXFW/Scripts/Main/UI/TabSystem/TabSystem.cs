@@ -51,7 +51,7 @@ namespace BXFW.UI
         /// <summary>
         /// Called when any of the buttons in the TabSystem was pressed.
         /// </summary>
-        public IndexEvent OnTabButtonsClicked;
+        public IndexEvent onTabButtonClicked;
 
         /// <summary>
         /// Returns the current selected tab.
@@ -153,7 +153,7 @@ namespace BXFW.UI
         /// </summary>
         /// <param name="btnSelect">Index to select. Clamped value.</param>
         /// <param name="silentSelect">
-        /// Whether if the <see cref="OnTabButtonsClicked"/> event should not invoke. 
+        /// Whether if the <see cref="onTabButtonClicked"/> event should not invoke. 
         /// This is set to <see langword="false"/> by default.
         /// </param>
         public void SetSelectedButtonIndex(int btnSelect, bool silentSelect = false)
@@ -168,7 +168,7 @@ namespace BXFW.UI
                 ButtonToSelScript.SetButtonAppearance(TabButton.ButtonState.Click);
 
                 if (!silentSelect)
-                    OnTabButtonsClicked?.Invoke(IndexSelect);
+                    onTabButtonClicked?.Invoke(IndexSelect);
 
                 UpdateElementsAppearance();
             }

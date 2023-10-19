@@ -74,6 +74,12 @@ namespace BXFW.UI
         { }
 
         /// <summary>
+        /// The target transform to parent the elements of this MultiUIManager in.
+        /// <br>By default, this is set to the <see cref="Component.transform"/>.</br>
+        /// </summary>
+        protected virtual Transform ParentTransform => transform;
+
+        /// <summary>
         /// An override that should be done to create a element generically.
         /// <br>Removal is handled by the base script.</br>
         /// </summary>
@@ -86,7 +92,7 @@ namespace BXFW.UI
         /// <br>This is the method that is normally called, but invokes the events to both to the unity event and the abstract base.</br>
         /// <br>
         /// This method sets the transform parent of the generated element to this
-        /// <see cref="Component.transform"/> and sets it's <see cref="Transform.localScale"/> to <see cref="Vector3.one"/>.
+        /// <see cref="ParentTransform"/> and sets it's <see cref="Transform.localScale"/> to <see cref="Vector3.one"/>.
         /// </br>
         /// </summary>
         /// <param name="useReferenceElement">
@@ -113,7 +119,7 @@ namespace BXFW.UI
             m_Elements.Add(element);
             onCreateElementEvent?.Invoke(createIndex, element);
             // Transform stuff (because the child will be scaled weirdly)
-            element.transform.SetParent(transform);
+            element.transform.SetParent(ParentTransform);
             element.transform.localScale = Vector3.one;
             // Check name and truncate the '(Clone)' from them
             if (TruncateCloneNameOnCreate)
@@ -283,9 +289,9 @@ namespace BXFW.UI
             // Clear the child transform
             if (clearChildTransform)
             {
-                while (transform.childCount > 0)
+                while (ParentTransform.childCount > 0)
                 {
-                    GameObject destroyObject = transform.GetChild(0).gameObject;
+                    GameObject destroyObject = ParentTransform.GetChild(0).gameObject;
 #if UNITY_EDITOR
                     if (Application.isPlaying)
                         Destroy(destroyObject);

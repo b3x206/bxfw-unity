@@ -92,9 +92,25 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         }
 
         // Convert to-from dictionary
+        /// <summary>
+        /// Creates an empty SerializableDictionary.
+        /// </summary>
         public SerializableDictionary() : base()
         { }
-        public SerializableDictionary(Dictionary<TKey, TValue> dict) : base(dict)
+        /// <summary>
+        /// Creates a dictionary with capacity reserved.
+        /// </summary>
+        public SerializableDictionary(int capacity) : base(capacity)
+        { }
+        /// <summary>
+        /// Creates a dictionary from another dictionary.
+        /// </summary>
+        public SerializableDictionary(IDictionary<TKey, TValue> dict) : base(dict)
+        { }
+        /// <summary>
+        /// Creates a dictionary from a collection.
+        /// </summary>
+        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer) : base(values, comparer)
         { }
     }
 }

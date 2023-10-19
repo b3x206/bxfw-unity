@@ -12,7 +12,7 @@ using System.Collections.Generic;
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(UICustomResizer), true)]
-    internal class UICustomResizerEditor : Editor
+    public class UICustomResizerEditor : Editor
     {
         private static string scriptPath;
         // These files are contained with this editor script.
@@ -70,9 +70,11 @@ namespace BXFW.ScriptEditor
 
             tracker.Add(target, target.RectTransform, flags);
         }
-        // Disable rect transform tracker (rect transform tracker is buggy, and likes to resize the rect transform)
+        // Disable rect transform tracker (rect transform tracker is buggy and likes to resize the rect transform)
         private void OnDisable()
         {
+            EditorApplication.playModeStateChanged -= SetRectTransformTrackerState;
+
             tracker.Clear();
         }
         // This method handles an editor bug where the tracker causes the rect to be returned as 0.
@@ -108,12 +110,14 @@ namespace BXFW.ScriptEditor
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                { nameof(UICustomResizer.alignPivot), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
+                { 
+                    nameof(UICustomResizer.alignPivot), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
                         int scriptPivot = (int)target.alignPivot;
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Align Pivot");
+                        
                         int currentSelectedPivot = GUILayout.Toolbar(scriptPivot, texPreviews, GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.5f), GUILayout.MaxWidth(410f));
                         GUILayout.EndHorizontal();
 

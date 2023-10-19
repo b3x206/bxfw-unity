@@ -62,12 +62,27 @@ namespace BXFW.UI
         [InspectorConditionalDraw(nameof(IsScrollable)), Clamp(0f, float.MaxValue)]
         public float scrollWaitTime = .16f;
 
+        [Header(":: References")]
+        [SerializeField] private RectTransform m_ItemContainer;
         /// <summary>
         /// The target rect transform that contains the items.
-        /// <br>The container should be with the same width of the items if possible.</br>
+        /// <br>The container should be with the same width of the items if possible, as the container is used for width.</br>
         /// </summary>
-        [Header(":: References")]
-        public RectTransform ItemContainer;
+        public RectTransform ItemContainer
+        {
+            get
+            {
+                if (m_ItemContainer == null)
+                {
+                    if (!TryGetComponent(out m_ItemContainer))
+                    {
+                        throw new NullReferenceException($"[SwipableUI::Awake] The object \"{transform.GetPath()}\" doesn't have a ItemContainer assigned. SwipableUI won't work without a rect transform.");
+                    }
+                }
+
+                return m_ItemContainer;
+            }
+        }
 
         [Header(":: Current")]
         [SerializeField, ReadOnlyView] private int m_CurrentMenu;
@@ -119,14 +134,6 @@ namespace BXFW.UI
         #region Init
         protected override void Awake()
         {
-            if (ItemContainer == null)
-            {
-                if (!TryGetComponent(out ItemContainer))
-                {
-                    throw new NotSupportedException($"[SwipableUI::Awake] The object \"{transform.GetPath()}\" doesn't have a ItemContainer assigned. SwipableUI won't work without a rect transform.");
-                }
-            }
-
             // Get initial positions
             m_containerInitialPosition = ItemContainer.localPosition;
             // Call base awake (even though there's nothing in UIBehaviour)

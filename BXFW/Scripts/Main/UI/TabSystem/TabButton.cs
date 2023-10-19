@@ -174,7 +174,7 @@ namespace BXFW.UI
             if (!Interactable)
                 return;
 
-            ParentTabSystem.OnTabButtonsClicked?.Invoke(transform.GetSiblingIndex());
+            ParentTabSystem.onTabButtonClicked?.Invoke(transform.GetSiblingIndex());
 
             ParentTabSystem.CurrentSelectedTab = this;
             ParentTabSystem.UpdateElementsAppearance();

@@ -342,6 +342,18 @@ namespace BXFW
             foreach (TParam t in enumerable)
                 yield return converter(t);
         }
+        /// <summary>
+        /// Allows enumerable to be iterable with an index.
+        /// </summary>
+        public static IEnumerable<KeyValuePair<int, T>> Indexed<T>(this IEnumerable<T> enumerable)
+        {
+            int i = -1;
+            foreach (T value in enumerable)
+            {
+                i++;
+                yield return new KeyValuePair<int, T>(i, value);
+            }
+        }
 
         // -- Array Utils
         public static void RemoveRange<T>(this IList<T> l, int index, int count)
