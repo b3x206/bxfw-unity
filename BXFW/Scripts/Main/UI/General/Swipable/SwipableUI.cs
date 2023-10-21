@@ -214,8 +214,8 @@ namespace BXFW.UI
                 return;
 
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
-            // (maybe) TODO : Add smooth slowdown until swipe limit.
-            // Only apply swipe clamping if the ClampItemMenu is in valid range for clamping.
+
+            // Only apply swipe clamping if the MenuCount is in valid range.
             if (MenuCount > 0)
             {
                 if (!Mathf.Approximately(swipeDragClampLength, 0f))

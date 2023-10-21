@@ -621,7 +621,7 @@ namespace BXFW
                     // notify the unity that we set a variable and scene is modified
                     EditorUtility.SetDirty(property.serializedObject.targetObject);
                 }
-            }, new Rect(position) { height = PaddedSingleLineHeight });
+            }, () => GUI.enabled, new Rect(position) { height = PaddedSingleLineHeight });
 
             // Null target gui.
             if (target == null)

@@ -203,6 +203,9 @@ namespace BXFW.Data
             PragmaDefinitions = pragmaDefs;
         }
 
+        /// <summary>
+        /// Returns the current locale string.
+        /// </summary>
         public static explicit operator string(LocalizedTextData text)
         {
             return text.GetCurrentLocaleString();
@@ -223,7 +226,7 @@ namespace BXFW.Data
             return base.Equals(obj);
         }
         /// <summary>
-        /// Returns a debug display with the text id and the current locale string.
+        /// Returns debug information with the text id and the current locale string.
         /// </summary>
         public override string ToString()
         {
@@ -249,7 +252,7 @@ namespace BXFW.Data
 
         public bool Equals(LocalizedTextData other)
         {
-            if (other == null)
+            if (other is null)
                 return false;
 
             // Pragma settings can be different, idc.

@@ -41,7 +41,7 @@ namespace BXFW
     public enum LineColor
     {
         White, Red, Green, Blue,
-        Gray, Magenta, Yellow, Cyan, 
+        Gray, Magenta, Yellow, Cyan,
     }
 
     /// <summary>
@@ -173,10 +173,10 @@ namespace BXFW
         public readonly double max;
 #endif
 
-        public ClampAttribute(double min, double max) 
+        public ClampAttribute(double min, double max)
         {
 #if UNITY_EDITOR
-            this.min = min; 
+            this.min = min;
             this.max = max;
 #endif
         }
@@ -236,7 +236,7 @@ namespace BXFW
     /// <br>Expects a <see cref="string"/>, and disallows all characters in the <see cref="string"/>.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
-    public class EditDisallowCharsAttribute : PropertyAttribute 
+    public class EditDisallowCharsAttribute : PropertyAttribute
     {
 #if UNITY_EDITOR
         /// <summary>
@@ -256,5 +256,38 @@ namespace BXFW
         {
             disallowText = disallow;
         }
+    }
+
+    /// <summary>
+    /// A type constraint used to add interface constraints to <see cref="UnityEngine.Object"/> related fields.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = true)]
+    public class ObjectFieldInterfaceConstraintAttribute : PropertyAttribute
+    {
+#if UNITY_EDITOR
+        public Type interfaceType1;
+        public Type interfaceType2;
+        public Type interfaceType3;
+        public Type interfaceType4;
+#endif
+
+        public ObjectFieldInterfaceConstraintAttribute(Type constraint1, Type constraint2, Type constraint3, Type constraint4)
+        {
+#if UNITY_EDITOR
+            interfaceType1 = constraint1;
+            interfaceType2 = constraint2;
+            interfaceType3 = constraint3;
+            interfaceType4 = constraint4;
+#endif
+        }
+        public ObjectFieldInterfaceConstraintAttribute(Type constraint1, Type constraint2, Type constraint3)
+            : this(constraint1, constraint2, constraint3, null)
+        { }
+        public ObjectFieldInterfaceConstraintAttribute(Type constraint1, Type constraint2)
+            : this(constraint1, constraint2, null, null)
+        { }
+        public ObjectFieldInterfaceConstraintAttribute(Type constraint1)
+            : this(constraint1, null, null, null)
+        { }
     }
 }
