@@ -2,8 +2,6 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
-using System.Reflection;
-using System;
 
 /// Editor utils go on this namespace.
 /// You can use these.

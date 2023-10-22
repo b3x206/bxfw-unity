@@ -228,7 +228,8 @@ namespace BXFW.UI
                     else if (m_CurrentMenu <= 0)
                     {
                         // We are swiping LTR and we should clamp.
-                        swipeDelta = Mathf.Clamp(swipeDelta, -swipeDragClampLength, (ItemContainer.rect.width * MenuCount) + swipeDragClampLength);
+                        // (subtract MenuCount by 1 to clamp correctly)
+                        swipeDelta = Mathf.Clamp(swipeDelta, -swipeDragClampLength, (ItemContainer.rect.width * (MenuCount - 1)) + swipeDragClampLength);
                     }
                     else
                     {
@@ -400,7 +401,7 @@ namespace BXFW.UI
             {
                 // Show the gizmo on right (According to menu).
                 Gizmos.color = Color.green;
-                var linePos = new Vector2((rTransform.position.x + ((rTransform.rect.width / 2f) + swipeDragClampLength)) * MenuCount, rTransform.position.y);
+                var linePos = new Vector2((rTransform.position.x + ((rTransform.rect.width / 2f) + swipeDragClampLength)) * Mathf.Abs(MenuCount), rTransform.position.y);
                 Gizmos.DrawLine(linePos + new Vector2(0f, 100f), linePos - new Vector2(0f, 100f));
             }
             if (m_CurrentMenu <= 0)

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using BXFW.Tools.Editor;
-using static UnityEngine.GraphicsBuffer;
 
 namespace BXFW.ScriptEditor
 {

@@ -20,19 +20,29 @@ namespace BXFW.Data
     {
         /// <summary>
         /// Default locale used for the data.
-        /// <br>This is set to "en".</br>
+        /// <br>This is set to "en" by default.</br>
         /// </summary>
-        public static readonly string DefaultLocale = "en";
+        public static string DefaultLocale = "en";
+        private static string m_CurrentISOLocaleName = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         /// <summary>
         /// Current TwoLetterISOLanguageName of this current locale of your system.
-        /// <br>This does not change during runtime. The app needs to be restarted to be able to change this value.</br>
+        /// <br>This does not change during runtime (unless intervened with using <see cref="RefreshCurrentLocaleName"/>).
+        /// The app needs to be restarted or <see cref="RefreshCurrentLocaleName"/> needs to be called to correct this value.</br>
         /// </summary>
-        public static readonly string ISOCurrentLocale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+        public static string CurrentISOLocaleName => m_CurrentISOLocaleName;
+        /// <summary>
+        /// Refreshes the current locale to the current culture value.
+        /// <br>Depending on the OS, this may or may not have an effect.</br>
+        /// </summary>
+        public static void RefreshCurrentLocaleName()
+        {
+            m_CurrentISOLocaleName = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+        }
+
         /// <summary>
         /// A text ID, used for finding a <see cref="LocalizedTextData"/> inside an array.
         /// </summary>
         public string TextID;
-
         /// <summary>
         /// Contains the definitions that start with #pragma.
         /// <br>An optional extension way of defining variables.</br>
@@ -99,13 +109,17 @@ namespace BXFW.Data
         /// <summary>
         /// Returns the current locale string. If it doesn't exist it fallbacks to <see cref="DefaultLocale"/>.
         /// <br>If the default locale doesn't also exist, it fallbacks to the first value.</br>
+        /// <br>If no locales were registered, this function just returns null.</br>
         /// </summary>
         public string GetCurrentLocaleString()
         {
-            if (m_LocaleDatas.Count == 0)
-                throw new NullReferenceException("[LocalizedTextData::GetCurrentLocaleString] No locale strings registered!");
+            if (m_LocaleDatas.Count <= 0)
+            {
+                // since no locales exist at this state, return empty
+                return string.Empty;
+            }
 
-            var locale = ISOCurrentLocale;
+            var locale = CurrentISOLocaleName;
             if (ContainsLocale(locale))
                 return this[locale];
 
@@ -114,7 +128,7 @@ namespace BXFW.Data
 
             // Return the first in values
             Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
-            return m_LocaleDatas.Values.ToArray()[0];
+            return m_LocaleDatas.Values.First();
         }
         /// <summary>
         /// Sets a value for the current locale for this data.
@@ -124,11 +138,11 @@ namespace BXFW.Data
         {
             if (!ContainsLocale(value))
             {
-                m_LocaleDatas.Add(ISOCurrentLocale, value);
+                m_LocaleDatas.Add(CurrentISOLocaleName, value);
                 return;
             }
 
-            m_LocaleDatas[ISOCurrentLocale] = value;
+            m_LocaleDatas[CurrentISOLocaleName] = value;
         }
         /// <summary>
         /// <c><see langword="get"/> : </c> <see cref="GetCurrentLocaleString"/>

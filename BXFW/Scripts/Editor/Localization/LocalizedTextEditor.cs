@@ -155,7 +155,7 @@ namespace BXFW.ScriptEditor
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));
                         if (GUILayout.Button(string.IsNullOrWhiteSpace(target.spoofLocale) ?
-                            string.Format("None ({0})", LocalizedTextData.ISOCurrentLocale) : target.spoofLocale, EditorStyles.popup))
+                            string.Format("None ({0})", LocalizedTextData.CurrentISOLocaleName) : target.spoofLocale, EditorStyles.popup))
                         {
                             menu.ShowAsContext();
                         }

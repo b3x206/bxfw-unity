@@ -251,6 +251,24 @@ namespace BXFW
             // Nothing found
             return -1;
         }
+        /// <summary>
+        /// Returns the index of value using <paramref name="comparer"/>.
+        /// </summary>
+        public static int IndexOf<T>(this IEnumerable<T> values, T value, IEqualityComparer<T> comparer)
+        {
+            int i = 0;
+            foreach (T checkValue in values)
+            {
+                if (comparer.Equals(checkValue, value))
+                {
+                    return i;
+                }
+
+                i++;
+            }
+
+            return -1;
+        }
 
         /// <summary>
         /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.

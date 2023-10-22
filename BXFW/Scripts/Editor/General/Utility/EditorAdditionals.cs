@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.ProjectWindowCallback;
-using UnityEditor.PackageManager.Requests;
 
 namespace BXFW.Tools.Editor
 {

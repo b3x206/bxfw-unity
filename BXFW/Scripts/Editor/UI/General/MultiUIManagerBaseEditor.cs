@@ -5,7 +5,6 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using System.Xml.Linq;
 
 namespace BXFW.ScriptEditor
 {
