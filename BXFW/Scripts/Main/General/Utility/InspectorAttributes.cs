@@ -254,7 +254,9 @@ namespace BXFW
 #endif
         public EditDisallowCharsAttribute(string disallow)
         {
+#if UNITY_EDITOR
             disallowText = disallow;
+#endif
         }
     }
 

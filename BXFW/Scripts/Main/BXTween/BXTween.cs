@@ -68,7 +68,7 @@ namespace BXFW.Tweening
                     // maybe throw exception? making it more obvious that something has went wrong on compilation-generation process?
                     Debug.LogError(BXTweenStrings.Err_BXTwSettingsNoResource);
                     // Create a tempoary resource using default settings.
-                    currentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
+                    m_CurrentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
 #endif
                 }
 
