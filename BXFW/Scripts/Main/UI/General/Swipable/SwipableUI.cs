@@ -220,16 +220,15 @@ namespace BXFW.UI
             {
                 if (!Mathf.Approximately(swipeDragClampLength, 0f))
                 {
-                    if (m_CurrentMenu >= MenuCount - 1)
-                    {
-                        // We are swiping RTL and we should clamp.
-                        swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * MenuCount) + swipeDragClampLength), swipeDragClampLength);
-                    }
-                    else if (m_CurrentMenu <= 0)
+                    if (m_CurrentMenu <= 0)
                     {
                         // We are swiping LTR and we should clamp.
-                        // (subtract MenuCount by 1 to clamp correctly)
                         swipeDelta = Mathf.Clamp(swipeDelta, -swipeDragClampLength, (ItemContainer.rect.width * (MenuCount - 1)) + swipeDragClampLength);
+                    }
+                    else if (m_CurrentMenu >= MenuCount - 1)
+                    {
+                        // We are swiping RTL and we should clamp.
+                        swipeDelta = Mathf.Clamp(swipeDelta, -((ItemContainer.rect.width * (MenuCount - 1)) + swipeDragClampLength), swipeDragClampLength);
                     }
                     else
                     {
