@@ -9,15 +9,17 @@ namespace BXFW.Tweening.Next
     /// A tweening engine that can be attached to most things supporting c#.
     /// (but will still require things to do/remove because unity doesn't serialize private/protected's)
     /// ---------
+    /// Huh, it's almost like i predicted the unity thing so i made this easier to port to other c# frameworks
+    /// lol.
     /// <summary>
-    /// A simpler tick based tweening engine.
-    /// <br>This tweening engine focuses on flexibility. (it won't be simple due to the required features)</br>
+    /// A simpler ticking + delta time based tweening engine.
+    /// <br>This tweening engine focuses on flexibility. (but it won't be simple due to the required features + explicitness)</br>
     /// <br/>
     /// <br><see cref="BXSTween"/> is mostly going to be similar to <see cref="BXTween"/>, so you will see the reuse of most parts that are fine.</br>
     /// <br/>
     /// <b>!! CAUTION !!</b>
     /// <br><see cref="BXSTween"/> is in an experimental state, i am still unsure what to do with this, the api will be different but also do the same things.</br>
-    /// <br>So yeah don't use this, the actual <see cref="BXTween"/> is stabler (but dumber and has less features).</br>
+    /// <br>So yeah use this at your own risk. The actual <see cref="BXTween"/> is stabler (but dumber, has less features and is GC.Allocing).</br>
     /// </summary>
     public static class BXSTween
     {

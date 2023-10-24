@@ -1,5 +1,4 @@
 using System;
-using BXFW.Tweening.Next.Events;
 
 namespace BXFW.Tweening.Next
 {

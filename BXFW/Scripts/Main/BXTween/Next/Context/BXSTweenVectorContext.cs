@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using BXFW.Tweening.Next.Events;
 
 namespace BXFW.Tweening.Next
 {
