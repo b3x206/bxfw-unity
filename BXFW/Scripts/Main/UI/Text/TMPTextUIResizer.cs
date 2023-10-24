@@ -14,7 +14,7 @@ namespace BXFW.UI
         [Header(":: References")]
         [SerializeField] private TMP_Text target;
 
-        protected override RectTransform ObjectTarget
+        protected override RectTransform ResizeTarget
         {
             get
             {

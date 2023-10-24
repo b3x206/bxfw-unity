@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using BXFW.Tweening.Next.Events;
 
 namespace BXFW.Tweening.Next
 {
@@ -10,8 +9,11 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenMatrix4x4Context : BXSTweenContext<Matrix4x4>
     {
-        public override BXSLerpAction<Matrix4x4> LerpAction => MathUtility.LerpUnclamped;
-        
+        public override Matrix4x4 LerpMethod(Matrix4x4 a, Matrix4x4 b, float time)
+        {
+            return MathUtility.LerpUnclamped(a, b, time);
+        }
+
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

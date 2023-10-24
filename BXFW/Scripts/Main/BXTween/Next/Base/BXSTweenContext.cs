@@ -46,12 +46,8 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// The linear interpolation method to override for the setter of this <typeparamref name="TValue"/> context.
         /// <br>This expects an unclamped interpolation action.</br>
-        /// <br/>
-        /// TODO : Maybe turn this into an abstract method because this allocates gc when accessed first time
-        /// <br/>
-        /// (ok i know jit gc is normal but this allocates some random gc as well)
         /// </summary>
-        public abstract BXSLerpAction<TValue> LerpAction { get; }
+        public abstract TValue LerpMethod(TValue a, TValue b, float time);
 
         // - Overrides
         /// <summary>
@@ -60,29 +56,23 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public override bool IsValid =>
             SetterAction != null &&
-            HasGenericActions &&
             // check if struct or not, if not a struct check nulls
             (typeof(TValue).IsValueType || (StartValue != null && EndValue != null));
-        /// <summary>
-        /// Returns whether if this class was overriden correctly.
-        /// Used in <see cref="IsValid"/>.
-        /// </summary>
-        public bool HasGenericActions => LerpAction != null;
-
+        
         /// <summary>
         /// The tick type of a sequence is always to be run at the variable mode.
         /// </summary>
         public override TickType ActualTickType => TickType.Variable;
 
         /// <summary>
-        /// Evaluates the <see cref="SetterAction"/> with <see cref="LerpAction"/>.
+        /// Evaluates the <see cref="SetterAction"/> with <see cref="LerpMethod"/>.
         /// </summary>
         public override void EvaluateTween(float t)
         {
             // Check easing clamping
             float easedTime = EvaluateEasing(t);
 
-            SetterAction(LerpAction(StartValue, EndValue, easedTime));
+            SetterAction(LerpMethod(StartValue, EndValue, easedTime));
         }
 
         // -- Methods

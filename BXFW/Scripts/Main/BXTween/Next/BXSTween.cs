@@ -28,7 +28,7 @@ namespace BXFW.Tweening.Next
         public const int NoID = 0;
 
         // -- Prepare
-#if ENABLE_MONO
+#if !UNITY_2017 || ENABLE_MONO
         static BXSTween()
         {
             // Only do the initialization of other classes in jit runtimes
@@ -153,6 +153,7 @@ namespace BXFW.Tweening.Next
 
         // -- Tweening
         /// <summary>
+        /// <b>!! TODO : Optimize this method, do the checks only once?</b>
         /// Runs a tweenable.
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
         /// </summary>
@@ -224,7 +225,6 @@ namespace BXFW.Tweening.Next
 
             // DeltaTime
             float deltaTime;
-            // unity didn't support the switch expression for a long time, so no switch expression.
             switch (tween.ActualTickType)
             {
                 default:

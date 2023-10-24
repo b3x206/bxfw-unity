@@ -270,6 +270,8 @@ namespace BXFW.Tweening.Next
 
             tween.ParentTweenable = this;
             m_RunnableTweens.Add(new RunnableTween(LastPriority, tween));
+            // Last priority is invalid
+            m_priorityDurationCache.Remove(LastPriority);
         }
         /// <summary>
         /// Joins a tween to the start.
@@ -284,6 +286,8 @@ namespace BXFW.Tweening.Next
                 ctx.Stop();
 
             m_RunnableTweens.Add(new RunnableTween(0, ctx));
+            // First priority is invalid
+            m_priorityDurationCache.Remove(0);
         }
         /// <summary>
         /// Appends a tween with new priority.
@@ -298,6 +302,7 @@ namespace BXFW.Tweening.Next
                 ctx.Stop();
 
             m_RunnableTweens.Add(new RunnableTween(NextPriority, ctx));
+            // No cache modifications required, it will be calculated when needed
         }
         /// <summary>
         /// Same as calling <see cref="Append(BXSTweenable)"/>, but for the <see cref="ICollection{T}"/>.
@@ -326,6 +331,10 @@ namespace BXFW.Tweening.Next
             m_RunnableTweens.Sort();
 
             m_RunnableTweens.Add(new RunnableTween(0, ctx));
+
+            // Cache is invalid and i won't bother shifting all keys by 1
+            // Becuase c# dictionary we can't do cool unsafe stuff
+            m_priorityDurationCache.Clear();
         }
         /// <summary>
         /// Clears this sequence.
@@ -334,6 +343,7 @@ namespace BXFW.Tweening.Next
         public void Clear()
         {
             m_RunnableTweens.Clear();
+            m_priorityDurationCache.Clear();
         }
         /// <summary>
         /// Whether if this sequence contains given <paramref name="item"/>.
@@ -386,6 +396,8 @@ namespace BXFW.Tweening.Next
                         {
                             afterPriorityRunnable.priority -= 1;
                         }
+                        // Invalidate durations completely
+                        m_priorityDurationCache.Clear();
                     }
 
                     m_RunnableTweens.RemoveAt(i);
@@ -411,6 +423,9 @@ namespace BXFW.Tweening.Next
             if (!removedAny)
                 return;
 
+            // Invalidate durations
+            m_priorityDurationCache.Clear();
+
             // Check if the last priority
             if (priority == LastPriority)
                 return;
@@ -428,12 +443,18 @@ namespace BXFW.Tweening.Next
         {
             return m_RunnableTweens.Count(rt => rt.priority == priority);
         }
+        // Cache the results of Durations
+        // Only do clear the cache if a new tween was added or removed
+        private readonly Dictionary<int, float> m_priorityDurationCache = new Dictionary<int, float>();
         /// <summary>
         /// Returns the longest duration tween in given <paramref name="priority"/>.
         /// <br>Returns -1f if there's no items in <paramref name="priority"/>.</br>
         /// </summary>
         public float PriorityDuration(int priority)
         {
+            if (m_priorityDurationCache.TryGetValue(priority, out float cachedDuration))
+                return cachedDuration;
+
             float longestDuration = -1f;
             for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
@@ -443,13 +464,14 @@ namespace BXFW.Tweening.Next
 
                 // LoopCount = 0 and 1 = play once, beyond that is play multiple times
                 // Infinite loops will be only waited out once per their duration and it won't be stopped.
-                float duration = (runnable.tween.Duration * (Math.Max(runnable.tween.LoopCount + 1, 0) + 1)) + runnable.tween.Delay;
+                float duration = (runnable.tween.Duration * Math.Max(runnable.tween.LoopCount + 1, 1)) + runnable.tween.Delay;
                 if (duration > longestDuration)
                 {
                     longestDuration = duration;
                 }
             }
 
+            m_priorityDurationCache.Add(priority, longestDuration);
             return longestDuration;
         }
         /// <summary>

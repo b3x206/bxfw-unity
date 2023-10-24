@@ -186,9 +186,6 @@ namespace BXFW
         {
             get 
             {
-                if (!IsSorted())
-                    Sort();
-
                 return m_list[index];
             }
             set
@@ -225,6 +222,18 @@ namespace BXFW
                 // Can alternatively also be this :
                 // (m_list[index], m_list[prevIndex]) = (value, m_list[index]);
             }
+        }
+
+        /// <summary>
+        /// Get an value with checking if the array is sorted.
+        /// <br>This may cause issues with a lot of accesses to the array as this is an o(N) operation.</br>
+        /// </summary>
+        public T GetChecked(int index)
+        {
+            if (!IsSorted())
+                Sort();
+
+            return m_list[index];
         }
 
         public override int Count => m_list.Count;

@@ -10,8 +10,11 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenVector2Context : BXSTweenContext<Vector2>
     {
-        public override BXSLerpAction<Vector2> LerpAction => Vector2.LerpUnclamped;
-        
+        public override Vector2 LerpMethod(Vector2 a, Vector2 b, float time)
+        {
+            return Vector2.LerpUnclamped(a, b, time);
+        }
+
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>
@@ -57,7 +60,10 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenVector3Context : BXSTweenContext<Vector3>
     {
-        public override BXSLerpAction<Vector3> LerpAction => Vector3.LerpUnclamped;
+        public override Vector3 LerpMethod(Vector3 a, Vector3 b, float time)
+        {
+            return Vector3.LerpUnclamped(a, b, time);
+        }
 
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
@@ -104,8 +110,11 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenVector4Context : BXSTweenContext<Vector4>
     {
-        public override BXSLerpAction<Vector4> LerpAction => Vector4.LerpUnclamped;
-        
+        public override Vector4 LerpMethod(Vector4 a, Vector4 b, float time)
+        {
+            return Vector4.LerpUnclamped(a, b, time);
+        }
+
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

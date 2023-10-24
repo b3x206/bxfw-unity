@@ -503,6 +503,18 @@ namespace BXFW.Tweening.Next
 
             // Other values will be copied by the override casting the values to itself...
         }
+        
+        /// <summary>
+        /// Returns the BXSTweenable as a copy.
+        /// </summary>
+        public T AsCopy<T>()
+            where T : BXSTweenable, new()
+        {
+            T tweenable = new T();
+            tweenable.CopyFrom(this);
+
+            return tweenable;
+        }
 
         /// <summary>
         /// Starts the tween.

@@ -10,8 +10,11 @@ namespace BXFW.Tweening.Next
     [Serializable]
     public sealed class BXSTweenColorContext : BXSTweenContext<Color>
     {
-        public override BXSLerpAction<Color> LerpAction => Color.LerpUnclamped;
-        
+        public override Color LerpMethod(Color a, Color b, float time)
+        {
+            return Color.LerpUnclamped(a, b, time);
+        }
+
         /// <summary>
         /// Makes a blank context. Has no duration or anything.
         /// </summary>

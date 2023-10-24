@@ -1,21 +1,25 @@
 using System.Collections;
-
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace BXFW.UI
 {
     /// <summary>
     /// Resizes itself according to rect transform constraint. (Acts like an <see cref="UnityEngine.UI.ContentSizeFitter"/>)
-    /// <br>The inheriting class can use the '<see cref="ObjectTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
+    /// <br>The inheriting class can use the '<see cref="ResizeTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public abstract class UICustomResizer : UIBehaviour
     {
         [Header(":: Settings")]
-        public float paddingX = 0f;
-        public float paddingY = 0f;
-        public bool applyX = true, applyY = true;
+        public bool applyX = true;
+        public bool applyY = true;
+        [InspectorConditionalDraw(nameof(applyX))] public float paddingX = 0f;
+        [InspectorConditionalDraw(nameof(applyX))] public MinMaxValue sizeLimitX = MinMaxValue.Zero;
+        [InspectorConditionalDraw(nameof(applyY))] public float paddingY = 0f;
+        [InspectorConditionalDraw(nameof(applyY))] public MinMaxValue sizeLimitY = MinMaxValue.Zero;
         [Tooltip("Disables this gameObject if the target is disabled too.")]
         public bool disableIfTargetIs = false;
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;
@@ -23,7 +27,7 @@ namespace BXFW.UI
         /// <summary>
         /// The target object to be resized.
         /// </summary>
-        protected abstract RectTransform ObjectTarget { get; }
+        protected abstract RectTransform ResizeTarget { get; }
         /// <summary>
         /// Return the preferred size here.
         /// <br>The padding is done on the base class, and added into <see cref="CurrentTargetValues"/>.</br>
@@ -36,16 +40,23 @@ namespace BXFW.UI
         /// </summary>
         private Vector2 prevTargetValues;
         /// <summary>
-        /// Given target values with padding.
+        /// Given target values with padding and clamping.
         /// </summary>
         public Vector2 CurrentTargetValues
         {
             get
             {
-                if (ObjectTarget == null)
+                if (ResizeTarget == null)
                     return Vector2.zero;
 
-                return GetTargetSize() + new Vector2(paddingX, paddingY);
+                Vector2 result = GetTargetSize() + new Vector2(paddingX, paddingY);
+
+                if (sizeLimitX.Max > float.Epsilon)
+                    result.x = sizeLimitX.ClampBetween(result.x);
+                if (sizeLimitY.Max > float.Epsilon)
+                    result.y = sizeLimitY.ClampBetween(result.y);
+
+                return result;
             }
         }
         private RectTransform m_RectTransform;
@@ -115,13 +126,13 @@ namespace BXFW.UI
         protected bool ShouldUpdate()
         {
             // Check target
-            if (ObjectTarget == null)
+            if (ResizeTarget == null)
                 return false;
 
             // Check if target is enabled (note : this object is disabled in update if the target is disabled)
             // Disabling the object here, unity doesn't allow it.
             // (this was the case in the previous event based update, it may have been changed)
-            if (!ObjectTarget.gameObject.activeInHierarchy)
+            if (!ResizeTarget.gameObject.activeInHierarchy)
                 return false;
 
             // Check preferenced values
@@ -143,12 +154,12 @@ namespace BXFW.UI
                 // TODO : Maybe use 'LateUpdate'?
                 yield return new WaitForEndOfFrame();
 
-                if (ObjectTarget != null)
+                if (ResizeTarget != null)
                 {
                     // Disabling the 'gameObject' does kill the coroutine, so use a coroutine dispatcher.
                     // Disable object if the target is disabled too.
                     
-                    if (!ObjectTarget.gameObject.activeInHierarchy && 
+                    if (!ResizeTarget.gameObject.activeInHierarchy && 
                         disableIfTargetIs)
                     {
                         gameObject.SetActive(false);
@@ -161,6 +172,37 @@ namespace BXFW.UI
 
                 UpdateRectTransform();
                 OnCoroutineUpdate();
+            }
+        }
+
+        /// <summary>
+        /// The layout group cache, is static and used with <see cref="SendUpdateToLayoutGroups"/>.
+        /// </summary>
+        protected static readonly List<LayoutGroup> m_layoutGroupCache = new List<LayoutGroup>(32);
+        /// <summary>
+        /// Calls <see cref="LayoutGroup"/>'s calculation and layouting functions.
+        /// </summary>
+        protected void SendUpdateToLayoutGroups()
+        {
+            Transform t = transform;
+            // Iterate all parents
+            while (t != null)
+            {
+                t.GetComponents(m_layoutGroupCache);
+                for (int i = 0; i < m_layoutGroupCache.Count; i++)
+                {
+                    if (m_layoutGroupCache[i] == null)
+                        continue;
+
+                    m_layoutGroupCache[i].CalculateLayoutInputHorizontal();
+                    m_layoutGroupCache[i].CalculateLayoutInputVertical();
+                    m_layoutGroupCache[i].SetLayoutHorizontal();
+                    m_layoutGroupCache[i].SetLayoutVertical();
+                    // TODO : Determine if calling only one layout group's functions is enough.
+                    // For now just call all for good measure
+                }
+
+                t = t.parent;
             }
         }
         /// <summary>
@@ -256,6 +298,9 @@ namespace BXFW.UI
 
                 prevTargetValues.y = CurrentTargetValues.y;
             }
+
+            // Update all parent LayoutGroups to recalculate
+            SendUpdateToLayoutGroups();
         }
     }
 }

@@ -12,7 +12,7 @@ namespace BXFW.UI
         [Header(":: References")]
         [SerializeField] private RectTransform target;
 
-        protected override RectTransform ObjectTarget
+        protected override RectTransform ResizeTarget
         {
             get
             {

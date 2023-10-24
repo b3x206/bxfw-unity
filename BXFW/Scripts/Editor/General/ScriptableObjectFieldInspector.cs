@@ -680,7 +680,7 @@ namespace BXFW
             // This GUI element is inserted (foldout space is squished for this property), so yeah.
             if (DisplayObjectNameEditor)
             {
-                GUI.enabled = !targetHasAssetPath;
+                GUI.enabled = GUI.enabled && !targetHasAssetPath;
 
                 rInspectorInfo.x += previousWidth * BTN_FOLDOUT_MIN_WIDTH;
                 float lblNameEditorWidth = 1f - (1f - (rFoldoutRefWidth - BTN_FOLDOUT_MIN_WIDTH));
@@ -716,7 +716,7 @@ namespace BXFW
                 }
                 rInspectorInfo.x -= previousWidth * BTN_FOLDOUT_MIN_WIDTH;
 
-                GUI.enabled = true;
+                GUI.enabled = gEnabled;
             }
 
             // 'Show On Project' button
