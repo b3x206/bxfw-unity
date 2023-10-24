@@ -15,7 +15,7 @@ namespace BXFW.ScriptEditor
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                { nameof(CameraCapture.CaptureKey), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After,
+                { nameof(CameraCapture.captureKey), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After,
                     () =>
                     {
                         if (targets.Length <= 1)

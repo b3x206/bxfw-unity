@@ -107,24 +107,6 @@ namespace BXFW.Tweening.Next
         protected bool m_WaitDelayOnLoop = true;
 
         /// <summary>
-        /// Type of the easing for this tweenable.
-        /// </summary>
-        public EaseType Ease
-        {
-            get { return m_Ease; }
-            protected set
-            {
-                m_Ease = value;
-                // TODO : Get rid of this new delegate creation
-                m_EaseFunction = (f) => BXTweenEase.Methods[m_Ease](f);
-            }
-        }
-        /// <summary>
-        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
-        /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
-        private EaseType m_Ease = EaseType.QuadOut;
-        /// <summary>
         /// Whether if the 'EaseCurve' should be used.
         /// <br>Setting this will not touch the internal <see cref="m_EaseCurve"/> value.</br>
         /// </summary>
@@ -148,6 +130,24 @@ namespace BXFW.Tweening.Next
         /// </summary>
         [SerializeField]
         private bool m_UseEaseCurve;
+        /// <summary>
+        /// Type of the easing for this tweenable.
+        /// </summary>
+        public EaseType Ease
+        {
+            get { return m_Ease; }
+            protected set
+            {
+                m_Ease = value;
+                // TODO : Get rid of this new delegate creation
+                m_EaseFunction = (f) => BXTweenEase.Methods[m_Ease](f);
+            }
+        }
+        /// <summary>
+        /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
+        /// </summary>
+        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
+        private EaseType m_Ease = EaseType.QuadOut;
         /// <summary>
         /// The internal cached ease function.
         /// <br>Use the <see cref="EaseFunction"/> to ensure a non-null easing function.</br>
@@ -518,7 +518,7 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// Starts the tween.
-        /// <br>If the tween is already running, calling this will stop it. This won't call <see cref="Reset"/> on the tween.</br>
+        /// <br>If the tween is already running, calling this will restart it. This won't call <see cref="Reset"/> on the tween.</br>
         /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true.</br>
         /// </summary>
         public virtual void Play()

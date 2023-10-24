@@ -4,7 +4,7 @@ namespace BXFW.Data
 {
     /// <summary>
     /// A scriptable object that contains an GUID pair.
-    /// <br>The GUID is seperated using <see cref="ScriptableObjectIDSerializer.OBJ_IDENTIFIER_PROPERTY_SEP"/>.</br>
+    /// <br>The GUID is seperated using <see cref="ScriptableObjectIDUtility.OBJ_IDENTIFIER_PROPERTY_SEP"/>.</br>
     /// </summary>
     public class GUIDScriptableObject : ScriptableObject
     {
@@ -21,8 +21,18 @@ namespace BXFW.Data
         /// </summary>
         protected virtual void OnValidate()
         {
-            m_GUID = ScriptableObjectIDSerializer.GetUnityObjectIdentifier(this);
+            m_GUID = ScriptableObjectIDUtility.GetUnityObjectIdentifier(this);
         }
 #endif
+        /// <summary>
+        /// Used to set the <see cref="m_GUID"/> value, but only in editor.
+        /// <br>Calling the base is only mandatory for editor purposes.</br>
+        /// </summary>
+        protected virtual void OnEnable()
+        {
+#if UNITY_EDITOR
+            m_GUID = ScriptableObjectIDUtility.GetUnityObjectIdentifier(this);
+#endif
+        }
     }
 }
