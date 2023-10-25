@@ -6,7 +6,7 @@ namespace BXFW
 {
     /// Changes Done :
     ///   * Fixed formatting and added discards for unused RenderTexture's.
-    ///   * Renamed class from RTUtils -> RenderTextureUtils
+    ///   * Renamed class from RTUtils -> RenderTextureUtility
     ///   * removed some pointless methods (such as DrawTextureGUI without rect input)
     ///   * (some) Methods can now take camera matrices
     /// 
@@ -18,6 +18,7 @@ namespace BXFW
     /// RenderTexture utilities for direct drawing meshes, texts and sprites and converting to Texture / Texture2D.
     /// Requires BlitQuad shader (or also known as a default sprite shader).
     /// 
+    /// Original License Text (if required/needed)
     /// ============================================================================
     ///
     /// MIT License

@@ -202,7 +202,7 @@ namespace BXFW
                 // (heck, even the fieldInfo variable that unity gives points to that element's array parent)
                 // so we have to copy the entire 'IEnumerable' thing and paste into that array.
 
-                int index = property.GetPropertyArrayIndex();
+                int index = property.GetPropertyParentArrayIndex();
 
                 // We also have to ensure the array is a 'members that you can set' type
                 // Object we cast to is reference, but singular objects may still need FieldInfo set.

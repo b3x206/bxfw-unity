@@ -492,7 +492,7 @@ namespace BXFW.Tools.Editor
         /// Returns the (last array) index of this property in the array.
         /// <br>Returns <c>-1</c> if <paramref name="property"/> is not in an array.</br>
         /// </summary>
-        public static int GetPropertyArrayIndex(this SerializedProperty property)
+        public static int GetPropertyParentArrayIndex(this SerializedProperty property)
         {
             // Find whether if there's any array define token
             int arrayDefLastIndex = property.propertyPath.LastIndexOf(SP_ARRAY_DATA_TK);

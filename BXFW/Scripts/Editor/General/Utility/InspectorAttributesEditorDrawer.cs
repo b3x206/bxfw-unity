@@ -325,7 +325,7 @@ namespace BXFW.ScriptEditor
                 var parentObject = property.serializedObject.targetObject; // This returns the parent object. (array is also parent)
                 var parentArrayPair = property.GetTarget(); // This returns the array itself anyways (even if we call GetParentOfTargetField with 1 depth)
                 // The element index to draw
-                int propertyIndex = property.GetPropertyArrayIndex();
+                int propertyIndex = property.GetPropertyParentArrayIndex();
 
                 // Parent array itself
                 // (since normal IComparable and generic IComparable are incompatible with casting, just assume that these objects have a Method that has CompareTo)

@@ -181,7 +181,8 @@ namespace BXFW.Tweening.Next
                 try
                 {
                     tween.OnStartAction?.Invoke();
-                    tween.OnEndAction?.Invoke();
+                    // tween.Stop alreadycalls OnEndAction
+                    //tween.OnEndAction?.Invoke();
                 }
                 catch (Exception e)
                 {

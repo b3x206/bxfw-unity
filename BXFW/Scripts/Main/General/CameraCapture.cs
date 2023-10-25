@@ -59,7 +59,7 @@ namespace BXFW.Tools.Editor
             screenshotCamera.targetTexture = null;
 
             // Save to Filesystem
-            var dirString = $"{Directory.GetCurrentDirectory()}/000EditorScreenshots";
+            var dirString = Path.Combine(Directory.GetCurrentDirectory(), "000EditorScreenshots");
             DirectoryInfo directoryInfo = new DirectoryInfo(dirString);
             if (!directoryInfo.Exists) 
             { 
