@@ -16,7 +16,7 @@ namespace BXFW.ScriptEditor
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            bool drawPosClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
+            bool drawPosClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
 
             return (drawPosClamp ? EditorGUIUtility.singleLineHeight * 6 : EditorGUIUtility.singleLineHeight * 3) + 12;
         }
@@ -31,26 +31,26 @@ namespace BXFW.ScriptEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)).boolValue;
+            bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
 
-            EditorGUI.PropertyField(GetPropertyRect(position, 0), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.UseCameraPosClamp)));
+            EditorGUI.PropertyField(GetPropertyRect(position, 0), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)));
             if (DrawXYZClamp)
             {
                 // Rest of the gui
-                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.Position)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.EulerRotation)));
+                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.position)));
+                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.eulerRotation)));
 
                 // indent by 15
                 Rect indentRect = new Rect(position) { x = position.x + 15f, width = position.width - 15f };
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 3), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosXClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 4), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosYClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 5), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.CameraPosZClamp)));
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 3), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posXClamp)));
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 4), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posYClamp)));
+                EditorGUI.PropertyField(GetPropertyRect(indentRect, 5), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posZClamp)));
             }
             else
             {
                 // Without the clamp stuff
-                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.Position)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.EulerRotation)));
+                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.position)));
+                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.eulerRotation)));
             }
 
             property.serializedObject.ApplyModifiedProperties();
@@ -115,8 +115,8 @@ namespace BXFW.ScriptEditor
                     var FollowPosition = target.followTransform == null ? target.followPosition : target.followTransform.position;
                     Undo.RecordObject(target.transform, string.Empty);
 
-                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].Position = target.transform.position - FollowPosition;
-                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation = target.transform.rotation.eulerAngles;
+                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].position = target.transform.position - FollowPosition;
+                    target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].eulerRotation = target.transform.rotation.eulerAngles;
                 }
                 Undo.CollapseUndoOperations(undoID);
             }
@@ -130,8 +130,8 @@ namespace BXFW.ScriptEditor
                     var FollowPosition = target.followTransform == null ? target.followPosition : target.followTransform.position;
                     Undo.RecordObject(target.transform, string.Empty);
 
-                    target.transform.position = target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].Position + FollowPosition;
-                    target.transform.rotation = Quaternion.Euler(target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].EulerRotation);
+                    target.transform.position = target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].position + FollowPosition;
+                    target.transform.rotation = Quaternion.Euler(target.cameraOffsetTargets[target.CurrentCameraOffsetIndex].eulerRotation);
                 }
                 Undo.CollapseUndoOperations(undoID);
             }

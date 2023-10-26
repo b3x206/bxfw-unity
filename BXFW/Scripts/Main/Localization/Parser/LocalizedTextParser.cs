@@ -9,7 +9,7 @@ namespace BXFW.Data
 {
     /// <summary>
     /// Parses localized text asset.
-    /// <br>While i did release prod games with this localization system, it is still not recommended for this to be used.</br>
+    /// <br>While i did release production games with this localization system, it is still not recommended for this to be used.</br>
     /// </summary>
     /// Here's how the data type looks like
     /// <example>
@@ -181,13 +181,13 @@ namespace BXFW.Data
                         {
                             // Push pragma and continue
                             string splitString = line.Substring(indexOfPragmaDef + PragmaDefString.Length + 1);
-                            string[] pragmaKeyValue = splitString.Split(SpaceChar, VerticalTabChar, TabChar);
-                            // because for some reason string.Split loves to add random empty stuff.
-                            pragmaKeyValue = pragmaKeyValue.Where((s) => !string.IsNullOrWhiteSpace(s)).ToArray();
-
+                            string[] pragmaKeyValue = splitString.Split(new char[] { SpaceChar, VerticalTabChar, TabChar }, StringSplitOptions.RemoveEmptyEntries);
+                            
                             if (pragmaKeyValue.Length != 2)
-                                throw new ParseException(string.Format("[LocalizationDictionaryParser::Parse] Error on '{0}:{1}' : Invalid pragma seperation. Expected length was 2, got '{2}'.", 
-                                    i + 1, indexOfPragmaDef + PragmaDefString.Length, pragmaKeyValue.Length));
+                                throw new ParseException(string.Format(
+                                    "[LocalizationDictionaryParser::Parse] Error on '{0}:{1}' : Invalid pragma seperation. Expected length was 2, got '{2}'.", 
+                                    i + 1, indexOfPragmaDef + PragmaDefString.Length, pragmaKeyValue.Length
+                                ));
 
                             globalPragmaSettings.Add(pragmaKeyValue[0], pragmaKeyValue[1]);
                         }

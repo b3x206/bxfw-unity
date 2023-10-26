@@ -17,16 +17,16 @@ namespace BXFW
         public struct CameraOffset
         {
             // -- Position
-            public Vector3 Position;
-            public Vector3 EulerRotation;
+            public Vector3 position;
+            public Vector3 eulerRotation;
 
             // -- Clamp
-            public bool UseCameraPosClamp;
-            public MinMaxValue CameraPosXClamp;
-            public MinMaxValue CameraPosYClamp;
-            public MinMaxValue CameraPosZClamp;
+            public bool usePositionClamp;
+            public MinMaxValue posXClamp;
+            public MinMaxValue posYClamp;
+            public MinMaxValue posZClamp;
 
-            public override string ToString() { return string.Format("[CameraOffset] Pos={0}, Rot={1}", Position, EulerRotation); }
+            public override string ToString() { return string.Format("[FollowCamera.CameraOffset] Pos={0}, Rot={1}", position, eulerRotation); }
         }
 
         // ** Variables (Inspector)
@@ -92,20 +92,20 @@ namespace BXFW
         {
             // Get Position
             var followPos = (followTransform == null || useFollowPositionInstead) ? followPosition : followTransform.position;
-            var lerpPos = CurrentCameraOffset.UseCameraPosClamp ? new Vector3(
-                CurrentCameraOffset.CameraPosXClamp.ClampBetween(followPos.x + CurrentCameraOffset.Position.x),
-                CurrentCameraOffset.CameraPosYClamp.ClampBetween(followPos.y + CurrentCameraOffset.Position.y),
-                CurrentCameraOffset.CameraPosZClamp.ClampBetween(followPos.z + CurrentCameraOffset.Position.z)
+            var lerpPos = CurrentCameraOffset.usePositionClamp ? new Vector3(
+                CurrentCameraOffset.posXClamp.ClampBetween(followPos.x + CurrentCameraOffset.position.x),
+                CurrentCameraOffset.posYClamp.ClampBetween(followPos.y + CurrentCameraOffset.position.y),
+                CurrentCameraOffset.posZClamp.ClampBetween(followPos.z + CurrentCameraOffset.position.z)
             ) : new Vector3(
-                followPos.x + CurrentCameraOffset.Position.x,
-                followPos.y + CurrentCameraOffset.Position.y,
-                followPos.z + CurrentCameraOffset.Position.z
+                followPos.x + CurrentCameraOffset.position.x,
+                followPos.y + CurrentCameraOffset.position.y,
+                followPos.z + CurrentCameraOffset.position.z
             );
             // Get Rotation
             var rotatePos = Quaternion.Euler(
-                CurrentCameraOffset.EulerRotation.x,
-                CurrentCameraOffset.EulerRotation.y,
-                CurrentCameraOffset.EulerRotation.z
+                CurrentCameraOffset.eulerRotation.x,
+                CurrentCameraOffset.eulerRotation.y,
+                CurrentCameraOffset.eulerRotation.z
             );
             // Apply (with interpolation, using Mathf.MoveTowards doesn't work nice and smooth here)
             transform.SetPositionAndRotation(
@@ -195,7 +195,7 @@ namespace BXFW
             for (int i = 0; i < cameraOffsetTargets.Length; i++)
             {
                 Gizmos.color = m_cacheColor[i];
-                Gizmos.DrawSphere(cameraOffsetTargets[i].Position + posOffset, 1f);
+                Gizmos.DrawSphere(cameraOffsetTargets[i].position + posOffset, 1f);
             }
 
             // Draw 'followVector3'

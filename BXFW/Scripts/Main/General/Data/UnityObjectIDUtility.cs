@@ -1,26 +1,21 @@
-using System.Reflection;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-
 #if UNITY_EDITOR
+using UnityEngine;
+using System.Reflection;
 using UnityEditor;
-#endif
 
-namespace BXFW.Data
+// - editor related data utils - //
+namespace BXFW.Data.Editor
 {
     /// <summary>
-    /// A utility script that only returns the FileID's / UUID's of <see cref="ScriptableObject"/>s.
-    /// <br>This may only be used in cases where JSONUtility dissapoints you and you have full access to the 'ScriptableObject'.
-    /// (Instead of using this please use OdinSerializer)
-    /// </br>
+    /// <c>[ EDITOR ONLY ]</c> A utility script that only returns the FileID's / UUID's of <see cref="UnityEngine.Object"/>s.<br/>
+    /// (Instead of using this for serialization purposes please use OdinSerializer) <br/>
     /// </summary>
-    internal static class ScriptableObjectIDUtility
+    public static class UnityObjectIDUtility
     {
-#if UNITY_EDITOR
         /// <summary>
-        /// The object / key property identifier seperator used.
+        /// The default object / key property identifier seperator used.
         /// </summary>
-        public const string OBJ_IDENTIFIER_PROPERTY_SEP = "::";
+        public const string DefaultObjIdentifierValueSeperator = "::";
         /// <summary>
         /// Returns the local file identifier for the <paramref name="target"/>.
         /// </summary>
@@ -48,7 +43,8 @@ namespace BXFW.Data
         /// <br>If the <paramref name="target"/> is a component or a GameObject, the scene GUID + the fileID of the objects are combined.</br>
         /// <br>If the <paramref name="target"/> is not a scene object (i.e ScriptableObject or an asset importer thing), the file already has it's own GUID + fileID.</br>
         /// </summary>
-        public static string GetUnityObjectIdentifier(UnityEngine.Object target)
+        /// <param name="valueSeperator">The value seperator to use if you have a custom one.</param>
+        public static string GetUnityObjectIdentifier(UnityEngine.Object target, string valueSeperator = DefaultObjIdentifierValueSeperator)
         {
             string result;
 
@@ -56,14 +52,14 @@ namespace BXFW.Data
             if (target is Component c)
             {
                 // Can get 'LocalFileIdentifier' directly apparently
-                result = $"{AssetDatabase.AssetPathToGUID(c.gameObject.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{GetLocalFileIdentifier(c)}";
+                result = $"{AssetDatabase.AssetPathToGUID(c.gameObject.scene.path)}{valueSeperator}{GetLocalFileIdentifier(c)}";
             }
             // The target value we are looking for is a GameObject though
             // Could make this code more compact but at the cost of slight performance
             // Plus this works probably fine so it's ok.
             else if (target is GameObject o)
             {
-                result = $"{AssetDatabase.AssetPathToGUID(o.scene.path)}{OBJ_IDENTIFIER_PROPERTY_SEP}{GetLocalFileIdentifier(o)}";
+                result = $"{AssetDatabase.AssetPathToGUID(o.scene.path)}{valueSeperator}{GetLocalFileIdentifier(o)}";
             }
             // If this is not the case, assume it's a local filesystem asset. (can be ScriptableObject)
             // In that case use the object's own GUID
@@ -73,19 +69,21 @@ namespace BXFW.Data
                 bool tryGetResult = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out string guid, out long fileID);
                 if (!tryGetResult)
                 {
-                    // stupid unity does not know that the target exists on the scene
-                    // but since it doesn't have any GUID's we have to improvise with
-                    // TODO : This needs fixing? or just leave as is?
-                    guid = AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path);
-                    //guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetOrScenePath(target));
+                    // stupid unity ignores the fact that the target exists on the scene
+                    // but since it doesn't have any GUID's we have to improvise with this crap hack
+                    // which will not make unique objects on other scenes
+                    // --
+                    // this is probably the best solution for objects that have no GUID
+                    // No serialization of these as reference of guid+file id pair is possible
+                    guid = string.Empty;
                     fileID = GetLocalFileIdentifier(target);
                 }
 
-                result = $"{guid}{OBJ_IDENTIFIER_PROPERTY_SEP}{fileID}";
+                result = $"{guid}{valueSeperator}{fileID}";
             }
 
             return result;
         }
-#endif
     }
 }
+#endif

@@ -3,10 +3,10 @@ using UnityEngine;
 namespace BXFW.Data
 {
     /// <summary>
-    /// A scriptable object that contains an GUID pair.
-    /// <br>The GUID is seperated using <see cref="ScriptableObjectIDUtility.OBJ_IDENTIFIER_PROPERTY_SEP"/>.</br>
+    /// A scriptable object that contains an GUID+FileID pair.
+    /// <br>The GUID+FileID is seperated using <see cref="ObjIdentifierValueSeperator"/>.</br>
     /// </summary>
-    public class GUIDScriptableObject : ScriptableObject
+    public abstract class GUIDScriptableObject : ScriptableObject
     {
         /// <summary>
         /// UUID gathered on the editor, for loading with JSONUtility.
@@ -14,6 +14,12 @@ namespace BXFW.Data
         [ReadOnlyView, SerializeField] private string m_GUID;
         /// <inheritdoc cref="m_GUID"/>
         public string GUID => m_GUID;
+        /// <summary>
+        /// The seperator for the GUID+FileID values on the string respectively.
+        /// <br>Before this string =&gt; GUID</br>
+        /// <br>After this string  =&gt; FileID</br>
+        /// </summary>
+        protected const string ObjIdentifierValueSeperator = "::";
 
 #if UNITY_EDITOR
         /// <summary>
@@ -21,7 +27,7 @@ namespace BXFW.Data
         /// </summary>
         protected virtual void OnValidate()
         {
-            m_GUID = ScriptableObjectIDUtility.GetUnityObjectIdentifier(this);
+            m_GUID = Editor.UnityObjectIDUtility.GetUnityObjectIdentifier(this, ObjIdentifierValueSeperator);
         }
 #endif
         /// <summary>
@@ -31,7 +37,7 @@ namespace BXFW.Data
         protected virtual void OnEnable()
         {
 #if UNITY_EDITOR
-            m_GUID = ScriptableObjectIDUtility.GetUnityObjectIdentifier(this);
+            m_GUID = Editor.UnityObjectIDUtility.GetUnityObjectIdentifier(this, ObjIdentifierValueSeperator);
 #endif
         }
     }

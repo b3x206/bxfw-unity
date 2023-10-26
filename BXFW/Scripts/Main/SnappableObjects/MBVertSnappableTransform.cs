@@ -149,7 +149,6 @@ namespace BXFW
         /// </summary>
         protected Action OnSnapTransformCall;
         
-        #region Extension Functions
         /// <summary>
         /// Snaps the given transform to this transform. (Depending on the <paramref name="SnapGiven"/>)
         /// </summary>
@@ -252,7 +251,7 @@ namespace BXFW
         /// <param name="transformTarget">Transform target. The default object to move.</param>
         /// <param name="pointThis">Snap point for object that calls this method.</param>
         /// <returns>Whether if the SnapTransform operation was successful.</returns>
-        public bool SnapTransform(Transform transformTarget, int pointThis, Vector3 transformTargetPosOffset = default)
+        public bool SnapTransform(Transform transformTarget, int pointThis, Vector3 pointOffset = default)
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
@@ -263,30 +262,21 @@ namespace BXFW
                 return false;
             }
 
-            /// -- Create snap helper --
-            /// --> So here's the way snap helper works:
-            /// 1: Create the gameobject,
-            /// 2: Put this gameobject to the same place as the corner of the platform,
-            /// 3: Parent the platform to this gameobject,
-            /// 4: Place this gameobject to the target corner,
-            /// 5: Unparent the platform.
-            /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
+            var snapHelper = new GameObject("SnapHelper").transform;
 
             // Difference here is that we snap the target object instead of this object.
-            var PrevParent = transformTarget.transform.parent;
+            var prevParent = transformTarget.transform.parent;
 
-            SnapHelper.position = transformTarget.position + transformTargetPosOffset;
-            transformTarget.transform.SetParent(SnapHelper, true);
-            SnapHelper.position = VertPoints[pointThis];
-            transformTarget.transform.SetParent(PrevParent, true);
+            snapHelper.position = transformTarget.position + pointOffset;
+            transformTarget.transform.SetParent(snapHelper, true);
+            snapHelper.position = VertPoints[pointThis];
+            transformTarget.transform.SetParent(prevParent, true);
 
-            Destroy(SnapHelper.gameObject);
+            Destroy(snapHelper.gameObject);
             OnSnapTransformCall?.Invoke();
 
             return true;
         }
-        #endregion
 
 #if UNITY_EDITOR
         protected virtual void OnDrawGizmosSelected()

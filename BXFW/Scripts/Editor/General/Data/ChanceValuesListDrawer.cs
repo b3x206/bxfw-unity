@@ -79,7 +79,7 @@ namespace BXFW.ScriptEditor
         /// (ah well, just don't use the interface as it's the previous value,
         /// it is only contained to check if the array was reordered)
         /// </br>
-        /// <br>The previous value is the 'Value' of the KeyValuePair.</br>
+        /// <br>The previous 'Chance' is the 'Value' of the KeyValuePair.</br>
         /// </summary>
         private readonly List<KeyValuePair<IChanceValue, float>> prevChanceList = new List<KeyValuePair<IChanceValue, float>>();
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -169,12 +169,11 @@ namespace BXFW.ScriptEditor
                     {
                         for (int i = 0; i < localCopyArray.arraySize; i++)
                         {
-                            localCopyArray.GetArrayElementAtIndex(i)
-                                .FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = ChanceValuesListBase.ChanceUpperLimit / localCopyArray.arraySize;
+                            localCopyArray.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = ChanceValuesListBase.ChanceUpperLimit / localCopyArray.arraySize;
                         }
 
-                        // and this thing to call too, always needed because 
-                        // you can't determine whether if a property ever changes. It's impossible in c# (saying it satirically).
+                        // and this thing to call too, always needed because you can't determine
+                        // whether if a property ever changes. It's impossible in c# (saying it satirically).
                         localCopyArray.serializedObject.ApplyModifiedProperties();
                         // Delegate SerializedProperty can be disposed, as it's used and when this event refires this value will be renewed
                         localCopyArray.Dispose();
