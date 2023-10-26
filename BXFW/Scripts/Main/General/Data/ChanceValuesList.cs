@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
-using BXFW;
 using UnityEngine;
 
 namespace BXFW
@@ -33,7 +32,7 @@ namespace BXFW
         /// List of the all of the chance values.
         /// <br>Instead of changing the chance directly from this value, use the <see cref="SetChance(int, float)"/> method instead.</br>
         /// </summary>
-        public abstract IReadOnlyList<IChanceValue> ChanceDatas { get; }
+        public abstract IReadOnlyList<IChanceValue> ChanceValues { get; }
 
         /// <summary>
         /// Fills the missing sum of chances if a data was removed.
@@ -81,7 +80,7 @@ namespace BXFW
                     return;
                 }
 
-                m_Chance = Mathf.Clamp(value, 0f, 100f);
+                m_Chance = Mathf.Clamp(value, 0f, ChanceValuesListBase.ChanceUpperLimit);
             }
         }
 
@@ -90,6 +89,22 @@ namespace BXFW
         /// Value of this chanced item.
         /// </summary>
         public T Value;
+
+        public ChanceValue()
+        { }
+        public ChanceValue(float chance)
+        {
+            Chance = chance;
+        }
+        public ChanceValue(T value)
+        {
+            Value = value;
+        }
+        public ChanceValue(float chance, T value)
+        {
+            Chance = chance;
+            Value = value;
+        }
 
         public override bool Equals(object obj)
         {
@@ -145,7 +160,7 @@ namespace BXFW
         /// Get a list of the chance data.
         /// <br>While the chances of the elements in the list could be changed, this most likely shouldn't change the chances inside other datas.</br>
         /// </summary>
-        public override IReadOnlyList<IChanceValue> ChanceDatas
+        public override IReadOnlyList<IChanceValue> ChanceValues
         {
             get
             {
@@ -295,11 +310,16 @@ namespace BXFW
         /// </summary>
         protected void ReserveChanceForItem(ChanceValue<T> item)
         {
+            // Item chance requires no reserving
+            if (item.Chance < float.Epsilon)
+                return;
+
+            float decrementChance = item.Chance / m_list.Count;
             // If the item has chance, lower all others
             for (int i = 0; i < m_list.Count; i++)
             {
                 ChanceValue<T> data = m_list[i];
-                data.Chance -= item.Chance / m_list.Count;
+                data.Chance -= decrementChance;
             }
         }
         public override void FillMissingChanceSum()
@@ -362,6 +382,7 @@ namespace BXFW
 
             ReserveChanceForItem(item);
             m_list.Add(item);
+            FillMissingChanceSum();
         }
         public void Clear()
         {
@@ -387,6 +408,7 @@ namespace BXFW
         {
             ReserveChanceForItem(item);
             m_list.Insert(index, item);
+            FillMissingChanceSum();
         }
         public bool Remove(ChanceValue<T> item)
         {

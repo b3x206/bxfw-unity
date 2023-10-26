@@ -42,20 +42,23 @@ namespace BXFW.UI
         {
             base.CalculateLayoutInputHorizontal();
 
+            // Calculations divide by zero when there's no transform child
+            // So always assume that there's one single transform child
+            // Because 'NaN' is definitely one of the floating point values of all time.
             if (fitType == FitType.Width || fitType == FitType.Height || fitType == FitType.Uniform)
             {
-                float sqrRt = Mathf.Sqrt(transform.childCount);
-                rows = Mathf.CeilToInt(sqrRt);
-                columns = Mathf.CeilToInt(sqrRt);
+                float sqrtChildren = Mathf.Sqrt(Mathf.Max(transform.childCount, 1));
+                rows = Mathf.CeilToInt(sqrtChildren);
+                columns = Mathf.CeilToInt(sqrtChildren);
             }
 
             if (fitType == FitType.Height || fitType == FitType.FixedRows)
             {
-                rows = Mathf.CeilToInt(transform.childCount / (float)rows);
+                rows = Mathf.CeilToInt(Mathf.Max(transform.childCount, 1) / (float)rows);
             }
             if (fitType == FitType.Width || fitType == FitType.FixedColumns)
             {
-                columns = Mathf.CeilToInt(transform.childCount / (float)columns);
+                columns = Mathf.CeilToInt(Mathf.Max(transform.childCount, 1) / (float)columns);
             }
 
             float parentWidth = rectTransform.rect.width;

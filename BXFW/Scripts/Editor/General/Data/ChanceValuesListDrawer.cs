@@ -33,6 +33,7 @@ namespace BXFW.ScriptEditor
     public class ChanceValuesListDrawer : PropertyDrawer
     {
         protected virtual string LIST_FIELD_NAME => "m_list";
+        protected virtual string LIST_VALUE_VAL_NAME => "Value";
         protected virtual string LIST_VALUE_CHANCE_NAME => $"m_{nameof(IChanceValue.Chance)}";
         private float currentY = 0;
         private float DefaultGUIHeight => EditorGUIUtility.singleLineHeight + 2;
@@ -104,13 +105,15 @@ namespace BXFW.ScriptEditor
                     .GetGenericArguments()
                     .SingleOrDefault();
 
-                if (!targetType.GetBaseTypes().Any(t => t == typeof(Component)))
+                // Only supports by reference serialized stuff's drag/drop
+                // Won't support that dumb attribute, like seriously?
+                if (!targetType.GetBaseTypes().Any(t => t == typeof(UnityEngine.Object)))
                     return;
 
                 // Only equally distribute the chances if there's no elements in the array, otherwise set the chances to 0
                 var objsFiltered = DragAndDrop.objectReferences.Where((obj) =>
                 {
-                    if (obj is GameObject g)
+                    if (obj is GameObject g && targetType != typeof(GameObject))
                     {
                         if (!g.TryGetComponent(targetType, out Component _))
                         {
@@ -138,21 +141,28 @@ namespace BXFW.ScriptEditor
                 arrayProperty.arraySize += objsFiltered.Length;
                 for (int i = 0; i < objsFiltered.Length; i++)
                 {
+                    // Create IChanceValue with generic type
+                    IChanceValue chanceData = (IChanceValue)Activator.CreateInstance(chanceDataType, new object[] { 0f });
+                 
+                    // Call add from here because the object is already IList
+                    // NOTE : DragAndDrop won't work on struct parent properties because the target is a copy in that instance
+                    // but tbh as long as it works on normal classes it's fine. This is because serialized property moment
+                    // no, this method doesn't copy the value
+                    // We needed to access 'objectReferenceValue'
+                    target.Add(chanceData);
+                }
+                // Evenly distribute chances + assign values
+                for (int i = 0; i < arrayProperty.arraySize; i++)
+                {
                     var assignObj = objsFiltered[i];
-                    if (assignObj is GameObject g)
+                    // Only try getting component if the target is not GameObject
+                    if (assignObj is GameObject g && targetType != typeof(GameObject))
                     {
                         assignObj = g.GetComponent(targetType);
                     }
 
-                    // Create IChanceValue + the
-                    IChanceValue chanceData = (IChanceValue)Activator.CreateInstance(chanceDataType);
-                    chanceDataType.GetField(nameof(ChanceValue<object>.Value)).SetValue(chanceData, assignObj);
-                    chanceData.Chance = addedChance;
-
-                    // Call add from here because the object is already IList
-                    // NOTE : DragAndDrop won't work on struct parent properties because the target is a copy in that instance
-                    // but tbh as long as it works on normal classes it's fine to me.
-                    target.Add(chanceData);
+                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_VAL_NAME).objectReferenceValue = assignObj;
+                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = addedChance;
                 }
             }, () => GUI.enabled, new Rect(position) { height = EditorGUIUtility.singleLineHeight + 2f });
 
@@ -189,7 +199,7 @@ namespace BXFW.ScriptEditor
             // Set a copy of the chance values in here from target
             prevChanceList.Clear();
             prevChanceList.Capacity = arrayProperty.arraySize;
-            prevChanceList.AddRange(target.ChanceDatas.Cast(x => new KeyValuePair<IChanceValue, float>(x, x.Chance)));
+            prevChanceList.AddRange(target.ChanceValues.Cast(x => new KeyValuePair<IChanceValue, float>(x, x.Chance)));
 
             EditorGUI.indentLevel += 1;
 
@@ -205,10 +215,10 @@ namespace BXFW.ScriptEditor
                 if (EditorGUI.EndChangeCheck() || prevChanceList.Any(p => p.Key.Chance != p.Value))
                 {
                     // Less than 2 element
-                    if (target.ChanceDatas.Count < 2)
+                    if (target.ChanceValues.Count < 2)
                     {
                         // Set only single element chance.
-                        if (target.ChanceDatas.Count == 1)
+                        if (target.ChanceValues.Count == 1)
                         {
                             arrayProperty.GetArrayElementAtIndex(0).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = ChanceValuesListBase.ChanceUpperLimit;
                         }
@@ -219,13 +229,13 @@ namespace BXFW.ScriptEditor
                     float delta = 0f;
                     // Figure out the modified value's index.
                     int modifiedValueIndex = -1;
-                    for (int i = 0; i < Mathf.Min(target.ChanceDatas.Count, prevChanceList.Count); i++)
+                    for (int i = 0; i < Mathf.Min(target.ChanceValues.Count, prevChanceList.Count); i++)
                     {
-                        if (target.ChanceDatas[i].Chance != prevChanceList[i].Value)
+                        if (target.ChanceValues[i].Chance != prevChanceList[i].Value)
                         {
                             modifiedValueIndex = i;
                             // Calculate the chance delta as well
-                            delta = Mathf.Clamp(prevChanceList[i].Value - target.ChanceDatas[i].Chance, -ChanceValuesListBase.ChanceUpperLimit, ChanceValuesListBase.ChanceUpperLimit);
+                            delta = Mathf.Clamp(prevChanceList[i].Value - target.ChanceValues[i].Chance, -ChanceValuesListBase.ChanceUpperLimit, ChanceValuesListBase.ChanceUpperLimit);
                             break;
                         }
                     }
@@ -234,23 +244,23 @@ namespace BXFW.ScriptEditor
                     // Check if we added / removed value from array (should be done after the reorder check)
                     if (!shouldModifyValues)
                     {
-                        if (target.ChanceDatas.Count > prevChanceList.Count)
+                        if (target.ChanceValues.Count > prevChanceList.Count)
                         {
                             // New item added but can just set the chance to zero
                             arrayProperty.GetArrayElementAtIndex(arrayProperty.arraySize - 1)
                                 .FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = 0f;
                         }
-                        if (target.ChanceDatas.Count < prevChanceList.Count)
+                        if (target.ChanceValues.Count < prevChanceList.Count)
                         {
                             // Items removed, get the removal delta and evenly distribute
                             // (since 'delta' is subtracted this has to be negative)
-                            delta = prevChanceList.GetRange(target.ChanceDatas.Count, prevChanceList.Count - target.ChanceDatas.Count).Sum(c => c.Value);
+                            delta = prevChanceList.GetRange(target.ChanceValues.Count, prevChanceList.Count - target.ChanceValues.Count).Sum(c => c.Value);
                             shouldModifyValues = true;
                         }
                     }
 
                     int validChanceDataCount = prevChanceList.Where(f => !Mathf.Approximately(f.Value, 0f)).Count(); // valid for calculation, non-zero
-                    for (int i = 0; i < target.ChanceDatas.Count && shouldModifyValues; i++)
+                    for (int i = 0; i < target.ChanceValues.Count && shouldModifyValues; i++)
                     {
                         if (i == modifiedValueIndex)
                             continue;
@@ -260,7 +270,7 @@ namespace BXFW.ScriptEditor
                         // -> data count excl. modified => (target.ChanceDatas.Count - 1)
 
                         // Only use the current valid values. (try not to divide by 0 to avoid NaN)
-                        float deltaValue = delta / (validChanceDataCount <= 1 ? target.ChanceDatas.Count - 1 : validChanceDataCount - 1);
+                        float deltaValue = delta / (validChanceDataCount <= 1 ? target.ChanceValues.Count - 1 : validChanceDataCount - 1);
                         // Since target is read-only do the assigning using the SerializedProperty
                         using SerializedProperty valueChanceField = arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME);
                         valueChanceField.floatValue = Mathf.Clamp(valueChanceField.floatValue + deltaValue, 0f, ChanceValuesListBase.ChanceUpperLimit);

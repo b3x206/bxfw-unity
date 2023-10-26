@@ -49,6 +49,9 @@ namespace BXFW
     {
         // TODO (bit higher but still low priority) :
         // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
+        // Or Allow for this way of creating UI, then on the Editor override for 'T' type
+        // use the GUILayoutUtility reserval things and create the Rect based interface in a standalone editor as well.
+        // 2. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
         // 2. AdvancedDropdown implementation for null field selector on UnityEditor.IMGUI.Controls

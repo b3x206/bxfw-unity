@@ -36,9 +36,15 @@ namespace BXFW.UI
             targetSwipableUI.OnMenuCountChanged += OnMenuCountChanged;
             targetSwipableUI.OnMenuChangeEvent.AddListener(OnMenuChanged);
             m_prevMenuIndex = targetSwipableUI.CurrentMenu;
+            SetAllChildExceptIndex(disabledColor, activeColor, m_prevMenuIndex);
         }
         protected override void OnDestroy()
         {
+            if (targetSwipableUI == null)
+            {
+                return;
+            }
+
             targetSwipableUI.OnMenuCountChanged -= OnMenuCountChanged;
         }
 

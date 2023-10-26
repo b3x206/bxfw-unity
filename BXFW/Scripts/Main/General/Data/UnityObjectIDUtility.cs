@@ -35,8 +35,17 @@ namespace BXFW.Data.Editor
             inspectorModeInfo.SetValue(serializedObject, InspectorMode.Debug, null);
 
             // Get the field normally
+            // Note : The misspelling is real, amazing job unity.
             SerializedProperty localIdProp = serializedObject.FindProperty("m_LocalIdentfierInFile");
-            return localIdProp.longValue;
+            // Note : This value may return 0 at times
+            // If this occurs, just set the 'target' as dirty (so that it gets a valid value assigned)
+            long result = localIdProp.longValue;
+            if (result == 0)
+            {
+                EditorUtility.SetDirty(target);
+                result = localIdProp.longValue;
+            }
+            return result;
         }
         /// <summary>
         /// Returns the GUID + fileID combined of <paramref name="target"/>.
