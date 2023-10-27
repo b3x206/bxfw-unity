@@ -16,7 +16,7 @@ namespace BXFW
     /// <summary>
     /// Data type that contains a draw command.
     /// </summary>
-    public struct DrawGUICommand<T> 
+    public struct DrawGUICommand<T>
         where T : ScriptableObject
     {
         /// <summary>
@@ -116,7 +116,7 @@ namespace BXFW
         /// </br>
         /// </summary>
         protected virtual bool NameEditorEnforceNonNullName => false;
-        
+
         /// <summary>
         /// Currently drawn list of the scriptable objects. (or also known as a editor memory leak)
         /// </summary> 
@@ -324,43 +324,32 @@ namespace BXFW
             // Get types inheriting from player powerup on all assemblies
             if (typeMenus == null)
             {
-                // Use a 'GenericMenu' as it's much more convenient than using EditorGUI.Popup
+                // Use a 'GenericMenu' as it's nicer than using EditorGUIUtility.Popup
                 typeMenus = new GenericMenu();
 
-                // Get all assemblies
-                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-                foreach (Assembly assembly in assemblies)
+                foreach (Type type in TypeListProvider.GetDomainTypesByPredicate((Type t) =>
+                    t.IsSubclassOf(typeof(T)) && t != typeof(T) && !t.IsAbstract))
                 {
-                    foreach (Type type in assembly.GetTypes())
-                    {
-                        if (type.IsClass)
+                    T elem = ScriptableObject.CreateInstance(type) as T;
+
+                    // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
+                    // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
+                    var copySO = new SerializedObject(property.serializedObject.targetObject);
+                    SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
+
+                    typeMenus.AddItem(
+                        new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
+                        false,
+                        () =>
                         {
-                            if (type.IsSubclassOf(typeof(T)) && type != typeof(T) && !type.IsAbstract)
-                            {
-                                T elem = ScriptableObject.CreateInstance(type) as T;
-
-                                // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
-                                // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
-                                var copySO = new SerializedObject(property.serializedObject.targetObject);
-                                SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
-
-                                typeMenus.AddItem(
-                                    new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
-                                    false,
-                                    () =>
-                                    {
-                                        // Apply value
-                                        SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
-                                        // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
-                                        // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
-                                        copySO.Dispose();
-                                        copyProp.Dispose();
-                                    }
-                               );
-                            }
+                            // Apply value
+                            SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
+                            // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
+                            // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
+                            copySO.Dispose();
+                            copyProp.Dispose();
                         }
-                    }
+                    );
                 }
 
                 // No items
@@ -508,7 +497,7 @@ namespace BXFW
                     {
                         if (DebugMode)
                             Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Exception occured while HandleDifferentDrawers. Not handling e={0}\n{1}", e.Message, e.StackTrace));
-                        
+
                         // just needs a refreshin clear.
                         // note : this is a crap solution and may cause issues.
                         drawnScriptableObjects.Clear();

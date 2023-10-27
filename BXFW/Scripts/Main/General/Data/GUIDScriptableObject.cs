@@ -13,7 +13,23 @@ namespace BXFW.Data
         /// </summary>
         [ReadOnlyView, SerializeField] private string m_GUID;
         /// <inheritdoc cref="m_GUID"/>
-        public string GUID => m_GUID;
+        public string GUID
+        {
+            get
+            {
+#if UNITY_EDITOR
+                if (m_GUID == $"{ObjIdentifierValueSeperator}0")
+                {
+                    if (!Application.isPlaying)
+                    {
+                        m_GUID = Editor.UnityObjectIDUtility.GetUnityObjectIdentifier(this, ObjIdentifierValueSeperator);
+                    }
+                }
+#endif
+                return m_GUID;
+            }
+        }
+
         /// <summary>
         /// The seperator for the GUID+FileID values on the string respectively.
         /// <br>Before this string =&gt; GUID</br>
