@@ -75,7 +75,7 @@ namespace BXFW.UI
 
         /// <summary>
         /// The target transform to parent the elements of this MultiUIManager in.
-        /// <br>By default, this is set to the <see cref="Component.transform"/>.</br>
+        /// <br>By default, this is constant, set to the <see cref="Component.transform"/>.</br>
         /// </summary>
         protected virtual Transform ParentTransform => transform;
 
@@ -86,6 +86,35 @@ namespace BXFW.UI
         /// <returns>The created element.</returns>
         /// <param name="referenceElement">The reference element. This will be null if there needs to be a new element created from scratch.</param>
         protected abstract TElement OnCreateElement(TElement referenceElement);
+
+        /// <summary>
+        /// Called when the MultiUIManager needs to initialize the element. (after creation)
+        /// <br>The initialization (if required for an element) <b>should not</b> be done in <see cref="OnCreateElement(TElement)"/>!</br>
+        /// <br/>
+        /// <br>Static content or one-time setup that gets serialized is okay to do in <see cref="OnCreateElement(TElement)"/>.</br>
+        /// <br>This is used for constant setups.</br>
+        /// </summary>
+        /// <param name="initializeElement">Element to initialize. Don't spawn or do anything with this element.</param>
+        /// <exception cref="ArgumentNullException"/>
+        protected virtual void OnInitializeElement(TElement initializeElement)
+        {
+            if (initializeElement == null)
+                throw new ArgumentNullException(nameof(initializeElement), "[MultiUIManager::InitializeElement] Failed to initialize element.");
+
+            // Transform stuff (because the child will be scaled weirdly)
+            initializeElement.transform.SetParent(ParentTransform);
+            initializeElement.transform.localScale = Vector3.one;
+            // Check name and truncate the '(Clone)' from them
+            if (TruncateCloneNameOnCreate)
+            {
+                string elemName = initializeElement.gameObject.name;
+                int idxOfClone = elemName.IndexOf("(Clone)");
+                if (idxOfClone != -1)
+                {
+                    initializeElement.gameObject.name = elemName.Remove(idxOfClone);
+                }
+            }
+        }
 
         /// <summary>
         /// Creates an element.
@@ -118,19 +147,7 @@ namespace BXFW.UI
             // Add to list + events
             m_Elements.Add(element);
             onCreateElementEvent?.Invoke(createIndex, element);
-            // Transform stuff (because the child will be scaled weirdly)
-            element.transform.SetParent(ParentTransform);
-            element.transform.localScale = Vector3.one;
-            // Check name and truncate the '(Clone)' from them
-            if (TruncateCloneNameOnCreate)
-            {
-                string elemName = element.gameObject.name;
-                int idxOfClone = elemName.IndexOf("(Clone)");
-                if (idxOfClone != -1)
-                {
-                    element.gameObject.name = elemName.Remove(idxOfClone);
-                }
-            }
+            OnInitializeElement(element);
 
             return element;
         }
@@ -145,7 +162,20 @@ namespace BXFW.UI
         /// </param>
         public TElement CreateUIElement(bool useReferenceElement = true)
         {
-            InternalCreateUIElement(useReferenceElement);
+            // If the previous element count is zero, ensure that the first object is enabeld
+            if (m_ElementCount <= 0 && m_Elements.Count >= 1 && m_Elements[0] != null)
+            {
+                // Since this method adds only 1 element.
+                m_Elements[0].gameObject.SetActive(true);
+                onCreateElementEvent?.Invoke(0, m_Elements[0]);
+                OnInitializeElement(m_Elements[0]);
+            }
+            else
+            {
+                // No elements exist or elements already exist and enabled.
+                InternalCreateUIElement(useReferenceElement);
+            }
+
             // Increment element count after just in case if an exception is thrown
             m_ElementCount++;
             return m_Elements[m_Elements.Count - 1];
@@ -236,6 +266,8 @@ namespace BXFW.UI
                     }
 
                     m_Elements[0].gameObject.SetActive(true);
+                    onCreateElementEvent?.Invoke(0, m_Elements[0]);
+                    OnInitializeElement(m_Elements[0]);
                 }
 
                 InternalCreateUIElement();

@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -117,12 +120,72 @@ namespace BXFW
     public class ReadOnlyViewAttribute : PropertyAttribute { }
 
     /// <summary>
+    /// An attribute that allows conditional drawing of the field that it's applied into.
+    /// <br>Only works in <see cref="AttributeTargets.Field"/> or anything that unity serializes.</br>
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public abstract class ConditionalDrawAttribute : PropertyAttribute
+    {
+        /// <summary>
+        /// Target flags shorthand to be able to check the serialized non-private and private fields.
+        /// </summary>
+        protected const BindingFlags TARGET_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+        /// <summary>
+        /// A bool to whether to invert the draw condition field or not.
+        /// </summary>
+        public bool ConditionInverted { get; set; } = false;
+
+        /// <summary>
+        /// State defined for drawing.
+        /// <br><see cref="False"/> =&gt; No drawing allowed</br>
+        /// <br><see cref="True"/> =&gt; Drawing allowed</br>
+        /// <br><see cref="Error"/> =&gt; Invalid object/arguments.</br>
+        /// </summary>
+        public enum DrawCondition
+        {
+            False, True, Error
+        }
+
+        /// <summary>
+        /// Return the condition of this attribute.
+        /// <br>This is the internal call to be overriden, it is called by <see cref="GetDrawCondition(FieldInfo, object, out string)"/>.</br>
+        /// </summary>
+        protected abstract DrawCondition DoGetDrawCondition(FieldInfo targetField, object parentValue, out string errorString);
+        /// <summary>
+        /// Return the condition of this attribute.
+        /// </summary>
+        public DrawCondition GetDrawCondition(FieldInfo targetField, object parentValue, out string errorString)
+        {
+            DrawCondition result = DoGetDrawCondition(targetField, parentValue, out errorString);
+
+            if (ConditionInverted)
+            {
+                switch (result)
+                {
+                    case DrawCondition.False:
+                        result = DrawCondition.True;
+                        break;
+                    case DrawCondition.True:
+                        result = DrawCondition.False;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
     /// Attribute to draw a field conditionally.
     /// <br>Only expects absolute bool field names! (but properties that take things and are safe to call in editor should work too)</br>
     /// <br>If you want a 'NoDraw' attribute, try using <see cref="HideInInspector"/> attribute.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
-    public class InspectorConditionalDrawAttribute : PropertyAttribute
+    public sealed class InspectorConditionalDrawAttribute : ConditionalDrawAttribute
     {
 #if UNITY_EDITOR
         /// <summary>
@@ -130,16 +193,107 @@ namespace BXFW
         /// </summary>
         public readonly string boolFieldName;
 #endif
-        /// <summary>
-        /// A bool to whether to invert the draw condition field or not.
-        /// </summary>
-        public bool ConditionInverted { get; set; } = false;
 
         public InspectorConditionalDrawAttribute(string boolFieldName)
         {
 #if UNITY_EDITOR
             this.boolFieldName = boolFieldName;
 #endif
+        }
+
+        protected override DrawCondition DoGetDrawCondition(FieldInfo targetField, object parentValue, out string errorString)
+        {
+            errorString = string.Empty;
+#if UNITY_EDITOR
+            // Try getting the FieldInfo
+            FieldInfo targetBoolFieldInfo = targetField.DeclaringType.GetField(boolFieldName, TARGET_FLAGS);
+            if (targetBoolFieldInfo != null)
+            {
+                return (bool)targetBoolFieldInfo.GetValue(parentValue) ? DrawCondition.True : DrawCondition.False;
+            }
+
+            // Try getting the PropertyInfo
+            PropertyInfo targetBoolPropertyInfo = targetField.DeclaringType.GetProperty(boolFieldName, TARGET_FLAGS);
+            if (targetBoolPropertyInfo != null && targetBoolPropertyInfo.CanRead)
+            {
+                return (bool)targetBoolPropertyInfo.GetValue(parentValue) ? DrawCondition.True : DrawCondition.False;
+            }
+
+            // Both property + value failed
+            errorString = "Attribute has incorrect target";
+#endif
+            return DrawCondition.Error;
+        }
+    }
+
+    /// <summary>
+    /// Draws the attribute depending whether if the field is null or not.
+    /// <br><see cref="IEquatable{T}"/> values recommended.</br>
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public sealed class InspectorConditionalDrawNotNullAttribute : ConditionalDrawAttribute
+    {
+#if UNITY_EDITOR
+        /// <summary>
+        /// Name of the field assigned into.
+        /// </summary>
+        public readonly string nullableFieldName;
+#endif
+
+        public InspectorConditionalDrawNotNullAttribute(string checkNullFieldName)
+        {
+#if UNITY_EDITOR
+            nullableFieldName = checkNullFieldName;
+#endif
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// An utility method used to get the type
+        /// </summary>
+        /// <param name="t">
+        /// Type of the both <paramref name="x"/> and <paramref name="y"/>.
+        /// An <see cref="ArgumentException"/> will be thrown on invocation if the types mismatch.
+        /// </param>
+        /// <param name="x">First object to compare. This method returns whether if this value is equal to <paramref name="y"/>.</param>
+        /// <param name="y">Other way around. Method returns if this is equal to <paramref name="x"/>.</param>
+        /// <returns></returns>
+        private bool GetTypedEqualityComparerResult(Type t, object x, object y)
+        {
+            // Because apparently there's no typeless EqualityComparer?
+            // EqualityComparer is used because of the IEquatable check and other things
+            // ----- No Typeless EqualityComparer? -----
+            Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(t);
+            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { t, t });
+            return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { x, y });
+        }
+#endif
+
+        protected override DrawCondition DoGetDrawCondition(FieldInfo targetField, object parentValue, out string errorString)
+        {
+            errorString = string.Empty;
+#if UNITY_EDITOR
+            // Try getting the FieldInfo
+            FieldInfo targetFieldInfo = targetField.DeclaringType.GetField(nullableFieldName, TARGET_FLAGS);
+            if (targetFieldInfo != null)
+            {
+                bool nullComparisonResult = GetTypedEqualityComparerResult(targetFieldInfo.FieldType, targetFieldInfo.GetValue(parentValue), null);
+                return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
+            }
+
+            // Try getting the PropertyInfo
+            PropertyInfo targetPropertyInfo = targetField.DeclaringType.GetProperty(nullableFieldName, TARGET_FLAGS);
+            if (targetPropertyInfo != null && targetPropertyInfo.CanRead)
+            {
+                bool nullComparisonResult = GetTypedEqualityComparerResult(targetPropertyInfo.PropertyType, targetPropertyInfo.GetValue(parentValue), null);
+                return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
+            }
+
+            // Both property + value failed
+            errorString = "Attribute has incorrect target";
+#endif
+            return DrawCondition.Error;
         }
     }
 

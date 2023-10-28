@@ -645,6 +645,7 @@ namespace BXFW
                 if (GUI.Button(position, "Refresh"))
                 {
                     typeMenus = null;
+                    TypeListProvider.Refresh();
                 }
 
                 GUI.enabled = gEnabled;

@@ -109,88 +109,67 @@ namespace BXFW.ScriptEditor
     /// <summary>
     /// Draws the property affected by the <see cref="InspectorConditionalDrawAttribute"/>.
     /// </summary>
-    [CustomPropertyDrawer(typeof(InspectorConditionalDrawAttribute))]
-    public class InspectorConditionalAttributeDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(ConditionalDrawAttribute), true)]
+    public class ConditionalDrawAttributeDrawer : PropertyDrawer
     {
         private PropertyDrawer targetTypeCustomDrawer;
         private bool UseCustomDrawer => targetTypeCustomDrawer != null;
         /// <summary>
-        /// The target boolean value.
+        /// The target condition value to act on.
         /// </summary>
-        private bool drawField = true;
-        /// <summary>
-        /// Is true if the target field is incorrect.
-        /// </summary>
-        private bool drawWarning = false;
-        private InspectorConditionalDrawAttribute Attribute => (InspectorConditionalDrawAttribute)attribute;
+        private ConditionalDrawAttribute.DrawCondition currentCondition = ConditionalDrawAttribute.DrawCondition.True;
+        private ConditionalDrawAttribute Attribute => (ConditionalDrawAttribute)attribute;
 
+        private string errorString;
         private const float WARN_BOX_HEIGHT = 32f;
-        private const BindingFlags TARGET_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             // First called method before OnGUI
             // This also resets 'drawField'
             var parentPair = property.GetParentOfTargetField();
-            // Try getting the FieldInfo
-            FieldInfo targetBoolFieldInfo = fieldInfo.DeclaringType.GetField(Attribute.boolFieldName, TARGET_FLAGS);
-            if (targetBoolFieldInfo == null)
-            {
-                // Try getting the PropertyInfo
-                PropertyInfo targetBoolPropertyInfo = fieldInfo.DeclaringType.GetProperty(Attribute.boolFieldName, TARGET_FLAGS);
-
-                if (targetBoolPropertyInfo == null)
-                {
-                    // Both failed, return the height
-                    drawWarning = true;
-                    return WARN_BOX_HEIGHT;
-                }
-                else
-                {
-                    drawField = (bool)targetBoolPropertyInfo.GetValue(parentPair.value);
-                }
-            }
-            else
-            {
-                drawField = (bool)targetBoolFieldInfo.GetValue(parentPair.value);
-            }
 
             // A no fail condition
-            if (Attribute.ConditionInverted)
-                drawField = !drawField;
-            
-            drawWarning = false;
+            currentCondition = Attribute.GetDrawCondition(fieldInfo, parentPair.value, out errorString);
+            switch (currentCondition)
+            {
+                case ConditionalDrawAttribute.DrawCondition.False:
+                    return 0f;
+                default:
+                case ConditionalDrawAttribute.DrawCondition.True:
+                    targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
+                    return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
 
-            if (!drawField)
-                return 0f;
-
-            targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
-            return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
+                case ConditionalDrawAttribute.DrawCondition.Error:
+                    return WARN_BOX_HEIGHT;
+            }
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            // Warning
-            if (drawWarning)
+            switch (currentCondition)
             {
-                label = EditorGUI.BeginProperty(position, label, property);
-                EditorGUI.HelpBox(position, string.Format("[ConditionalDrawAttribute] Attribute has incorrect target '{0}' for value '{1}'.", Attribute.boolFieldName, label.text), MessageType.Warning);
-                EditorGUI.EndProperty();
-                return;
-            }
+                case ConditionalDrawAttribute.DrawCondition.False:
+                    // No draw
+                    return;
+                default:
+                case ConditionalDrawAttribute.DrawCondition.True:
+                    // Draw (with CustomDrawer)
+                    if (UseCustomDrawer)
+                    {
+                        targetTypeCustomDrawer.OnGUI(position, property, label);
+                    }
+                    else
+                    {
+                        EditorGUI.PropertyField(position, property, label, true);
+                    }
+                    return;
 
-            // No draw
-            if (!drawField)
-                return;
-
-            // Draw (with CustomDrawer)
-            if (UseCustomDrawer)
-            {
-                targetTypeCustomDrawer.OnGUI(position, property, label);
-            }
-            else
-            {
-                EditorGUI.PropertyField(position, property, label, true);
+                case ConditionalDrawAttribute.DrawCondition.Error:
+                    label = EditorGUI.BeginProperty(position, label, property);
+                    EditorGUI.HelpBox(position, string.Format("[ConditionalDrawAttribute] '{0}' on field '{1}'.", errorString, label.text), MessageType.Warning);
+                    EditorGUI.EndProperty();
+                    return;
             }
         }
     }
@@ -275,7 +254,7 @@ namespace BXFW.ScriptEditor
                 .Any(i => i == typeof(IEnumerable) || i == typeof(IEnumerable<>));
             propertyTypeValid = (propertyParentTypeArray && property.GetPropertyType()
                 .GetInterfaces()
-                .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>))) 
+                .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>)))
                 || property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
 
             // Since we can't intercept the 'OnGUI' of the parent array (this PropertyDrawer will be shown per element, we will just get the parent array)
@@ -728,7 +707,7 @@ namespace BXFW.ScriptEditor
                                     sb.Remove(i, 1);
                                 }
                             }
-                            
+
                             property.stringValue = sb.ToString();
                         }
                     }
@@ -779,7 +758,7 @@ namespace BXFW.ScriptEditor
                 bool showMixed = EditorGUI.showMixedValue;
                 EditorGUI.showMixedValue = property.hasMultipleDifferentValues; // ObjectField without 'SerializedProperty' doesn't handle this
                 var objectValue = EditorGUI.ObjectField(position, label, property.objectReferenceValue, fieldInfo.FieldType, true);
-                EditorGUI.showMixedValue = showMixed; 
+                EditorGUI.showMixedValue = showMixed;
 
                 if (EditorGUI.EndChangeCheck())
                 {

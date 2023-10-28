@@ -36,7 +36,7 @@ namespace BXFW.UI
             targetSwipableUI.OnMenuCountChanged += OnMenuCountChanged;
             targetSwipableUI.OnMenuChangeEvent.AddListener(OnMenuChanged);
             m_prevMenuIndex = targetSwipableUI.CurrentMenu;
-            SetAllChildExceptIndex(disabledColor, activeColor, m_prevMenuIndex);
+            UpdateElementsAppearance();
         }
         protected override void OnDestroy()
         {
@@ -81,6 +81,7 @@ namespace BXFW.UI
         private void OnMenuCountChanged()
         {
             ElementCount = targetSwipableUI.MenuCount;
+            UpdateElementsAppearance();
         }
 
         // Swipable menu can only start from this index, however we still assign it to it's 'CurrentMenu' variable.
@@ -159,11 +160,12 @@ namespace BXFW.UI
                 createImage = Instantiate(referenceElement);
             }
 
-            createImage.transform.SetParent(transform);
+            createImage.transform.SetParent(ParentTransform);
             createImage.name = $"ProgressImage{m_Elements.Count}";
 
             return createImage;
         }
+
         public override void UpdateElementsAppearance()
         {
             if (targetSwipableUI == null)

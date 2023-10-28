@@ -236,10 +236,10 @@ namespace BXFW.UI
                         // tested : works fine on even numbers of menus, don't care about scrolling this much anyways, it's disabled ootb
                         swipeDelta = Mathf.Clamp(
                             swipeDelta,
-                            // menuCount = 2
-                            // currentMenu = 0..1
-                            -((ItemContainer.rect.width * (MenuCount - (1 + m_CurrentMenu))) + swipeDragClampLength), // -1 (correct value)
-                            (ItemContainer.rect.width * (MenuCount - m_CurrentMenu)) + swipeDragClampLength           // 1  (")
+                            // menuCount = 3
+                            // currentMenu = 0, 1, 2
+                            -((ItemContainer.rect.width * (MenuCount - (1 + m_CurrentMenu))) + swipeDragClampLength), // 0 + clamp
+                            (ItemContainer.rect.width * (MenuCount - (1 + m_CurrentMenu))) + swipeDragClampLength     // 2 + clamp 
                         );
                     }
                 }

@@ -119,11 +119,17 @@ namespace BXFW.UI
             // Init button
             button.ButtonIndex = m_Elements.Count; // This is called before adding to elements array
                                                    // Using the ElementCount property is incorrect
-            button.m_ParentTabSystem = this;
             // Generate name
             button.gameObject.name = $"Button_{m_Elements.Count}";
 
             return button;
+        }
+        protected override void OnInitializeElement(TabButton initializeBtn)
+        {
+            base.OnInitializeElement(initializeBtn);
+
+            // This value is serialized, but will still do this 'OnInitializeElement'
+            initializeBtn.m_ParentTabSystem = this;
         }
 
         // Tab Cleanup
