@@ -223,54 +223,6 @@ namespace BXFW
             return target.x;
         }
 
-        #region Obsolete
-        /// <inheritdoc cref="MaxAxis"/>
-        [Obsolete("Use 'value.MaxAxis()' instead.", false)]
-        public static float GetBiggestAxis(this Vector3 target)
-        {
-            return target.MaxAxis();
-        }
-        /// <inheritdoc cref="MaxAxis"/>
-        [Obsolete("Use 'value.MaxAxis()' instead.", false)]
-        public static float GetBiggestAxis(this Vector2 target)
-        {
-            return target.MaxAxis();
-        }
-        /// <inheritdoc cref="MinAxis"/>
-        [Obsolete("Use 'value.MinAxis()' instead.", false)]
-        public static float GetSmallestAxis(this Vector3 target)
-        {
-            return target.MinAxis();
-        }
-        /// <inheritdoc cref="MinAxis"/>
-        [Obsolete("Use 'value.MinAxis()' instead.", false)]
-        public static float GetSmallestAxis(this Vector2 target)
-        {
-            return target.MinAxis();
-        }
-
-        [Obsolete("Use 'Vector3.AxisVector(axisConstraint)' instead", false)]
-        public static Vector3 GetAxisVector(this TransformAxis axisConstraint, Vector3 current)
-        {
-            return current.AxisVector(axisConstraint);
-        }
-        [Obsolete("Use 'Vector3.SettedAxisVector(Vector3)' instead", false)]
-        public static Vector3 SetAxisVector(this TransformAxis axisConstraint, Vector3 current, Vector3 setCurrent)
-        {
-            return current.SettedAxisVector(axisConstraint, setCurrent);
-        }
-        [Obsolete("Use 'Vector3.AxisVector(Vector2)' instead", false)]
-        public static Vector2 GetAxisVector(this TransformAxis2D axisConstraint, Vector2 current)
-        {
-            return current.AxisVector(axisConstraint);
-        }
-        [Obsolete("Use 'Vector3.SettedAxisVector(Vector2)' instead", false)]
-        public static Vector2 SetAxisVector(this TransformAxis2D axisConstraint, Vector2 current, Vector2 setCurrent)
-        {
-            return current.SettedAxisVector(axisConstraint, setCurrent);
-        }
-        #endregion
-
         /// <summary>
         /// Returns the given <see cref="Vector3"/> direction value from <paramref name="axis"/>.
         /// </summary>

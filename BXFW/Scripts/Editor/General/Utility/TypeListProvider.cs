@@ -9,7 +9,7 @@ namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// Defines a list of type flags to use with <see cref="TypeListProvider"/> methods.
-    /// <br><see cref="None"/> =&gt; No assembly determined. This parameter is ignored like <see cref="Uncategorized"/>.</br>
+    /// <br><see cref="None"/> =&gt; No assembly determined. This parameter shall be ignored and should contain no assemblies.</br>
     /// <br><see cref="MsCorlib"/> =&gt; The mscorlib System thing.</br>
     /// <br><see cref="SystemLib"/> =&gt; Library that is a 'System' that is on the global assembly cache.</br>
     /// <br><see cref="UnityAssembly"/> =&gt; Assembly used by unity's core libraries (this is determined by the 'SharedInternalsModule')</br>
@@ -18,10 +18,9 @@ namespace BXFW.Tools.Editor
     /// <br><see cref="BXFW"/> =&gt; Scripts contained in BXFW assembly.</br>
     /// <br><see cref="BXFWEditor"/> =&gt; Scripts contained in BXFW.Editor assembly.</br>
     /// <br><see cref="Dynamic"/> =&gt; Assemblies that don't fit into a category but is <see cref="Assembly.IsDynamic"/>.</br>
-    /// <br><see cref="AssetScriptAssembly"/> =&gt; Assemblies contained in <see cref="Directory.GetCurrentDirectory"/>/ScriptAssemblies.</br>
+    /// <br><see cref="AssetScript"/> =&gt; Assemblies contained in <see cref="Directory.GetCurrentDirectory"/>/ScriptAssemblies.</br>
     /// <br><see cref="All"/> =&gt; Inclusive of all assemblies contained.</br>
     /// <br><see cref="Uncategorized"/> =&gt; Uncategorized / undefined scripts.</br>
-    /// <br></br>
     /// </summary>
     [Flags]
     public enum AssemblyFlags
@@ -35,7 +34,7 @@ namespace BXFW.Tools.Editor
         BXFW = 1 << 5,
         BXFWEditor = 1 << 6,
         Dynamic = 1 << 7,
-        AssetScriptAssembly = 1 << 8,
+        AssetScript = 1 << 8,
 
         All = unchecked(~0),
         Uncategorized = unchecked(1 << 31),
@@ -49,6 +48,26 @@ namespace BXFW.Tools.Editor
     public static class TypeListProvider
     {
         /// <summary>
+        /// A <see cref="KeyValuePair{TKey, TValue}"/> that has <see cref="GetHashCode"/> properly implemented.
+        /// </summary>
+        private struct HashablePair<TFirst, TSecond>
+        {
+            public TFirst item1;
+            public TSecond item2;
+
+            public HashablePair(TFirst i1, TSecond i2)
+            {
+                item1 = i1;
+                item2 = i2;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(item1, item2);
+            }
+        }
+
+        /// <summary>
         /// The current domain's assemblys cache.
         /// <br>Reset and loaded once unity recompiles code.</br>
         /// </summary>
@@ -57,13 +76,16 @@ namespace BXFW.Tools.Editor
         /// List of all types in the current <see cref="AppDomain"/>.
         /// <br>This should be respectfully considered read only, but it can be assigned into.</br>
         /// </summary>
-        //public static Type[] AllDomainTypesCache;
         public static Dictionary<AssemblyFlags, Type[]> DomainTypesList = new Dictionary<AssemblyFlags, Type[]>(255);
 
         /// <summary>
-        /// List of all special types contained to get cached results for existing predicate types instead.
+        /// Returns the current assembly that BXFW is contained in.
         /// </summary>
-        private static Dictionary<long, Type[]> HashedTypeResultsPair = new Dictionary<long, Type[]>();
+        public static readonly Assembly BXFWAssembly = typeof(global::BXFW.Additionals).Assembly;
+        /// <summary>
+        /// Returns the current assembly that BXFW.Editor is contained in.
+        /// </summary>
+        public static readonly Assembly BXFWEditorAssembly = typeof(global::BXFW.Tools.Editor.TypeListProvider).Assembly;
 
         /// <summary>
         /// Determines the assembly type flag information about the given <paramref name="asm"/>.
@@ -93,9 +115,13 @@ namespace BXFW.Tools.Editor
             {
                 return asm.FullName.Contains("Editor") ? AssemblyFlags.AssemblyCSharpEditor : AssemblyFlags.AssemblyCSharp;
             }
-            if (asm.FullName.StartsWith("BXFW"))
+            if (asm == BXFWAssembly)
             {
-                return asm.FullName.Contains("Editor") ? AssemblyFlags.BXFWEditor : AssemblyFlags.BXFW;
+                return AssemblyFlags.BXFW;
+            }
+            if (asm == BXFWEditorAssembly)
+            {
+                return AssemblyFlags.BXFWEditor;
             }
             // Getting assembly location while the assembly is dynamic is not supported.
             if (asm.IsDynamic)
@@ -105,13 +131,16 @@ namespace BXFW.Tools.Editor
             // Contained in 'ProjectRoot/ScriptAssemblies' file of unity
             if (asm.Location.Contains(Directory.GetCurrentDirectory()))
             {
-                return AssemblyFlags.AssetScriptAssembly;
+                return AssemblyFlags.AssetScript;
             }
             
             return AssemblyFlags.Uncategorized;
         }
 
-        private static IEnumerable<Type[]> GetValuesFromFlags(AssemblyFlags flags)
+        /// <summary>
+        /// Get domain type lists from the given <paramref name="flags"/>.
+        /// </summary>
+        public static IEnumerable<Type[]> GetDomainTypesFromFlags(AssemblyFlags flags)
         {
             if (flags == AssemblyFlags.All)
             {
@@ -134,6 +163,79 @@ namespace BXFW.Tools.Editor
             }
         }
 
+        private static Dictionary<HashablePair<Assembly, Type>, bool> TypeInsideAssemblyResults = new Dictionary<HashablePair<Assembly, Type>, bool>();
+        /// <summary>
+        /// Returns whether if the type is inside an assembly.
+        /// </summary>
+        public static bool IsTypeInsideAssembly(Assembly asm, Type t)
+        {
+            HashablePair<Assembly, Type> valuePair = new HashablePair<Assembly, Type>(asm, t);
+            if (TypeInsideAssemblyResults.TryGetValue(valuePair, out bool result))
+            {
+                return result;
+            }
+
+            foreach (Type asmType in DomainTypesList[GetAssemblyFlag(asm)])
+            {
+                if (asmType == t)
+                {
+                    result = true;
+                    break;
+                }
+            }
+
+            TypeInsideAssemblyResults.Add(valuePair, result);
+
+            return result;
+        }
+
+        /// <summary>
+        /// List of all special types contained to get cached results for existing predicate types instead.
+        /// </summary>
+        private static Dictionary<long, Type[]> HashedTypeResultsPair = new Dictionary<long, Type[]>();
+        /// <summary>
+        /// Returns a list of types by predicate applied to types.
+        /// <br>These results are cached according to the given <paramref name="predicate"/>'s results and returned fastly.</br>
+        /// </summary>
+        /// <param name="predicate">Function delegate to match by.</param>
+        /// <param name="noHashCheck">Whether to always iterate the <see cref="DomainTypesList"/>.</param>
+        /// <returns>
+        /// The type list <see cref="HashedTypeResultsPair"/> filtered.
+        /// The results are cached with the same predicate until domain reset.
+        /// </returns>
+        public static Type[] GetDomainTypesByPredicate(Predicate<Type> predicate, AssemblyFlags flags = AssemblyFlags.All, bool noHashCheck = false)
+        {
+            long argsHash = HashCode.Combine(flags, predicate.GetHashCode());
+            Type[] results;
+            if (!noHashCheck)
+            {
+                if (HashedTypeResultsPair.TryGetValue(argsHash, out results))
+                {
+                    return results;
+                }
+            }
+
+            // This maneuver is gonna cost us 51 years
+            if (DomainTypesList.Count <= 0)
+            {
+                Refresh();
+            }
+
+            List<Type> tempResults = new List<Type>(32);
+            foreach (Type[] list in GetDomainTypesFromFlags(flags))
+            {
+                foreach (Type t in list)
+                {
+                    if (predicate(t))
+                        tempResults.Add(t);
+                }
+            }
+
+            results = tempResults.ToArray();
+            HashedTypeResultsPair.Add(argsHash, results);
+            return tempResults.ToArray();
+        }
+
         /// <summary>
         /// Refreshes the list of assembly types.
         /// </summary>
@@ -144,6 +246,7 @@ namespace BXFW.Tools.Editor
             //AllDomainTypesCache = Array.Empty<Type>();
             DomainTypesList.Clear();
             HashedTypeResultsPair.Clear();
+            TypeInsideAssemblyResults.Clear();
 
             // int copyIndex = 0;
             for (int i = 0; i < CurrentDomainAssembliesCache.Length; i++)
@@ -177,49 +280,6 @@ namespace BXFW.Tools.Editor
             
             // Ensure that the dictionary only uses the memory it needs.
             DomainTypesList.TrimExcess();
-        }
-
-        /// <summary>
-        /// Returns a list of types by predicate applied to types.
-        /// <br>These results are cached according to the given <paramref name="predicate"/>'s results and returned fastly.</br>
-        /// </summary>
-        /// <param name="predicate">Function delegate to match by.</param>
-        /// <param name="noHashCheck">Whether to always iterate the <see cref="AllDomainTypesCache"/>.</param>
-        /// <returns>
-        /// The type list <see cref="AllDomainTypesCache"/> filtered.
-        /// The results are cached with the same predicate until domain reset.
-        /// </returns>
-        public static Type[] GetDomainTypesByPredicate(Predicate<Type> predicate, AssemblyFlags flags = AssemblyFlags.All, bool noHashCheck = false)
-        {
-            long argsHash = HashCode.Combine(flags, predicate.GetHashCode());
-            Type[] results;
-            if (!noHashCheck)
-            {
-                if (HashedTypeResultsPair.TryGetValue(argsHash, out results))
-                {
-                    return results;
-                }
-            }
-
-            // This maneuver is gonna cost us 51 years
-            if (HashedTypeResultsPair.Count <= 0)
-            {
-                Refresh();
-            }
-
-            List<Type> tempResults = new List<Type>(32);
-            foreach (Type[] list in GetValuesFromFlags(flags))
-            {
-                foreach (Type t in list)
-                {
-                    if (predicate(t))
-                        tempResults.Add(t);
-                }
-            }
-
-            results = tempResults.ToArray();
-            HashedTypeResultsPair.Add(argsHash, results);
-            return tempResults.ToArray();
         }
     }
 }

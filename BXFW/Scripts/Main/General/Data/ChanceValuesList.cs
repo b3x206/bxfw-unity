@@ -135,11 +135,11 @@ namespace BXFW
 
         public override int GetHashCode()
         {
-            unchecked // no int checks
+            unchecked
             {
                 int hashCode = 1403209422;
-                hashCode = hashCode * -1521134295 + Chance.GetHashCode();
-                hashCode = hashCode * -1521134295 + EqualityComparer<T>.Default.GetHashCode(Value);
+                hashCode = (hashCode * -1521134295) + Chance.GetHashCode();
+                hashCode = (hashCode * -1521134295) + EqualityComparer<T>.Default.GetHashCode(Value);
                 return hashCode;
             }
         }

@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
+using System.Collections.Generic;
 
 namespace BXFW.Tweening.Next
 {
@@ -652,9 +653,23 @@ namespace BXFW.Tweening.Next
         /// <param name="pSep">The property seperator character for values.</param>
         public virtual string ToString(bool simpleString, char pSep = ',')
         {
+            // To make this method noexcept, get m_IDObject string reprensation as this
+            string idObjToString;
+            // This is the best way i could think of, because the stupid unity objects are fake null
+            // (but other c# objects are fine, so can use null coalesence for this)
+            // Maybe add a IBXSTweenRunner.IsNullObject method instead of this
+            try
+            {
+                idObjToString = m_IDObject?.ToString() ?? "<null>";
+            }
+            catch
+            {
+                idObjToString = "<null>";
+            }
+
             if (simpleString)
             {
-                return $"[BXSTweenable(play={IsPlaying})] Duration={m_Duration}{pSep} Delay={m_Delay}{pSep} Loops={m_LoopCount}{pSep} Speed={m_Speed}{pSep} ID={m_ID}{pSep} IDObj={m_IDObject}";
+                return $"[BXSTweenable(play={IsPlaying})] Duration={m_Duration}{pSep} Delay={m_Delay}{pSep} Loops={m_LoopCount}{pSep} Speed={m_Speed}{pSep} ID={m_ID}{pSep} IDObj={idObjToString}";
             }
 
             StringBuilder sb = new StringBuilder(512);
@@ -669,7 +684,7 @@ namespace BXFW.Tweening.Next
                 .Append(pSep).Append(" Clamp01Easing=").Append(m_Clamp01EasingSetter)
                 .Append(pSep).Append(" TickType=").Append(m_TickType)
                 .Append(pSep).Append(" ID=").Append(m_ID)
-                .Append(pSep).Append(" IDObject=").Append(m_IDObject)
+                .Append(pSep).Append(" IDObject=").Append(idObjToString)
                 .Append(pSep).Append(" PlayAction=").Append(OnPlayAction)
                 .Append(pSep).Append(" StartAction=").Append(OnStartAction)
                 .Append(pSep).Append(" UpdateAction=").Append(OnTickAction)

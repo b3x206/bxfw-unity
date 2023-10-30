@@ -37,6 +37,7 @@ namespace BXFW.ScriptEditor
         // - ValueAnimatorEditor.cs
         // - BXSTweenSequenceEditor.cs
         // - BezierPathEditor.cs
+        // - SerializableDictionaryDrawer.cs
 
         /// <summary>
         /// The current Y elapsed for this property field.

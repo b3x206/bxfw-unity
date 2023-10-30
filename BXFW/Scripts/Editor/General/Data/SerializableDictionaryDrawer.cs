@@ -1,0 +1,179 @@
+using UnityEngine;
+using UnityEditor;
+using System.Linq;
+using BXFW.Tools.Editor;
+using UnityEditorInternal;
+using System.Collections.Generic;
+
+namespace BXFW.ScriptEditor
+{
+    [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
+    public class SerializableDictionaryDrawer : PropertyDrawer
+    {
+        private PropertyRectContext mainGUIContext = new PropertyRectContext(2);
+        private const float NonUniqueValuesWarningHeight = 32;
+        private PropertyRectContext reorderableListContext = new PropertyRectContext(2);
+        /// <summary>
+        /// Current reorderable list drawing list.
+        /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise it doesn't work if you create the same ReorderableList constantly.</br>
+        /// </summary>
+        private static readonly Dictionary<string, ReorderableList> idDrawList = new Dictionary<string, ReorderableList>();
+        private const int IdDrawListDictSizeLimit = 64;
+        /// <summary>
+        /// Current base property attached for drawing.
+        /// </summary>
+        private SerializedProperty m_baseProperty;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            // Yes, this is not a very nice way of doing this, but it will do for now.
+            // Because the 'ReorderableList' is not quite draggable if this is not done.
+            string sPropId = property.GetIDString();
+            if (!idDrawList.TryGetValue(sPropId, out ReorderableList list))
+            {
+                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Keys"), true, true, true, true)
+                {
+                    drawHeaderCallback = DrawListHeader,
+                    drawElementCallback = DrawListElements,
+                    elementHeightCallback = GetElementHeight,
+                    onCanAddCallback = OnListCanAddCallback,
+                };
+
+                idDrawList.Add(sPropId, list);
+                // nice spaghetti, but this is kinda needed?
+                // 'Dictionary.Add's ordering is undefined behaviour (which is amazing)
+                if (idDrawList.Count > IdDrawListDictSizeLimit)
+                {
+                    idDrawList.Remove(idDrawList.Keys.First(k => k != sPropId));
+                }
+            }
+
+            float height = EditorGUIUtility.singleLineHeight + mainGUIContext.Padding;
+
+            if (!property.isExpanded)
+                return height;
+
+            SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
+            if (!dict.KeysAreUnique())
+            {
+                height += NonUniqueValuesWarningHeight + mainGUIContext.Padding;
+            }
+
+            m_baseProperty = property;  // Set the current undisposed SerializedProperty
+            height += list.GetHeight();
+
+            return height;
+        }
+
+        private void DrawListHeader(Rect r)
+        {
+            EditorGUI.LabelField(r, "Keys & Values");
+        }
+        private float GetElementHeight(int index)
+        {
+            float height = 0f;
+            using SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
+            using SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
+
+            if (valuesProperty.arraySize != keysProperty.arraySize)
+            {
+                valuesProperty.arraySize = keysProperty.arraySize;
+            }
+
+            if (keysProperty.arraySize <= 0)
+            {
+                return EditorGUIUtility.singleLineHeight + reorderableListContext.Padding;
+            }
+
+            height += EditorGUI.GetPropertyHeight(keysProperty.GetArrayElementAtIndex(index)) + reorderableListContext.Padding;
+            height += 6 + reorderableListContext.Padding; // GUIAdditionals.DrawLine();
+            height += EditorGUI.GetPropertyHeight(valuesProperty.GetArrayElementAtIndex(index)) + reorderableListContext.Padding;
+            return height;
+        }
+        private void DrawListElements(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            // Reset this per every call, as the rect is local lol.
+            reorderableListContext.Reset();
+            using SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
+            using SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
+
+            if (valuesProperty.arraySize != keysProperty.arraySize)
+            {
+                valuesProperty.arraySize = keysProperty.arraySize;
+            }
+
+            // Draw key
+            SerializableDictionaryBase dict = (SerializableDictionaryBase)m_baseProperty.GetTarget().value;
+            object prevValue = dict.GetKey(index);
+            EditorGUI.PropertyField(reorderableListContext.GetPropertyRect(rect, keysProperty.GetArrayElementAtIndex(index)), keysProperty.GetArrayElementAtIndex(index), new GUIContent($"Key {index}"));
+
+            // Draw line
+            GUIAdditionals.DrawUILine(
+                reorderableListContext.GetPropertyRect(rect, 6),
+                EditorGUIUtility.isProSkin ? Color.gray : new Color(0.12f, 0.12f, 0.12f, 1f)
+            );
+            // Draw value
+            EditorGUI.PropertyField(reorderableListContext.GetPropertyRect(rect, valuesProperty.GetArrayElementAtIndex(index)), valuesProperty.GetArrayElementAtIndex(index), new GUIContent("Value"));
+
+            // Ensure that the keys are unique
+            // Otherwise revert the 'PropertyField'
+            if (keysProperty.serializedObject.ApplyModifiedProperties())
+            {
+                if (!dict.KeysAreUnique())
+                {
+                    // Q : How do we support struct parents?
+                    // A : ^UCK (silly dog image)
+                    // Society if SerializedProperty value was assignable with any c# type
+                    // --
+
+                    //keysProperty.GetArrayElementAtIndex(index).value = keysValueCurrentCopy;
+                    // Now we gotta do stupid array reflection shenanigans
+                    dict.SetKey(index, prevValue);
+                }
+            }
+            valuesProperty.serializedObject.ApplyModifiedProperties();
+        }
+
+        private bool OnListCanAddCallback(ReorderableList list)
+        {
+            // TODO : Maybe add a 'add element' dummy ShowAsPopup EditorWindow?
+            // This is how you add element. (or that's how the add element button does with a default value)
+            // (we will display a dummy 'SerializedProperty')
+            //list.list.Add();
+            //list.InvalidateCache();
+
+            return true;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            mainGUIContext.Reset();
+            string sPropId = property.GetIDString();
+            ReorderableList list = idDrawList[sPropId];
+            label = EditorGUI.BeginProperty(position, label, property);
+
+            property.isExpanded = EditorGUI.Foldout(mainGUIContext.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
+
+            if (!property.isExpanded)
+                return;
+
+            EditorGUI.indentLevel++;
+            Rect indentedPosition = EditorGUI.IndentedRect(position);
+            // EditorGUI.IndentedRect indents too much
+            float indentDiffScale = (position.width - indentedPosition.width) / 1.33f;
+            indentedPosition.x -= indentDiffScale;
+            indentedPosition.width += indentDiffScale;
+
+            SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
+            if (!dict.KeysAreUnique())
+            {
+                EditorGUI.HelpBox(mainGUIContext.GetPropertyRect(position, NonUniqueValuesWarningHeight), "Dictionary keys are not unique. This will cause problems.", MessageType.Warning);
+            }
+
+            m_baseProperty = property; // Set the current undisposed SerializedProperty
+            list.DoList(mainGUIContext.GetPropertyRect(indentedPosition, list.GetHeight()));
+
+            EditorGUI.indentLevel--;
+        }
+    }
+}

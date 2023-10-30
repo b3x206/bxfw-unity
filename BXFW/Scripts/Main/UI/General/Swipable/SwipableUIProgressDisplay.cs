@@ -38,6 +38,15 @@ namespace BXFW.UI
             m_prevMenuIndex = targetSwipableUI.CurrentMenu;
             UpdateElementsAppearance();
         }
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (ElementCount != targetSwipableUI.MenuCount)
+            {
+                OnMenuCountChanged();
+            }
+        }
         protected override void OnDestroy()
         {
             if (targetSwipableUI == null)

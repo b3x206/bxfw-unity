@@ -67,42 +67,5 @@ namespace BXFW.Tweening
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.LerpUnclamped(start.width, end.width, time));
             target.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.LerpUnclamped(start.height, end.height, time));
         }
-
-        #region Obsolete
-        /// <summary>
-        /// Interpolates a Matrix4x4.
-        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
-        /// </summary>
-        [Obsolete("Use MathUtility instead", false)]
-        public static Matrix4x4 MatrixLerp(Matrix4x4 src, Matrix4x4 dest, float time)
-        {
-            return MatrixLerpUnclamped(src, dest, Mathf.Clamp01(time));
-        }
-        /// <summary>
-        /// Interpolates a Matrix4x4. (Unclamped)
-        /// <br>This can be used for interpolating such things as <see cref="Camera.projectionMatrix"/> and others.</br>
-        /// </summary>
-        [Obsolete("Use MathUtility instead", false)]
-        public static Matrix4x4 MatrixLerpUnclamped(Matrix4x4 src, Matrix4x4 dest, float time)
-        {
-            Matrix4x4 ret = new Matrix4x4();
-
-            for (int i = 0; i < 16; i++)
-            {
-                ret[i] = Mathf.LerpUnclamped(src[i], dest[i], time);
-            }
-
-            return ret;
-        }
-
-        /// <summary>
-        /// <see cref="Mathf.LerpUnclamped"/> with int cast.
-        /// </summary>
-        [Obsolete("Cast a Mathf.LerpUnclamped or create a static utility method.", false)]
-        internal static int IntLerpUnclamped(int start, int end, float time)
-        {
-            return (int)Mathf.LerpUnclamped(start, end, time);
-        }
-        #endregion
     }
 }

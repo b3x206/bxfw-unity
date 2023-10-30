@@ -150,6 +150,10 @@ namespace BXFW
 
     /// <summary>
     /// List that has a delegate checking for changes.
+    /// <br/>
+    /// <br><b>Warning : </b> This class is a <b>footgun</b> when you do serialization related actions.
+    /// It is not efficient and it will call <see cref="OnUpdated"/> for all elements even though the list is being iterated.
+    /// </br>
     /// </summary>
     [Serializable]
     public class ObservedList<T> : ObservedListBase<T>
