@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
-using System.Collections.Generic;
 
 namespace BXFW.Tweening.Next
 {

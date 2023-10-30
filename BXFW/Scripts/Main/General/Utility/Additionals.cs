@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Collections.Generic;
 
 // Serialization
-using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace BXFW

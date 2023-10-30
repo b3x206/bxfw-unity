@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Runtime.CompilerServices;
-using System;
 
 namespace BXFW.Tweening
 {

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Serialization;
-using Codice.CM.Common.Tree;
 
 namespace BXFW
 {
