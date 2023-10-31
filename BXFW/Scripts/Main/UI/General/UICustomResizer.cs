@@ -47,14 +47,21 @@ namespace BXFW.UI
             get
             {
                 if (ResizeTarget == null)
+                {
                     return Vector2.zero;
+                }
 
                 Vector2 result = GetTargetSize() + new Vector2(paddingX, paddingY);
 
                 if (sizeLimitX.Max > float.Epsilon)
+                {
                     result.x = sizeLimitX.ClampBetween(result.x);
+                }
+
                 if (sizeLimitY.Max > float.Epsilon)
+                {
                     result.y = sizeLimitY.ClampBetween(result.y);
+                }
 
                 return result;
             }
@@ -68,7 +75,9 @@ namespace BXFW.UI
             get
             {
                 if (m_RectTransform == null)
+                {
                     m_RectTransform = GetComponent<RectTransform>();
+                }
 
                 return m_RectTransform;
             }
@@ -127,17 +136,23 @@ namespace BXFW.UI
         {
             // Check target
             if (ResizeTarget == null)
+            {
                 return false;
+            }
 
             // Check if target is enabled (note : this object is disabled in update if the target is disabled)
             // Disabling the object here, unity doesn't allow it.
             // (this was the case in the previous event based update, it may have been changed)
             if (!ResizeTarget.gameObject.activeInHierarchy)
+            {
                 return false;
+            }
 
             // Check preferenced values
             if (CurrentTargetValues == prevTargetValues)
+            {
                 return false;
+            }
 
             return true;
         }
@@ -192,7 +207,9 @@ namespace BXFW.UI
                 for (int i = 0; i < m_layoutGroupCache.Count; i++)
                 {
                     if (m_layoutGroupCache[i] == null)
+                    {
                         continue;
+                    }
 
                     m_layoutGroupCache[i].CalculateLayoutInputHorizontal();
                     m_layoutGroupCache[i].CalculateLayoutInputVertical();
@@ -213,7 +230,9 @@ namespace BXFW.UI
         public void UpdateRectTransform(bool xAxisUpdate = true, bool yAxisUpdate = true)
         {
             if (!ShouldUpdate())
+            {
                 return;
+            }
 
             // No need to update canvases if we are calling this from a waiting coroutine
             // (events only invoke once globally for this behaviour, like an static method)

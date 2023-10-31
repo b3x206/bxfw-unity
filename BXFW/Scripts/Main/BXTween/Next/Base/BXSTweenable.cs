@@ -184,7 +184,9 @@ namespace BXFW.Tweening.Next
             float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : EaseFunction(t);
 
             if (Clamp01EasingSetter)
+            {
                 returnValue = Math.Clamp(returnValue, 0f, 1f);
+            }
 
             return returnValue;
         }
@@ -228,7 +230,9 @@ namespace BXFW.Tweening.Next
             get
             {
                 if (BXSTween.MainRunner != null)
+                {
                     return BXSTween.MainRunner.SupportsFixedTick ? TickType : TickType.Variable;
+                }
 
                 // No 'MainRunner', just return the normal value.
                 return TickType;
@@ -453,7 +457,9 @@ namespace BXFW.Tweening.Next
                 m_IsTargetValuesSwitched = value;
 
                 if (prevValue != value)
+                {
                     OnSwitchTargetValues();
+                }
             }
         }
         /// <summary>
@@ -531,7 +537,9 @@ namespace BXFW.Tweening.Next
 
             // Stop if already playing
             if (IsPlaying)
+            {
                 Stop();
+            }
 
             // Not continuing a paused tween, set run temps
             if (!IsPaused)
@@ -557,7 +565,9 @@ namespace BXFW.Tweening.Next
             BXSTween.RunningTweens.Add(this);
 
             if (!HasPlayedOnce)
+            {
                 HasPlayedOnce = true;
+            }
         }
         /// <summary>
         /// Keeps the current tween state and pauses the running tweening timers.
@@ -572,7 +582,9 @@ namespace BXFW.Tweening.Next
             }
 
             if (!IsPlaying)
+            {
                 return;
+            }
 
             // Set state
             IsPlaying = false;
@@ -633,7 +645,9 @@ namespace BXFW.Tweening.Next
             else
             {
                 if (!m_WaitDelayOnLoop)
+                {
                     DelayElapsed = 1f;
+                }
             }
         }
 

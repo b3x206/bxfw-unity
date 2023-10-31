@@ -22,7 +22,9 @@ namespace BXFW.Tools.Editor
         {
             var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
             if (!shouldAcceptDrag)
+            {
                 return;
+            }
 
             MakeDragDropArea(onDragAcceptAction, customRect);
         }
@@ -41,7 +43,9 @@ namespace BXFW.Tools.Editor
                     Rect dropArea = customRect ?? GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
                     if (!dropArea.Contains(evt.mousePosition))
+                    {
                         return;
+                    }
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 
@@ -70,10 +74,14 @@ namespace BXFW.Tools.Editor
         public static bool DrawArray(bool toggle, SerializedProperty property)
         {
             if (property == null)
+            {
                 throw new ArgumentNullException(nameof(property), "[EditorGUIAdditionals::DrawArray] Given SerializedProperty is null.");
+            }
 
             if (!property.isArray)
+            {
                 throw new ArgumentException("[EditorGUIAdditionals::DrawArray] Given SerializedProperty is not an array.", nameof(property));
+            }
 
             // Also draws the 'PropertyField'
             // Create this function as it's more ergonomic compared to writing an inline delegate in this case.
@@ -84,7 +92,9 @@ namespace BXFW.Tools.Editor
 
                 // If our property is null, ignore.
                 if (prop == null)
+                {
                     throw new NullReferenceException(string.Format("[EditorGUIAdditionals::DrawArray] The drawn property at index {0} does not exist. This should not happen.", i));
+                }
 
                 EditorGUILayout.PropertyField(prop);
             }

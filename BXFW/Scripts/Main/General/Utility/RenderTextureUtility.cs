@@ -58,7 +58,9 @@ namespace BXFW
         public static Mesh GetQuad()
         {
             if (quad != null)
+            {
                 return quad;
+            }
 
             Mesh mesh = new Mesh();
 
@@ -113,12 +115,16 @@ namespace BXFW
         public static Shader GetBlitShader()
         {
             if (blitShader != null)
+            {
                 return blitShader;
+            }
 
             Shader shader = Shader.Find(BLIT_SHADER_NAME);
 
             if (!shader)
+            {
                 Debug.LogError(string.Format("[GetBlitShader] Shader with name '{0}' is not found, did you forget to include it in the project settings?", BLIT_SHADER_NAME));
+            }
 
             blitShader = shader;
             return blitShader;
@@ -131,7 +137,9 @@ namespace BXFW
         public static Material GetBlitMaterial()
         {
             if (blitMaterial == null)
+            {
                 blitMaterial = new Material(GetBlitShader());
+            }
 
             return blitMaterial;
         }
@@ -172,7 +180,9 @@ namespace BXFW
             // This fixes flickering (by @guycalledfrank)
             // (because there's some switching back and forth between cameras, I don't fully understand)
             if (Camera.current != null)
+            {
                 projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+            }
 
             // Remember the current texture and make our own active
             prevRT = RenderTexture.active;
@@ -250,12 +260,16 @@ namespace BXFW
             // Create an orthographic matrix (for 2D rendering)
             // You can otherwise use Matrix4x4.Perspective()
             if (projectionMatrix == Matrix4x4.identity)
+            {
                 projectionMatrix = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+            }
 
             // This fixes flickering (by @guycalledfrank)
             // (because there's some switching back and forth between cameras, I don't fully understand)
             if (Camera.current != null)
+            {
                 projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+            }
 
             // Remember the current texture and set our own as "active".
             RenderTexture prevRT = RenderTexture.active;
@@ -273,13 +287,19 @@ namespace BXFW
 
             // Clear the texture
             if (clear)
+            {
                 GL.Clear(true, true, clearColor);
+            }
 
             // Draw the mesh!
             if (canRender)
+            {
                 Graphics.DrawMeshNow(mesh, objectMatrix);
+            }
             else
+            {
                 Debug.LogWarning(string.Format("[RenderTextureUtils::BlitMesh] Material with shader {0} couldn't be rendered!", material.shader.name));
+            }
 
             // Pop the projection matrix to set it back to the previous one
             GL.PopMatrix();
@@ -296,12 +316,16 @@ namespace BXFW
         public static void DrawMesh(this RenderTexture _, Mesh mesh, Material material, in Matrix4x4 matrix, int pass = 0)
         {
             if (mesh == null)
+            {
                 throw new NullReferenceException("[RenderTextureExtensions::DrawMesh] Argument 'mesh' cannot be null.");
+            }
 
             bool canRender = material.SetPass(pass);
 
             if (canRender)
+            {
                 Graphics.DrawMeshNow(mesh, matrix);
+            }
         }
 
         public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Vector2 position, float size)

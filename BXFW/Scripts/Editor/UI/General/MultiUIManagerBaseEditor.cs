@@ -36,7 +36,9 @@ namespace BXFW.ScriptEditor
             var targets = base.targets.Cast<MultiUIManagerBase>().ToArray();
 
             if (m_existingUndoRecord.Count > 0)
+            {
                 m_existingUndoRecord.Clear();
+            }
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(undo);
@@ -48,7 +50,9 @@ namespace BXFW.ScriptEditor
                 foreach (Component element in manager.IterableElements())
                 {
                     if (element == null)
+                    {
                         continue;
+                    }
 
                     m_existingUndoRecord.Add(element.gameObject);
                 }
@@ -87,7 +91,9 @@ namespace BXFW.ScriptEditor
                 )
                 {
                     if (checkUndoElementComponent == null)
+                    {
                         continue;
+                    }
 
                     Undo.RegisterCreatedObjectUndo(checkUndoElementComponent.gameObject, string.Empty);
                 }

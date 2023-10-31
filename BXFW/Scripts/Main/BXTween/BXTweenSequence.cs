@@ -30,7 +30,9 @@ namespace BXFW.Tweening
             public int CompareTo(RunnableTweenContext other)
             {
                 if (other == null)
+                {
                     return 1;
+                }
 
                 return priority.CompareTo(other.priority);
             }
@@ -38,7 +40,9 @@ namespace BXFW.Tweening
             public bool Equals(RunnableTweenContext other)
             {
                 if (other == null)
+                {
                     return false;
+                }
 
                 return priority == other.priority && tween == other.tween;
             }
@@ -132,10 +136,14 @@ namespace BXFW.Tweening
         public void Join(ITweenCTX ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::Join] Given context parameter is null.");
+            }
 
             if (ctx.IsRunning)
+            {
                 ctx.StopTween();
+            }
 
             if (LastPriority <= -1)
             {
@@ -154,10 +162,14 @@ namespace BXFW.Tweening
         public void JoinFirst(ITweenCTX ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::JoinFirst] Given context parameter is null.");
+            }
 
             if (ctx.IsRunning)
+            {
                 ctx.StopTween();
+            }
 
             m_Tweens.Insert(0, new RunnableTweenContext(0, ctx));
         }
@@ -168,10 +180,14 @@ namespace BXFW.Tweening
         public void Append(ITweenCTX ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::Append] Given context parameter is null.");
+            }
 
             if (ctx.IsRunning)
+            {
                 ctx.StopTween();
+            }
 
             m_Tweens.Add(new RunnableTweenContext(LastPriority + 1, ctx));
         }
@@ -182,10 +198,14 @@ namespace BXFW.Tweening
         public void Prepend(ITweenCTX ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::Prepend] Given context parameter is null.");
+            }
 
             if (ctx.IsRunning)
+            {
                 ctx.StopTween();
+            }
 
             foreach (var runnable in m_Tweens)
             {
@@ -229,7 +249,9 @@ namespace BXFW.Tweening
                     (longestDurationCtx.Duration + longestDurationCtx.Delay) : float.NegativeInfinity;
 
                 if ((runnable.tween.Duration + runnable.tween.Delay) > longestDuration)
+                {
                     longestDurationCtx = runnable.tween;
+                }
 
                 runnable.tween.StartTween();
                 runnable.tween.TweenCompleteAction += () =>
@@ -239,7 +261,9 @@ namespace BXFW.Tweening
             }
 
             if (longestDurationCtx == null)
+            {
                 throw new NullReferenceException(string.Format("[BXTweenSequence::RunRecursive] Sequence id={0} does not have any tweens on it.", currentRunPriority));
+            }
 
             longestDurationCtx.TweenCompleteAction += () =>
             {
@@ -260,7 +284,9 @@ namespace BXFW.Tweening
         public void Stop()
         {
             if (!IsRunning)
+            {
                 return;
+            }
 
             OnSequenceEnd?.Invoke();
             IsRunning = false;
@@ -307,7 +333,9 @@ namespace BXFW.Tweening
             set
             {
                 if (value == null)
+                {
                     throw new NullReferenceException(string.Format("[BXTweenSequence::(set)this[{0}]] Given value for index '{0}' is null.", index));
+                }
 
                 m_Tweens[index].tween = value;
             }

@@ -76,10 +76,15 @@ namespace BXFW.UI
             cellSize.y = fitY ? cellHeight : cellSize.y;
 
             // Invalid value clamping (this method is called OnValidate [hah that fits])
-            if (columns <= 0) 
+            if (columns <= 0)
+            {
                 columns = 1;
+            }
+
             if (rows <= 0)
+            {
                 rows = 1;
+            }
 
             int columnCount;
             int rowCount;

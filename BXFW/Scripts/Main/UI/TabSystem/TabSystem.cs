@@ -142,7 +142,9 @@ namespace BXFW.UI
             foreach (var button in m_Elements)
             {
                 if (button == null)
+                {
                     continue;
+                }
 
                 if (!Interactable)
                 {
@@ -174,7 +176,9 @@ namespace BXFW.UI
                 ButtonToSelScript.SetButtonAppearance(TabButton.ButtonState.Click);
 
                 if (!silentSelect)
+                {
                     onTabButtonClicked?.Invoke(IndexSelect);
+                }
 
                 UpdateElementsAppearance();
             }

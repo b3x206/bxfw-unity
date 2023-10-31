@@ -130,7 +130,9 @@ namespace BXFW.Tweening.Editor
             }
             // Pause editor if the tween amount exceeded
             if (viewOptions.BreakAtTweenCount > 0 && BXSTween.RunningTweens.Count >= viewOptions.BreakAtTweenCount)
+            {
                 EditorApplication.isPaused = true;
+            }
 
             // Draw the list of current running tweens (with name)
             // Get a monospace font style with rich text coloring as well
@@ -145,7 +147,9 @@ namespace BXFW.Tweening.Editor
                 // We just want to reverse the 'CurrentRunningTweens'
                 // Otherwise it's very easy to get ArgumentOutOfRangeException
                 if (guiIndex > m_expandedTweens.Count - 1)
+                {
                     m_expandedTweens.Add(false);
+                }
 
                 // Get target type using reflection instead, no need to pollute the interface,
                 // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.
@@ -167,7 +171,9 @@ namespace BXFW.Tweening.Editor
                     {
                         // Unsupported index parameters, can be triggered by 'this[int idx]' expressions
                         if (v.GetIndexParameters().Length > 0)
+                        {
                             continue;
+                        }
 
                         GUILayout.Label(string.Format("  <color=#f3bd28>[ Property ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
@@ -175,7 +181,9 @@ namespace BXFW.Tweening.Editor
                     {
                         // Don't draw properties twice
                         if (v.Name.Contains("k__BackingField"))
+                        {
                             continue;
+                        }
 
                         GUILayout.Label(string.Format("  <color=#f3bd28>[ Field    ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }

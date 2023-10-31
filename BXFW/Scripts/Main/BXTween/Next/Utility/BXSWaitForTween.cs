@@ -17,7 +17,9 @@ namespace BXFW.Tweening.Next
         public BXSWaitForTween(BXSTweenable target)
         {
             if (target == null)
+            {
                 throw new ArgumentNullException(nameof(target), "[BXSWaitForTween::ctor()] Given BXSTweenable target cannot be null.");
+            }
 
             tweenable = target;
         }

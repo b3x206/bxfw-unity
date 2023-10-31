@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using static BXFW.SaveMigratorData;
 
 namespace BXFW
 {
@@ -8,6 +10,39 @@ namespace BXFW
     /// </summary>
     public abstract class SaveMigratorRecipe : ScriptableObject
     {
+        /// <summary>
+        /// Defines a type hint for a recipe element.
+        /// <br>Can be used in cases where the serializer doesn't do type independent serialization.</br>
+        /// </summary>
+        [Flags]
+        public enum TypeHint
+        {
+            None = 0,
+            /// <summary>
+            /// Generic type, can be converted to serialization string format.
+            /// </summary>
+            Generic = 1 << 0,
+            /// <summary>
+            /// String type, can be written to string directly or be converted to bytes.
+            /// </summary>
+            String = 1 << 1,
+            /// <summary>
+            /// Integer (of any size) type.
+            /// </summary>
+            Integer = 1 << 2,
+            /// <summary>
+            /// Float (of any size) type.
+            /// </summary>
+            Float = 1 << 3,
+
+            /// <summary>
+            /// All type serialization flags.
+            /// </summary>
+            All = ~0
+        }
+
+        public abstract TypeHint TypeSerializationSupportFlags { get; }
+
         // How does a save migrator work?
         // A : Store a series of keys or a data structure layout
         // B : Search for the old keys or load data struct according to old layout on the recipe.
@@ -21,7 +56,7 @@ namespace BXFW
         /// Returns the key from the saved data list.
         /// </summary>
         /// <param name="key">Key of this given data.</param>
-        public abstract object GetValueFromKey(string key);
+        public abstract object GetValueFromKey(KeyMatcher key);
 
         /// <summary>
         /// Use this method to set value to the corresponding key.
@@ -33,8 +68,13 @@ namespace BXFW
         /// <summary>
         /// Method to use if key removal is needed.
         /// </summary>
-        public virtual void RemoveKey(string key)
+        public virtual void RemoveKey(KeyMatcher key)
         { }
+
+        /// <summary>
+        /// Method to use if key exists.
+        /// </summary>
+        public abstract bool HasKey(KeyMatcher key);
 
         /// <summary>
         /// Use this method to finalize your serialization.

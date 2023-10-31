@@ -23,9 +23,14 @@ namespace BXFW
             set
             {
                 if (MinFPS > value && value >= 0f)
+                {
                     MinFPS = value;
+                }
+
                 if (MaxFPS < value)
+                {
                     MaxFPS = value;
+                }
 
                 m_currentFPS = value;
             }
@@ -55,13 +60,17 @@ namespace BXFW
 
             // We already updated this frame, return.
             if (PrevTimeElapsed == TimeElapsed)
+            {
                 return;
+            }
 
             // Smooth delta time starts to fade into the current Time.deltaTime when it's getting more constant
             // So just use a Mathf.MoveToward thing (smoothDeltaTime's n value is (time - prevTime) * 0.5f)
             // Smooth out the elapsed time (if a previous reference point exists)
             if (PrevTimeElapsed > 0f)
+            {
                 TimeElapsed = Mathf.MoveTowards(PrevTimeElapsed, TimeElapsed, Mathf.Abs(TimeElapsed - PrevTimeElapsed) * 0.5f);
+            }
 
             if (FPSTimer <= 0)
             { 
@@ -76,7 +85,9 @@ namespace BXFW
             if (FPSTimer <= 0f)
             {
                 if (TimeElapsed <= 0f)
+                {
                     TimeElapsed = 0.016f;
+                }
 
                 CurrentFPS = (int)(1f / TimeElapsed);
             }

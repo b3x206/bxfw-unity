@@ -21,7 +21,9 @@ namespace BXFW.UI
                 // If you don't return null if target is null it throw error
                 // (because we try to refer the target's rectTransform)
                 if (target == null)
-                    return null; 
+                {
+                    return null;
+                }
 
                 return target.rectTransform;
             }
@@ -33,7 +35,9 @@ namespace BXFW.UI
             // though it would have been better if i cached it
             // (but also there's no performance diff because unity made comparing with null intensive so lol)
             if (target != null && TryGetComponent(out Graphic g))
+            {
                 g.enabled = !string.IsNullOrWhiteSpace(target.text);
+            }
         }
 
         protected override Vector2 GetTargetSize()

@@ -107,7 +107,9 @@ namespace BXFW.Tools.Editor
                 }
             }
             // These are fragile
-            if (asm.GetName().Name == "UnityEngine.SharedInternalsModule" || asm.GetReferencedAssemblies().Any((asmName) => asmName.Name == "UnityEngine.SharedInternalsModule"))
+            if (asm.GetName().Name.Contains("UnityEngine") ||
+                asm.GetName().Name == "UnityEngine.SharedInternalsModule" ||
+                asm.GetReferencedAssemblies().Any((asmName) => asmName.Name == "UnityEngine.SharedInternalsModule"))
             {
                 return AssemblyFlags.UnityAssembly;
             }
@@ -227,7 +229,9 @@ namespace BXFW.Tools.Editor
                 foreach (Type t in list)
                 {
                     if (predicate(t))
+                    {
                         tempResults.Add(t);
+                    }
                 }
             }
 
@@ -248,6 +252,7 @@ namespace BXFW.Tools.Editor
             HashedTypeResultsPair.Clear();
             TypeInsideAssemblyResults.Clear();
 
+            // TODO : Fix this adding loop, as it seems to be missing some elements
             // int copyIndex = 0;
             for (int i = 0; i < CurrentDomainAssembliesCache.Length; i++)
             {
@@ -257,7 +262,7 @@ namespace BXFW.Tools.Editor
                 // If not it can still be sorted
                 Type[] asmTypes = assembly.GetTypes();
                 AssemblyFlags asmFlag = GetAssemblyFlag(assembly);
-                
+
                 // UnityEngine.Debug.Log($"[Adding] | Assembly : C:{asmFlag} N:{assembly.GetName()}, Category Exists: {DomainTypesList.ContainsKey(asmFlag)}");
                 if (DomainTypesList.TryGetValue(asmFlag, out Type[] flagTypes))
                 {

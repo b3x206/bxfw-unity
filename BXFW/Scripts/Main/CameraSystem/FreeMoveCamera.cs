@@ -55,7 +55,9 @@ namespace BXFW
         private void Start()
         {
             if (!IsEnabled)
+            {
                 return;
+            }
 
             // Initilaze resets quaternion rotation.
             Initilaze();
@@ -63,7 +65,9 @@ namespace BXFW
         protected virtual void Initilaze()
         {
             if (m_isInit)
+            {
                 return;
+            }
 
             TargetTransform = moveTransform == null ? GetComponent<Transform>() : moveTransform;
 
@@ -173,14 +177,18 @@ namespace BXFW
             }
 
             if (!m_isInit)
+            {
                 Initilaze();
+            }
         }
         private void OnDisable()
         {
             foreach (var comp in disableComponentsOnEnable)
             {
                 if (comp == null)
+                {
                     continue;
+                }
 
                 comp.enabled = true;
             }

@@ -10,13 +10,16 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
+        // hooray, the editor works inside nested children
+        // too bad it's fragile thanks to the 'ReorderableList' and it's joys
         // This isn't a good way of architecturing a dictionary, but if it works no problem.
         private PropertyRectContext mainGUIContext = new PropertyRectContext(2);
         private const float NonUniqueValuesWarningHeight = 32;
         private PropertyRectContext reorderableListContext = new PropertyRectContext(2);
         /// <summary>
         /// Current reorderable list drawing list.
-        /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise it doesn't work if you create the same ReorderableList constantly.</br>
+        /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise
+        /// it doesn't work if you create the same ReorderableList constantly. Basically unique persistent ReorderableList storage</br>
         /// </summary>
         private static readonly Dictionary<string, ReorderableList> idDrawList = new Dictionary<string, ReorderableList>();
         private const int IdDrawListDictSizeLimit = 64;
@@ -55,8 +58,11 @@ namespace BXFW.ScriptEditor
 
             float height = EditorGUIUtility.singleLineHeight + mainGUIContext.Padding;
 
+
             if (!property.isExpanded)
+            {
                 return height;
+            }
 
             SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
             if (!dict.KeysAreUnique())
@@ -91,6 +97,12 @@ namespace BXFW.ScriptEditor
         private float GetElementHeight(int index)
         {
             float height = 0f;
+            // Do this for one iteration as the OnGUI hack fixes this
+            if (m_baseProperty.serializedObject.IsDisposed())
+            {
+                return EditorGUIUtility.singleLineHeight + reorderableListContext.Padding;
+            }
+
             SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
             SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
 
@@ -142,7 +154,7 @@ namespace BXFW.ScriptEditor
                 if (!dict.KeysAreUnique())
                 {
                     // Q : How do we support struct parents?
-                    // A : ^UCK (silly dog video)
+                    // A : ^UCK (silly dog video, most commonly used in a tiktok where random videos is mismashed, trying to make humor out of chaos)
                     // Society if SerializedProperty value was assignable with any c# type
                     // --
 
@@ -166,7 +178,9 @@ namespace BXFW.ScriptEditor
         private void OnListSwitchPairs(ReorderableList list, int oldIndex, int newIndex)
         {
             // Switch the switched value when the list values are switched
-            m_baseProperty.FindPropertyRelative("m_Keys").MoveArrayElement(oldIndex, newIndex);  // Because ReorderableList sucks
+            // ReorderableList completely replaces the behaviour with this, which is okay.
+            // (but it's still an undocumented mess of a class)
+            m_baseProperty.FindPropertyRelative("m_Keys").MoveArrayElement(oldIndex, newIndex);
             m_baseProperty.FindPropertyRelative("m_Values").MoveArrayElement(oldIndex, newIndex);
         }
 
@@ -180,7 +194,9 @@ namespace BXFW.ScriptEditor
             property.isExpanded = EditorGUI.Foldout(mainGUIContext.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
             if (!property.isExpanded)
+            {
                 return;
+            }
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);
@@ -203,6 +219,9 @@ namespace BXFW.ScriptEditor
             m_basePropertyClone = so.FindProperty(m_baseProperty.propertyPath);
 
             // go ahead, dispose my ASS here.
+            // This is a terrible hack done to fix the stupid automatic disposal of the 'm_baseProperty'
+            // Instead this method will now dispose 'm_basePropertyClone' which is, like, why?
+            // This occured solely because i used 'ReorderableList', any other array viewing method and it would have worked fine.
             list.serializedProperty = m_basePropertyClone.FindPropertyRelative("m_Keys");
             list.DoList(mainGUIContext.GetPropertyRect(indentedPosition, height));
             so.ApplyModifiedProperties();

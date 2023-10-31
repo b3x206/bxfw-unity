@@ -23,7 +23,9 @@ namespace BXFW
         public Logger(LogAction logAction, LogAction warnAction, LogAction errorAction, LogExceptionAction logException)
         {
             if (logAction == null)
+            {
                 throw new ArgumentNullException(nameof(logAction), "[Logger::(ctor)Logger] Given parameter was null.");
+            }
 
             logStandardAction = logAction;
             logWarningAction = warnAction;

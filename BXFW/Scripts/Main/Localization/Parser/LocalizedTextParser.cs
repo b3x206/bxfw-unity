@@ -162,7 +162,9 @@ namespace BXFW.Data
 
                 // Ignore blank lines.
                 if (string.IsNullOrWhiteSpace(line))
+                {
                     continue;
+                }
 
                 // -- Pragma + comment lines
                 // NOTE : Only comment lines starting with ';' is ignored.
@@ -171,7 +173,9 @@ namespace BXFW.Data
                     string trimmedLine = line.Substring(trimCount); // because of this, this does contain rest of line
 
                     if (trimmedLine.StartsWith(CommentChar.ToString()))
+                    {
                         continue;
+                    }
 
                     // Check if pragma line
                     if (trimmedLine.StartsWith(PragmaDefChar.ToString()))
@@ -184,10 +188,12 @@ namespace BXFW.Data
                             string[] pragmaKeyValue = splitString.Split(new char[] { SpaceChar, VerticalTabChar, TabChar }, StringSplitOptions.RemoveEmptyEntries);
                             
                             if (pragmaKeyValue.Length != 2)
+                            {
                                 throw new ParseException(string.Format(
                                     "[LocalizationDictionaryParser::Parse] Error on '{0}:{1}' : Invalid pragma seperation. Expected length was 2, got '{2}'.", 
                                     i + 1, indexOfPragmaDef + PragmaDefString.Length, pragmaKeyValue.Length
                                 ));
+                            }
 
                             globalPragmaSettings.Add(pragmaKeyValue[0], pragmaKeyValue[1]);
                         }
@@ -347,9 +353,14 @@ namespace BXFW.Data
         public static string Save(List<LocalizedTextData> assets)
         {
             if (assets == null)
+            {
                 throw new ArgumentNullException("[LocalizedAssetParser::Save] Error while saving : argument named 'assets' passed is null.");
+            }
+
             if (assets.Count <= 0)
+            {
                 throw new ArgumentException("[LocalizedAssetParser::Save] Given save list is empty (Count <= 0).");
+            }
 
             // Save using the string builder.
             // Approximate capacity of the 'StringBuilder' is the length of the dictionary strings.

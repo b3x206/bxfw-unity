@@ -82,9 +82,14 @@ namespace BXFW
 
             // Get optional parameters
             if (lower <= -1)
+            {
                 lower = 0;
+            }
+
             if (upper <= -1)
+            {
                 upper = m_list.Count;
+            }
 
             int center = (upper + lower) / 2;                     // Center of array values
             T elem = m_list[center];                              // Element
@@ -155,7 +160,9 @@ namespace BXFW
 
                 // Current is larger than the next value, which is incorrect.
                 if (m_comparer.Compare(current, next) > 0)
+                {
                     return false;
+                }
             }
 
             return true;
@@ -231,7 +238,9 @@ namespace BXFW
         public T GetChecked(int index)
         {
             if (!IsSorted())
+            {
                 Sort();
+            }
 
             return m_list[index];
         }

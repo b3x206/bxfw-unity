@@ -13,18 +13,10 @@ namespace BXFW.Tweening.Next.Editor
         [Tooltip("The '.cs' is appended to the last file name."), EditDisallowChars("?<>:*|\"")]
         public string shorthandFileName = "Scripts/BXSTween/Extension/CustomExtension.cs";
 
-        // The 'targetTypeName' should be ensured that it can be accessed from both BXFW and Assembly-CSharp.
-        [SerializeField] private string targetTypeName = string.Empty;
-        private const AssemblyFlags TypeListAsmFlags = AssemblyFlags.BXFW | AssemblyFlags.BXFWEditor 
-            | AssemblyFlags.AssemblyCSharp | AssemblyFlags.AssemblyCSharpEditor 
-            | AssemblyFlags.UnityAssembly | AssemblyFlags.AssetScript;
-        public Type TargetType
-        {
-            get
-            {
-                return TypeListProvider.GetDomainTypesByPredicate((Type t) => t.IsPublic && t.Name == targetTypeName, TypeListAsmFlags).First();
-            }
-        }
+        // The 'targetTypeName' should be ensured that it can be accessed from both BXFW and Assembly-CSharp?
+        // Or just make it a local file lol and the people who know that there's no cyclic dependencies can just use it with that knowledge
+        // (which is me, this is just a tool for generating for unity types)
+        public SerializableSystemType targetExtensionType;
         public struct GenerateMethodInfo
         {
             public string methodName;

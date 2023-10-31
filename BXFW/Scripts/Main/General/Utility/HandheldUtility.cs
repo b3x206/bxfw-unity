@@ -35,7 +35,9 @@ namespace BXFW
                 AndroidJavaObject dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
 
                 if (view == null || dialog == null)
+                {
                     return 0;
+                }
 
                 int decorHeight = 0;
                 // The input box that appears on top when the keyboard is visible

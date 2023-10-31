@@ -16,7 +16,9 @@ namespace BXFW.ScriptEditor
             float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             if (!property.isExpanded)
+            {
                 return height;
+            }
 
             // ValueAnimatorBase.Sequence.Duration
             height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
@@ -42,7 +44,9 @@ namespace BXFW.ScriptEditor
             var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().value;
 
             if (!property.isExpanded)
+            {
                 return;
+            }
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);

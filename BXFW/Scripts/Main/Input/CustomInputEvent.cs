@@ -67,7 +67,9 @@ namespace BXFW
         public void Poll()
         {
             if (!isPolled)
+            {
                 return;
+            }
 
             foreach (KeyCode key in KeyCodeReq)
             {
@@ -113,7 +115,10 @@ namespace BXFW
             {
                 case InputEventType.None:
                     if (!isPolled)
+                    {
                         Debug.LogWarning("[CustomKeyEvent::Use] Called use even though this event isn't polled. Set 'isPolled' to true to fix this.");
+                    }
+
                     break;
 
                 default:
@@ -253,7 +258,9 @@ namespace BXFW
         public CustomInputEvent(List<KeyCode> keyCodes)
         {
             if (keyCodes == null)
+            {
                 throw new ArgumentNullException(nameof(keyCodes), "[CustomInputEvent::ctor()] Given List<KeyCode> parameter is null.");
+            }
 
             // For a participation trophy i added this ctor, enjoy (if you absolutely need performance)
             // This class will migrate to a 'List<KeyCode>' because then now you can add new keys from code.
@@ -267,7 +274,9 @@ namespace BXFW
         public CustomInputEvent(IList<KeyCode> keyCodes)
         {
             if (keyCodes == null)
+            {
                 throw new ArgumentNullException(nameof(keyCodes), "[CustomInputEvent::ctor()] Given 'keyCodes' parameter is null.");
+            }
 
             // While casting to 'List<KeyCode>' would have been faster, this method is way more type safe.
             // This class is meant to be constructed in the inspector anyways (or a MonoBehaviour ctor)
@@ -304,7 +313,9 @@ namespace BXFW
         public static bool operator ==(CustomInputEvent lhs, CustomInputEvent rhs)
         {
             if (Equals(lhs, null))
+            {
                 return Equals(rhs, null);
+            }
 
             return lhs.Equals(rhs);
         }
@@ -316,7 +327,9 @@ namespace BXFW
         public bool Equals(CustomInputEvent other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             return Enumerable.SequenceEqual(KeyCodeReq, other.KeyCodeReq);
         }

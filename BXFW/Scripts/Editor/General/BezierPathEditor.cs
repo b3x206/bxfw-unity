@@ -19,7 +19,9 @@ namespace BXFW.ScriptEditor
             float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             if (!property.isExpanded)
+            {
                 return height;
+            }
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
@@ -37,7 +39,9 @@ namespace BXFW.ScriptEditor
             property.isExpanded = EditorGUI.Foldout(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
             if (!property.isExpanded)
+            {
                 return;
+            }
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);

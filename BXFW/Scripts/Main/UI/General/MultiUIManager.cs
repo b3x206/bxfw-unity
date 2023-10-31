@@ -99,7 +99,9 @@ namespace BXFW.UI
         protected virtual void OnInitializeElement(TElement initializeElement)
         {
             if (initializeElement == null)
+            {
                 throw new ArgumentNullException(nameof(initializeElement), "[MultiUIManager::InitializeElement] Failed to initialize element.");
+            }
 
             // Transform stuff (because the child will be scaled weirdly)
             initializeElement.transform.SetParent(ParentTransform);
@@ -140,7 +142,9 @@ namespace BXFW.UI
         {
             int createIndex = m_Elements.Count;
             if (useReferenceElement)
+            {
                 useReferenceElement = m_Elements.Count > 0; // Check eligibility of using an reference element
+            }
 
             TElement element = OnCreateElement(useReferenceElement ? m_Elements[ReferenceElementIndex] : null);
 
@@ -309,9 +313,13 @@ namespace BXFW.UI
 #if UNITY_EDITOR
                 // Playing check
                 if (Application.isPlaying)
+                {
                     Destroy(destroyObject);
+                }
                 else
+                {
                     ManagerDestroyImmediate(destroyObject);
+                }
 #else
                 // No need for that on built games
                 Destroy(destroyObject);
@@ -326,9 +334,13 @@ namespace BXFW.UI
                     GameObject destroyObject = ParentTransform.GetChild(0).gameObject;
 #if UNITY_EDITOR
                     if (Application.isPlaying)
+                    {
                         Destroy(destroyObject);
+                    }
                     else
+                    {
                         ManagerDestroyImmediate(destroyObject);
+                    }
 #else
                     Destroy(destroyObject);
 #endif

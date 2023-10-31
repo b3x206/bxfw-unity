@@ -42,7 +42,9 @@ namespace BXFW
         {
             // Check if the rules apply for those values
             if (min > max)
+            {
                 max = min;
+            }
 
             m_Min = min;
             m_Max = max;
@@ -228,7 +230,9 @@ namespace BXFW
         public MinMaxValueInt(int min, int max)
         {
             if (min > max)
+            {
                 max = min;
+            }
 
             m_Min = min;
             m_Max = max;

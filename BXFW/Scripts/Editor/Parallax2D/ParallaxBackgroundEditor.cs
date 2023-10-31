@@ -51,7 +51,9 @@ namespace BXFW
             {
                 // Ensure only one window
                 if (pxWindow != null)
+                {
                     pxWindow.Close();
+                }
 
                 pxWindow = ParallaxBackgroundEditorWindow.CreateWindow(target);
             }
@@ -213,7 +215,9 @@ namespace BXFW
                 {
                     var spriteAddList = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                     if (spriteAddList == null)
+                    {
                         continue;
+                    }
 
                     listSprite.Add(spriteAddList);
                 }
@@ -434,7 +438,9 @@ namespace BXFW
                     foreach (var obj in targetGroup.Backgrounds)
                     {
                         if (obj == null)
+                        {
                             return;
+                        }
 
                         Undo.DestroyObjectImmediate(obj.gameObject);
                     }
@@ -458,7 +464,9 @@ namespace BXFW
                     foreach (var obj in targetGroup.Backgrounds)
                     {
                         if (obj == null)
+                        {
                             return;
+                        }
 
                         Undo.DestroyObjectImmediate(obj);
                     }

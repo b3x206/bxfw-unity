@@ -16,7 +16,9 @@ namespace BXFW
             get
             {
                 if (m_Instance != null)
+                {
                     return m_Instance;
+                }
 
                 // If instance isn't loaded, we need to load it.
                 // Simplest way to find instance is to call Resources.LoadAll<>() with a empty directory.
@@ -83,7 +85,9 @@ namespace BXFW
             var cInstance = CreateInstance<T>();
 
             if (enforceAssetPrefix && !fileName.EndsWith(ASSET_EXT_PREFIX))
+            {
                 fileName += ASSET_EXT_PREFIX;
+            }
 
             UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(relativeParentDir, fileName));
             UnityEditor.AssetDatabase.Refresh();

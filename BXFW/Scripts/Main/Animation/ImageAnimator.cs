@@ -15,14 +15,18 @@ namespace BXFW
             get
             {
                 if (targetImage == null)
+                {
                     TryGetComponent(out targetImage);
+                }
 
                 return targetImage.sprite;
             }
             protected set
             {
                 if (targetImage == null)
+                {
                     TryGetComponent(out targetImage);
+                }
 
                 targetImage.sprite = value;
             }

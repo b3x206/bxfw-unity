@@ -62,9 +62,13 @@ namespace BXFW
         public static float Map(float from, float to, float vFrom, float vTo, float value)
         {
             if (value <= vFrom)
+            {
                 return from;
+            }
             else if (value >= vTo)
+            {
                 return to;
+            }
 
             // a + ((b - a) * t) but goofy
             return from + ((to - from) * ((value - vFrom) / (vTo - vFrom)));
@@ -86,7 +90,10 @@ namespace BXFW
             // Normal related stuff
             cPointNormal = Vector3.Cross(v1, v2);
             if (cPointNormal.sqrMagnitude < Mathf.Epsilon)
+            {
                 return Vector3.one * float.NaN;
+            }
+
             cPointNormal.Normalize();
 
             // Perpendicular of both chords
@@ -102,7 +109,9 @@ namespace BXFW
             float d = (float)(r.magnitude * Math.Sin(a * Mathf.Deg2Rad) / Math.Sin(c * Mathf.Deg2Rad));
 
             if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0f)
+            {
                 return cPoint0 + (v2 * 0.5f) - (pd2 * d);
+            }
 
             return cPoint0 + (v2 * 0.5f) + (pd2 * d);
         }
@@ -143,13 +152,24 @@ namespace BXFW
         {
             // This is faster than 'for looping' the Vector4
             if (target.x > target.y && target.x > target.z && target.x > target.w)
+            {
                 return target.x;
+            }
+
             if (target.y > target.x && target.y > target.z && target.y > target.w)
+            {
                 return target.y;
+            }
+
             if (target.z > target.x && target.z > target.y && target.z > target.w)
+            {
                 return target.z;
+            }
+
             if (target.w > target.x && target.w > target.y && target.w > target.z)
+            {
                 return target.w;
+            }
 
             return target.x;
         }
@@ -159,11 +179,19 @@ namespace BXFW
         public static float MaxAxis(this Vector3 target)
         {
             if (target.x > target.y && target.x > target.z)
+            {
                 return target.x;
+            }
+
             if (target.y > target.x && target.y > target.z)
+            {
                 return target.y;
+            }
+
             if (target.z > target.y && target.z > target.x)
+            {
                 return target.z;
+            }
 
             return target.x;
         }
@@ -173,9 +201,14 @@ namespace BXFW
         public static float MaxAxis(this Vector2 target)
         {
             if (target.x > target.y)
+            {
                 return target.x;
+            }
+
             if (target.y > target.x)
+            {
                 return target.y;
+            }
 
             return target.x;
         }
@@ -186,13 +219,24 @@ namespace BXFW
         public static float MinAxis(this Vector4 target)
         {
             if (target.x < target.y && target.x < target.z && target.x < target.w)
+            {
                 return target.x;
+            }
+
             if (target.y < target.x && target.y < target.z && target.y < target.w)
+            {
                 return target.y;
+            }
+
             if (target.z < target.x && target.z < target.y && target.z < target.w)
+            {
                 return target.z;
+            }
+
             if (target.w < target.x && target.w < target.y && target.w < target.z)
+            {
                 return target.w;
+            }
 
             return target.x;
         }
@@ -202,11 +246,19 @@ namespace BXFW
         public static float MinAxis(this Vector3 target)
         {
             if (target.x < target.y && target.x < target.z)
+            {
                 return target.x;
+            }
+
             if (target.y < target.x && target.y < target.z)
+            {
                 return target.y;
+            }
+
             if (target.z < target.y && target.z < target.x)
+            {
                 return target.z;
+            }
 
             return target.x;
         }
@@ -216,9 +268,14 @@ namespace BXFW
         public static float MinAxis(this Vector2 target)
         {
             if (target.x < target.y)
+            {
                 return target.x;
+            }
+
             if (target.y < target.x)
+            {
                 return target.y;
+            }
 
             return target.x;
         }
@@ -490,7 +547,10 @@ namespace BXFW
         {
             Vector3 forward = new Vector3(matrix.m02, matrix.m12, matrix.m22);
             if (forward == Vector3.zero)
+            {
                 return Quaternion.identity; // Get identity rotation without logging message to the console
+            }
+
             Vector3 upwards = new Vector3(matrix.m01, matrix.m11, matrix.m21);
 
             return Quaternion.LookRotation(forward, upwards);
@@ -531,7 +591,9 @@ namespace BXFW
         public static void SetMatrix(this Transform transform, Matrix4x4 matrix, Space space = Space.World)
         {
             if (transform == null)
+            {
                 throw new ArgumentNullException(nameof(transform), "[MathUtility::SetMatrix] Passed parameter was null.");
+            }
 
             matrix.Deconstruct(out Vector3 position, out Quaternion rotation, out Vector3 scale);
 
@@ -541,7 +603,9 @@ namespace BXFW
                     transform.SetPositionAndRotation(position, rotation);
                     Vector3 parentLossyScale = Vector3.one;
                     if (transform.parent != null)
+                    {
                         parentLossyScale = transform.parent.lossyScale;
+                    }
 
                     transform.localScale = Vector3.Scale(parentLossyScale, scale);
                     break;
@@ -577,7 +641,7 @@ namespace BXFW
 
             for (int i = 0; i < 16; i++)
             {
-                ret[i] = Mathf.LerpUnclamped(src[i], dest[i], time);
+                ret[i] = src[i] + ((dest[i] - src[i]) * time);
             }
 
             return ret;

@@ -38,14 +38,18 @@ namespace BXFW
                     foreach (Transform rendAdd in transform)
                     {
                         if (rendAdd.TryGetComponent(out SpriteRenderer set))
+                        {
                             m_AllRendererObjects.Add(set);
+                        }
                     }
                 }
 
                 foreach (var rend in m_AllRendererObjects)
                 {
                     if (rend == null)
+                    {
                         Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Null renderer registered in object '{this.GetPath()}'.");
+                    }
 
                     rend.sortingOrder = value;
                 }
@@ -71,14 +75,18 @@ namespace BXFW
                     foreach (Transform rendAdd in transform)
                     {
                         if (rendAdd.TryGetComponent(out SpriteRenderer set))
+                        {
                             m_AllRendererObjects.Add(set);
+                        }
                     }
                 }
 
                 foreach (var rend in m_AllRendererObjects)
                 {
                     if (rend == null)
+                    {
                         Debug.LogWarning($"[TilingSpriteRenderer::(set)Color] Null renderer registered in object '{this.GetPath()}'.");
+                    }
 
                     rend.color = value;
                 }
@@ -106,14 +114,18 @@ namespace BXFW
                     foreach (Transform rendAdd in transform)
                     {
                         if (rendAdd.TryGetComponent(out SpriteRenderer set))
+                        {
                             m_AllRendererObjects.Add(set);
+                        }
                     }
                 }
 
                 foreach (var rend in m_AllRendererObjects)
                 {
                     if (rend == null)
+                    {
                         Debug.LogWarning($"[TilingSpriteRenderer::(set)TiledSprite] Null renderer registered in object '{this.GetPath()}'.");
+                    }
 
                     rend.sprite = m_TiledSprite;
                 }
@@ -129,7 +141,9 @@ namespace BXFW
             get
             {
                 if (m_AllRendererObjects.Count <= 0)
+                {
                     return m_TiledSprite != null ? m_TiledSprite.bounds : default;
+                }
 
                 return m_AllRendererObjects[0].bounds;
             }
@@ -167,7 +181,9 @@ namespace BXFW
                 m_GridX = Mathf.Clamp(value, 0, int.MaxValue);
 
                 if (prev != m_GridX)
+                {
                     GenerateGrid();
+                }
             }
         }
         [SerializeField] private int m_GridX = 0;
@@ -180,7 +196,9 @@ namespace BXFW
                 m_GridY = Mathf.Clamp(value, 0, int.MaxValue);
                 
                 if (prev != m_GridY)
+                {
                     GenerateGrid();
+                }
             }
         }
         [SerializeField] private int m_GridY = 1;
@@ -248,7 +266,9 @@ namespace BXFW
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)
+            {
                 return;
+            }
 #endif
             Initilaze();
 
@@ -278,7 +298,9 @@ namespace BXFW
         {
             // Set main camera
             if (resizeTargetCamera == null)
+            {
                 resizeTargetCamera = Camera.main;
+            }
 
             // Create correct scaled parent.
             GenerateCorrectScaleParent();
@@ -300,7 +322,9 @@ namespace BXFW
             if (m_TiledSprite == null)
             {
                 if (Application.isPlaying)
+                {
                     Debug.LogError($"[TilingSpriteRenderer::GenerateGrid] The tiledSprite variable is null on object \"{name}\".");
+                }
 
                 return false;
             }
@@ -318,7 +342,9 @@ namespace BXFW
 
             // Generate Object
             if ((m_GridX <= 0 || m_GridY <= 0) && !AutoTile)
+            {
                 return false; // No grid
+            }
 
             // Grid count
             int gX = ((AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? m_GridX : 1;
@@ -371,13 +397,19 @@ namespace BXFW
                     var t = CorrectScaledParent.GetChild(0);
 
                     if (t == null)
+                    {
                         continue;
+                    }
 
                     if (t == CorrectScaledParent)
+                    {
                         continue;
+                    }
 #if UNITY_EDITOR
                     if (Application.isEditor && !Application.isPlaying)
+                    {
                         UnityEditor.Undo.DestroyObjectImmediate(t.gameObject);
+                    }
                     else
 #endif
                     {

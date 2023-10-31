@@ -80,7 +80,9 @@ namespace BXFW
         public void SetupSnapTransform()
         {
             if (IsSetup)
+            {
                 return;
+            }
 
             m_SnapPoints = new Dictionary<SnapPoint, Transform>();
 
@@ -243,13 +245,20 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
 
             // Check and setup transforms.
             if (!IsSetup)
+            {
                 SetupSnapTransform();
+            }
+
             if (!transformTarget.IsSetup)
+            {
                 transformTarget.SetupSnapTransform();
+            }
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -296,11 +305,15 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
 
             // Check and setup transforms.
             if (!IsSetup)
+            {
                 SetupSnapTransform();
+            }
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -341,14 +354,21 @@ namespace BXFW
         public bool AlignTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, Vector3 alignAxis, bool alignTarget = true)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null || alignAxis == Vector3.zero) 
+            if (transformTarget == null || alignAxis == Vector3.zero)
+            {
                 return false;
+            }
 
             // Check and setup transforms.
             if (!IsSetup)
+            {
                 SetupSnapTransform();
+            }
+
             if (!transformTarget.IsSetup)
+            {
                 transformTarget.SetupSnapTransform();
+            }
 
             // -- Alignment
             var snapHelper = new GameObject("SnapHelper").transform;

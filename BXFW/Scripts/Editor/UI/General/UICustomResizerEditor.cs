@@ -64,9 +64,14 @@ namespace BXFW.ScriptEditor
 
             DrivenTransformProperties flags = DrivenTransformProperties.None;
             if (target.applyX)
+            {
                 flags |= DrivenTransformProperties.SizeDeltaX;
+            }
+
             if (target.applyY)
+            {
                 flags |= DrivenTransformProperties.SizeDeltaY;
+            }
 
             tracker.Add(target, target.RectTransform, flags);
         }
@@ -89,9 +94,14 @@ namespace BXFW.ScriptEditor
                     tracker.Clear();
                     DrivenTransformProperties flags = DrivenTransformProperties.None;
                     if (target.applyX)
+                    {
                         flags |= DrivenTransformProperties.SizeDeltaX;
+                    }
+
                     if (target.applyY)
+                    {
                         flags |= DrivenTransformProperties.SizeDeltaY;
+                    }
 
                     tracker.Add(target, target.RectTransform, flags);
                     break;

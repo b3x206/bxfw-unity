@@ -128,7 +128,9 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetStartValue()
         {
             if (GetterAction == null)
+            {
                 throw new NullReferenceException($"[BXSTweenContext<{typeof(TValue)}>::SetStartValue] Parameterless SetStartValue 'GetterAction()' value is null.");
+            }
 
             return SetStartValue(GetterAction());
         }
@@ -139,7 +141,9 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetStartValue(BXSGetterAction<TValue> getter)
         {
             if (getter == null)
+            {
                 throw new ArgumentNullException(nameof(getter), $"[BXSTweenContext<{typeof(TValue)}>::SetStartValue] Given argument is null.");
+            }
 
             GetterAction = getter;
             return SetStartValue(GetterAction());
@@ -172,7 +176,9 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetSetter(BXSSetterAction<TValue> setter)
         {
             if (setter == null)
+            {
                 throw new ArgumentNullException(nameof(setter), $"[BXSTweenContext<{typeof(TValue)}>::SetSetterAction] Given argument is null.");
+            }
 
             SetterAction = setter;
             return this;
@@ -268,7 +274,9 @@ namespace BXFW.Tweening.Next
             m_EaseCurve = curve;
 
             if (m_EaseCurve == null)
+            {
                 UseEaseCurve = false;
+            }
 
             return this;
         }

@@ -53,7 +53,9 @@ namespace BXFW.Tweening.Editor
             get
             {
                 if (currentSettings == null)
+                {
                     currentSettings = BXTweenSettings.Instance;
+                }
 
                 if (currentSettings == null)
                 {

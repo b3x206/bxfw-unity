@@ -148,7 +148,9 @@ namespace BXFW.Tools.Editor
         {
             // Create at the selected directory
             if (string.IsNullOrEmpty(path))
+            {
                 path = Selection.activeObject == null ? "Assets" : AssetDatabase.GetAssetPath(Selection.activeObject);
+            }
 
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), path)))
             {
@@ -208,7 +210,9 @@ namespace BXFW.Tools.Editor
         {
             int lastIndexOfPeriod = propertyPath.LastIndexOf('.');
             for (int i = 1; i < parentDepth; i++)
+            {
                 lastIndexOfPeriod = propertyPath.LastIndexOf('.', lastIndexOfPeriod - 1);
+            }
 
             if (lastIndexOfPeriod == -1)
             {
@@ -227,9 +231,14 @@ namespace BXFW.Tools.Editor
         private static PropertyTargetInfo GetTarget(UnityEngine.Object propertyRootParent, string propertyPath)
         {
             if (propertyRootParent == null)
+            {
                 throw new ArgumentNullException(nameof(propertyRootParent), "[EditorAdditionals::GetTarget] Given argument was null.");
+            }
+
             if (string.IsNullOrWhiteSpace(propertyPath))
+            {
                 throw new ArgumentNullException(nameof(propertyPath), "[EditorAdditionals::GetTarget] Given argument was null.");
+            }
 
             object parent = null;
             FieldInfo targetInfo = null;
@@ -262,8 +271,10 @@ namespace BXFW.Tools.Editor
                         var arrayIndex = int.Parse(m.Groups[1].Value);
 
                         if (!(target is IEnumerable targetAsArray))
+                        {
                             throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
+                        }
 
                         var enumerator = targetAsArray.GetEnumerator();
                         var isSuccess = false;
@@ -299,7 +310,9 @@ namespace BXFW.Tools.Editor
 
                         // Element doesn't exist in the array
                         if (!isSuccess)
+                        {
                             throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'.", propertyPath, targetAsArray));
+                        }
                     }
                     else // Array parse failure, should only happen on the ends of the array (i.e size field)
                     {
@@ -359,9 +372,14 @@ namespace BXFW.Tools.Editor
         public static void GetTargetsNoAlloc(this SerializedProperty prop, List<PropertyTargetInfo> targetInfos)
         {
             if (prop == null)
+            {
                 throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTargets] Parameter 'prop' is null.");
+            }
+
             if (targetInfos == null)
+            {
                 throw new ArgumentNullException(nameof(targetInfos), "[EditorAdditionals::GetTargets] Array Parameter 'targetPairs' is null.");
+            }
 
             targetInfos.Clear();
             targetInfos.Capacity = prop.serializedObject.targetObjects.Length;
@@ -370,7 +388,9 @@ namespace BXFW.Tools.Editor
             {
                 UnityEngine.Object targetedObject = prop.serializedObject.targetObjects[i];
                 if (targetedObject == null)
+                {
                     continue;
+                }
 
                 targetInfos.Add(GetTarget(targetedObject, prop.propertyPath));
             }
@@ -403,9 +423,14 @@ namespace BXFW.Tools.Editor
         public static void GetParentsOfTargetsNoAlloc(this SerializedProperty prop, List<PropertyTargetInfo> targetInfos, int parentDepth = 1)
         {
             if (prop == null)
+            {
                 throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetParentsOfTargetsNoAlloc] Parameter 'prop' is null.");
+            }
+
             if (targetInfos == null)
+            {
                 throw new ArgumentNullException(nameof(targetInfos), "[EditorAdditionals::GetParentsOfTargetsNoAlloc] Array Parameter 'targetPairs' is null.");
+            }
 
             targetInfos.Clear();
             targetInfos.Capacity = prop.serializedObject.targetObjects.Length;
@@ -414,7 +439,9 @@ namespace BXFW.Tools.Editor
             {
                 UnityEngine.Object targetedObject = prop.serializedObject.targetObjects[i];
                 if (targetedObject == null)
+                {
                     continue;
+                }
 
                 targetInfos.Add(GetTarget(targetedObject, GetParentTraversedPropertyPathString(prop.propertyPath, parentDepth)));
             }
@@ -447,7 +474,9 @@ namespace BXFW.Tools.Editor
         public static PropertyTargetInfo GetTarget(this SerializedProperty prop)
         {
             if (prop == null)
+            {
                 throw new ArgumentNullException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
+            }
 
             return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
         }
@@ -498,7 +527,9 @@ namespace BXFW.Tools.Editor
             int arrayDefLastIndex = property.propertyPath.LastIndexOf(SP_ARRAY_DATA_TK);
             // No define token
             if (arrayDefLastIndex < 0)
+            {
                 return -1;
+            }
 
             // Remove the enclosing bracket ']' token
             string indStr = property.propertyPath.Substring(arrayDefLastIndex + SP_ARRAY_DATA_TK.Length).TrimEnd(']');
@@ -511,10 +542,14 @@ namespace BXFW.Tools.Editor
         private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
             if (target == null)
+            {
                 throw new ArgumentNullException(nameof(target), "[EditorAdditionals::GetField] Error while getting field : Null 'target' object.");
+            }
 
             if (string.IsNullOrEmpty(name))
+            {
                 throw new ArgumentNullException(nameof(name), string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
+            }
 
             if (targetType == null)
             {
@@ -548,7 +583,9 @@ namespace BXFW.Tools.Editor
         public static PropertyDrawer GetPropertyDrawerFromType(Type targetType)
         {
             if (targetType == null)
+            {
                 throw new ArgumentNullException(nameof(targetType), "[EditorAdditionals::GetTargetPropertyDrawer] Given Type argument is null.");
+            }
 
             Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(PropertyDrawer))         // Internal class is contained in the same assembly (UnityEditor.CoreModule)
                 .GetType("UnityEditor.ScriptAttributeUtility", true)                             // Internal class that has dictionary for all custom PropertyDrawer's
@@ -556,7 +593,9 @@ namespace BXFW.Tools.Editor
                 .Invoke(null, new object[] { targetType });                                      // Call with the type parameter. It will return a type that needs instantiation using Activator.
 
             if (propertyDrawerType == null)
+            {
                 throw new ArgumentException($"[EditorAdditionals::GetTargetPropertyDrawer] Given type {targetType} has no property drawer. Ensure the type is valid and serializable by unity.", nameof(targetType));
+            }
 
             // PropertyDrawer's don't inherit UnityEngine.Object and thus can be created normally
             return (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
@@ -601,7 +640,9 @@ namespace BXFW.Tools.Editor
         public static PropertyDrawer GetTargetPropertyDrawer(PropertyDrawer requester)
         {
             if (requester == null)
+            {
                 throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
+            }
 
             // -- Assert the requester to be a property drawer for an attribute
             // - This is done to not get the same property drawer as the requester which may cause an overflow
@@ -611,10 +652,14 @@ namespace BXFW.Tools.Editor
                 .GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
             // Check if the CustomPropertyDrawer is for an attribute
             if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
+            {
                 throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
+            }
 
             if (!TryGetPropertyDrawerFromType(requester.fieldInfo.FieldType, out PropertyDrawer resultDrawer))
+            {
                 return null;
+            }
 
             //PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
@@ -638,7 +683,9 @@ namespace BXFW.Tools.Editor
             foreach (var i in ActiveEditorTracker.sharedTracker.activeEditors)
             {
                 if (i.serializedObject != obj)
+                {
                     continue;
+                }
 
                 i.Repaint();
             }
@@ -721,18 +768,24 @@ namespace BXFW.Tools.Editor
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
+                                {
                                     Pair.Value();
+                                }
                             }
 
                             if ((Pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            {
                                 EditorGUILayout.PropertyField(property, true);
+                            }
 
                             if ((Pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
                             {
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
+                                {
                                     Pair.Value();
+                                }
                             }
 
                             expanded = false;
@@ -761,7 +814,9 @@ namespace BXFW.Tools.Editor
         public static bool IsDisposed(this SerializedObject obj)
         {
             if (obj == null)
+            {
                 throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+            }
 
             return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
         }
@@ -771,7 +826,9 @@ namespace BXFW.Tools.Editor
         public static bool IsDisposed(this SerializedProperty obj)
         {
             if (obj == null)
+            {
                 throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+            }
 
             return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
         }
@@ -831,7 +888,9 @@ namespace BXFW.Tools.Editor
                 {
                     // Check if the 'currentProperty' is now equal to a 'non-children' property
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
+                    {
                         break;
+                    }
 
                     // Use '.Copy' for making 'Enumerable.ToArray' work
                     // This is due to yield return'd value will be always be the same 'currentProperty' if we don't copy it

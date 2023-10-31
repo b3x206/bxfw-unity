@@ -55,7 +55,9 @@ namespace BXFW
         private void Update()
         {
             if (!canInteract)
+            {
                 return;
+            }
 
             if (interactionInput)
             {
@@ -71,7 +73,9 @@ namespace BXFW
         public void Interact()
         {
             if (!canInteract)
+            {
                 return;
+            }
 
             int overlapBoxInteractedCount = Physics.OverlapBoxNonAlloc(
                 center: transform.InverseTransformPoint(InteractionPoint),

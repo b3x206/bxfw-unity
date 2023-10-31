@@ -30,7 +30,9 @@ namespace BXFW.UI
             get
             {
                 if (m_BackgroundImage == null)
+                {
                     m_BackgroundImage = GetComponent<Image>();
+                }
 
                 return m_BackgroundImage;
             }
@@ -172,7 +174,9 @@ namespace BXFW.UI
         public void OnPointerClick(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             ParentTabSystem.onTabButtonClicked?.Invoke(transform.GetSiblingIndex());
 
@@ -184,7 +188,9 @@ namespace BXFW.UI
         public void OnPointerDown(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -194,7 +200,9 @@ namespace BXFW.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -204,7 +212,9 @@ namespace BXFW.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -293,7 +303,9 @@ namespace BXFW.UI
         private void TweenColorFade(Color Target, float Duration)
         {
             if (!gameObject.activeInHierarchy)
+            {
                 return; // Do not start coroutines if the object isn't active.
+            }
 
             StartCoroutine(CoroutineTweenColorFade(Target, Duration));
         }
@@ -305,7 +317,9 @@ namespace BXFW.UI
             bool TargetIsPrevColor = Target == PrevColor;
 
             if (ParentTabSystem.FadeSubtractFromCurrentColor)
+            {
                 Target = TargetIsPrevColor ? Target : CurrentPrevColor - Target;
+            }
             // else, leave it unchanged
 
             if (!Application.isPlaying)

@@ -39,7 +39,9 @@ namespace BXFW
                 for (int i = 0; i < Count; i++)
                 {
                     if (this[i] < m_Min)
+                    {
                         this[i] = m_Min;
+                    }
                 }
             }
         }
@@ -57,7 +59,9 @@ namespace BXFW
                 for (int i = 0; i < Count; i++)
                 {
                     if (this[i] > m_Max)
+                    {
                         this[i] = m_Max;
+                    }
                 }
             }
         }

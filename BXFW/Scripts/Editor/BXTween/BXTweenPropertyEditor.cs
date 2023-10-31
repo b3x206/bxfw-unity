@@ -96,7 +96,10 @@ namespace BXFW.ScriptEditor
                 EditorGUI.PropertyField(GetPropertyRect(position), propRepeatAmount, new GUIContent("Repeat Amount", "Repeat amount of the tween. 0 and lower is no repeat."));
                 // Show repeat type if we are using repeats
                 if (propRepeatAmount.intValue > 0)
+                {
                     EditorGUI.PropertyField(GetPropertyRect(position), propRepeatType, new GUIContent("Repeat Type", "Repeat type of the tween. PingPong: Switch values for 1 repeat, Reset:"));
+                }
+
                 EditorGUI.PropertyField(GetPropertyRect(position), propTargetObject, new GUIContent("Target Object", "Tween target object. Set this to a value to keep the tween stop when the object is invalid/null."));
                 EditorGUI.PropertyField(GetPropertyRect(position), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
 
@@ -104,10 +107,14 @@ namespace BXFW.ScriptEditor
                 targetValue.UseTweenCurve = EditorGUI.Toggle(GetPropertyRect(position), new GUIContent("Use Custom Curve", "Use a custom easing curve."), targetValue.UseTweenCurve);
 
                 if (useTwCurve)
+                {
                     EditorGUI.PropertyField(GetPropertyRect(position), propTweenCurve, new GUIContent("Curve", "Custom easing curve."));
-                else 
+                }
+                else
+                {
                     EditorGUI.PropertyField(GetPropertyRect(position), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
-                
+                }
+
                 EditorGUI.PropertyField(GetPropertyRect(position), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
                     "When 'StartTween' is called, if the tween is already running 'StopTween' will invoke 'OnEnd' function (this may produce unwanted results on certain occassions). This prevents that. [Property-specific issue.]"));
                 EditorGUI.PropertyField(GetPropertyRect(position, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));

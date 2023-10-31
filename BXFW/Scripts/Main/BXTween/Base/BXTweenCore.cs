@@ -177,22 +177,32 @@ namespace BXFW.Tweening
                         if (ctx.InvokeDelayOnRepeat)
                         {
                             if (!CurrentSettings.ignoreTimeScale)
+                            {
                                 yield return new WaitForSeconds(ctx.Delay);
+                            }
                             else
+                            {
                                 yield return new WaitForSecondsRealtime(ctx.Delay);
+                            }
                         }
                     }
                     else
                     {
                         if (!CurrentSettings.ignoreTimeScale)
+                        {
                             yield return new WaitForSeconds(ctx.Delay);
+                        }
                         else
+                        {
                             yield return new WaitForSecondsRealtime(ctx.Delay);
+                        }
                     }
                 }
 
                 if (ctx.OnStartAction != null)
+                {
                     ctx.OnStartAction.Invoke();
+                }
 
                 // Main loop
                 float Elapsed = ctx.CurrentElapsed;
@@ -209,7 +219,9 @@ namespace BXFW.Tweening
                         // Check if the timescale is tampered with
                         // if it's below zero, just skip the frame
                         if (Time.timeScale <= 0f)
+                        {
                             canTick = false;
+                        }
                     }
                     // Tick cond check (should be true to tick)
                     if (ctx.TickTweenConditionFunction != null)
@@ -287,7 +299,9 @@ namespace BXFW.Tweening
                 {
                     // Infinitely loop if the 'RepeatAmount' is less than 0.
                     if (ctx.RepeatAmount > 0)
+                    {
                         ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
+                    }
 
                     // Repeat
                     // Invoke ending method on repeat.

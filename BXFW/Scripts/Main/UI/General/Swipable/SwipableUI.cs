@@ -211,7 +211,9 @@ namespace BXFW.UI
         public void OnDrag(PointerEventData data)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
 
@@ -251,7 +253,9 @@ namespace BXFW.UI
         public void OnEndDrag(PointerEventData data)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             float percentage = (data.pressPosition.x - data.position.x) / ItemContainer.rect.width;
 
@@ -315,7 +319,9 @@ namespace BXFW.UI
         private void Update()
         {
             if (m_scrollEventData == null)
+            {
                 return;
+            }
 
             // Tick the scroll cooldown
             // This will only proceed if there's no scroll delta.
@@ -332,7 +338,9 @@ namespace BXFW.UI
         {
             // Disable scroll if no sensitivity
             if (!IsScrollable)
+            {
                 return;
+            }
 
             if (m_scrollEventData == null)
             {

@@ -32,7 +32,9 @@ namespace BXFW.Tweening.Next
             public int CompareTo(RunnableTween other)
             {
                 if (other == null)
+                {
                     return 1;
+                }
 
                 return priority.CompareTo(other.priority);
             }
@@ -40,7 +42,9 @@ namespace BXFW.Tweening.Next
             public bool Equals(RunnableTween other)
             {
                 if (other == null)
+                {
                     return false;
+                }
 
                 return priority == other.priority && tween == other.tween;
             }
@@ -235,7 +239,9 @@ namespace BXFW.Tweening.Next
             set
             {
                 if (value == null)
+                {
                     throw new NullReferenceException(string.Format("[BXTweenSequence::(set)this[{0}]] Given value for index '{0}' is null.", index));
+                }
 
                 m_RunnableTweens[index].tween = value;
             }
@@ -256,10 +262,14 @@ namespace BXFW.Tweening.Next
         public void Join(BXSTweenable tween)
         {
             if (tween == null)
+            {
                 throw new ArgumentNullException(nameof(tween), "[BXSTweenSequence::Join] Given context parameter is null.");
+            }
 
             if (tween.IsPlaying)
+            {
                 tween.Stop();
+            }
 
             if (LastPriority <= -1)
             {
@@ -280,10 +290,14 @@ namespace BXFW.Tweening.Next
         public void JoinFirst(BXSTweenable ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXSTweenSequence::JoinFirst] Given context parameter is null.");
+            }
 
             if (ctx.IsPlaying)
+            {
                 ctx.Stop();
+            }
 
             m_RunnableTweens.Add(new RunnableTween(0, ctx));
             // First priority is invalid
@@ -296,10 +310,14 @@ namespace BXFW.Tweening.Next
         public void Append(BXSTweenable ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXSTweenSequence::Append] Given context parameter is null.");
+            }
 
             if (ctx.IsPlaying)
+            {
                 ctx.Stop();
+            }
 
             m_RunnableTweens.Add(new RunnableTween(NextPriority, ctx));
             // No cache modifications required, it will be calculated when needed
@@ -318,10 +336,14 @@ namespace BXFW.Tweening.Next
         public void Prepend(BXSTweenable ctx)
         {
             if (ctx == null)
+            {
                 throw new ArgumentNullException(nameof(ctx), "[BXTweenSequence::Prepend] Given context parameter is null.");
+            }
 
             if (ctx.IsPlaying)
+            {
                 ctx.Stop();
+            }
 
             foreach (var runnable in m_RunnableTweens)
             {
@@ -361,13 +383,19 @@ namespace BXFW.Tweening.Next
         public void CopyTo(BXSTweenable[] array, int arrayIndex)
         {
             if (array == null)
+            {
                 throw new ArgumentNullException(nameof(array));
+            }
 
             if (arrayIndex < 0 || arrayIndex >= array.Length)
+            {
                 throw new IndexOutOfRangeException($"[BXSTweenSequence::CopyTo] Given 'arrayIndex' is out of range. arrayIndex={arrayIndex}");
+            }
 
             if (m_RunnableTweens.Count + arrayIndex > array.Length)
+            {
                 throw new ArgumentException($"[BXSTweenSequence::CopyTo] Source array was not long enough. array.Length={array.Length}, arrayIndex={arrayIndex}", nameof(array));
+            }
 
             for (int i = arrayIndex; i < m_RunnableTweens.Count; i++)
             {
@@ -417,18 +445,24 @@ namespace BXFW.Tweening.Next
         public void RemovePriority(int priority)
         {
             if (priority < 0 || priority > LastPriority)
+            {
                 throw new IndexOutOfRangeException($"[BXSTweenSequence::RemovePriority] Failed to remove priority '{priority}' : Index was out of range.");
-            
+            }
+
             bool removedAny = m_RunnableTweens.RemoveAll(runnable => runnable.priority == priority) > 0;
             if (!removedAny)
+            {
                 return;
+            }
 
             // Invalidate durations
             m_priorityDurationCache.Clear();
 
             // Check if the last priority
             if (priority == LastPriority)
+            {
                 return;
+            }
 
             // Shift runnables (no tweens exist in given priority now)
             foreach (var afterPriorityRunnable in GetAfterPriorityRunnables(priority))
@@ -453,14 +487,18 @@ namespace BXFW.Tweening.Next
         public float PriorityDuration(int priority)
         {
             if (m_priorityDurationCache.TryGetValue(priority, out float cachedDuration))
+            {
                 return cachedDuration;
+            }
 
             float longestDuration = -1f;
             for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
                 var runnable = m_RunnableTweens[i];
                 if (runnable.priority != priority)
+                {
                     continue;
+                }
 
                 // LoopCount = 0 and 1 = play once, beyond that is play multiple times
                 // Infinite loops will be only waited out once per their duration and it won't be stopped.
@@ -482,7 +520,9 @@ namespace BXFW.Tweening.Next
         {
             RunnableTween r = m_RunnableTweens.Where(x => x.tween == item).FirstOrDefault();
             if (r == null)
+            {
                 return -1;
+            }
 
             return r.priority;
         }
@@ -495,7 +535,9 @@ namespace BXFW.Tweening.Next
             foreach (var runnable in m_RunnableTweens)
             {
                 if (runnable.priority > priority)
+                {
                     yield return runnable;
+                }
             }
         }
         /// <summary>
@@ -507,7 +549,9 @@ namespace BXFW.Tweening.Next
             {
                 var runnable = m_RunnableTweens[i];
                 if (runnable.priority == priority)
+                {
                     runnable.tween.Play();
+                }
             }
         }
 

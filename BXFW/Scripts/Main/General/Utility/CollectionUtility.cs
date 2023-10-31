@@ -29,7 +29,9 @@ namespace BXFW
         {
             // Match input
             if (src == null)
+            {
                 return null;
+            }
 
             // Get array dimensions
             int height = src.GetLength(0);
@@ -46,7 +48,9 @@ namespace BXFW
 
                 // Set source.
                 for (int j = 0; j < width; j++)
+                {
                     tgt[i][j] = src[i, j];
+                }
             }
 
             // Return it
@@ -63,9 +67,14 @@ namespace BXFW
         {
             // Match input
             if (src == null)
+            {
                 return null;
+            }
+
             if (converter is null)
+            {
                 throw new ArgumentNullException(nameof(converter));
+            }
 
             // Get array dimensions
             int iLen = src.GetLength(0);
@@ -82,7 +91,9 @@ namespace BXFW
                     tgt[i][j] = new TDest[kLen];
 
                     for (int k = 0; k < kLen; k++)
+                    {
                         tgt[i][j][k] = converter(src[i, j, k]);
+                    }
                 }
             }
 
@@ -140,7 +151,9 @@ namespace BXFW
 
             // Still zero? do nothing as there's no size.
             if (moveNextSize <= 0)
+            {
                 return default;
+            }
 
             // Get rng value (according to size)
 #if UNITY_5_3_OR_NEWER
@@ -155,7 +168,9 @@ namespace BXFW
             while (enumerator.MoveNext())
             {
                 if (current == rngValue)
+                {
                     return enumerator.Current;
+                }
 
                 current++;
             }
@@ -169,16 +184,23 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
         {
             if (values == null)
+            {
                 throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
+            }
+
             if (predicate == null)
+            {
                 throw new ArgumentNullException(nameof(predicate), "[CollectionUtility::GetRandom] 'predicate' is null.");
+            }
 
             IEnumerable<T> GetValuesFiltered()
             {
                 foreach (T elem in values)
                 {
                     if (!predicate(elem))
+                    {
                         continue;
+                    }
 
                     yield return elem;
                 }
@@ -192,15 +214,22 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values)
         {
             if (values == null)
+            {
                 throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
+            }
 
             // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
             int valuesSize = -1;
 
             if (values is ICollection<T> collection)
+            {
                 valuesSize = collection.Count;
+            }
+
             if (values is ICollection collection1)
+            {
                 valuesSize = collection1.Count;
+            }
 
             // Get size + check
             using (IEnumerator<T> enumerator = values.GetEnumerator())
@@ -355,10 +384,14 @@ namespace BXFW
         public static IEnumerable<TResult> Cast<TResult, TParam>(this IEnumerable<TParam> enumerable, Func<TParam, TResult> converter)
         {
             if (converter == null)
+            {
                 throw new NullReferenceException("[CollectionUtility::Cast] Given 'converter' parameter is null.");
+            }
 
             foreach (TParam t in enumerable)
+            {
                 yield return converter(t);
+            }
         }
         /// <summary>
         /// Allows enumerable to be iterable with an index.
@@ -419,7 +452,9 @@ namespace BXFW
         {
             // Optimize
             if (sz > list.Capacity)
+            {
                 list.Capacity = sz;
+            }
 
             Resize((IList<T>)list, sz, newT);
         }

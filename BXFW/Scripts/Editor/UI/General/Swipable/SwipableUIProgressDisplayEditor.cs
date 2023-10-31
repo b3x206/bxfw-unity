@@ -27,7 +27,9 @@ namespace BXFW.ScriptEditor
             {
                 target.UpdateElementsAppearance();
                 if (target.targetSwipableUI != null)
+                {
                     target.ElementCount = target.targetSwipableUI.MenuCount;
+                }
             }
 
             // Button + Warning for the 'TargetSwipableUI'

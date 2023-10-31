@@ -16,7 +16,9 @@ namespace BXFW
         public static void VerticesToMatrixSpaceNoAlloc(Mesh mesh, Matrix4x4 matrixSpace, List<Vector3> vertsArray)
         {
             if (mesh == null)
+            {
                 throw new ArgumentNullException(nameof(mesh), "[MeshUtility::VerticesToWorldSpaceNoAlloc] Passed 'mesh' argument is null.");
+            }
 
             // This method throws anyway if the 'vertsArray' is null, no need to check.
             mesh.GetVertices(vertsArray);
@@ -45,7 +47,9 @@ namespace BXFW
         public static void VerticesToWorldSpaceNoAlloc(this MeshFilter filter, List<Vector3> vertsArray)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[MeshUtility::VerticesToWorldSpaceNoAlloc] Passed 'filter' argument is null.");
+            }
 
             Mesh mesh;
 #if UNITY_EDITOR
@@ -62,7 +66,9 @@ namespace BXFW
         public static List<Vector3> VerticesToWorldSpace(this MeshFilter filter)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[MeshUtility::VerticesToWorldSpace] Passed 'filter' argument is null.");
+            }
 
             Mesh mesh;
 #if UNITY_EDITOR
@@ -108,15 +114,21 @@ namespace BXFW
         public static Vector3[] WorldVertsToLocalSpace(this MeshFilter filter, Vector3[] worldV)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[MeshUtility::WorldVertsToLocalSpace] Passed 'filter' argument is null.");
+            }
 
             Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
 
             if (vertsMesh == null)
+            {
                 throw new ArgumentException("[MeshUtility::WorldVertsToLocalSpace] Passed 'filter's mesh value is null.", nameof(filter.mesh));
+            }
 
             if (vertsMesh.vertexCount != worldV.Length)
+            {
                 throw new ArgumentException("[MeshUtility::WorldVertsToLocalSpace] The vertex count of passed array is not equal with mesh's vertex count.", nameof(worldV));
+            }
 
             Matrix4x4 worldToLocal = filter.transform.worldToLocalMatrix;
             Vector3[] localV = new Vector3[worldV.Length];

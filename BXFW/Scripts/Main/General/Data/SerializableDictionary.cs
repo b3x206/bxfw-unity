@@ -142,7 +142,9 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         protected static bool TypeIsNullable(Type t)
         {
             if (t == null)
+            {
                 throw new ArgumentNullException(nameof(t), "[SerializableDictionary::TypeIsNullable] Given argument was null.");
+            }
 
             return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
         }
@@ -276,7 +278,9 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
             int index = m_Keys.IndexOf(key);
 
             if (index < 0)
+            {
                 return false;
+            }
 
             // Set the size of the keys and values
             if (m_Values.Count != m_Keys.Count)
@@ -332,9 +336,14 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
             if (array == null)
+            {
                 throw new ArgumentNullException(nameof(array), "[SerializableDictionary::CopyTo] Argument was null.");
+            }
+
             if (array.Length < arrayIndex + Count)
+            {
                 throw new ArgumentException("[SerializableDictionary::CopyTo] Failed to copy into given array. Array length is smaller than dictionary or index is out of bounds", nameof(array));
+            }
 
             for (int i = 0; i < Count; i++)
             {

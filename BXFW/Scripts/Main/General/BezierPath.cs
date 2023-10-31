@@ -43,15 +43,14 @@ namespace BXFW
         public bool Equals(BezierPoint other)
         {
             if (other == null)
+            {
                 return false;
+            }
 
             return this == other;
         }
         public static bool operator ==(BezierPoint p1, BezierPoint p2)
         {
-            //if (p1 is null)
-            //    return p2 is null;
-
             return p1.position == p2.position && p1.handle == p2.handle;
         }
         public static bool operator !=(BezierPoint p1, BezierPoint p2)
@@ -232,11 +231,15 @@ namespace BXFW
 
             // Nothing to generate if there's only 1 control point.
             if (m_ControlPoints.Count <= 1)
+            {
                 return;
+            }
 
             // No points to generate per segment
             if (GeneratePointCount <= 0)
+            {
                 return;
+            }
 
             for (int s = 0; s < m_ControlPoints.Count - 1; s++)
             {
@@ -254,7 +257,9 @@ namespace BXFW
                 // p should be <= for last point check
                 // Generate bezier path.
                 if (PathPoints.Capacity < GeneratePointCount * s)
+                {
                     PathPoints.Capacity = GeneratePointCount * s; // lazily add more point capacity
+                }
 
                 for (int p = 0; p <= (GeneratePointCount / PerPointSegments); p++)
                 {
@@ -272,7 +277,9 @@ namespace BXFW
         public bool Equals(List<BezierPoint> other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             return m_ControlPoints.SequenceEqual(other);
         }

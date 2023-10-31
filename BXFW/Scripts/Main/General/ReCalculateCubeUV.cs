@@ -29,9 +29,14 @@ namespace BXFW
         {
             // Check whether re-calculation is necessary.
             if (m_currentCalcScale == transform.localScale)
+            {
                 return;
+            }
+
             if (CheckForDefaultSize())
+            {
                 return;
+            }
 
             // Get the mesh filter.
             var filter = GetComponent<MeshFilter>();
@@ -154,7 +159,9 @@ namespace BXFW
         private bool CheckForDefaultSize()
         {
             if (m_currentCalcScale != Vector3.one)
+            {
                 return false;
+            }
 
             // Set the 'MeshFilter' mesh null instead of destroying a component that we can reuse?
             if (!TryGetComponent(out MeshFilter filter))

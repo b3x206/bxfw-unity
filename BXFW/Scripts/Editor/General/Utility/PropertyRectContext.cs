@@ -14,9 +14,6 @@ namespace BXFW.Tools.Editor
     /// </remarks>
     public class PropertyRectContext
     {
-        // Is it viable(i read this as vtable someone help me) to call this class a 'factory'? lol.
-        // whatever this name will stay
-
         /// <summary>
         /// The current Y elapsed for this rect context.
         /// <br>Can be reset to zero using <see cref="Reset"/>.</br>

@@ -98,7 +98,9 @@ namespace BXFW
         public static long GetLong(string key, long defaultValue)
         {
             if (!HasKey<long>(key))
+            {
                 return defaultValue;
+            }
 
             return GetLong(key);
         }
@@ -130,7 +132,9 @@ namespace BXFW
         public static double GetDouble(string key, double defaultValue)
         {
             if (!HasKey<double>(key))
+            {
                 return defaultValue;
+            }
 
             return GetDouble(key);
         }
@@ -357,7 +361,9 @@ namespace BXFW
         public static bool HasKey<T>(string key)
         {
             if (string.IsNullOrEmpty(key))
+            {
                 return false;
+            }
 
             // type system abuse
             Type tType = typeof(T);

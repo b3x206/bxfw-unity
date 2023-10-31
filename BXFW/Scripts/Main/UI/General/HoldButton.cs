@@ -32,7 +32,9 @@ namespace BXFW.UI
         public override void OnPointerDown(PointerEventData eventData)
         {
             if (!IsInteractable())
+            {
                 return;
+            }
 
             base.OnPointerDown(eventData);
 
@@ -41,7 +43,9 @@ namespace BXFW.UI
         public override void OnPointerUp(PointerEventData eventData)
         {
             if (!IsInteractable())
+            {
                 return;
+            }
 
             base.OnPointerUp(eventData);
 
@@ -64,7 +68,9 @@ namespace BXFW.UI
         private void Update()
         {
             if (!holdable)
+            {
                 return;
+            }
 
             // Hold update
             if (!isPointerDown)

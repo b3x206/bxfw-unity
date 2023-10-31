@@ -191,7 +191,9 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
                 string saveKey = $"{m_noAllocPropertyStrings[i]}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{key}";
 
                 if (!targetDict.ContainsKey(saveKey))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -246,9 +248,14 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         private static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, string key, T value)
         {
             if (property == null || property.IsDisposed())
+            {
                 throw new ArgumentNullException(nameof(property), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.");
+            }
+
             if (string.IsNullOrWhiteSpace(key))
+            {
                 throw new ArgumentNullException(nameof(key), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given key is null.");
+            }
 
             GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
 
@@ -279,9 +286,14 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         private static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, Func<int, string> keyReturnPredicate, T value)
         {
             if (property == null || property.IsDisposed())
+            {
                 throw new ArgumentException($"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.", nameof(property));
+            }
+
             if (keyReturnPredicate == null)
+            {
                 throw new ArgumentNullException(nameof(keyReturnPredicate), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given argument is null.");
+            }
 
             GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
 
@@ -344,7 +356,9 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         public static string GetString(this SerializedProperty property, string key, string defaultValue)
         {
             if (!HasStringKey(property, key))
+            {
                 return defaultValue;
+            }
 
             return GetValue(MainContainer.savedStringValues, property, key);
         }
@@ -398,7 +412,9 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         public static long GetLong(this SerializedProperty property, string key, long defaultValue)
         {
             if (!HasLongKey(property, key))
+            {
                 return defaultValue;
+            }
 
             return GetValue(MainContainer.savedIntValues, property, key);
         }

@@ -43,7 +43,9 @@ namespace BXFW
                 {
                     // no data : no list
                     if (localeData == null)
+                    {
                         return null;
+                    }
 
                     localeTextData = LocalizedTextParser.Parse(localeData.text);
                 }
@@ -145,7 +147,9 @@ namespace BXFW
             if (target == null)
             {
                 if (logErrors)
+                {
                     Debug.LogError(string.Format("[LocalizedText::Apply] Text on {0} doesn't have target.", this.GetPath()));
+                }
 
                 return;
             }
@@ -153,19 +157,25 @@ namespace BXFW
             if (localeData != null)
             {
                 if (localeData.text != null)
+                {
                     localeTextData ??= LocalizedTextParser.Parse(localeData.text);
+                }
                 else
                 {
                     if (logErrors)
+                    {
                         Debug.LogWarning(string.Format("[LocalizedText::Apply] Text on {0} doesn't have a 'localeData' field with text on it assigned.", this.GetPath()));
-                
+                    }
+
                     return;
                 }
             }
             else
             {
                 if (logErrors)
+                {
                     Debug.LogWarning(string.Format("[LocalizedText::Apply] Text on {0} doesn't have a 'localeData' field assigned.", this.GetPath()));
+                }
 
                 return;
             }
@@ -178,13 +188,17 @@ namespace BXFW
                 string v = string.Empty;
                 // will throw an exception if the pragma value is invalid.
                 if (data?.PragmaDefinitions.TryGetValue(PRAGMA_REPLACE_TMP_CHARS, out v) ?? false)
+                {
                     replaceInvalidChars = bool.Parse(v);
+                }
             }
 
             if (data == null)
             {
                 if (logErrors)
+                {
                     Debug.LogError(string.Format("[LocalizedText::Apply] Text on {0} has invalid id '{1}'.", this.GetPath(), textID));
+                }
 
                 return;
             }
@@ -194,14 +208,20 @@ namespace BXFW
                 string setData = string.Empty;
 #if UNITY_EDITOR
                 if (data.ContainsLocale(spoofLocale))
+                {
                     setData = data[spoofLocale];
+                }
                 else
+                {
                     setData = data.GetCurrentLocaleString();
+                }
 #else
                 setData = data.GetCurrentLocaleString();
 #endif
                 if (replaceInvalidChars)
+                {
                     setData = RemoveDiacritics(setData, (char c) => target.font.HasCharacter(c));
+                }
 
                 if (fmt.Length > 0)
                 { 

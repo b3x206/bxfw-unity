@@ -22,7 +22,9 @@ namespace BXFW.ScriptEditor
             var target = base.target as TilingSpriteRenderer;
             // Only do drawing if the target is autotile
             if (!target.AutoTile)
+            {
                 return;
+            }
 
             Transform tTrs = target.transform;
 
@@ -65,7 +67,9 @@ namespace BXFW.ScriptEditor
             // TODO : Merge undos into one using the Undo group creation outside the foreach
             //var Targets = targets.Cast<TilingSpriteRenderer>();
             if (target == null)
+            {
                 target = (TilingSpriteRenderer)base.target;
+            }
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(undoMsg);
@@ -79,7 +83,9 @@ namespace BXFW.ScriptEditor
             foreach (SpriteRenderer sr in target.AllRendererObjects)
             {
                 if (sr == null)
+                {
                     continue;
+                }
 
                 m_undoRecord.Add(sr.gameObject);
             }
@@ -94,7 +100,9 @@ namespace BXFW.ScriptEditor
             foreach (var undoRegister in target.AllRendererObjects.Where(sr => !m_undoRecord.Contains(sr.gameObject)))
             {
                 if (undoRegister == null)
+                {
                     continue;
+                }
 
                 Undo.RegisterCreatedObjectUndo(undoRegister.gameObject, string.Empty);
             }

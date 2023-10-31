@@ -54,7 +54,9 @@ namespace BXFW.ScriptEditor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (target.fieldInfo == null)
+            {
                 target = property.GetTarget();
+            }
 
             // Draw an object field for sprite property
             if (target.fieldInfo.FieldType != typeof(Sprite))
@@ -622,7 +624,9 @@ namespace BXFW.ScriptEditor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property.propertyType != SerializedPropertyType.String)
+            {
                 return WARN_BOX_HEIGHT;
+            }
 
             return EditorGUI.GetPropertyHeight(property, label, true);
         }
@@ -813,13 +817,24 @@ namespace BXFW.ScriptEditor
                         foreach (Type interfaceType in interfaces)
                         {
                             if (!hasType1)
+                            {
                                 hasType1 = interfaceType == Attribute.interfaceType1;
+                            }
+
                             if (!hasType2)
+                            {
                                 hasType2 = interfaceType == Attribute.interfaceType2;
+                            }
+
                             if (!hasType3)
+                            {
                                 hasType3 = interfaceType == Attribute.interfaceType3;
+                            }
+
                             if (!hasType4)
+                            {
                                 hasType4 = interfaceType == Attribute.interfaceType4;
+                            }
                         }
                         if (hasType1 && hasType2 && hasType3 && hasType4)
                         {

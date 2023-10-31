@@ -79,7 +79,9 @@ namespace BXFW.UI
         public void ExitCurrentMenu()
         {
             if (!InsideMenu)
+            {
                 return;
+            }
 
             m_CurrentUIMenu.CloseMenu();
             m_CurrentUIMenu = null;
@@ -122,7 +124,9 @@ namespace BXFW.UI
             {
                 var subMenu = m_CurrentUISubMenus[i];
                 if (subMenu != null)
+                {
                     subMenu.CloseMenu();
+                }
 
                 m_CurrentUISubMenus.RemoveAt(i);
             }

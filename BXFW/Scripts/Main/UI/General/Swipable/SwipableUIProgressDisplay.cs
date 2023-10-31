@@ -153,13 +153,17 @@ namespace BXFW.UI
                 // -- Hardcoded defaults
                 // Add layout group & content resizer to this object as this moment is 'probably' the first time this gameobject is created.
                 if (!gameObject.TryGetComponent(out HorizontalLayoutGroup contentLayout))
+                {
                     contentLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
+                }
 
                 contentLayout.spacing = 10f;
                 contentLayout.childAlignment = TextAnchor.MiddleCenter;
 
                 if (!gameObject.TryGetComponent(out ContentSizeFitter contentSizeFitter))
+                {
                     contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
+                }
 
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
                 contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
@@ -178,7 +182,9 @@ namespace BXFW.UI
         public override void UpdateElementsAppearance()
         {
             if (targetSwipableUI == null)
+            {
                 return;
+            }
 
             switch (childImageFadeType)
             {

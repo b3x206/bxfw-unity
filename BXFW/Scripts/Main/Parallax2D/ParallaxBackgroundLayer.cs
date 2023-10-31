@@ -74,9 +74,13 @@ namespace BXFW
                 positionDelta.x += dist;
 
                 if (temp > m_startPos.x + m_length)
+                {
                     m_startPos.x += m_length;
+                }
                 else if (temp < m_startPos.x - m_length)
+                {
                     m_startPos.x -= m_length;
+                }
             }
             if ((parentGroup.scrollAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis)
             {

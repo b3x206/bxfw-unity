@@ -73,7 +73,9 @@ namespace BXFW
         public static string GetPath(this Transform target)
         {
             if (target.parent == null)
+            {
                 return string.Format("/{0}", target.name);
+            }
 
             return string.Format("{0}/{1}", target.parent.GetPath(), target.name);
         }
@@ -414,7 +416,9 @@ namespace BXFW
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
             if (type.BaseType == null)
+            {
                 return type.GetInterfaces();
+            }
 
             return Enumerable.Repeat(type.BaseType, 1)
                              .Concat(type.GetInterfaces())
@@ -447,7 +451,7 @@ namespace BXFW
                 .GetTypes()
                 .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
         }
-        
+
         // -- Serialization (?)
         /// <summary>
         /// Returns a byte array from an object.

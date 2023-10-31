@@ -36,7 +36,9 @@ namespace BXFW
                 m_GroupColor = value;
 
                 if (!useGlobalGroupColor)
+                {
                     return;
+                }
 
                 foreach (var obj in Backgrounds)
                 {

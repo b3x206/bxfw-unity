@@ -56,8 +56,10 @@ namespace BXFW.ScriptEditor
         public static void HideDropdown()
         {
             if (Instance == null)
+            {
                 return;
-            
+            }
+
             Instance.Close();
         }
         /// <summary>
@@ -67,7 +69,9 @@ namespace BXFW.ScriptEditor
         public static void SetPosition(Rect screenPosition)
         {
             if (Instance == null)
+            {
                 return;
+            }
 
             Instance.position = screenPosition;
         }

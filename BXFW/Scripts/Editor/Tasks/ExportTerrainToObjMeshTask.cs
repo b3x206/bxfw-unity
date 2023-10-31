@@ -233,7 +233,9 @@ namespace BXFW.Tools.Editor
         private void UpdateProgress()
         {
             if (progressCounter++ != PROGRESS_COUNT_INTERVAL)
+            {
                 return;
+            }
 
             progressCounter = 0;
             EditorUtility.DisplayProgressBar("[ExportTerrainToObj::Run] Saving...", "", Mathf.InverseLerp(0, totalCount, ++elapsedCount));

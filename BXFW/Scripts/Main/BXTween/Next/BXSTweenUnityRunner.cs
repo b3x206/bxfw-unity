@@ -61,9 +61,14 @@ namespace BXFW.Tweening.Next
             public int CompareTo(ObjectRegistry other)
             {
                 if (other == null || other.unityObject == null)
+                {
                     return 1;
+                }
+
                 if (unityObject == null)
+                {
                     return other.unityObject == null ? 0 : 1;
+                }
 
                 return unityObject.GetInstanceID().CompareTo(other.unityObject.GetInstanceID());
             }
@@ -77,11 +82,15 @@ namespace BXFW.Tweening.Next
             where TDispatchObject : class
         {
             if (id == BXSTween.NoID)
+            {
                 return null;
+            }
 
             int index = m_idObjectRegistries.FindIndex(reg => GetIDFromObject(reg.unityObject) == id);
             if (index < 0)
+            {
                 return null;
+            }
 
             return m_idObjectRegistries[index].unityObject as TDispatchObject;
         }

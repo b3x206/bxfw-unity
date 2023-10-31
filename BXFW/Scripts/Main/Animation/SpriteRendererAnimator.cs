@@ -14,14 +14,18 @@ namespace BXFW
             get
             {
                 if (targetRenderer == null)
+                {
                     TryGetComponent(out targetRenderer);
+                }
 
                 return targetRenderer.sprite;
             }
             protected set
             {
                 if (targetRenderer == null)
+                {
                     TryGetComponent(out targetRenderer);
+                }
 
                 targetRenderer.sprite = value;
             }

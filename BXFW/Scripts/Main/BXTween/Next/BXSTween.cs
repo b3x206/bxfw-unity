@@ -64,7 +64,9 @@ namespace BXFW.Tweening.Next
                 if (m_MainRunner == null)
                 {
                     if (NeedsInitialize)
+                    {
                         return null;
+                    }
 
                     Initialize(m_GetMainRunnerAction, MainLogger);
                 }
@@ -89,7 +91,9 @@ namespace BXFW.Tweening.Next
         public static void SetLogger(Logger logger)
         {
             if (logger == null)
+            {
                 throw new ArgumentNullException(nameof(logger), "[BXSTween::SetLogger] Given argument was null.");
+            }
 
             MainLogger = logger;
         }
@@ -109,9 +113,14 @@ namespace BXFW.Tweening.Next
         public static void Initialize(BXSGetterAction<IBXSTweenRunner> getRunnerAction, Logger logger)
         {
             if (getRunnerAction == null)
+            {
                 throw new ArgumentNullException(nameof(getRunnerAction), "[BXSTween::Initialize] Given parameter is null.");
+            }
+
             if (logger == null)
+            {
                 throw new ArgumentNullException(nameof(logger), "[BXSTween::Initialize] Given parameter is null.");
+            }
 
             // Call this first to call all events on the 'OnRunnerExit'
             MainRunner?.Kill();
@@ -135,7 +144,9 @@ namespace BXFW.Tweening.Next
             {
                 BXSTweenable tween = RunningTweens[i];
                 if (tween == null)
+                {
                     continue;
+                }
 
                 tween.Stop();
             }
@@ -302,7 +313,9 @@ namespace BXFW.Tweening.Next
             if (tween.StartingLoopCount < 0 || tween.LoopsElapsed < tween.StartingLoopCount)
             {
                 if (tween.StartingLoopCount > 0)
+                {
                     tween.LoopsElapsed++;
+                }
 
                 // Call this before just in case the parameters are changed
                 try
@@ -317,7 +330,9 @@ namespace BXFW.Tweening.Next
                 // Reset the base while looping
                 tween.Reset();
                 if (tween.LoopType == LoopType.Yoyo)
+                {
                     tween.IsTargetValuesSwitched = !tween.IsTargetValuesSwitched;
+                }
 
                 return;
             }
@@ -336,7 +351,9 @@ namespace BXFW.Tweening.Next
             runner.OnRunnerTick += OnTweenRunnerTick;
 
             if (runner.SupportsFixedTick)
+            {
                 runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+            }
         }
 
         private static void OnTweenRunnerTick(IBXSTweenRunner runner)

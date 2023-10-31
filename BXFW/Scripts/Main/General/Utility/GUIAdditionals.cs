@@ -174,9 +174,14 @@ namespace BXFW
                     ((int)guiOptionTypeField.GetValue(o)) == 3
                 );
                 if (minWidthOption != null)
+                {
                     minWidth = (float)guiOptionValueField.GetValue(minWidthOption);
+                }
+
                 if (maxWidthOption != null)
+                {
                     maxWidth = (float)guiOptionValueField.GetValue(maxWidthOption);
+                }
 
                 GUILayoutOption minHeightOption = options.SingleOrDefault(o =>
                     // GUILayoutOption.Type.minHeight == 4
@@ -187,9 +192,14 @@ namespace BXFW
                     ((int)guiOptionTypeField.GetValue(o)) == 5
                 );
                 if (minHeightOption != null)
+                {
                     minHeight = (float)guiOptionValueField.GetValue(minHeightOption);
+                }
+
                 if (maxHeightOption != null)
+                {
                     maxHeight = (float)guiOptionValueField.GetValue(maxHeightOption);
+                }
 
                 // -- Fixed size options (override)
                 GUILayoutOption fixedWidthOption = options.SingleOrDefault(o =>
@@ -242,14 +252,21 @@ namespace BXFW
             var guiMat = GUI.matrix;
 
             if (start == end)
+            {
                 return;
+            }
+
             if (width <= 0)
+            {
                 return;
+            }
 
             Vector2 d = end - start;
             float a = Mathf.Rad2Deg * Mathf.Atan(d.y / d.x);
             if (d.x < 0)
+            {
                 a += 180;
+            }
 
             int width2 = (int)Mathf.Ceil(width / 2);
 
@@ -288,9 +305,14 @@ namespace BXFW
             PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE, wordWrap = true };
 
             if (segments < 1)
+            {
                 segments = 2;
+            }
+
             if ((vFrom + PLOT_DRAW_EPSILON) >= vTo)
+            {
                 vFrom = vTo - PLOT_DRAW_EPSILON;
+            }
 
             // Draw dark box behind
             var guiPrevColor = GUI.color;
@@ -321,12 +343,19 @@ namespace BXFW
                 float plotValue = plotFunction(lerpValue);
 
                 if (!Mathf.Approximately(plotValue, 0f))
+                {
                     allValuesZero = false;
+                }
 
                 if (plotValue > localMaximum)
+                {
                     localMaximum = plotValue;
+                }
+
                 if (plotValue < localMinimum)
+                {
                     localMinimum = plotValue;
+                }
             }
 
             // Labels have a reserved 'PLOT_TEXT_PADDING' width
@@ -393,7 +422,9 @@ namespace BXFW
 
             // Only do this plotting if we are actually drawing and not layouting
             if (Event.current.type != EventType.Repaint)
+            {
                 return;
+            }
 
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
@@ -538,7 +569,9 @@ namespace BXFW
 
             // This is indeed redundant code, BUT: we also apply transform data to camera also so this is required
             if (camProj == Matrix4x4.identity)
+            {
                 camProj = Matrix4x4.Ortho(-1, 1, -1, 1, 0.01f, 1024f);
+            }
 
             Matrix4x4 matrixCamPos = Matrix4x4.TRS(camPos, camRot, new Vector3(1, 1, -1));
             Matrix4x4 matrixCam = (camProj * matrixCamPos.inverse);
@@ -668,7 +701,9 @@ namespace BXFW
 
             // This is indeed redundant code, BUT: we also apply transform data to camera also so this is required
             if (camProj == Matrix4x4.identity)
+            {
                 camProj = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+            }
 
             Matrix4x4 matrixCamPos = Matrix4x4.TRS(camPos, camRot, new Vector3(1, 1, -1));
             Matrix4x4 matrixCam = camProj * matrixCamPos.inverse;

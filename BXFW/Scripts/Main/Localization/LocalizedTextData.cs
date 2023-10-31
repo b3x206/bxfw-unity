@@ -92,7 +92,9 @@ namespace BXFW.Data
             get
             {
                 if (!m_LocaleDatas.TryGetValue(key, out string value))
+                {
                     return string.Format("{0} (no-locale) | {1}", key, TextID); // OnError, just return the problematic TextID.
+                }
 
                 return value;
             }
@@ -121,10 +123,14 @@ namespace BXFW.Data
 
             var locale = CurrentISOLocaleName;
             if (ContainsLocale(locale))
+            {
                 return this[locale];
+            }
 
             if (ContainsLocale(DefaultLocale))
+            {
                 return this[DefaultLocale];
+            }
 
             // Return the first in values
             Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
@@ -267,7 +273,9 @@ namespace BXFW.Data
         public bool Equals(LocalizedTextData other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             // Pragma settings can be different, idc.
             return TextID.Equals(other.TextID, StringComparison.Ordinal) && 

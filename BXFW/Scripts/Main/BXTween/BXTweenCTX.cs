@@ -405,7 +405,9 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetTargetObject(UnityEngine.Object obj, bool overrideNull = false)
         {
             if (obj == null && !overrideNull)
+            {
                 return this;
+            }
 
             _TargetObj = obj;
 
@@ -532,11 +534,19 @@ namespace BXFW.Tweening
 
             // Classes that need to be copied in other ways require other methods.
             if (copyFrom.CustomTimeCurve != null)
+            {
                 SetCustomCurve(new AnimationCurve(copyFrom.CustomTimeCurve.keys));
+            }
+
             if (copyFrom.OnEndAction != null)
+            {
                 SetEndingEvent(copyFrom.OnEndAction);
+            }
+
             if (copyFrom.OnEndActionUnityEvent != null)
+            {
                 SetEndingEvent(copyFrom.OnEndActionUnityEvent);
+            }
 
             // !! setter(s), must not be null
             SetEase(copyFrom.Easing);
@@ -586,7 +596,10 @@ namespace BXFW.Tweening
 
             // Checks
             if (IsRunning)
+            {
                 StopTween();
+            }
+
             if (!UpdateContextCoroutine())
             {
                 // Iterator coroutine failed.
@@ -623,7 +636,9 @@ namespace BXFW.Tweening
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
+                {
                     Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+                }
 
                 return;
             }
@@ -676,7 +691,9 @@ namespace BXFW.Tweening
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
+                {
                     Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+                }
 
                 return;
             }
@@ -741,13 +758,24 @@ namespace BXFW.Tweening
             try
             {
                 if (OnEndAction != null)
+                {
                     OnEndAction.Invoke();
+                }
+
                 if (PersistentOnEndAction != null)
+                {
                     PersistentOnEndAction.Invoke();
+                }
+
                 if (TweenCompleteAction != null)
+                {
                     TweenCompleteAction.Invoke();
+                }
+
                 if (OnEndActionUnityEvent != null)
+                {
                     OnEndActionUnityEvent.Invoke(this);
+                }
             }
             catch (Exception e)
             {

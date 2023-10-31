@@ -109,7 +109,9 @@ namespace BXFW
         public override bool Equals(object obj)
         {
             if (!(obj is ChanceValue<T> other))
+            {
                 return false;
+            }
 
             return Equals(other);
         }
@@ -199,7 +201,9 @@ namespace BXFW
             filterList.AddRange(m_list.Where(cd => filter(cd.Value)));
 
             if (filterList.Count <= 0)
+            {
                 throw new InvalidOperationException("[ChanceGroupList::GetData] No data in filtered list. Please make sure the filter predicate is valid.");
+            }
 
             // don't adjust the chances of the 'ChanceData's (because the classes are refs),
             // instead get a random value between zero and the existing sum of this array.
@@ -216,12 +220,16 @@ namespace BXFW
         protected static T GetRandomInternal(in List<ChanceValue<T>> list, float randUpperLimit = ChanceUpperLimit)
         {
             if (list == null)
+            {
                 throw new NullReferenceException("[ChanceDataList::GetRand] Array passed is null.");
+            }
 
             if (list.Count < 1)
             {
                 if (list.Count <= 0)
+                {
                     throw new InvalidOperationException("[ChanceDataList::GetRand] Array has no elements!");
+                }
 
                 return list[0].Value;  // Always return the first object
             }
@@ -263,7 +271,9 @@ namespace BXFW
         public ChanceValuesList(IEqualityComparer<T> comparer)
         {
             if (comparer == null)
+            {
                 throw new ArgumentNullException(nameof(comparer), "[ChanceValuesList::ctor] Given argument was null.");
+            }
 
             this.comparer = comparer;
         }
@@ -287,7 +297,9 @@ namespace BXFW
             : this(collection)
         {
             if (comparer == null)
+            {
                 throw new ArgumentNullException(nameof(comparer), "[ChanceValuesList::ctor] Given argument was null.");
+            }
 
             this.comparer = comparer;
         }
@@ -312,7 +324,9 @@ namespace BXFW
         {
             // Item chance requires no reserving
             if (item.Chance < float.Epsilon)
+            {
                 return;
+            }
 
             float decrementChance = item.Chance / m_list.Count;
             // If the item has chance, lower all others
@@ -328,7 +342,9 @@ namespace BXFW
 
             // Sum is already at the upper limit
             if (sum + float.Epsilon >= ChanceUpperLimit)
+            {
                 return;
+            }
 
             for (int i = 0; i < m_list.Count; i++)
             {
@@ -350,7 +366,9 @@ namespace BXFW
             {
                 // Only don't set the already set chance.
                 if (i == index)
+                {
                     continue;
+                }
 
                 // Set all to evenly distribute the sum
                 m_list[i].Chance += chanceDelta / (m_list.Count - 1);
@@ -360,12 +378,16 @@ namespace BXFW
         public void SetChance(T value, float chance)
         {
             if (value == null)
+            {
                 throw new ArgumentNullException(nameof(value), "[ChanceDataList::SetChance] Given argument was null.");
+            }
 
             int indexOfData = m_list.IndexOf((chanceData) => comparer.Equals(chanceData.Value, value));
 
             if (indexOfData == -1)
+            {
                 return;
+            }
 
             SetChance(indexOfData, chance);
         }
@@ -378,7 +400,9 @@ namespace BXFW
         {
             // Assert item to be not null
             if (item == null)
+            {
                 throw new ArgumentNullException(nameof(item), "[ChanceDataList::Add] Given argument was null.");
+            }
 
             ReserveChanceForItem(item);
             m_list.Add(item);

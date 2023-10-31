@@ -40,7 +40,9 @@ namespace BXFW.ScriptEditor
         private Rect GetPosition(Rect position, float height = -1f)
         {
             if (height < 0f)
+            {
                 height = DefaultGUIHeight;
+            }
 
             Rect r = new Rect
             {
@@ -98,7 +100,9 @@ namespace BXFW.ScriptEditor
             {
                 // Check type of dragged elements
                 if (DragAndDrop.objectReferences.Length <= 0)
+                {
                     return;
+                }
 
                 Type targetType = fieldInfo.FieldType.GetBaseTypes()
                     .First(t => t.GetGenericTypeDefinition() == typeof(ChanceValuesList<>))
@@ -108,7 +112,9 @@ namespace BXFW.ScriptEditor
                 // Only supports by reference serialized stuff's drag/drop
                 // Won't support that dumb attribute, like seriously?
                 if (!targetType.GetBaseTypes().Any(t => t == typeof(UnityEngine.Object)))
+                {
                     return;
+                }
 
                 // Only equally distribute the chances if there's no elements in the array, otherwise set the chances to 0
                 var objsFiltered = DragAndDrop.objectReferences.Where((obj) =>
@@ -129,7 +135,9 @@ namespace BXFW.ScriptEditor
                 }).ToArray();
 
                 if (objsFiltered.Length <= 0)
+                {
                     return;
+                }
 
                 // Chance value to set for added element
                 float addedChance = arrayProperty.arraySize <= 0 ? (ChanceValuesListBase.ChanceUpperLimit / objsFiltered.Length) : 0f;
@@ -194,7 +202,9 @@ namespace BXFW.ScriptEditor
             }
 
             if (!property.isExpanded)
+            {
                 return;
+            }
 
             // Set a copy of the chance values in here from target
             prevChanceList.Clear();
@@ -263,7 +273,9 @@ namespace BXFW.ScriptEditor
                     for (int i = 0; i < target.ChanceValues.Count && shouldModifyValues; i++)
                     {
                         if (i == modifiedValueIndex)
+                        {
                             continue;
+                        }
 
                         // -> delta => (change between the current value)
                         // -> delta division percentage => (target.ChanceDatas[i].Chance / avgValue)

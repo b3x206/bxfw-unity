@@ -37,7 +37,9 @@ namespace BXFW.Tools.Editor
         private static void Update()
         {
             if (m_Routines.Count <= 0)
+            {
                 return;
+            }
 
             for (int i = 0; i < m_Routines.Count; i++)
             {
@@ -90,7 +92,9 @@ namespace BXFW.Tools.Editor
             bool isFound = index > -1;
 
             if (isFound)
+            {
                 m_Routines.RemoveAt(index);
+            }
 
             return isFound;
         }

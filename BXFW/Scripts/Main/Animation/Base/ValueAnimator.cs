@@ -59,7 +59,9 @@ namespace BXFW
             {
                 // Index property being lower than 0 = No animations
                 if (CurrentAnimIndex < 0)
+                {
                     return null;
+                }
 
                 return animations[CurrentAnimIndex];
             }
@@ -158,21 +160,27 @@ namespace BXFW
         protected virtual void Update()
         {
             if (!IsPlaying || animUpdateMode != BehaviourUpdateMode.Update)
+            {
                 return;
+            }
 
             UpdateAnimator(ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime);
         }
         protected virtual void FixedUpdate()
         {
             if (!IsPlaying || animUpdateMode != BehaviourUpdateMode.FixedUpdate)
+            {
                 return;
+            }
 
             UpdateAnimator(ignoreTimeScale ? Time.fixedUnscaledDeltaTime : Time.fixedDeltaTime);
         }
         protected virtual void LateUpdate()
         {
             if (!IsPlaying || animUpdateMode != BehaviourUpdateMode.LateUpdate)
+            {
                 return;
+            }
 
             UpdateAnimator(ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime);
         }
@@ -196,7 +204,9 @@ namespace BXFW
             var loop = CurrentAnimation.loop;
 
             if (frameMS <= 0f)
+            {
                 return;
+            }
 
             // Lower timer + increment animation
             if (m_timer >= frameMS)
@@ -282,7 +292,9 @@ namespace BXFW
             }
 
             if (!foundID)
+            {
                 Debug.LogWarning($"[ValueAnimator::Play(string)] Couldn't find ID : \"{id}\". Playing current animation.");
+            }
 
             CurrentFrame = 0;
             IsPlaying = true;
