@@ -760,6 +760,9 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public static bool IsDisposed(this SerializedObject obj)
         {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+
             return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
         }
         /// <summary>
@@ -767,6 +770,9 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public static bool IsDisposed(this SerializedProperty obj)
         {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+
             return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
         }
 

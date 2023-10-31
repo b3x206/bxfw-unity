@@ -8,6 +8,8 @@ It may contain half-baked scripts for the time being, but at the beta-ish releas
 
 The code is &lt;summary/&gt; ified, basically what the code does is in the code file (which is not docs, but as soon as i feel like adding `docfx` as github pages it will be slightly better, i don't want to write docs one by one).
 
+* Supported version(s) : `2021.3` or higher, but may work on `2020` versions.
+
 ## How to use : 
 * Clone using ```$ git clone https://github.com/b3x206/bxfw-unity.git``` to desired directory (somewhere inside Assets folder, it has to be inside Assets). (Or download the zip of source code)
 * To clone into a folder with different name just add a name argument like ```$ <git command for clone> desired_folder_name```.

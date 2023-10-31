@@ -20,10 +20,14 @@ namespace BXFW.ScriptEditor
         private static readonly Dictionary<string, ReorderableList> idDrawList = new Dictionary<string, ReorderableList>();
         private const int IdDrawListDictSizeLimit = 64;
         /// <summary>
-        /// Current base property attached for drawing.
+        /// Current property used for drawing.
         /// </summary>
         private SerializedProperty m_baseProperty;
-
+        /// <summary>
+        /// The backup used for an hack in <see cref="OnGUI(Rect, SerializedProperty, GUIContent)"/>
+        /// </summary>
+        private SerializedProperty m_basePropertyClone;
+        
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             // Yes, this is not a very nice way of doing this, but it will do for now.
@@ -37,10 +41,10 @@ namespace BXFW.ScriptEditor
                     drawElementCallback = DrawListElements,
                     elementHeightCallback = GetElementHeight,
                     onCanAddCallback = OnListCanAddCallback,
+                    onReorderCallbackWithDetails = OnListSwitchPairs,
                 };
 
                 idDrawList.Add(sPropId, list);
-                // nice spaghetti, but this is kinda needed?
                 // 'Dictionary.Add's ordering is undefined behaviour (which is amazing)
                 if (idDrawList.Count > IdDrawListDictSizeLimit)
                 {
@@ -59,7 +63,9 @@ namespace BXFW.ScriptEditor
                 height += NonUniqueValuesWarningHeight + mainGUIContext.Padding;
             }
 
-            m_baseProperty = property;  // Set the current undisposed SerializedProperty
+            // Set the current undisposed SerializedProperties
+            m_baseProperty = property;
+            list.serializedProperty = property.FindPropertyRelative("m_Keys");
             height += list.GetHeight();
 
             return height;
@@ -67,13 +73,25 @@ namespace BXFW.ScriptEditor
 
         private void DrawListHeader(Rect r)
         {
+            // the pointer is set to zero (something calls dispose on list?) when the list starts drawing
+            // i mean why?
+            // this hack of "backing up the 'SerializedProperty' with a new 'SerializedObject' works"
+            // this occurs when the inspector mode is switched from-to inspector to debug to inspector back
+            // why? is this my shitty code or a unity bug? i don't even really know.
+            if (m_baseProperty.serializedObject.IsDisposed())
+            {
+                // this also makes the reorderable list non-reorderable
+                // which is amazing, but there's a simple solution for that.
+                m_baseProperty = m_basePropertyClone;
+            }
+
             EditorGUI.LabelField(r, "Keys & Values");
         }
         private float GetElementHeight(int index)
         {
             float height = 0f;
-            using SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
-            using SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
+            SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
+            SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
 
             if (valuesProperty.arraySize != keysProperty.arraySize)
             {
@@ -94,8 +112,9 @@ namespace BXFW.ScriptEditor
         {
             // Reset this per every call, as the rect is local lol.
             reorderableListContext.Reset();
-            using SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
-            using SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
+
+            SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
+            SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
 
             if (valuesProperty.arraySize != keysProperty.arraySize)
             {
@@ -122,12 +141,11 @@ namespace BXFW.ScriptEditor
                 if (!dict.KeysAreUnique())
                 {
                     // Q : How do we support struct parents?
-                    // A : ^UCK (silly dog image)
+                    // A : ^UCK (silly dog video)
                     // Society if SerializedProperty value was assignable with any c# type
                     // --
 
-                    //keysProperty.GetArrayElementAtIndex(index).value = keysValueCurrentCopy;
-                    // Now we gotta do stupid array reflection shenanigans
+                    // Now we gotta do stupid boxed array stuff
                     dict.SetKey(index, prevValue);
                 }
             }
@@ -138,11 +156,17 @@ namespace BXFW.ScriptEditor
         {
             // TODO : Maybe add a 'add element' dummy ShowAsPopup EditorWindow?
             // This is how you add element. (or that's how the add element button does with a default value)
-            // (we will display a dummy 'SerializedProperty')
+            // (will display a dummy 'SerializedProperty?')
             //list.list.Add();
             //list.InvalidateCache();
 
             return true;
+        }
+        private void OnListSwitchPairs(ReorderableList list, int oldIndex, int newIndex)
+        {
+            // Switch the switched value when the list values are switched
+            m_baseProperty.FindPropertyRelative("m_Keys").MoveArrayElement(oldIndex, newIndex);  // Because ReorderableList sucks
+            m_baseProperty.FindPropertyRelative("m_Values").MoveArrayElement(oldIndex, newIndex);
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -169,9 +193,18 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.HelpBox(mainGUIContext.GetPropertyRect(position, NonUniqueValuesWarningHeight), "Dictionary keys are not unique. This will cause problems.", MessageType.Warning);
             }
+            
+            m_baseProperty = property;
 
-            m_baseProperty = property; // Set the current undisposed SerializedProperty
-            list.DoList(mainGUIContext.GetPropertyRect(indentedPosition, list.GetHeight()));
+            float height = list.GetHeight();
+            // Clone the 'SerializedObject'
+            SerializedObject so = new SerializedObject(m_baseProperty.serializedObject.targetObjects);
+            m_basePropertyClone = so.FindProperty(m_baseProperty.propertyPath);
+
+            // go ahead, dispose my ASS here.
+            list.serializedProperty = m_basePropertyClone.FindPropertyRelative("m_Keys");
+            list.DoList(mainGUIContext.GetPropertyRect(indentedPosition, height));
+            so.ApplyModifiedProperties();
 
             EditorGUI.indentLevel--;
         }
