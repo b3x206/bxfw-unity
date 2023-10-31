@@ -8,7 +8,7 @@ namespace BXFW.Tweening.Next.Editor
     [CustomPropertyDrawer(typeof(BXSTweenSequence))]
     public class BXSTweenSequenceEditor : PropertyDrawer
     {
-        private const float PADDING = 2f;
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
         /// <summary>
         /// Name list of fields to be omitted.
         /// </summary>
@@ -25,7 +25,7 @@ namespace BXFW.Tweening.Next.Editor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float height = EditorGUIUtility.singleLineHeight + PADDING;
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             if (!property.isExpanded)
                 return height;
@@ -39,37 +39,23 @@ namespace BXFW.Tweening.Next.Editor
 
                 if (visibleProp.name == $"m_{nameof(BXSTweenable.Duration)}")
                 {
-                    height += EditorGUIUtility.singleLineHeight + PADDING;
+                    height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
                     continue;
                 }
 
-                height += EditorGUI.GetPropertyHeight(visibleProp) + PADDING;
+                height += EditorGUI.GetPropertyHeight(visibleProp) + mainCtx.Padding;
             }
 
             return height;
         }
 
-        private float m_currentY = 0f;
-        private Rect GetPropertyRect(Rect baseRect, SerializedProperty property)
-        {
-            return GetPropertyRect(baseRect, EditorGUI.GetPropertyHeight(property));
-        }
-        private Rect GetPropertyRect(Rect baseRect, float height)
-        {
-            baseRect.height = height;                  // set to target height
-            baseRect.y += m_currentY + (PADDING / 2f); // offset by Y
-            m_currentY += height + PADDING;            // add Y offset
-
-            return baseRect;
-        }
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            m_currentY = 0f;
+            mainCtx.Reset();
             label = EditorGUI.BeginProperty(position, label, property);
 
-            property.isExpanded = EditorGUI.Foldout(GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
+            property.isExpanded = EditorGUI.Foldout(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
             if (!property.isExpanded)
                 return;
@@ -93,13 +79,13 @@ namespace BXFW.Tweening.Next.Editor
                     using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
                     {
                         // Draw a read-only property
-                        EditorGUI.FloatField(GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Total Duration", ((BXSTweenable)property.GetTarget().value).Duration);
+                        EditorGUI.FloatField(mainCtx.GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Total Duration", ((BXSTweenable)property.GetTarget().value).Duration);
                     }
 
                     continue;
                 }
 
-                EditorGUI.PropertyField(GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
             }
             EditorGUI.indentLevel--;
 

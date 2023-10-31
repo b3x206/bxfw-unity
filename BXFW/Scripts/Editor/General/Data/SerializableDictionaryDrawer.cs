@@ -10,6 +10,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
+        // This isn't a good way of architecturing a dictionary, but if it works no problem.
         private PropertyRectContext mainGUIContext = new PropertyRectContext(2);
         private const float NonUniqueValuesWarningHeight = 32;
         private PropertyRectContext reorderableListContext = new PropertyRectContext(2);

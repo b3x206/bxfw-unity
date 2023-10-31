@@ -9,59 +9,35 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(ValueAnimatorBase.Sequence), true)]
     public class ValueAnimatorSequenceEditor : PropertyDrawer
     {
-        private const float PADDING = 2f;
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float height = EditorGUIUtility.singleLineHeight + PADDING;
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             if (!property.isExpanded)
                 return height;
 
             // ValueAnimatorBase.Sequence.Duration
-            height += EditorGUIUtility.singleLineHeight + PADDING;
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             // GUI.Button = ValueAnimatorBase.Sequence.Clear();
-            height += EditorGUIUtility.singleLineHeight + PADDING;
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
-                height += EditorGUI.GetPropertyHeight(visibleProp) + PADDING;
+                height += EditorGUI.GetPropertyHeight(visibleProp) + mainCtx.Padding;
             }
             
             return height;
         }
 
-        // Maybe TODO : Create a 'AutoRectPropertyDrawer' class that you can inherit from and it contains this recting, other things, etc.)
-        // Current class list that repeats this code is :
-        // - ValueAnimatorEditor.cs
-        // - BXSTweenSequenceEditor.cs
-        // - BezierPathEditor.cs
-        // - SerializableDictionaryDrawer.cs
-
-        /// <summary>
-        /// The current Y elapsed for this property field.
-        /// </summary>
-        private float m_currentY = 0f;
-        private Rect GetPropertyRect(Rect baseRect, SerializedProperty property)
-        {
-            return GetPropertyRect(baseRect, EditorGUI.GetPropertyHeight(property));
-        }
-        private Rect GetPropertyRect(Rect baseRect, float height)
-        {
-            baseRect.height = height;                  // set to target height
-            baseRect.y += m_currentY + (PADDING / 2f); // offset by Y
-            m_currentY += height + PADDING;            // add Y offset
-
-            return baseRect;
-        }
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            m_currentY = 0f;
+            mainCtx.Reset();
             label = EditorGUI.BeginProperty(position, label, property);
 
-            property.isExpanded = EditorGUI.Foldout(GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
+            property.isExpanded = EditorGUI.Foldout(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
             var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().value;
 
@@ -78,13 +54,13 @@ namespace BXFW.ScriptEditor
             using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
             {
                 EditorGUI.FloatField(
-                    GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight),
+                    mainCtx.GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight),
                     new GUIContent("Total Duration", "The length (in seconds) that this animation will take."),
                     targetValue.Duration
                 );
             }
 
-            if (GUI.Button(GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Clear Frames"))
+            if (GUI.Button(mainCtx.GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Clear Frames"))
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "Clear Frames");
 
@@ -93,7 +69,7 @@ namespace BXFW.ScriptEditor
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
-                EditorGUI.PropertyField(GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
             }
 
             EditorGUI.indentLevel--;
