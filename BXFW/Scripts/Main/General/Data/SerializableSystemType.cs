@@ -6,7 +6,6 @@ namespace BXFW
     // Written by Bryan Keiren (http://www.bryankeiren.com), modified by me lol
     // --
     // Since i'm lazy and don't want to bother with reflection (i probably will end up doing that anyways lol)
-    // Yup, this i fixed
     // Since the newer unity serializer does accept generic types this works fine with those too,
     // but i may just serialize the type into some sort of binary for a full copy.
     // --
@@ -17,7 +16,6 @@ namespace BXFW
 
     /// <summary>
     /// A <see cref="System.Type"/> datatype that can be serialized.
-    /// <br>Uses string trickery to do this.</br>
     /// </summary>
     [Serializable]
     public class SerializableSystemType : IEquatable<SerializableSystemType>

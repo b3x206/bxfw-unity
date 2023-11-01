@@ -269,6 +269,7 @@ namespace BXFW.Tools.Editor
                     int prevSize = flagTypes.Length;
                     Array.Resize(ref flagTypes, flagTypes.Length + asmTypes.Length);
                     Array.Copy(asmTypes, 0, flagTypes, prevSize, asmTypes.Length);
+                    DomainTypesList[asmFlag] = flagTypes;
                 }
                 else
                 {

@@ -9,6 +9,10 @@ namespace BXFW.ScriptEditor
 {
     public class TypeSelectorControl : AdvancedDropdown
     {
+        // TODO : Searching and adding 'UnityEngine' assemblies just makes this lag horribly
+        // Fix this by either implementing an 'OptimizedSearchDropdown' or something similar
+        // For other types it works fine though.
+
         /// <summary>
         /// An 'AdvancedDropdownItem' that contains extra data.
         /// </summary>
@@ -40,10 +44,11 @@ namespace BXFW.ScriptEditor
 
         protected override AdvancedDropdownItem BuildRoot()
         {
-            AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Type Categories");
-
             AdvDropdownElementLineStyle.richText = true;
             AdvDropdownElementHeaderStyle.richText = true;
+            
+            AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Type Categories");
+            rootItem.AddChild(new TypeDropdownItem("None", string.Empty));
 
             foreach (KeyValuePair<AssemblyFlags, Type[]> domainCategoryType in TypeListProvider.DomainTypesList)
             {
