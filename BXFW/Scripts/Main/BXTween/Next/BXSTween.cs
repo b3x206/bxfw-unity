@@ -85,6 +85,121 @@ namespace BXFW.Tweening.Next
         /// <br>Only to be used by BXSTween classes and the <see cref="IBXSTweenRunner"/> initializing this class.</br>
         /// </summary>
         internal static Logger MainLogger { get; private set; }
+
+        /// <summary>
+        /// A mutable state delay action.
+        /// </summary>
+        private class DelayedAction : IEquatable<DelayedAction>
+        {
+            /// <summary>
+            /// Action to call and remove the <see cref="DelayedAction"/> when the timer runs out.
+            /// </summary>
+            public readonly Action targetAction;
+            /// <summary>
+            /// Timer to wait for.
+            /// </summary>
+            public float timer = 0f;
+            /// <summary>
+            /// Frames to wait for.
+            /// </summary>
+            public int waitFrames = -1;
+            /// <summary>
+            /// Hash of the caller object.
+            /// </summary>
+            private readonly int callerHash;
+
+            public bool UseWaitFrames { get; private set; }
+
+            public static DelayedAction ComparisonAction(Action target, object caller)
+            {
+                return new DelayedAction(target, -1f, caller);
+            }
+
+            public DelayedAction(Action target, float timer, object caller)
+            {
+                targetAction = target;
+                this.timer = timer;
+                callerHash = caller?.GetHashCode() ?? 0;
+
+                UseWaitFrames = false;
+            }
+            public DelayedAction(Action target, object caller, int waitFrames)
+            {
+                targetAction = target;
+                this.waitFrames = waitFrames;
+                callerHash = caller?.GetHashCode() ?? 0;
+
+                UseWaitFrames = true;
+            }
+
+            public bool Equals(DelayedAction action)
+            {
+                if (action is null)
+                {
+                    return false;
+                }
+
+                return GetHashCode() == action.GetHashCode();
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(targetAction, callerHash);
+            }
+        }
+        private static List<DelayedAction> waitingActions = new List<DelayedAction>();
+        /// <summary>
+        /// Queues an action to be called.
+        /// <br>Used with the 'DelayDoFoo()' methods of BXSTween. Uses 'IBXSTweenRunner's non-fixed ticking to manage.</br>
+        /// </summary>
+        /// <param name="action">Event to call when the timer runs out.</param>
+        /// <param name="delay">Delay to wait out.</param>
+        internal static void DelayCall(Action action, float delay, object caller)
+        {
+            waitingActions.Add(new DelayedAction(action, delay, caller));
+        }
+        /// <summary>
+        /// Queues an action to be called.
+        /// <br>Used with the 'DelayDoFoo()' methods of BXSTween, this version waits out given amount of frames in <see cref="TickType.Variable"/> tick.</br>
+        /// </summary>
+        /// <param name="action">Event to call when the timer runs out.</param>
+        /// <param name="waitFrames">Amount of <see cref="TickType.Variable"/> frames to wait out.</param>
+        internal static void DelayFramesCall(Action action, int waitFrames, object caller)
+        {
+            waitingActions.Add(new DelayedAction(action, caller, waitFrames));
+        }
+        /// <summary>
+        /// Returns whether if the given parameters are queued in some way to be called.
+        /// <br>Newly created delegates may not return accurate values.</br>
+        /// </summary>
+        internal static bool HasDelayCallElement(Action action, object caller)
+        {
+            int indexOfTarget = waitingActions.IndexOf((a) => a.Equals(DelayedAction.ComparisonAction(action, caller)));
+            return indexOfTarget >= 0;
+        }
+        /// <summary>
+        /// Stops a queue called object.
+        /// </summary>
+        /// <returns>Whether if a queue call was stopped.</returns>
+        internal static bool StopDelayCall(Action action, object caller)
+        {
+            int indexOfTarget = waitingActions.IndexOf((a) => a.Equals(DelayedAction.ComparisonAction(action, caller)));
+            if (indexOfTarget < 0)
+            {
+                return false;
+            }
+
+            waitingActions.RemoveAt(indexOfTarget);
+            return true;
+        }
+
+        /// <summary>
+        /// The list of all running tweens.
+        /// <br>Unless absolutely necessary, there is no need to change the contents of this.</br>
+        /// <br>Can use the <see cref="BXSTweenable"/> methods on tweens here.</br>
+        /// </summary>
+        public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>(50);
+
         /// <summary>
         /// Sets a logger.
         /// </summary>
@@ -97,14 +212,6 @@ namespace BXFW.Tweening.Next
 
             MainLogger = logger;
         }
-
-        /// <summary>
-        /// The list of all running tweens.
-        /// <br>Unless absolutely necessary, there is no need to change the contents of this.</br>
-        /// <br>Can use the <see cref="BXSTweenable"/> methods on tweens here.</br>
-        /// </summary>
-        public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>(50);
-
         /// <summary>
         /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/> with logger <paramref name="logger"/>.
         /// </summary>
@@ -166,8 +273,8 @@ namespace BXFW.Tweening.Next
 
         // -- Tweening
         /// <summary>
-        /// <b>!! TODO : Optimize this method, do the checks only once?</b>
-        /// Runs a tweenable.
+        /// <b>!! TODO : </b>Optimize this method, do the checks only once?
+        /// <br>Runs a tweenable.</br>
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
         /// </summary>
         public static void RunTweenable(IBXSTweenRunner runner, BXSTweenable tween)
@@ -367,6 +474,34 @@ namespace BXFW.Tweening.Next
                 if (tween.ActualTickType == TickType.Variable)
                 {
                     RunTweenable(runner, tween);
+                }
+            }
+            // Iterate all queued actions
+            for (int i = waitingActions.Count - 1; i >= 0; i--)
+            {
+                DelayedAction waitAction = waitingActions[i];
+
+                if (waitAction.UseWaitFrames)
+                {
+                    if (waitAction.waitFrames < 0)
+                    {
+                        waitAction.targetAction?.Invoke();
+                        waitingActions.RemoveAt(i);
+                        continue;
+                    }
+
+                    waitAction.waitFrames--;
+                }
+                else
+                {
+                    if (waitAction.timer < 0f)
+                    {
+                        waitAction.targetAction?.Invoke();
+                        waitingActions.RemoveAt(i);
+                        continue;
+                    }
+
+                    waitAction.timer -= runner.UnscaledDeltaTime;
                 }
             }
         }

@@ -652,6 +652,41 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
+        /// Waits 1 frame before calling <see cref="Play"/> function.
+        /// <br>
+        /// Can be useful to be able to receive settings after the tween was created,
+        /// calling <see cref="Play"/> directly will lock the loop count and duration values.
+        /// </br>
+        /// </summary>
+        public void DelayedPlay()
+        {
+            BXSTween.DelayFramesCall(Play, 1, this);
+        }
+        /// <summary>
+        /// Waits 1 frame before calling <see cref="Pause"/> function.
+        /// </summary>
+        public void DelayedPause()
+        {
+            BXSTween.DelayFramesCall(Pause, 1, this);
+        }
+        /// <summary>
+        /// Waits 1 frame before calling <see cref="Stop"/> function.
+        /// </summary>
+        public void DelayedStop()
+        {
+            BXSTween.DelayFramesCall(Stop, 1, this);
+        }
+        /// <summary>
+        /// Stops all of the <c>DelayedX</c> calls.
+        /// </summary>
+        protected void CancelDelayedActions()
+        {
+            BXSTween.StopDelayCall(Play, this);
+            BXSTween.StopDelayCall(Pause, this);
+            BXSTween.StopDelayCall(Stop, this);
+        }
+
+        /// <summary>
         /// Converts a <see cref="BXSTweenable"/> to string.
         /// <br>By default this will return a smaller string. To return a more informative but longer string use the <see cref="ToString(bool, char)"/>.</br>
         /// </summary>

@@ -7,25 +7,43 @@ using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
-    public class TypeSelectorControl : AdvancedDropdown
+    public class TypeSelectorDropdown : AdvancedDropdown
     {
         // TODO : Searching and adding 'UnityEngine' assemblies just makes this lag horribly
         // Fix this by either implementing an 'OptimizedSearchDropdown' or something similar
         // For other types it works fine though.
+        // OptimizedAdvancedDropdown :
+        // General optimizations to do :
+        // A : Do a 'Recycling GUI' thing, that is, only call 'OnGUI' for in-any-way visible rects
+        // For the scroll bar thing, check if the value has changed and check the ranges of batched rect indices (instead of checking all rects to see if it contains?)
+        // Or make the constant height sized rects a lerp function with index and show those indices?
+        // Scroll bar height will be displayed using a discard GUI area specified for the scroll bar.
+        // B : Searching algorithm : Because 'OptimizedAdvancedDropdown' will handle large batches of strings, use aho-corasick or anything better idk.
+        //     Make searching asynchronous and the result list be filled in by an editor coroutine, pressing enter while search results are loading would wait until the searching is done
+        //     If the user presses enter again proceed with the requested option.
+        // Extra Features :
+        // - (in priority order)
+        // Allow rich text
+        // Allow the ability to set the maximum size (but only in height? or in both axis?)
+        // Allow custom fonts
+        // -
+        // For the first version though, it will only draw as if it was 'AdvancedDropdown'
+        // Allow for each 'AdvancedDropdownItem' to be able to define it's own 'GetPropertyHeight' and 'OnGUI'
+        // -
 
         /// <summary>
         /// An 'AdvancedDropdownItem' that contains extra data.
         /// </summary>
-        public class TypeDropdownItem : AdvancedDropdownItem
+        public class Item : AdvancedDropdownItem
         {
             /// <summary>
             /// Assembly qualified (and forklift certified) name for the given type.
             /// </summary>
             public string assemblyQualifiedName;
 
-            public TypeDropdownItem(string name) : base(name)
+            public Item(string name) : base(name)
             { }
-            public TypeDropdownItem(string name, string typeAssemblyQualifiedName) : base(name)
+            public Item(string name, string typeAssemblyQualifiedName) : base(name)
             {
                 assemblyQualifiedName = typeAssemblyQualifiedName;
             }
@@ -48,7 +66,7 @@ namespace BXFW.ScriptEditor
             AdvDropdownElementHeaderStyle.richText = true;
             
             AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Type Categories");
-            rootItem.AddChild(new TypeDropdownItem("None", string.Empty));
+            rootItem.AddChild(new Item("None", string.Empty));
 
             foreach (KeyValuePair<AssemblyFlags, Type[]> domainCategoryType in TypeListProvider.DomainTypesList)
             {
@@ -82,7 +100,7 @@ namespace BXFW.ScriptEditor
                         typeIdentifier = "<color=#b8d7a3>I</color>";
                     }
 
-                    TypeDropdownItem categoryChildItem = new TypeDropdownItem($"{typeIdentifier} | <color=white>{t.Name}</color>", t.AssemblyQualifiedName);
+                    Item categoryChildItem = new Item($"{typeIdentifier} | <color=white>{t.FullName}</color>", t.AssemblyQualifiedName);
                     categoryChildItem.enabled = t == m_selectedType;
                     categoryItem.AddChild(categoryChildItem);
                 }
@@ -99,12 +117,12 @@ namespace BXFW.ScriptEditor
             onItemSelected?.Invoke(item);
         }
 
-        public TypeSelectorControl(AdvancedDropdownState state) : base(state) { }
-        public TypeSelectorControl(AdvancedDropdownState state, Type selected) : base(state)
+        public TypeSelectorDropdown(AdvancedDropdownState state) : base(state) { }
+        public TypeSelectorDropdown(AdvancedDropdownState state, Type selected) : base(state)
         {
             m_selectedType = selected;
         }
-        public TypeSelectorControl(AdvancedDropdownState state, string selectedAssemblyQualifiedName) : base(state)
+        public TypeSelectorDropdown(AdvancedDropdownState state, string selectedAssemblyQualifiedName) : base(state)
         {
             if (string.IsNullOrWhiteSpace(selectedAssemblyQualifiedName))
                 return;
@@ -118,7 +136,7 @@ namespace BXFW.ScriptEditor
     public class SerializableSystemTypeEditor : PropertyDrawer
     {
         private PropertyRectContext mainCtx = new PropertyRectContext(2f);
-        private static TypeSelectorControl typeSelector;
+        private static TypeSelectorDropdown typeSelector;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -154,7 +172,7 @@ namespace BXFW.ScriptEditor
 
             if (openWindow)
             {
-                typeSelector = new TypeSelectorControl(new AdvancedDropdownState(), sPropTypeName.stringValue);
+                typeSelector = new TypeSelectorDropdown(new AdvancedDropdownState(), sPropTypeName.stringValue);
                 typeSelector.Show(dropdownSelfRect);
 
                 // Copy the 'SerializedObject' + 'SerializedProperty'
@@ -162,7 +180,7 @@ namespace BXFW.ScriptEditor
                 SerializedProperty spTypeNameCopy = mainSo.FindProperty(sPropTypeName.propertyPath);
                 typeSelector.onItemSelected = (AdvancedDropdownItem item) =>
                 {
-                    if (!(item is TypeSelectorControl.TypeDropdownItem typeItem))
+                    if (!(item is TypeSelectorDropdown.Item typeItem))
                         return;
 
                     spTypeNameCopy.stringValue = typeItem.assemblyQualifiedName;

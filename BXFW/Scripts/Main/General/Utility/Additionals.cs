@@ -465,7 +465,7 @@ namespace BXFW
         /// <summary>
         /// Returns a list of base generic types inside given <paramref name="type"/>,
         /// mapped accordingly to the dictionary of it's base inheriting generic types.
-        /// <br>The keys of the given dictionary is open generic types, with their generic arguments on the stored value.</br>
+        /// <br>The keys of the given dictionary is open generic types and the values are the keys generic arguments.</br>
         /// </summary>
         public static Dictionary<Type, Type[]> GetBaseGenericTypeArguments(this Type type)
         {

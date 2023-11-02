@@ -12,7 +12,7 @@ namespace BXFW.ScriptEditor
 {
     public class LocalizationKeySelectorDropdown : AdvancedDropdown
     {
-        public class DropdownLocaleKey : AdvancedDropdownItem
+        public class KeyItem : AdvancedDropdownItem
         {
             /// <summary>
             /// The two letter or whatever format localization key that this item has.
@@ -23,7 +23,7 @@ namespace BXFW.ScriptEditor
             /// </summary>
             public readonly bool exists = false;
 
-            public DropdownLocaleKey(string prettyName, string key, bool existing) : base(prettyName)
+            public KeyItem(string prettyName, string key, bool existing) : base(prettyName)
             {
                 localeKey = key;
                 exists = existing;
@@ -95,7 +95,7 @@ namespace BXFW.ScriptEditor
                             // Looks like somebody forgor how strings are immutable, insert does work.
                             optionName = optionName.Insert(0, "> ");
                         }
-                        DropdownLocaleKey keyOption = new DropdownLocaleKey(optionName, idValuePair.Key, true);
+                        KeyItem keyOption = new KeyItem(optionName, idValuePair.Key, true);
                         rootItem.AddChild(keyOption);
 
                         // Remove everything for duplicate two letters
@@ -110,7 +110,7 @@ namespace BXFW.ScriptEditor
             for (int i = 0; i < addableLanguageList.Count; i++)
             {
                 CultureInfo info = addableLanguageList[i];
-                DropdownLocaleKey keyOption = new DropdownLocaleKey($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false);
+                KeyItem keyOption = new KeyItem($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false);
                 rootItem.AddChild(keyOption);
             }
 
@@ -232,7 +232,7 @@ namespace BXFW.ScriptEditor
                 LocalizationKeySelectorDropdown localeSelectorDropdown = new LocalizationKeySelectorDropdown(new AdvancedDropdownState(), target, editedLocaleValue);
                 localeSelectorDropdown.onItemSelected = (AdvancedDropdownItem item) =>
                 {
-                    if (!(item is LocalizationKeySelectorDropdown.DropdownLocaleKey key))
+                    if (!(item is LocalizationKeySelectorDropdown.KeyItem key))
                     {
                         return;
                     }
