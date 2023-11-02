@@ -16,8 +16,8 @@ namespace BXFW
     /// <br>NOTE : Array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable 
     /// in <typeparamref name="TKey"/> or <typeparamref name="TValue"/> (by unity). Wrap them with array container class.</br>
     /// </summary>
-    [Serializable]
-    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
+    [Serializable, Obsolete("This 'SerializedDictionary' is obsolete.")]
+    public class OldSerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
@@ -97,22 +97,22 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// <summary>
         /// Creates an empty SerializableDictionary.
         /// </summary>
-        public SerializableDictionary() : base()
+        public OldSerializableDictionary() : base()
         { }
         /// <summary>
         /// Creates a dictionary with capacity reserved.
         /// </summary>
-        public SerializableDictionary(int capacity) : base(capacity)
+        public OldSerializableDictionary(int capacity) : base(capacity)
         { }
         /// <summary>
         /// Creates a dictionary from another dictionary.
         /// </summary>
-        public SerializableDictionary(IDictionary<TKey, TValue> dict) : base(dict)
+        public OldSerializableDictionary(IDictionary<TKey, TValue> dict) : base(dict)
         { }
         /// <summary>
         /// Creates a dictionary from a collection.
         /// </summary>
-        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer) : base(values, comparer)
+        public OldSerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer) : base(values, comparer)
         { }
     }
 
@@ -138,16 +138,6 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// Sets the boxed key object <paramref name="value"/>.
         /// </summary>
         public abstract void SetKey(int index, object value);
-
-        protected static bool TypeIsNullable(Type t)
-        {
-            if (t == null)
-            {
-                throw new ArgumentNullException(nameof(t), "[SerializableDictionary::TypeIsNullable] Given argument was null.");
-            }
-
-            return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
-        }
     }
     
     // If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
@@ -160,18 +150,15 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
     // * Migrate all scripts to this version
     /// <summary>
     /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
-    /// Uses the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on both editor and code.
+    /// Uses (mostly) the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on both editor and code.
     /// <br/>
-    /// <br>NOTE : Array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable
+    /// <br>NOTE : Array of array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable
     /// in this dictionary (by unity). Wrap them with array container class because double lists don't get serialized unless you trick the serializer.</br>
     /// </summary>
     [Serializable]
-    public class SerializableDictionary2<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
+    public class SerializableDictionary<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
     {
-        // I know this is most likely how you not dictionary but unity does not serialize anything array like otherwise.
-        // Because reorderable list, we have to use an incompatible data type
-        // So we create a key/value pair contained in the class
-
+        // ?? : Unless this works fine, refactor this to use a 'Pair' data type.
         [SerializeField, FormerlySerializedAs("keys")]
         private List<TKey> m_Keys = new List<TKey>();
         public ICollection<TKey> Keys => m_Keys;
@@ -220,6 +207,25 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
                 m_Values[index] = value;
             }
         }
+        /// <summary>
+        /// Returns the <see langword="default"/> value if the given <paramref name="key"/> doesn't exist.
+        /// </summary>
+        public TValue GetValueOrDefault(TKey key)
+        {
+            return GetValueOrDefault(key, default);
+        }
+        /// <inheritdoc cref="GetValueOrDefault(TKey)"/>
+        /// <param name="defaultValue">The value to default into if the given <paramref name="key"/> doesn't exist.</param>
+        public TValue GetValueOrDefault(TKey key, TValue defaultValue)
+        {
+            int index = m_Keys.IndexOf(key, m_Comparer);
+            if (index < 0)
+            {
+                return defaultValue;
+            }
+
+            return m_Values[index];
+        }
         public override object GetKey(int index)
         {
             return m_Keys[index];
@@ -236,7 +242,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
                 throw new ArgumentException("[SerializableDictionary::SetKey] Given boxed key value is not 'TKey'.");
             }
             // Check if unboxed value is valid
-            if (TypeIsNullable(typeof(TKey)) && Comparer.Equals(key, default))
+            if (typeof(TKey).IsTypeNullable() && Comparer.Equals(key, default))
             {
                 throw new ArgumentNullException("[SerializableDictionary::SetKey] Given boxed key value is null.");
             }
@@ -246,7 +252,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
 
         public void Add(TKey key, TValue value)
         {
-            if (TypeIsNullable(typeof(TKey)) && Comparer.Equals(key, default))
+            if (typeof(TKey).IsTypeNullable() && Comparer.Equals(key, default))
             {
                 throw new ArgumentNullException("[SerializableDictionary::Add] Given key was null.", nameof(key));
             }
@@ -394,12 +400,12 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// <summary>
         /// Creates an empty SerializableDictionary.
         /// </summary>
-        public SerializableDictionary2()
+        public SerializableDictionary()
         { }
         /// <summary>
         /// Creates a dictionary with capacity reserved.
         /// </summary>
-        public SerializableDictionary2(int capacity)
+        public SerializableDictionary(int capacity)
         {
             m_Keys.Capacity = capacity;
             m_Values.Capacity = capacity;
@@ -407,13 +413,13 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// <summary>
         /// Creates a dictionary from another dictionary.
         /// </summary>
-        public SerializableDictionary2(IDictionary<TKey, TValue> dict)
+        public SerializableDictionary(IDictionary<TKey, TValue> dict)
         {
             // Copy values to the pairs
             m_Keys = new List<TKey>(dict.Keys);
             m_Values = new List<TValue>(dict.Values);
         }
-        public SerializableDictionary2(IDictionary<TKey, TValue> dict, IEqualityComparer<TKey> comparer)
+        public SerializableDictionary(IDictionary<TKey, TValue> dict, IEqualityComparer<TKey> comparer)
             : this(dict)
         {
             m_Comparer = comparer;
@@ -421,7 +427,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// <summary>
         /// Creates a dictionary from a collection.
         /// </summary>
-        public SerializableDictionary2(IEnumerable<KeyValuePair<TKey, TValue>> values)
+        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values)
         {
             m_Keys.Capacity = m_Values.Capacity = values.Count();
 
@@ -433,7 +439,7 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// <summary>
         /// Creates a dictionary from a collection.
         /// </summary>
-        public SerializableDictionary2(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer)
+        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer)
             : this(values)
         {
             m_Comparer = comparer;

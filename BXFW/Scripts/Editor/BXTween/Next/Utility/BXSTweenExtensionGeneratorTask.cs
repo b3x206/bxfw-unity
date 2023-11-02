@@ -17,44 +17,26 @@ namespace BXFW.Tweening.Next.Editor
     public class BXSTweenExtensionGeneratorTask : EditorTask
     {
         /// <summary>
-        /// Returns whether if the given type is assignable from generic type <paramref name="genericType"/>.
-        /// </summary>
-        private static bool IsAssignableFromOpenGeneric(Type target, Type genericType)
-        {
-            // target      => given type
-            // genericType => Generic<> (open type)
-
-            // Can be assigned using interface
-            if (genericType.GetInterfaces().Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == genericType))
-            {
-                return true;
-            }
-
-            // Can be assigned directly (with open type)
-            if (target.IsGenericType && target.GetGenericTypeDefinition() == genericType)
-            {
-                return true;
-            }
-
-            // Reached end of base type
-            if (target.BaseType == null)
-            {
-                return false;
-            }
-
-            return IsAssignableFromOpenGeneric(target.BaseType, genericType);
-        }
-
-        /// <summary>
         /// Returns whether if the given type has a <see cref="BXSTweenContext{TValue}"/> defined for it.
         /// </summary>
         public static bool IsValidContextType(Type t)
         {
-            return IsAssignableFromOpenGeneric(t, typeof(BXSTweenContext<>));
+            Type[] bxsContextTypes = TypeListProvider.GetDomainTypesByPredicate((Type checkType) => checkType.IsAssignableFromOpenGeneric(typeof(BXSTweenContext<>)));
+
+            foreach (Type twType in bxsContextTypes)
+            {
+                // Check if the given type is a valid generic parameter.
+                var contextInherit = twType.GetBaseGenericTypeArguments().FirstOrDefault((p) => p.Key == typeof(BXSTweenContext<>));
+                if (contextInherit.Value.Contains(t))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         [Serializable]
-        public class GenerateMethodInfo
+        public class ExtensionMethodTemplate
         {
             /// <summary>
             /// Match everything except ascii characters, numbers and underscores.
@@ -89,13 +71,12 @@ namespace BXFW.Tweening.Next.Editor
             }
         }
         [Serializable]
-        public class ExtensionFileTemplate
+        public class ClassExtensionTemplate
         {
-            // The 'targetTypeName' should be ensured that it can be accessed from both BXFW and Assembly-CSharp?
-            // Or just make it a local file lol and the people who know that there's no cyclic dependencies can just use it with that knowledge
-            // (which is me, this is just a tool for generating for unity types)
+            // TODO : Add an editor for 'ExtensionMethodTemplate'
+            // Or make the 'ExtensionMethodTemplate' contain the type?
             public SerializableSystemType targetType;
-            public List<GenerateMethodInfo> extensionMethods;
+            public List<ExtensionMethodTemplate> extensionMethods;
         }
 
         private string UnityAssetsPath => Path.Combine(Directory.GetCurrentDirectory(), "Assets");
@@ -116,7 +97,7 @@ namespace BXFW.Tweening.Next.Editor
         [Tooltip("The '.cs' is appended to the last file name. The directory is local."), EditDisallowChars("?<>:*|\"")]
         public string tweenExtensionsFileName = "Scripts/BXSTween/Extension/CustomExtension.cs";
         /// <summary>
-        /// Same as <see cref="GenerateMethodInfo.ReMatchMethodName"/> but with dots allowed and no numbers on start of string.
+        /// Same as <see cref="ExtensionMethodTemplate.ReMatchMethodName"/> but with dots allowed and no numbers on start of string.
         /// </summary>
         private const string ReMatchNamespaceName = "[^_.a-zA-Z0-9_]|^[\\d]+";
         [EditDisallowChars(ReMatchNamespaceName, isRegex = true)]
@@ -126,7 +107,7 @@ namespace BXFW.Tweening.Next.Editor
         /// <summary>
         /// List of extension pairs to generate.
         /// </summary>
-        public List<ExtensionFileTemplate> extensionPairs = new List<ExtensionFileTemplate>();
+        public List<ClassExtensionTemplate> extensionPairs = new List<ClassExtensionTemplate>();
 
         private const string TkUsingTemplate = "using {0};";
         private const string TkNamespace = "namespace";
@@ -166,7 +147,7 @@ namespace BXFW.Tweening.Next.Editor
                 }
             }
 
-            return base.GetWarning();
+            return true;
         }
 
         public override void Run()
@@ -186,14 +167,69 @@ namespace BXFW.Tweening.Next.Editor
             }
             // partial extensions class definition (public static partial class {fileClassName})
             sb.Append(namespaceIndent).Append(TkPublic).Append(TkStatic).Append(TkPartial).Append(TkClass).Append(fileClassName).AppendLine();
-            sb.Append(namespaceIndent).Append(TkOpenScope).AppendLine(); // {
+            sb.Append(namespaceIndent).Append(TkOpenScope).AppendLine(); // {\n
+            // constant using definitions
+            currentUsings.Add(string.Format(TkUsingTemplate, "BXFW.Tweening"));
+            currentUsings.Add(string.Format(TkUsingTemplate, "BXFW.Tweening.Next"));
             // function definitions
-            foreach (ExtensionFileTemplate template in extensionPairs)
+            foreach (ClassExtensionTemplate template in extensionPairs)
             {
+                if (template.targetType.Type == null)
+                {
+                    Debug.LogWarning("[BXSTweenExtensionGeneratorTask::Run] Given template has no type, skipping.");
+                    continue;
+                }
 
+                // Add given types to using
+                string targetTypeNamespace = template.targetType.Type.Namespace;
+                if (!string.IsNullOrWhiteSpace(targetTypeNamespace) && !currentUsings.Contains(targetTypeNamespace))
+                {
+                    currentUsings.Add(targetTypeNamespace);
+                }
+
+                foreach (ExtensionMethodTemplate method in template.extensionMethods)
+                {
+                    // TODO : Generate method
+                }
             }
             // end class definition + 
+            sb.Append(namespaceIndent).Append(TkCloseScope).AppendLine(); // }\n
+            if (hasNamespaceDefinition)
+            {
+                sb.Append(TkCloseScope).AppendLine(); // '(namespace) }\n'
+            }
 
+            // Prepend usings
+            foreach (string usingStr in currentUsings)
+            {
+                sb.Insert(0, usingStr).AppendLine();
+            }
+
+            // Write class into a given file
+            string parentDirectory = GenerateFileAbsolutePath;
+            {
+                int indexOfPathSeperator = parentDirectory.LastIndexOf('/');
+#if UNITY_EDITOR_WIN
+                if (indexOfPathSeperator == -1)
+                {
+                    indexOfPathSeperator = parentDirectory.LastIndexOf('\\');
+                }
+#endif
+                parentDirectory = parentDirectory.Substring(0, indexOfPathSeperator);
+            }
+
+            Debug.Log($"checking if dir : {parentDirectory} exists");
+            if (!Directory.Exists(parentDirectory))
+            {
+                Directory.CreateDirectory(parentDirectory);
+                Debug.Log($"create dir {parentDirectory}");
+            }
+
+            Debug.Log($"writing to path : {GenerateFileAbsolutePath}");
+            // File.WriteAllBytes(GenerateFileAbsolutePath, Encoding.UTF8.GetBytes(sb.ToString()));
+            Debug.Log($"Result is : {sb}");
+            AssetDatabase.Refresh();
+            AssetDatabase.SaveAssets();
         }
     }
 }

@@ -57,8 +57,6 @@ namespace BXFW.ScriptEditor
             }
 
             float height = EditorGUIUtility.singleLineHeight + mainGUIContext.Padding;
-
-
             if (!property.isExpanded)
             {
                 return height;
@@ -179,7 +177,7 @@ namespace BXFW.ScriptEditor
         {
             // Switch the switched value when the list values are switched
             // ReorderableList completely replaces the behaviour with this, which is okay.
-            // (but it's still an undocumented mess of a class)
+            // (but it's still an undocumented mess of a class, or i suck at programming, probably the latter)
             m_baseProperty.FindPropertyRelative("m_Keys").MoveArrayElement(oldIndex, newIndex);
             m_baseProperty.FindPropertyRelative("m_Values").MoveArrayElement(oldIndex, newIndex);
         }

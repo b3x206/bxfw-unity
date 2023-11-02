@@ -85,12 +85,21 @@ namespace BXFW.ScriptEditor
                     if (removeInfoIndex >= 0)
                     {
                         CultureInfo removeInfo = addableLanguageList[removeInfoIndex];
-                        DropdownLocaleKey keyOption = new DropdownLocaleKey($"{removeInfo.EnglishName} ({idValuePair.Key}) (Exists)", idValuePair.Key, true);
-                        keyOption.enabled = idValuePair.Key == m_editedLocale;
+                        string optionName = $"{removeInfo.EnglishName} ({idValuePair.Key}) [Exists]";
+                        if (idValuePair.Key == m_editedLocale)
+                        {
+                            // Visual studio, why, on earth are you saving files as ansi in the year 2023?
+                            // And no, utf-8 with bom sucks as well, why not just default to utf8
+                            // Whatever, the character '>' will do for now.
+                            // --
+                            // Looks like somebody forgor how strings are immutable, insert does work.
+                            optionName = optionName.Insert(0, "> ");
+                        }
+                        DropdownLocaleKey keyOption = new DropdownLocaleKey(optionName, idValuePair.Key, true);
                         rootItem.AddChild(keyOption);
 
                         // Remove everything for duplicate two letters
-                        Debug.Log($"rcount : {addableLanguageList.RemoveAll(IsMatchingTwoLetterISO)}");
+                        addableLanguageList.RemoveAll(IsMatchingTwoLetterISO);
                     }
                 }
 
@@ -240,49 +249,8 @@ namespace BXFW.ScriptEditor
                     EditorAdditionals.RepaintAll();
                     EditorGUIUtility.editingTextField = false;
                 };
+
                 localeSelectorDropdown.Show(dropdownRect);
-
-                //var addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
-                //addableLanguageList.Sort((CultureInfo x, CultureInfo y) => x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName));
-                //GenericMenu menu = new GenericMenu();
-
-                //menu.AddItem(new GUIContent("Cancel"), false, () => { });
-
-                //// Add existing (to switch into locale previews)
-                //menu.AddSeparator(string.Empty);
-                //foreach (var idValuePair in target)
-                //{
-                //    // Remove + check if it was removed.
-                //    if (addableLanguageList.RemoveAll(ci => ci.TwoLetterISOLanguageName == idValuePair.Key) != 0)
-                //    {
-                //        menu.AddItem(new GUIContent(string.Format("{0} (exists)", idValuePair.Key)), idValuePair.Key == editedLocaleValue, () =>
-                //        {
-                //            // Switch the currently edited locale.
-                //            property.SetString(KeyEditLocale, idValuePair.Key);
-                //            editedLocaleValue = idValuePair.Key;
-                //            EditorAdditionals.RepaintAll();
-                //            EditorGUIUtility.editingTextField = false;
-                //        });
-                //    }
-                //}
-
-                //// Add non-existing
-                //menu.AddSeparator(string.Empty);
-                //for (int i = 0; i < addableLanguageList.Count; i++)
-                //{
-                //    CultureInfo info = addableLanguageList[i];
-
-                //    menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), false, () =>
-                //    {
-                //        Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
-                //        property.SetString(KeyEditLocale, info.TwoLetterISOLanguageName);
-                //        target.LocaleDatas.Add(info.TwoLetterISOLanguageName, string.Empty);
-                //        EditorAdditionals.RepaintAll();
-                //        EditorGUIUtility.editingTextField = false;
-                //    });
-                //}
-
-                //menu.ShowAsContext();
             }
 
             // Remove locale menu button

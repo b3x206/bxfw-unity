@@ -410,6 +410,89 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Returns whether if the type is a nullable one.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        public static bool IsTypeNullable(this Type t)
+        {
+            if (t == null)
+            {
+                throw new ArgumentNullException(nameof(t), "[SerializableDictionary::TypeIsNullable] Given argument was null.");
+            }
+
+            return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
+        }
+        /// <summary>
+        /// Returns whether if the given type is assignable from generic type <paramref name="openGenericType"/>.
+        /// <br>Can be used/tested against <b>open generic</b> types and <paramref name="target"/>'s base types are checked recursively.</br>
+        /// </summary>
+        public static bool IsAssignableFromOpenGeneric(this Type target, Type openGenericType)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target), "[Additionals::IsAssignableFromOpenGeneric] Given argument was null.");
+            }
+            if (openGenericType == null)
+            {
+                return false;
+            }
+
+            // target      => given type
+            // genericType => Generic<> (open type)
+
+            // Can be assigned using interface (can be checked only once, GetInterfaces returns all interfaces)
+            if (target.GetInterfaces().Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == openGenericType))
+            {
+                return true;
+            }
+
+            Type iterTarget = target;
+            do
+            {
+                // Can be assigned directly (with open type)
+                if (iterTarget.IsGenericType && iterTarget.GetGenericTypeDefinition() == openGenericType)
+                {
+                    return true;
+                }
+
+                iterTarget = iterTarget.BaseType;
+            }
+            while (iterTarget != null);
+
+            // Reached end of base type
+            return false;
+        }
+        /// <summary>
+        /// Returns a list of base generic types inside given <paramref name="type"/>,
+        /// mapped accordingly to the dictionary of it's base inheriting generic types.
+        /// <br>The keys of the given dictionary is open generic types, with their generic arguments on the stored value.</br>
+        /// </summary>
+        public static Dictionary<Type, Type[]> GetBaseGenericTypeArguments(this Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type), "[Additionals::GetBaseGenericTypeArguments] Given argument was null.");
+            }    
+
+            Dictionary<Type, Type[]> baseTypePairs = new Dictionary<Type, Type[]>(4);
+
+            Type iterTarget = type;
+            do
+            {
+                if (iterTarget.IsGenericType)
+                {
+                    // Set dictionary not null if element was added.
+                    baseTypePairs.Add(iterTarget.GetGenericTypeDefinition(), iterTarget.GetGenericArguments());
+                }
+
+                iterTarget = iterTarget.BaseType;
+            }
+            while (iterTarget != null);
+
+            return baseTypePairs;
+        }
+
+        /// <summary>
         /// Get an iterator of the base types of <paramref name="type"/>.
         /// <br>Returns a blank iterator if no base type.</br>
         /// </summary>
@@ -452,12 +535,13 @@ namespace BXFW
                 .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
         }
 
-        // -- Serialization (?)
         /// <summary>
         /// Returns a byte array from an object.
         /// </summary>
-        /// <param name="obj">Object that has the <see cref="SerializableAttribute"/>.</param>
+        /// <param name="obj">Object that has <see cref="SerializableAttribute"/>.</param>
         /// <returns>Object as serializd byte array.</returns>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
         public static byte[] ObjectToByteArray(object obj)
         {
             // Can't convert null object.

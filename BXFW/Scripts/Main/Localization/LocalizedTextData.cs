@@ -286,7 +286,7 @@ namespace BXFW.Data
         {
             int hashCode = -2018306565;
             hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(TextID);
-            hashCode = (hashCode * -1521134295) + EqualityComparer<Dictionary<string, string>>.Default.GetHashCode(m_LocaleDatas);
+            hashCode = (hashCode * -1521134295) + EqualityComparer<SerializableDictionary<string, string>>.Default.GetHashCode(m_LocaleDatas);
             return hashCode;
         }
     }
