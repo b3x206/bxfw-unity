@@ -1,10 +1,8 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEditorInternal;
 using UnityEditor.IMGUI.Controls;
 using BXFW.Tools.Editor;
 
@@ -15,6 +13,7 @@ namespace BXFW.Tweening.Next.Editor
     {
         /// <summary>
         /// A field info selector. Also adds the ability to select get+set properties.
+        /// <br>Can only select public instance fields.</br>
         /// </summary>
         public class FieldInfoSelectorDropdown : AdvancedDropdown
         {
@@ -89,38 +88,20 @@ namespace BXFW.Tweening.Next.Editor
             }
         }
 
-        private const float NonUniqueValuesWarningBoxHeight = 42;
+        private const float NonUniqueValuesWarningBoxHeight = 36;
+        private const string ChildListExpandedKey = "[BXSTwExtGenEditor].isChildListExpanded";
 
         private readonly PropertyRectContext mainCtx = new PropertyRectContext(2);
-        private readonly static Dictionary<string, ReorderableList> currentListsDict = new Dictionary<string, ReorderableList>();
 
-        private string currentPropertyId;
         private BXSTweenExtensionGeneratorTask.ExtensionClassTemplate currentTargetTemplate;
         private SerializedProperty currentArrayProperty;
-        private ReorderableList CurrentPropertyList => currentListsDict.GetValueOrDefault(string.IsNullOrEmpty(currentPropertyId) ? "0xdeadbeef" : currentPropertyId);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
-            currentPropertyId = property.GetIDString();
             currentTargetTemplate = (BXSTweenExtensionGeneratorTask.ExtensionClassTemplate)property.GetTarget().value;
-
             currentArrayProperty = property.FindPropertyRelative(nameof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate.extensionMethods));
-
-            if (CurrentPropertyList == null)
-            {
-                // Create the registry on dictionary as this property gets from it
-                // Resizing the 'ReorderableList' does not resize the array
-                ReorderableList list = new ReorderableList(property.serializedObject, currentArrayProperty)
-                {
-                    drawHeaderCallback = DrawExtensionTemplateListHeader,
-                    elementHeightCallback = GetExtensionMethodTemplateHeight,
-                    drawElementCallback = DrawExtensionMethodTemplate,
-                };
-
-                currentListsDict.Add(currentPropertyId, list);
-            }
 
             if (!property.isExpanded)
                 return height;
@@ -134,83 +115,23 @@ namespace BXFW.Tweening.Next.Editor
                 height += NonUniqueValuesWarningBoxHeight + mainCtx.Padding;
             }
 
-            if (CurrentPropertyList.serializedProperty.IsDisposed() || CurrentPropertyList.serializedProperty.serializedObject.IsDisposed())
+            // list (height)
+            // collapse + size fields
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            bool childListExpanded = property.GetLong(ChildListExpandedKey) != 0;
+            for (int i = 0; i < currentArrayProperty.arraySize && childListExpanded; i++)
             {
-                CurrentPropertyList.serializedProperty = currentArrayProperty;
+                // extensionMethods.Array.data[index]
+                SerializedProperty elementProperty = currentArrayProperty.GetArrayElementAtIndex(i);
+                // 'm_MethodName'
+                SerializedProperty methodNameProperty = elementProperty.FindPropertyRelative($"m_{nameof(BXSTweenExtensionGeneratorTask.ExtensionMethodTemplate.MethodName)}");
+                height += EditorGUI.GetPropertyHeight(methodNameProperty) + mainCtx.Padding;
+
+                // Draw a dropdown selector for method info in the given type from ClassExtensionTemplate
+                height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             }
 
-            height += CurrentPropertyList.GetHeight();
-
             return height;
-        }
-
-        private readonly PropertyRectContext listCtx = new PropertyRectContext(2);
-        private void DrawExtensionTemplateListHeader(Rect position)
-        {
-            EditorGUI.LabelField(position, "Field Info List");
-        }
-        private float GetExtensionMethodTemplateHeight(int index)
-        {
-            // 'm_MethodName'
-            float height = EditorGUI.GetPropertyHeight(currentArrayProperty.GetArrayElementAtIndex(index).FindPropertyRelative($"m_{nameof(BXSTweenExtensionGeneratorTask.ExtensionMethodTemplate.MethodName)}"));
-            // 'm_TargetMemberName'
-            height += EditorGUIUtility.singleLineHeight + listCtx.Padding;
-            return height;
-        }
-
-        private void DrawExtensionMethodTemplate(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            listCtx.Reset();
-            // extensionMethods.Array.data[index]
-            SerializedProperty elementProperty = currentArrayProperty.GetArrayElementAtIndex(index);
-            // 'm_MethodName'
-            SerializedProperty methodNameProperty = elementProperty.FindPropertyRelative($"m_{nameof(BXSTweenExtensionGeneratorTask.ExtensionMethodTemplate.MethodName)}");
-            EditorGUI.PropertyField(listCtx.GetPropertyRect(rect, methodNameProperty), methodNameProperty);
-
-            // Draw a dropdown selector for method info in the given type from ClassExtensionTemplate
-            // If the parent ClassExtensionTemplate doesn't have a type show a warning dropdown
-            SerializedProperty targetMemberNameProperty = elementProperty.FindPropertyRelative("m_TargetMemberName");
-            Rect baseDropdownAreaRect = listCtx.GetPropertyRect(rect, EditorGUIUtility.singleLineHeight);
-            Rect dropdownLabelRect = new Rect(baseDropdownAreaRect)
-            {
-                width = EditorGUIUtility.labelWidth,
-            };
-            Rect dropdownSelfRect = new Rect(baseDropdownAreaRect)
-            {
-                width = Mathf.Max(baseDropdownAreaRect.width - dropdownLabelRect.width),
-                x = baseDropdownAreaRect.x + dropdownLabelRect.width
-            };
-            EditorGUI.LabelField(dropdownLabelRect, "Target Field");
-            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(currentTargetTemplate.targetType.Type == null))
-            {
-                string displayString = string.IsNullOrWhiteSpace(targetMemberNameProperty.stringValue) ? "<null>" : targetMemberNameProperty.stringValue;
-                string tooltipString = currentTargetTemplate.targetType.Type == null ? "Assign a type to the parent target template to be able to edit this value." : targetMemberNameProperty.tooltip;
-                if (EditorGUI.DropdownButton(dropdownSelfRect, new GUIContent(displayString, tooltipString), FocusType.Passive))
-                {
-                    //SerializedObject copySo = new SerializedObject(targetMemberNameProperty.serializedObject.targetObjects);
-                    //SerializedProperty memberNameCopyProperty = copySo.FindProperty(targetMemberNameProperty.propertyPath);
-                    
-                    FieldInfoSelectorDropdown dropdown = new FieldInfoSelectorDropdown(new AdvancedDropdownState(), currentTargetTemplate.targetType.Type);
-                    dropdown.Show(dropdownSelfRect);
-                    dropdown.onItemSelected = (AdvancedDropdownItem item) =>
-                    {
-                        if (!(item is FieldInfoSelectorDropdown.Item fieldItem))
-                            return;
-
-                        targetMemberNameProperty.stringValue = fieldItem.memberInfo.Name;
-                        targetMemberNameProperty.serializedObject.ApplyModifiedProperties();
-
-                        /*
-                        memberNameCopyProperty.stringValue = fieldItem.memberInfo.Name;
-                        copySo.ApplyModifiedProperties();
-
-                        copySo.Dispose();
-                        memberNameCopyProperty.Dispose();
-                        */
-                    };
-                }
-            }
-            currentArrayProperty.serializedObject.ApplyModifiedProperties();
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -223,6 +144,7 @@ namespace BXFW.Tweening.Next.Editor
 
             if (!property.isExpanded)
             {
+                EditorGUI.EndProperty();
                 return;
             }
 
@@ -236,7 +158,7 @@ namespace BXFW.Tweening.Next.Editor
             if (!allMethodNamesUnique)
             {
                 EditorGUI.HelpBox(
-                    mainCtx.GetPropertyRect(position, NonUniqueValuesWarningBoxHeight), 
+                    mainCtx.GetPropertyRect(position, NonUniqueValuesWarningBoxHeight),
                     "Given method names are not unique. The given Method names inserted will be checked for uniqueness and a index identifier will be appended if the method name isn't unique.",
                     MessageType.Warning
                 );
@@ -245,18 +167,111 @@ namespace BXFW.Tweening.Next.Editor
             // Depending on the type selected, draw a ReorderableList where we can add valid MemberInfo's from given class
             // The member info shall either be a property with getter and setter or be a field
             currentArrayProperty = property.FindPropertyRelative(nameof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate.extensionMethods));
-            if (CurrentPropertyList == null)
+            // I found my new favorite unity class, it's called ReorderableList and it's very buggy and nice.
+            // Iterate all values on array property and draw their property fields manually
+            // Draw a foldout + array size controller
+            Rect mainFoldoutRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            // array size controller size is 150
+            Rect foldoutElementRect = new Rect(mainFoldoutRect)
             {
-                currentPropertyId = property.GetIDString();
+                width = mainFoldoutRect.width - 160
+            };
+            Rect foldoutArraySizeRect = new Rect(mainFoldoutRect)
+            {
+                x = mainFoldoutRect.x + foldoutElementRect.width + 10,
+                width = 150,
+            };
+            EditorGUI.BeginChangeCheck();
+            bool childListExpanded = EditorGUI.Foldout(foldoutElementRect, property.GetLong(ChildListExpandedKey) != 0, "Methods");
+
+            // Do + and - buttons to add/remove elements
+            Rect arraySizeIncBtnRect = new Rect(foldoutArraySizeRect)
+            {
+                width = 25,
+            };
+            Rect arraySizeDecBtnRect = new Rect(foldoutArraySizeRect)
+            {
+                x = arraySizeIncBtnRect.x + 30,
+                width = 25
+            };
+            Rect arraySizeIntFieldRect = new Rect(foldoutArraySizeRect)
+            {
+                x = arraySizeDecBtnRect.x + 30,
+                width = 90
+            };
+            int propertyArraySize = Mathf.Max(EditorGUI.IntField(arraySizeIntFieldRect, currentArrayProperty.arraySize), 0);
+            if (GUI.Button(arraySizeIncBtnRect, "+"))
+            {
+                propertyArraySize++;
+            }
+            if (GUI.Button(arraySizeDecBtnRect, "-"))
+            {
+                propertyArraySize--;
             }
 
-            if (CurrentPropertyList.serializedProperty.IsDisposed() || CurrentPropertyList.serializedProperty.serializedObject.IsDisposed())
+            if (EditorGUI.EndChangeCheck())
             {
-                CurrentPropertyList.serializedProperty = currentArrayProperty;
+                currentArrayProperty.arraySize = propertyArraySize;
+                property.SetLong(ChildListExpandedKey, childListExpanded ? 1 : 0);
             }
-            float listHeight = CurrentPropertyList.GetHeight();
-            CurrentPropertyList.DoList(mainCtx.GetPropertyRect(position, listHeight));
-            property.serializedObject.ApplyModifiedProperties();
+
+            Rect indentedRect = new Rect(position)
+            {
+                width = position.width - 30,
+                x = position.x + 30,
+            };
+            for (int i = 0; i < currentArrayProperty.arraySize && childListExpanded; i++)
+            {
+                // extensionMethods.Array.data[index]
+                SerializedProperty elementProperty = currentArrayProperty.GetArrayElementAtIndex(i);
+                // 'm_MethodName'
+                SerializedProperty methodNameProperty = elementProperty.FindPropertyRelative($"m_{nameof(BXSTweenExtensionGeneratorTask.ExtensionMethodTemplate.MethodName)}");
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentedRect, methodNameProperty), methodNameProperty);
+
+                // Draw a dropdown selector for method info in the given type from ClassExtensionTemplate
+                // If the parent ClassExtensionTemplate doesn't have a type show a warning dropdown
+                SerializedProperty targetMemberNameProperty = elementProperty.FindPropertyRelative("m_TargetMemberName");
+                Rect baseDropdownAreaRect = mainCtx.GetPropertyRect(indentedRect, EditorGUIUtility.singleLineHeight);
+                Rect dropdownLabelRect = new Rect(baseDropdownAreaRect)
+                {
+                    width = EditorGUIUtility.labelWidth,
+                };
+                Rect dropdownSelfRect = new Rect(baseDropdownAreaRect)
+                {
+                    width = Mathf.Max(baseDropdownAreaRect.width - dropdownLabelRect.width),
+                    x = baseDropdownAreaRect.x + dropdownLabelRect.width
+                };
+                EditorGUI.LabelField(dropdownLabelRect, "Target Field");
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(currentTargetTemplate.targetType.Type == null))
+                {
+                    string displayString = string.IsNullOrWhiteSpace(targetMemberNameProperty.stringValue) ? "<null>" : targetMemberNameProperty.stringValue;
+                    string tooltipString = currentTargetTemplate.targetType.Type == null ? "Assign a type to the parent target template to be able to edit this value." : targetMemberNameProperty.tooltip;
+                    if (EditorGUI.DropdownButton(dropdownSelfRect, new GUIContent(displayString, tooltipString), FocusType.Passive))
+                    {
+                        //SerializedObject copySo = new SerializedObject(targetMemberNameProperty.serializedObject.targetObjects);
+                        //SerializedProperty memberNameCopyProperty = copySo.FindProperty(targetMemberNameProperty.propertyPath);
+
+                        FieldInfoSelectorDropdown dropdown = new FieldInfoSelectorDropdown(new AdvancedDropdownState(), currentTargetTemplate.targetType.Type);
+                        dropdown.Show(dropdownSelfRect);
+                        dropdown.onItemSelected = (AdvancedDropdownItem item) =>
+                        {
+                            if (!(item is FieldInfoSelectorDropdown.Item fieldItem))
+                                return;
+
+                            targetMemberNameProperty.stringValue = fieldItem.memberInfo.Name;
+                            targetMemberNameProperty.serializedObject.ApplyModifiedProperties();
+
+                            /*
+                            memberNameCopyProperty.stringValue = fieldItem.memberInfo.Name;
+                            copySo.ApplyModifiedProperties();
+
+                            copySo.Dispose();
+                            memberNameCopyProperty.Dispose();
+                            */
+                        };
+                    }
+                }
+            }
 
             EditorGUI.EndProperty();
         }

@@ -203,9 +203,16 @@ namespace BXFW.Tweening.Next.Editor
             // partial extensions class definition (public static partial class {fileClassName})
             sb.Append(namespaceIndent).Append(TkPublic).Append(" ").Append(TkStatic).Append(" ").Append(TkPartial).Append(" ").Append(TkClass).Append(" ").Append(fileClassName).AppendLine();
             sb.Append(namespaceIndent).Append(TkOpenScope).AppendLine(); // {\n
-            // constant using definitions
-            currentNamespaceUsings.Add("BXFW.Tweening");
-            currentNamespaceUsings.Add("BXFW.Tweening.Next");
+            // constant using definitions (only add these if the root namespace isn't BXFW.Tweening)
+            bool isBaseTweeningNamespace = fileNamespace.StartsWith("BXFW.Tweening");
+            if (!isBaseTweeningNamespace)
+            {
+                currentNamespaceUsings.Add("BXFW.Tweening");
+            }
+            if (!isBaseTweeningNamespace || !fileNamespace.StartsWith("BXFW.Tweening.Next"))
+            {
+                currentNamespaceUsings.Add("BXFW.Tweening.Next");
+            }
             // function definitions
             foreach (ExtensionClassTemplate template in extensionPairs)
             {
@@ -235,7 +242,7 @@ namespace BXFW.Tweening.Next.Editor
                         Debug.LogWarning($"[BXSTweenExtensionGeneratorTask::Run] Given name \"{method.MethodName}\" already exists on list more than once. Appending count of 'generatedMethodNames' to it.");
                         method.MethodName += generatedMethodNames.Count;
                     }
-                    
+
                     MemberInfo targetTypeMember = method.GetTargets(template.targetType.Type).First();
                     Type memberFieldType;
                     if (targetTypeMember is FieldInfo fieldInfo)
@@ -286,7 +293,7 @@ namespace BXFW.Tweening.Next.Editor
                             .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkIndent).Append("throw new System.ArgumentNullException(\"[").Append(ExtensionMethodTemplate.MethodNamePrefix).Append(method.MethodName).Append("] Given argument was null.\")").Append(TkSemicolon).AppendLine()
                         .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkCloseScope).AppendLine() // }
                       .AppendLine() // Gap between the actual method calls
-                       // BXSTweenContext context = new BXSTweenContext(duration);
+                                    // BXSTweenContext context = new BXSTweenContext(duration);
                       .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(twContextType.Name).Append(" ").Append(TkContextValueName).Append(" = new ").Append(twContextType.Name).Append(TkOpenParams).Append(TkDurationParameterName).Append(TkCloseParams).Append(TkSemicolon).AppendLine()
                       // context.SetupContext(() => target.{TargetMemberName},
                       .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkContextValueName).Append(".SetupContext(() => ").Append(TkTargetParameterName).Append(".").Append(method.TargetMemberName).Append(TkParameterSep).Append(" ")

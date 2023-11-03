@@ -834,6 +834,14 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
+        /// Returns whether if Next is callable on <paramref name="prop"/>.
+        /// </summary>
+        public static bool IsEndOfData(this SerializedProperty prop)
+        {
+            return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(prop, null);
+        }
+
+        /// <summary>
         /// Returns the children (regardless of visibility) of the SerializedProperty.
         /// <br/>
         /// <br>This method won't work with Linq methods that cast this <see cref="IEnumerable{T}"/> 
