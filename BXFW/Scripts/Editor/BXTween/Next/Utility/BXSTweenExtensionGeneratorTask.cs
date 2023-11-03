@@ -170,21 +170,6 @@ namespace BXFW.Tweening.Next.Editor
             return true;
         }
 
-        public static BXSTweenFloatContext BXSTwMoveY(/* this */ Transform target, float lastValue, float duration)
-        {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target), "[BXSTwDoSomeCrap] Argument was null.");
-            }
-
-            BXSTweenFloatContext context = new BXSTweenFloatContext(duration);
-            context.SetupContext(() => target.position.y, lastValue, (v) => target.position = new Vector3(target.position.x, v, target.position.z));
-            // Wait 1 frame delay for letting the user apply it's settings
-            context.DelayedPlay();
-
-            return context;
-        }
-
         public override void Run()
         {
             // -- Reset state
