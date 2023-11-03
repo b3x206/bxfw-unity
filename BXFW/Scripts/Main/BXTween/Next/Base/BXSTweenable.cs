@@ -364,16 +364,20 @@ namespace BXFW.Tweening.Next
         /// Depending on the <see cref="Delay"/> being larger than 0, this value will tick gradually.
         /// Otherwise it will be instantly set to 1 if there's no delay (except for a single frame delay for all tweens)
         /// </br>
+        /// <br>This value goes between 0-1 linearly.</br>
         /// </summary>
         public float DelayElapsed { get; protected internal set; }
         /// <summary>
         /// The current elapsed value for this tween.
         /// <br>This value only resets when the <see cref="Reset"/> is called, which is done by the stop action.</br>
+        /// <br>This value goes between 0-1 linearly.</br>
         /// </summary>
         public float CurrentElapsed { get; protected internal set; }
         /// <summary>
         /// The total elapsed for the main tween.
         /// <br>This includes the loops, excludes delays.</br>
+        /// <br>This value goes between 0-1 linearly.</br>
+        /// <br>Infinitely looping tweens (<see cref="StartingLoopCount"/> &lt; 0) will just return <see cref="CurrentElapsed"/>.</br>
         /// </summary>
         public float TotalElapsed
         {
@@ -382,9 +386,9 @@ namespace BXFW.Tweening.Next
                 float elapsedValue = CurrentElapsed;
                 if (StartingLoopCount > 0)
                 {
-                    float loopPartElapsed = 1f / (StartingLoopCount + 1);
-                    elapsedValue *= loopPartElapsed; // Get current elapsed value by loop part
-                    elapsedValue += loopPartElapsed * LoopsElapsed; // Add the elapsed loop count
+                    float loopPartDuration = 1f / (StartingLoopCount + 1);
+                    elapsedValue *= loopPartDuration; // Get current elapsed value by loop part
+                    elapsedValue += loopPartDuration * LoopsElapsed; // Add the elapsed loop count
                 }
 
                 return elapsedValue;
@@ -393,7 +397,10 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// The elapsed loops that this tween has.
-        /// <br>Only increments until the target <see cref="LoopCount"/>.</br>
+        /// <br>
+        /// Only increments until the target <see cref="LoopCount"/>,
+        /// equality to the <see cref="LoopCount"/> will be the final loop.
+        /// </br>
         /// </summary>
         public int LoopsElapsed { get; protected internal set; } = 0;
         /// <summary>
@@ -570,6 +577,42 @@ namespace BXFW.Tweening.Next
             }
         }
         /// <summary>
+        /// Calls play with the <see cref="CurrentElapsed"/> and <see cref="LoopsElapsed"/> set to given values.
+        /// </summary>
+        /// <param name="currentElapsed">The current elapsation. Clamped between 0-1.</param>
+        /// <param name="loopsElapsed">
+        /// The amount of loops elapsed when playing.
+        /// Setting this value to anything if the tween isn't <see cref="IsLoopable"/> does nothing.
+        /// <br>If the tween is also infinitely loopable this parameter does nothing.</br>
+        /// </param>
+        public void PlayFrom(float currentElapsed, int loopsElapsed)
+        {
+            Play();
+
+            // Set the elapsed values
+            CurrentElapsed = Math.Clamp(currentElapsed, 0f, 1f);
+            LoopsElapsed = Math.Clamp(loopsElapsed, 0, StartingLoopCount);
+        }
+        /// <summary>
+        /// Calls play with the <see cref="TotalElapsed"/> (approximately) being set to <paramref name="totalElapsed"/>.
+        /// <br>Calculates the <see cref="CurrentElapsed"/> and <see cref="LoopsElapsed"/> according to the <paramref name="totalElapsed"/>.</br>
+        /// </summary>
+        /// <param name="totalElapsed">
+        /// The current elapsation duration. This includes loops, to make the tween play from 
+        /// the loop you want + current elapsed use the <see cref="PlayFrom(float, int)"/> method.
+        /// <br>This value is not divided by <see cref="StartingLoopCount"/>,
+        /// but rather by it's 1 extra as 1 loop is counted as 2 runs.</br>
+        /// </param>
+        public void PlayFrom(float totalElapsed)
+        {
+            // Get the loops + current from the total elapsed
+            float loopPartDuration = 1f / (Math.Max(0, StartingLoopCount) + 1);
+            int loopsElapsed = (int)(totalElapsed / loopPartDuration);
+            float currentElapsed = totalElapsed - (loopsElapsed * loopPartDuration);
+            
+            PlayFrom(currentElapsed, loopsElapsed);
+        }
+        /// <summary>
         /// Keeps the current tween state and pauses the running tweening timers.
         /// <br>Calling <see cref="Stop"/> at this state will only reset the tween, and calling play will continue the tween.</br>
         /// </summary>
@@ -655,7 +698,7 @@ namespace BXFW.Tweening.Next
         /// Waits 1 frame before calling <see cref="Play"/> function.
         /// <br>
         /// Can be useful to be able to receive settings after the tween was created,
-        /// calling <see cref="Play"/> directly will lock the loop count and duration values.
+        /// calling <see cref="Play"/> will immediately lock the loop count and duration values.
         /// </br>
         /// </summary>
         public void DelayedPlay()
