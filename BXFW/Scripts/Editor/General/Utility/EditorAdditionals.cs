@@ -92,7 +92,7 @@ namespace BXFW.Tools.Editor
         /// Directory of the 'Resources' file (for bxfw assets generally).
         /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
         /// </summary>
-        public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
+        public static readonly string ResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/");
         #endregion
 
         #region Prefab Utility
@@ -838,6 +838,11 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public static bool IsEndOfData(this SerializedProperty prop)
         {
+            if (prop == null)
+            {
+                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::IsEndOfData] Target was null.");
+            }
+
             return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(prop, null);
         }
 

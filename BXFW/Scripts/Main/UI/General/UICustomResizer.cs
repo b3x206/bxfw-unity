@@ -83,43 +83,19 @@ namespace BXFW.UI
             }
         }
 
-        private Coroutine currentRoutine;
         // Manage
-        protected override void Awake()
-        {
-            base.Awake();
-
-            currentRoutine = StartCoroutine(UpdateCoroutine());
-        }
         protected override void OnEnable()
         {
             base.OnEnable();
 
-            // Restart routine as the object/behaviour is re-enabled.
-            if (currentRoutine == null)
-            {
-                currentRoutine = StartCoroutine(UpdateCoroutine());
-            }
-
             UpdateRectTransform();
         }
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-
-            currentRoutine = null;
-            // Coroutine is stopped when the entire gameobject is disabled anyways
-            // But just the behaviour disabling will keep the routine running
-            // We don't want that.
-            // (note : this may not set the entire coroutine stopping as this is probably called when the behaviour disables so we just stop the coroutines here)
-            StopAllCoroutines();
-        }
         /// <summary>
-        /// An update method that is called with the coroutine.
-        /// <br>This is run on the end of this frame (<see cref="WaitForEndOfFrame"/>).</br>
+        /// An update method that is called on the LateUpdate.
         /// <br>It does not run if the current object is destroyed or disabled, it will be re-run when it gets enabled or created again.</br>
         /// </summary>
-        protected virtual void OnCoroutineUpdate() { }
+        protected virtual void OnLateUpdate()
+        { }
 
         // Update
         // -- Editor Update
@@ -132,6 +108,31 @@ namespace BXFW.UI
             }
 #endif
         }
+        private void LateUpdate()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+#endif
+            if (ResizeTarget != null)
+            {
+                // Disable object if the target is disabled too.
+                if (!ResizeTarget.gameObject.activeInHierarchy && disableIfTargetIs)
+                {
+                    gameObject.SetActive(false);
+                }
+                else
+                {
+                    gameObject.SetActive(true);
+                }
+            }
+
+            UpdateRectTransform();
+            OnLateUpdate();
+        }
+
         protected bool ShouldUpdate()
         {
             // Check target
@@ -155,39 +156,6 @@ namespace BXFW.UI
             }
 
             return true;
-        }
-        private IEnumerator UpdateCoroutine()
-        {
-            for (;;)
-            {
-                // Coroutine will be broken / disabled when the
-                // A : GameObject is destroy/kil
-                // B : GameObject is disable
-                // no.
-                // It won't stop when the behaviour is disabled but we intercept 'OnDisable' to disable the routine
-                // This coroutine waits until end of frame for 'RectTransform' calculations to be done
-                // TODO : Maybe use 'LateUpdate'?
-                yield return new WaitForEndOfFrame();
-
-                if (ResizeTarget != null)
-                {
-                    // Disabling the 'gameObject' does kill the coroutine, so use a coroutine dispatcher.
-                    // Disable object if the target is disabled too.
-                    
-                    if (!ResizeTarget.gameObject.activeInHierarchy && 
-                        disableIfTargetIs)
-                    {
-                        gameObject.SetActive(false);
-                    }
-                    else
-                    {
-                        gameObject.SetActive(true);
-                    }
-                }
-
-                UpdateRectTransform();
-                OnCoroutineUpdate();
-            }
         }
 
         /// <summary>

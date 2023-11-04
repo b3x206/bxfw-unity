@@ -12,10 +12,10 @@ namespace BXFW.Tweening.Next.Editor
     public class BXSTweenExtensionTemplateEditor : PropertyDrawer
     {
         /// <summary>
-        /// A field info selector. Also adds the ability to select get+set properties.
+        /// A member info selector. Also adds the ability to select get+set properties.
         /// <br>Can only select public instance fields.</br>
         /// </summary>
-        public class FieldInfoSelectorDropdown : AdvancedDropdown
+        public class MemberInfoSelectorDropdown : AdvancedDropdown
         {
             /// <summary>
             /// Item that contains extra data for selected.
@@ -44,7 +44,7 @@ namespace BXFW.Tweening.Next.Editor
                 AdvDropdownElementLineStyle.richText = true;
                 AdvDropdownElementHeaderStyle.richText = true;
 
-                AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Select Field Info");
+                AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Select Member Info");
 
                 // Only draw public fields + properties with get+set
                 foreach (MemberInfo member in targetType.GetMembers())
@@ -76,13 +76,13 @@ namespace BXFW.Tweening.Next.Editor
 
             protected override void ItemSelected(AdvancedDropdownItem item)
             {
-                onItemSelected?.Invoke(item);
-
                 AdvDropdownElementLineStyle.richText = false;
                 AdvDropdownElementHeaderStyle.richText = false;
+
+                onItemSelected?.Invoke(item);
             }
 
-            public FieldInfoSelectorDropdown(AdvancedDropdownState state, Type target) : base(state)
+            public MemberInfoSelectorDropdown(AdvancedDropdownState state, Type target) : base(state)
             {
                 targetType = target;
             }
@@ -251,11 +251,11 @@ namespace BXFW.Tweening.Next.Editor
                         //SerializedObject copySo = new SerializedObject(targetMemberNameProperty.serializedObject.targetObjects);
                         //SerializedProperty memberNameCopyProperty = copySo.FindProperty(targetMemberNameProperty.propertyPath);
 
-                        FieldInfoSelectorDropdown dropdown = new FieldInfoSelectorDropdown(new AdvancedDropdownState(), currentTargetTemplate.targetType.Type);
+                        MemberInfoSelectorDropdown dropdown = new MemberInfoSelectorDropdown(new AdvancedDropdownState(), currentTargetTemplate.targetType.Type);
                         dropdown.Show(dropdownSelfRect);
                         dropdown.onItemSelected = (AdvancedDropdownItem item) =>
                         {
-                            if (!(item is FieldInfoSelectorDropdown.Item fieldItem))
+                            if (!(item is MemberInfoSelectorDropdown.Item fieldItem))
                                 return;
 
                             targetMemberNameProperty.stringValue = fieldItem.memberInfo.Name;

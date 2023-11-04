@@ -29,7 +29,7 @@ namespace BXFW.UI
             }
         }
         
-        protected override void OnCoroutineUpdate()
+        protected override void OnLateUpdate()
         {
             // there can be only 1 graphic anyways
             // though it would have been better if i cached it
