@@ -9,114 +9,6 @@ using UnityEngine.Serialization;
 namespace BXFW
 {
     /// <summary>
-    /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
-    /// Uses the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on code, 
-    /// but on editor a <see cref="UnityEditor.PropertyDrawer"/> is needed (TODO)
-    /// <br/>
-    /// <br>NOTE : Array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable 
-    /// in <typeparamref name="TKey"/> or <typeparamref name="TValue"/> (by unity). Wrap them with array container class.</br>
-    /// </summary>
-    [Serializable, Obsolete("This 'SerializedDictionary' is obsolete.")]
-    public class OldSerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
-    {
-        [SerializeField] private List<TKey> keys = new List<TKey>();
-        [SerializeField] private List<TValue> values = new List<TValue>();
-
-        // Save the base class Dictionary to serialized lists
-        public void OnBeforeSerialize()
-        {
-            // The 'keys' and 'values' are already serialized, just add them to the actual lists that unity will serialize.
-            // -- These used to only account for removing + adding keys and values
-            // - Check for array sequence changes also (the SequenceEqual's)
-
-            // - Check for removal + adding
-            // If a key is removed
-            if (keys.Count != values.Count)
-            {
-                // Removing or adding keys, set to defualt value
-                values.Resize(keys.Count, default);
-            }
-
-            // Directly adding to dictionary (from c#, not from editor)
-            // --Only useful if we directly add to the dictionary, then serialize
-            if (!Enumerable.SequenceEqual(keys, Keys) || !Enumerable.SequenceEqual(values, Values) || keys.Count < Keys.Count) // If the actual dictionary is more up to date.
-            {
-                keys.Clear();
-                values.Clear();
-
-                foreach (KeyValuePair<TKey, TValue> pair in this)
-                {
-                    keys.Add(pair.Key);
-                    values.Add(pair.Value);
-                }
-            }
-        }
-
-        // Load base class Dictionary from the serialized lists
-        public void OnAfterDeserialize()
-        {
-            // Clear the base dictionary in case of garbage data
-            Clear();
-
-            if (keys.Count != values.Count)
-            {
-                // Resize the values if the keys are more or less
-                values.Resize(keys.Count, default);
-
-                // Unity moment
-                if (keys.Count != values.Count)
-                {
-                    throw new IndexOutOfRangeException(string.Format(@"[SerializableDictionary] There are {0} keys and {1} values after deserialization.
-Make sure that both key and value types are serializable.", keys.Count, values.Count));
-                }
-            }
-
-            // Append the serialized values into the base dictionary class
-            for (int i = 0; i < keys.Count; i++)
-            {
-                if (Keys.Contains(keys[i]))
-                {
-                    // NOTE : 
-                    // Ignore for now, don't update the dictionary.
-                    // There is no elegant solution to the 'duplicate' issue.
-                    // Just make sure that the dev is notified about the issue.
-
-                    if (Application.isPlaying)
-                    {
-                        Debug.LogWarning(string.Format("[SerializableDictionary] Note : Key {0} is already contained in the dictionary. Please make sure your keys are all unique.", keys[i]));
-                    }
-
-                    continue;
-                }
-
-                Add(keys[i], values[i]);
-            }
-        }
-
-        // Convert to-from dictionary
-        /// <summary>
-        /// Creates an empty SerializableDictionary.
-        /// </summary>
-        public OldSerializableDictionary() : base()
-        { }
-        /// <summary>
-        /// Creates a dictionary with capacity reserved.
-        /// </summary>
-        public OldSerializableDictionary(int capacity) : base(capacity)
-        { }
-        /// <summary>
-        /// Creates a dictionary from another dictionary.
-        /// </summary>
-        public OldSerializableDictionary(IDictionary<TKey, TValue> dict) : base(dict)
-        { }
-        /// <summary>
-        /// Creates a dictionary from a collection.
-        /// </summary>
-        public OldSerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer) : base(values, comparer)
-        { }
-    }
-
-    /// <summary>
     /// Base used for the <see cref="SerializableDictionary2{TKey, TValue}"/>.
     /// <br>Used to match the editor for the dictionary with a custom reorderable list.</br>
     /// </summary>
@@ -139,15 +31,12 @@ Make sure that both key and value types are serializable.", keys.Count, values.C
         /// </summary>
         public abstract void SetKey(int index, object value);
     }
-    
-    // If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
-    // Well, you asked. And i delivered. The all new SerializableDictionary2!
-    // Features
-    // * Probably will break your previous serialization lol
-    // * Has a cool editor that isn't definitely broken because ReorderableList adding doesn't work unless you use dark magic.
-    // TODO list:
-    // * Some Unit testing (to check if the dictionary2 is screwed or if it works)
-    // * Migrate all scripts to this version
+
+    /// If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
+    /// Well, you asked. And i delivered. The all new SerializableDictionary2!
+    /// Features
+    /// * Probably will break your previous serialization lol
+    /// * Has a cool editor that isn't definitely broken because ReorderableList adding doesn't work unless you use dark magic.
     /// <summary>
     /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
     /// Uses (mostly) the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on both editor and code.
