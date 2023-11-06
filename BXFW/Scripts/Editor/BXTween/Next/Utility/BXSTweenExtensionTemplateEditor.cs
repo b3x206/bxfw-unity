@@ -104,7 +104,9 @@ namespace BXFW.Tweening.Next.Editor
             currentArrayProperty = property.FindPropertyRelative(nameof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate.extensionMethods));
 
             if (!property.isExpanded)
+            {
                 return height;
+            }
 
             height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate.targetType)));
 
@@ -256,7 +258,9 @@ namespace BXFW.Tweening.Next.Editor
                         dropdown.onItemSelected = (AdvancedDropdownItem item) =>
                         {
                             if (!(item is MemberInfoSelectorDropdown.Item fieldItem))
+                            {
                                 return;
+                            }
 
                             targetMemberNameProperty.stringValue = fieldItem.memberInfo.Name;
                             targetMemberNameProperty.serializedObject.ApplyModifiedProperties();

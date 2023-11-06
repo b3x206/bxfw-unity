@@ -396,6 +396,8 @@ namespace BXFW
         /// The current list of disallowed characters.
         /// </summary>
         public readonly string disallowText;
+#endif
+        // These optional parameters won't compile if the given values won't exist
         /// <summary>
         /// Whether to assume that the disallowText is regex?
         /// </summary>
@@ -404,7 +406,7 @@ namespace BXFW
         /// If the disallow text is regex, the options to use.
         /// </summary>
         public RegexOptions regexOpts;
-#endif
+
         public EditDisallowCharsAttribute(string disallow)
         {
 #if UNITY_EDITOR

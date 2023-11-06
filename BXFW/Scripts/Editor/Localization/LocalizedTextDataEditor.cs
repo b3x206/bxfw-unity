@@ -53,7 +53,9 @@ namespace BXFW.ScriptEditor
             public bool Equals(CultureInfo x, CultureInfo y)
             {
                 if (x is null)
+                {
                     return y is null;
+                }
 
                 return x.TwoLetterISOLanguageName == y.TwoLetterISOLanguageName;
             }

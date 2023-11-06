@@ -71,7 +71,9 @@ namespace BXFW.ScriptEditor
             foreach (KeyValuePair<AssemblyFlags, Type[]> domainCategoryType in TypeListProvider.DomainTypesList)
             {
                 if ((domainCategoryType.Key & filterFlags) != domainCategoryType.Key)
+                {
                     continue;
+                }
 
                 AdvancedDropdownItem categoryItem = new AdvancedDropdownItem($"<color=#a2d4a3>{domainCategoryType.Key}</color>");
                 rootItem.AddChild(categoryItem);
@@ -79,7 +81,9 @@ namespace BXFW.ScriptEditor
                 foreach (Type t in domainCategoryType.Value)
                 {
                     if (!t.IsPublic)
+                    {
                         continue;
+                    }
 
                     string typeIdentifier = string.Empty;
                     if (t.IsClass)
@@ -125,7 +129,9 @@ namespace BXFW.ScriptEditor
         public TypeSelectorDropdown(AdvancedDropdownState state, string selectedAssemblyQualifiedName) : base(state)
         {
             if (string.IsNullOrWhiteSpace(selectedAssemblyQualifiedName))
+            {
                 return;
+            }
 
             //m_selectedType = TypeListProvider.GetDomainTypesByPredicate((t) => t.AssemblyQualifiedName == selectedAssemblyQualifiedName).First();
             m_selectedType = Type.GetType(selectedAssemblyQualifiedName);
@@ -181,7 +187,9 @@ namespace BXFW.ScriptEditor
                 typeSelector.onItemSelected = (AdvancedDropdownItem item) =>
                 {
                     if (!(item is TypeSelectorDropdown.Item typeItem))
+                    {
                         return;
+                    }
 
                     spTypeNameCopy.stringValue = typeItem.assemblyQualifiedName;
                     mainSo.ApplyModifiedProperties();

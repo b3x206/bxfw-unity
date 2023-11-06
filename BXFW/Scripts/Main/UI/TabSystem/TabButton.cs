@@ -9,6 +9,9 @@ using System.Collections;
 
 namespace BXFW.UI
 {
+    /// <summary>
+    /// A child element of a <see cref="TabSystem"/>.
+    /// </summary>
     [RequireComponent(typeof(Image))]
     public sealed class TabButton : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler
     {
@@ -22,7 +25,7 @@ namespace BXFW.UI
         /// <summary>
         /// The fade type contained by the <see cref="ParentTabSystem"/>.
         /// </summary>
-        public FadeType FadeType { get { return ParentTabSystem.ButtonFadeType; } }
+        public FadeType FadeType => ParentTabSystem.ButtonFadeType;
 
         private Image m_BackgroundImage;
         public Image BackgroundImage
@@ -50,7 +53,7 @@ namespace BXFW.UI
         /// </summary>
         public Content Content
         {
-            get { return m_Content; }
+            get => m_Content;
             set
             {
                 m_Content = value ?? new Content(); // Set new Content as 'GenerateButtonContent' doesn't like null content.
@@ -73,8 +76,8 @@ namespace BXFW.UI
         [Header(":: Tab Button Reference")]
         [SerializeField] private TMP_Text m_ButtonText;
         [SerializeField] private Image m_ButtonImage;
-        public TMP_Text ButtonText { get { return m_ButtonText; } internal set { m_ButtonText = value; } }
-        public Image ButtonImage { get { return m_ButtonImage; } internal set { m_ButtonImage = value; } }
+        public TMP_Text ButtonText { get => m_ButtonText; internal set => m_ButtonText = value; }
+        public Image ButtonImage { get => m_ButtonImage; internal set => m_ButtonImage = value; }
 
         [Header(":: Internal Reference")]
         [ReadOnlyView, SerializeField] internal int ButtonIndex = 0;
