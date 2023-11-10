@@ -44,7 +44,6 @@ namespace BXFW.ScriptEditor
                     drawHeaderCallback = DrawListHeader,
                     drawElementCallback = DrawListElements,
                     elementHeightCallback = GetElementHeight,
-                    onCanAddCallback = OnListCanAddCallback,
                     onReorderCallbackWithDetails = OnListSwitchPairs,
                 };
 
@@ -82,7 +81,7 @@ namespace BXFW.ScriptEditor
             // i mean why?
             // this hack of "backing up the 'SerializedProperty' with a new 'SerializedObject' works"
             // this occurs when the inspector mode is switched from-to inspector to debug to inspector back
-            // why? is this my shitty code or a unity bug? i don't even really know.
+            // why? is this my crappy code or a unity bug? i don't even really know.
             if (m_baseProperty.serializedObject.IsDisposed())
             {
                 // this also makes the reorderable list non-reorderable
@@ -152,7 +151,7 @@ namespace BXFW.ScriptEditor
                 if (!dict.KeysAreUnique())
                 {
                     // Q : How do we support struct parents?
-                    // A : ^UCK (silly dog video, most commonly used in a tiktok where random videos is mismashed, trying to make humor out of chaos)
+                    // A : no.
                     // Society if SerializedProperty value was assignable with any c# type
                     // --
 
@@ -163,16 +162,6 @@ namespace BXFW.ScriptEditor
             valuesProperty.serializedObject.ApplyModifiedProperties();
         }
 
-        private bool OnListCanAddCallback(ReorderableList list)
-        {
-            // TODO : Maybe add a 'add element' dummy ShowAsPopup EditorWindow?
-            // This is how you add element. (or that's how the add element button does with a default value)
-            // (will display a dummy 'SerializedProperty?')
-            //list.list.Add();
-            //list.InvalidateCache();
-
-            return true;
-        }
         private void OnListSwitchPairs(ReorderableList list, int oldIndex, int newIndex)
         {
             // Switch the switched value when the list values are switched
@@ -216,7 +205,7 @@ namespace BXFW.ScriptEditor
             SerializedObject so = new SerializedObject(m_baseProperty.serializedObject.targetObjects);
             m_basePropertyClone = so.FindProperty(m_baseProperty.propertyPath);
 
-            // go ahead, dispose my ASS here.
+            // go ahead, dispose my [object Object] here.
             // This is a terrible hack done to fix the stupid automatic disposal of the 'm_baseProperty'
             // Instead this method will now dispose 'm_basePropertyClone' which is, like, why?
             // This occured solely because i used 'ReorderableList', any other array viewing method and it would have worked fine.

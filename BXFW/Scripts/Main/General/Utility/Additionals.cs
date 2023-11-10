@@ -12,40 +12,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace BXFW
 {
     /// <summary>
-    /// Quaternion axis.
-    /// Isn't used for anything useful.
-    /// </summary>
-    [Obsolete("This class is pointless, but it could be still used (if this class exists for something useful). Will get removed.")]
-    public enum QuatAxis
-    {
-        // P(4,0)
-        None = 0,
-
-        // P(4,1)
-        XAxis = 1,
-        YAxis = 2,
-        ZAxis = 3,
-        WAxis = 4,
-
-        // P(4,2)
-        XYAxis = 5,
-        XZAxis = 6,
-        XWAxis = 7,
-        YZAxis = 8,
-        YWAxis = 9,
-        ZWAxis = 10,
-
-        // P(4,3)
-        XYZAxis = 11,
-        XYWAxis = 12,
-        YZWAxis = 13,
-        XZWAxis = 14,
-
-        // P(4,4)
-        XYZWAxis = 15
-    }
-
-    /// <summary>
     /// The additionals class.
     /// <br>Contains additionals that doesn't exactly fit somewhere, or it is too small that it doesn't have it's own class.</br>
     /// </summary>
@@ -144,7 +110,7 @@ namespace BXFW
         public static void AddExplosionForce(this Rigidbody2D rb, float explosionForce, Vector2 explosionPosition, float explosionRadius, float upwardsModifier = 0.0f, ForceMode2D mode = ForceMode2D.Force)
         {
             Vector2 explosionDir = rb.position - explosionPosition;
-            float explosionDistance = (explosionDir.magnitude / explosionRadius);
+            float explosionDistance = explosionDir.magnitude / explosionRadius;
 
             // Normalize without computing magnitude again
             if (upwardsModifier == 0)
@@ -159,7 +125,7 @@ namespace BXFW
                 explosionDir.Normalize();
             }
 
-            rb.AddForce(Mathf.Lerp(0, explosionForce, (1 - explosionDistance)) * explosionDir, mode);
+            rb.AddForce(Mathf.Lerp(0f, explosionForce, (1f - explosionDistance)) * explosionDir, mode);
         }
 
         // --- SpriteRenderer + Camera

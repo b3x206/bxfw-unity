@@ -16,13 +16,6 @@ namespace BXFW
         YAxis = 1 << 1,
         ZAxis = 1 << 2,
 
-        [Obsolete("This value of TransformAxis is no longer used, use (XAxis | YAxis) instead.")]
-        XYAxis = XAxis | YAxis,
-        [Obsolete("This value of TransformAxis is no longer used, use (YAxis | ZAxis) instead.")]
-        YZAxis = YAxis | ZAxis,
-        [Obsolete("This value of TransformAxis is no longer used, use (XAxis | ZAxis) instead.")]
-        XZAxis = XAxis | ZAxis,
-
         // This will exist because 'TransformAxis2D' also has it.
         XYZAxis = XAxis | YAxis | ZAxis
     }

@@ -248,15 +248,14 @@ namespace BXFW
 
 #if UNITY_EDITOR
         /// <summary>
-        /// An utility method used to get the type
+        /// An utility method used to get the typed <see cref="EqualityComparer{T}.Default"/>.
         /// </summary>
         /// <param name="t">
         /// Type of the both <paramref name="x"/> and <paramref name="y"/>.
-        /// An <see cref="ArgumentException"/> will be thrown on invocation if the types mismatch.
+        /// An <see cref="ArgumentException"/> will be thrown (by the reflection utility) on invocation if the types mismatch.
         /// </param>
         /// <param name="x">First object to compare. This method returns whether if this value is equal to <paramref name="y"/>.</param>
         /// <param name="y">Other way around. Method returns if this is equal to <paramref name="x"/>.</param>
-        /// <returns></returns>
         private bool GetTypedEqualityComparerResult(Type t, object x, object y)
         {
             // Because apparently there's no typeless EqualityComparer?
@@ -268,7 +267,6 @@ namespace BXFW
             return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { x, y });
         }
 #endif
-
         protected override DrawCondition DoGetDrawCondition(FieldInfo targetField, object parentValue, out string errorString)
         {
             errorString = string.Empty;
