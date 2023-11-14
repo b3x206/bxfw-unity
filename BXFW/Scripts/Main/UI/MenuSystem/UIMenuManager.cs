@@ -100,7 +100,7 @@ namespace BXFW.UI
             }
             else
             {
-                Debug.LogWarning($"[UIMenuManager::OpenSubMenu] SubMenu '{name}' is already open.", menu);
+                Debug.LogWarning($"[UIMenuManager::OpenSubMenu] SubMenu '{menu.name}' is already open.", menu);
                 return;
             }
 
