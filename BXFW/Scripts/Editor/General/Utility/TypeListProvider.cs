@@ -135,7 +135,7 @@ namespace BXFW.Tools.Editor
             {
                 return AssemblyFlags.AssetScript;
             }
-            
+
             return AssemblyFlags.Uncategorized;
         }
 
@@ -197,7 +197,7 @@ namespace BXFW.Tools.Editor
         private static Dictionary<long, Type[]> HashedTypeResultsPair = new Dictionary<long, Type[]>();
         /// <summary>
         /// Returns a list of types by predicate applied to types.
-        /// <br>These results are cached according to the given <paramref name="predicate"/>'s results and returned fastly.</br>
+        /// <br>These results are cached according to the given <paramref name="predicate"/>'s results and returned faster afterwards.</br>
         /// </summary>
         /// <param name="predicate">Function delegate to match by.</param>
         /// <param name="noHashCheck">Whether to always iterate the <see cref="DomainTypesList"/>.</param>
@@ -238,6 +238,33 @@ namespace BXFW.Tools.Editor
             results = tempResults.ToArray();
             HashedTypeResultsPair.Add(argsHash, results);
             return tempResults.ToArray();
+        }
+
+        /// <summary>
+        /// Returns the first matching type using <paramref name="predicate"/>.
+        /// </summary>
+        /// <param name="predicate">Predicate to search using</param>
+        /// <param name="flags">List of domain flags to search inside.</param>
+        public static Type FirstDomainTypeByPredicate(Predicate<Type> predicate, AssemblyFlags flags = AssemblyFlags.All)
+        {
+            // This maneuver is gonna cost us 51 years
+            if (DomainTypesList.Count <= 0)
+            {
+                Refresh();
+            }
+
+            foreach (Type[] list in GetDomainTypesFromFlags(flags))
+            {
+                foreach (Type t in list)
+                {
+                    if (predicate(t))
+                    {
+                        return t;
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -283,7 +310,7 @@ namespace BXFW.Tools.Editor
                 //Array.Copy(asmTypes, 0, AllDomainTypesCache, copyIndex, asmTypes.Length);
                 //copyIndex += asmTypes.Length;
             }
-            
+
             // Ensure that the dictionary only uses the memory it needs.
             DomainTypesList.TrimExcess();
         }

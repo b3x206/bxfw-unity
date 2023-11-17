@@ -36,6 +36,8 @@ namespace BXFW.ScriptEditor
             // EditorWindow.ShowAsDropdown's public version tries to be a real dropdown by using mouse unfocus events
             // With those events it also tries to hook itself to a conceivable parent
             // This window will require manual management so we can use the window however we like to do
+            // -- 
+            // It does the same thing? TODO : Test this
             Instance.position = new Rect(Instance.position) { x = parentRect.xMin, y = parentRect.yMax, size = size };
             Instance.onGUICall = onGUICall;
             // internal void ShowAsDropDown(Rect buttonRect, Vector2 windowSize, PopupLocation[] priorities)

@@ -89,7 +89,7 @@ namespace BXFW.Tweening.Next.Editor
         [Serializable]
         public class ExtensionClassTemplate
         {
-            public SerializableSystemType targetType;
+            public SerializableType targetType;
             public List<ExtensionMethodTemplate> extensionMethods;
         }
 

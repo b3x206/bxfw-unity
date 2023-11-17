@@ -131,7 +131,7 @@ namespace BXFW
                 throw new ArgumentException("[SerializableDictionary::SetKey] Given boxed key value is not 'TKey'.");
             }
             // Check if unboxed value is valid
-            if (typeof(TKey).IsTypeNullable() && Comparer.Equals(key, default))
+            if (typeof(TKey).IsNullable() && Comparer.Equals(key, default))
             {
                 throw new ArgumentNullException("[SerializableDictionary::SetKey] Given boxed key value is null.");
             }
@@ -141,7 +141,7 @@ namespace BXFW
 
         public void Add(TKey key, TValue value)
         {
-            if (typeof(TKey).IsTypeNullable() && Comparer.Equals(key, default))
+            if (typeof(TKey).IsNullable() && Comparer.Equals(key, default))
             {
                 throw new ArgumentNullException("[SerializableDictionary::Add] Given key was null.", nameof(key));
             }

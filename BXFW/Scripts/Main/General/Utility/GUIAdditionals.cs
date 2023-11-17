@@ -13,11 +13,12 @@ namespace BXFW
         /// <summary>
         /// Hashes contained in the <see cref="GUI"/> class, 
         /// for use with <see cref="GUIUtility.GetControlID(int, FocusType, Rect)"/>.
-        /// <br>This is not the exact same hashlist unity internally uses, this is for custom uses.</br>
+        /// <br>This is not the exact same hashlist unity internally uses, this is for custom ID usage.</br>
         /// </summary>
         public static class HashList
         {
             public static readonly int BoxHash = "Box".GetHashCode();
+            // Button is misspelled on the unity hashlist as 'Buton'
             public static readonly int ButtonHash = "Button".GetHashCode();
             public static readonly int RepeatButtonHash = "repeatButton".GetHashCode();
             public static readonly int ToggleHash = "Toggle".GetHashCode();
@@ -25,6 +26,24 @@ namespace BXFW
             public static readonly int SliderHash = "Slider".GetHashCode();
             public static readonly int BeginGroupHash = "BeginGroup".GetHashCode();
             public static readonly int ScrollViewHash = "scrollView".GetHashCode();
+        }
+
+        /// <summary>
+        /// Checks whether if there's a valid OnGUI context.
+        /// <br>Throws <see cref="ArgumentException"/> if the context is not valid.</br>
+        /// </summary>
+        public static void CheckOnGUI()
+        {
+            typeof(GUIUtility).GetMethod("CheckOnGUI", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
+        }
+        /// <summary>
+        /// Returns whether if there's a valid OnGUI context.
+        /// </summary>
+        public static bool IsOnGUI()
+        {
+            // 'CheckOnGUI' checks whether if the guiDepth is less or equal to zero
+            // Then it throws an exception.
+            return (int)typeof(GUIUtility).GetProperty("guiDepth", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null) > 0;
         }
 
         private const string JBMONO_FONT_NAME = "Jetbrains Mono";

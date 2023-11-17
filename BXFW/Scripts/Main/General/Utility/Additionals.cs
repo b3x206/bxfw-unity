@@ -379,7 +379,7 @@ namespace BXFW
         /// Returns whether if the type is a nullable one.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        public static bool IsTypeNullable(this Type t)
+        public static bool IsNullable(this Type t)
         {
             if (t == null)
             {
@@ -429,6 +429,65 @@ namespace BXFW
             return false;
         }
         /// <summary>
+        /// Returns whether if the <paramref name="genericArg"/> allows the <paramref name="checkType"/> as it's value on the given class/struct/whatever's generic argument.
+        /// <br>Note : This is not as good as the CLR checks of <see cref="Type.MakeGenericType(Type[])"/>. If there is a smaller amount of types available for you to test for
+        /// use the <see cref="Type.MakeGenericType(Type[])"/> method in a <c>try {} catch</c> block instead of using this method.</br>
+        /// </summary>
+        /// <param name="genericArg">The generic argument to check against. This mustn't be null and must be <see cref="Type.IsGenericType"/>.</param>
+        /// <param name="checkType">The type to check against. This mustn't be null.</param>
+        /// <returns>The result of whether if the <paramref name="checkType"/> is assignable to the <paramref name="genericArg"/>'s constraints.</returns>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentException"/>
+        public static bool GenericArgumentAllowsType(Type genericArg, Type checkType)
+        {
+            if (genericArg == null)
+            {
+                throw new ArgumentNullException(nameof(genericArg), "[Additionals::GenericArgumentAllowsType] Given argument was null.");
+            }
+            if (!genericArg.IsGenericParameter)
+            {
+                throw new ArgumentException("[Additionals::GenericArgumentAllowsType] Given 'genericArg' is not an open generic type.", nameof(genericArg));
+            }
+            if (checkType == null)
+            {
+                throw new ArgumentNullException(nameof(checkType), "[Additionals::GenericArgumentAllowsType] Given argument was null.");
+            }
+
+            // Get generic arg parameter attributes
+            Type[] baseTypes = checkType.GetBaseTypes().ToArray();
+            bool hasStructConstraint = (genericArg.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) == GenericParameterAttributes.NotNullableValueTypeConstraint;
+            bool hasNewConstructorConstraint = hasStructConstraint || (genericArg.GenericParameterAttributes & GenericParameterAttributes.DefaultConstructorConstraint) == GenericParameterAttributes.DefaultConstructorConstraint;
+            bool hasClassConstraint = !hasStructConstraint && (genericArg.GenericParameterAttributes & GenericParameterAttributes.ReferenceTypeConstraint) == GenericParameterAttributes.ReferenceTypeConstraint;
+
+            // Check if the parameter attributes pass
+            // TODO : Some attributes are missing the checks (i.e covariance, whatever that is)
+            if (hasStructConstraint && !checkType.IsValueType)
+            {
+                return false;
+            }
+            if (hasClassConstraint && !checkType.IsNullable() && !checkType.IsByRef)
+            {
+                return false;
+            }
+            if (hasNewConstructorConstraint && checkType.GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null) == null)
+            {
+                return false;
+            }
+
+            // Get the first class that provides the constraints
+            // The 'GetGenericParameterConstraints' return the actual class constraints
+            foreach (Type constraint in genericArg.GetGenericParameterConstraints())
+            {
+                // Check if base types contain the type for inheritance checking
+                if (!baseTypes.Contains(constraint))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        /// <summary>
         /// Returns a list of base generic types inside given <paramref name="type"/>,
         /// mapped accordingly to the dictionary of it's base inheriting generic types.
         /// <br>The keys of the given dictionary is open generic types and the values are the keys generic arguments.</br>
@@ -459,8 +518,8 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Get an iterator of the base types of <paramref name="type"/>.
-        /// <br>Returns a blank iterator if no base type.</br>
+        /// Get an iterator of the base types + interfaces implemented of <paramref name="type"/>.
+        /// <br>Returns a blank iterator if no base type + interfaces.</br>
         /// </summary>
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
