@@ -10,9 +10,9 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
-    public class LocalizationKeySelectorDropdown : AdvancedDropdown
+    public class LocalizationKeySelectorDropdown : SearchDropdown
     {
-        public class KeyItem : AdvancedDropdownItem
+        public class Item : SearchDropdownElement
         {
             /// <summary>
             /// The two letter or whatever format localization key that this item has.
@@ -23,19 +23,19 @@ namespace BXFW.ScriptEditor
             /// </summary>
             public readonly bool exists = false;
 
-            public KeyItem(string prettyName, string key, bool existing) : base(prettyName)
+            public Item(string prettyName, string key, bool existing) : base(prettyName)
             {
                 localeKey = key;
                 exists = existing;
             }
         }
 
-        public Action<AdvancedDropdownItem> onItemSelected;
         /// <summary>
         /// Data to generate the dropdown accordingly to.
         /// </summary>
         private readonly LocalizedTextData m_referenceData;
         private readonly string m_editedLocale;
+        protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
 
         private class CultureInfoTwoLetterComparer : IEqualityComparer<CultureInfo>
         {
@@ -66,9 +66,9 @@ namespace BXFW.ScriptEditor
             }
         }
 
-        protected override AdvancedDropdownItem BuildRoot()
+        protected override SearchDropdownElement BuildRoot()
         {
-            AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Languages");
+            SearchDropdownElement rootItem = new SearchDropdownElement("Languages");
             List<CultureInfo> addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures).Distinct(CultureInfoTwoLetterComparer.Default));
             addableLanguageList.Sort((x, y) => x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName));
             
@@ -88,46 +88,35 @@ namespace BXFW.ScriptEditor
                     {
                         CultureInfo removeInfo = addableLanguageList[removeInfoIndex];
                         string optionName = $"{removeInfo.EnglishName} ({idValuePair.Key}) [Exists]";
-                        if (idValuePair.Key == m_editedLocale)
+                        Item keyOption = new Item(optionName, idValuePair.Key, true)
                         {
-                            // Visual studio, why, on earth are you saving files as ansi in the year 2023?
-                            // And no, utf-8 with bom sucks as well, why not just default to utf8
-                            // Whatever, the character '>' will do for now.
-                            // --
-                            // Looks like somebody forgor how strings are immutable, insert does work.
-                            optionName = optionName.Insert(0, "> ");
-                        }
-                        KeyItem keyOption = new KeyItem(optionName, idValuePair.Key, true);
-                        rootItem.AddChild(keyOption);
+                            Selected = idValuePair.Key == m_editedLocale
+                        };
+                        rootItem.Add(keyOption);
 
                         // Remove everything for duplicate two letters
                         addableLanguageList.RemoveAll(IsMatchingTwoLetterISO);
                     }
                 }
 
-                rootItem.AddSeparator();
+                rootItem.Add(new SearchDropdownSeperatorElement());
             }
 
             // Show the rest of localizations
             for (int i = 0; i < addableLanguageList.Count; i++)
             {
                 CultureInfo info = addableLanguageList[i];
-                KeyItem keyOption = new KeyItem($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false);
-                rootItem.AddChild(keyOption);
+                Item keyOption = new Item($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false);
+                rootItem.Add(keyOption);
             }
 
             // Cannot constraint window size as that is not very possible.
             return rootItem;
         }
 
-        protected override void ItemSelected(AdvancedDropdownItem item)
-        {
-            onItemSelected?.Invoke(item);
-        }
-
-        public LocalizationKeySelectorDropdown(AdvancedDropdownState state) : base(state)
+        public LocalizationKeySelectorDropdown()
         { }
-        public LocalizationKeySelectorDropdown(AdvancedDropdownState state, LocalizedTextData data, string editedLocale) : base(state)
+        public LocalizationKeySelectorDropdown(LocalizedTextData data, string editedLocale)
         {
             m_referenceData = data;
             m_editedLocale = editedLocale;
@@ -231,10 +220,10 @@ namespace BXFW.ScriptEditor
             Rect dropdownRect = new Rect(baseDropdownRect) { width = baseDropdownRect.width - 35 };
             if (EditorGUI.DropdownButton(dropdownRect, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
             {
-                LocalizationKeySelectorDropdown localeSelectorDropdown = new LocalizationKeySelectorDropdown(new AdvancedDropdownState(), target, editedLocaleValue);
-                localeSelectorDropdown.onItemSelected = (AdvancedDropdownItem item) =>
+                LocalizationKeySelectorDropdown localeSelectorDropdown = new LocalizationKeySelectorDropdown(target, editedLocaleValue);
+                localeSelectorDropdown.OnElementSelectedEvent += (item) =>
                 {
-                    if (!(item is LocalizationKeySelectorDropdown.KeyItem key))
+                    if (!(item is LocalizationKeySelectorDropdown.Item key))
                     {
                         return;
                     }

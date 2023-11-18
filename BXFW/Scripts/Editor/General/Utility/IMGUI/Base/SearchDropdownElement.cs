@@ -37,9 +37,9 @@ namespace BXFW.Tools.Editor
         public bool Selected { get; set; } = false;
         /// <summary>
         /// Whether if this element can be interacted with.
-        /// <br>Setting this will set the state constantly to Default.</br>
+        /// <br>Setting this <see langword="false"/> will set the state constantly to Default and make this element unselectable.</br>
         /// </summary>
-        public bool Interactable { get; set; } = true;
+        public virtual bool Interactable { get; set; } = true;
         /// <summary>
         /// The rectangle reserving context.
         /// <br>The values can be overriden/changed.</br>
@@ -191,14 +191,14 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Adds a child element to this element.
         /// </summary>
-        public void Add(SearchDropdownElement item)
+        public virtual void Add(SearchDropdownElement item)
         {
             m_Children.Add(item);
         }
         /// <summary>
         /// Clears all children inside this element.
         /// </summary>
-        public void Clear()
+        public virtual void Clear()
         {
             m_Children.Clear();
         }
@@ -219,7 +219,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Removes a child element if it exists.
         /// </summary>
-        public bool Remove(SearchDropdownElement item)
+        public virtual bool Remove(SearchDropdownElement item)
         {
             return m_Children.Remove(item);
         }
