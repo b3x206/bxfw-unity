@@ -34,7 +34,12 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Whether if this element is selected.
         /// </summary>
-        public bool Selected { get; set; }
+        public bool Selected { get; set; } = false;
+        /// <summary>
+        /// Whether if this element can be interacted with.
+        /// <br>Setting this will set the state constantly to Default.</br>
+        /// </summary>
+        public bool Interactable { get; set; } = true;
         /// <summary>
         /// The rectangle reserving context.
         /// <br>The values can be overriden/changed.</br>
@@ -112,10 +117,16 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Returns the height of the default element.
         /// <br>The default height is <see cref="EditorGUIUtility.singleLineHeight"/> + <see cref="drawingContext"/>.Padding</br>
+        /// <br/>
+        /// <br>
+        /// <b>Warning</b> : This method affects performance vastly (for the time being). Use it carefully 
+        /// (this method will be slow until the heights of non-visible is cached).
+        /// </br>
         /// </summary>
         /// <param name="drawingState">GUI drawing state for this element.</param>
-        public virtual float GetHeight()
+        public virtual float GetHeight(float viewWidth)
         {
+            // Calling 'GUI.skin.label.CalcHeight' like 10000 times is most likely not good
             return EditorGUIUtility.singleLineHeight + drawingContext.Padding;
         }
         /// <summary>
@@ -174,7 +185,7 @@ namespace BXFW.Tools.Editor
                 GUI.DrawTexture(iconRect, content.image, ScaleMode.ScaleToFit);
             }
             // This also sets tooltips, etc.
-            GUI.Label(textRect, content);
+            GUI.Label(textRect, content, SearchDropdownWindow.StyleList.LabelStyle);
         }
 
         /// <summary>

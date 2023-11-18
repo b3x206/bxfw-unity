@@ -123,7 +123,10 @@ namespace BXFW
                 {
                     Type argument = Read(readStream);
 
-                    if (argument == null || !isValidClosedType)
+                    // Type is still not valid if the children are open types
+                    // In strongly typed c# this throws a compile error, but the 'Type.GetType' won't throw as the first open type is valid
+                    // Then the 'MakeGenericType' is the one that doesn't throw as it's being constructed with an open type as a generic parameter.
+                    if (argument == null || argument.IsGenericTypeDefinition || !isValidClosedType)
                     {
                         isValidClosedType = false;
                         break;

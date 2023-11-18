@@ -39,6 +39,13 @@ namespace BXFW.Tools.Editor
                 alignment = TextAnchor.MiddleCenter
             };
             /// <summary>
+            /// A GUIStyle that uses word wrapping.
+            /// </summary>
+            public static GUIStyle WrapLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                wordWrap = true
+            };
+            /// <summary>
             /// The style used to draw a searching field.
             /// </summary>
             public static GUIStyle SearchBarStyle = new GUIStyle(EditorStyles.toolbarSearchField)
@@ -58,6 +65,48 @@ namespace BXFW.Tools.Editor
             /// String used for a checkmark.
             /// </summary>
             public static string CheckMarkString = "✔";
+
+            /// <summary>
+            /// Manages a rich text scope for the text styles.
+            /// </summary>
+            public struct RichTextScope : IDisposable
+            {
+                private readonly Dictionary<GUIStyle, bool> m_PreviousRichTextStates;
+
+                /// <summary>
+                /// Creates a new rich text scope.
+                /// </summary>
+                /// <param name="isRichText">Set whether if this GUI drawing scope contains rich texts.</param>
+                public RichTextScope(bool isRichText)
+                {
+                    m_PreviousRichTextStates = new Dictionary<GUIStyle, bool>()
+                    {
+                        { LabelStyle, LabelStyle.richText },
+                        { CenteredLabelStyle, LabelStyle.richText },
+                        { WrapLabelStyle, LabelStyle.richText }
+                    };
+
+                    foreach (GUIStyle style in m_PreviousRichTextStates.Keys)
+                    {
+                        style.richText = isRichText;
+                    }
+                }
+
+                public void Dispose()
+                {
+                    // States are not saved
+                    if (m_PreviousRichTextStates == null)
+                    {
+                        return;
+                    }
+
+                    // Revert states
+                    foreach (KeyValuePair<GUIStyle, bool> pair in m_PreviousRichTextStates)
+                    {
+                        pair.Key.richText = pair.Value;
+                    }
+                }
+            }
         }
 
         private const float SearchBarHeight = 18f;
@@ -260,7 +309,7 @@ namespace BXFW.Tools.Editor
             int i = 0;
             foreach (SearchDropdownElement child in element)
             {
-                height += child.GetHeight();
+                height += child.GetHeight(-1f);
                 i++;
             }
 
@@ -299,10 +348,10 @@ namespace BXFW.Tools.Editor
         /// <param name="rhs">Second rect to check</param>
         private bool AreRectsColliding(Rect lhs, Rect rhs)
         {
-            return lhs.x < rhs.x + rhs.width &&
-                lhs.x + lhs.width > rhs.x &&
-                lhs.y < rhs.y + rhs.height &&
-                lhs.y + lhs.height > rhs.y;
+            return lhs.x < (rhs.x + rhs.width) &&
+                (lhs.x + lhs.width) > rhs.x &&
+                lhs.y < (rhs.y + rhs.height) &&
+                (lhs.y + lhs.height) > rhs.y;
         }
 
         private void OnGUI()
@@ -310,6 +359,7 @@ namespace BXFW.Tools.Editor
             if (parentManager == null)
             {
                 Close();
+                return;
             }
 
             if (parentManager.IsSearchable)
@@ -317,24 +367,21 @@ namespace BXFW.Tools.Editor
                 DrawSearchBar();
             }
 
-            bool labelStyleAllowsRich = StyleList.LabelStyle.richText;
-            bool centeredLabelStyleAllowsRich = StyleList.LabelStyle.richText;
-            StyleList.LabelStyle.richText = parentManager.AllowRichText;
-            StyleList.CenteredLabelStyle.richText = parentManager.AllowRichText;
             // Don't let the exception stop the execution
             // So only log the exception and reset the drawing settings
-            try
+            using (StyleList.RichTextScope scope = new StyleList.RichTextScope(parentManager.AllowRichText))
             {
-                DrawElementNameBar(string.IsNullOrEmpty(SearchString) ? GetLastSelected() : searchFilteredElements);
-                // Draw the search filter if there's a query
-                DrawElement(string.IsNullOrWhiteSpace(SearchString) ? m_ElementStack.Peek() : searchFilteredElements);
+                try
+                {
+                    DrawElementNameBar(string.IsNullOrEmpty(SearchString) ? GetLastSelected() : searchFilteredElements);
+                    // Draw the search filter if there's a query
+                    DrawElement(string.IsNullOrWhiteSpace(SearchString) ? m_ElementStack.Peek() : searchFilteredElements);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-            StyleList.LabelStyle.richText = labelStyleAllowsRich;
-            StyleList.CenteredLabelStyle.richText = centeredLabelStyleAllowsRich;
 
             // EventType.MouseMove doesn't repaint by itself
             if (Event.current.type == EventType.MouseMove)
@@ -435,7 +482,8 @@ namespace BXFW.Tools.Editor
 
             // Begin a new area to not have horizontal scroll bars
             // Since the scroll view is handled by rect calculations
-            GUILayout.BeginVertical(GUILayout.Width(position.width - GUI.skin.verticalScrollbar.fixedWidth));
+            float elementsViewWidth = position.width - GUI.skin.verticalScrollbar.fixedWidth;
+            GUILayout.BeginVertical(GUILayout.Width(elementsViewWidth));
 
             // FIXME : Unoptimized ver
             // Reason : pushed rect quantity is too large
@@ -466,7 +514,7 @@ namespace BXFW.Tools.Editor
                 // Which causes the scroll box to overflow a bit
                 // So, what do? Begin an area? or something else?
                 // Yes, but use 'BeginVertical'
-                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight());
+                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(elementsViewWidth));
 
                 // Check if the rect is visible in any way
                 // Rect.max : bottom-right corner
@@ -476,16 +524,19 @@ namespace BXFW.Tools.Editor
                     continue;
                 }
 
-                ElementGUIDrawingState state = ElementGUIDrawingState.Default;
-                if (reservedRect.Contains(e.mousePosition))
+                ElementGUIDrawingState state = child.Selected ? ElementGUIDrawingState.Selected : ElementGUIDrawingState.Default;
+                if (child.Interactable)
                 {
-                    if (e.isMouse && e.button == 0 && e.type == EventType.MouseDown)
+                    if (reservedRect.Contains(e.mousePosition))
                     {
-                        state = ElementGUIDrawingState.Pressed;
-                    }
-                    else
-                    {
-                        state = ElementGUIDrawingState.Hover;
+                        if (e.isMouse && e.button == 0 && e.type == EventType.MouseDown)
+                        {
+                            state = ElementGUIDrawingState.Pressed;
+                        }
+                        else
+                        {
+                            state = ElementGUIDrawingState.Hover;
+                        }
                     }
                 }
 
@@ -512,27 +563,24 @@ namespace BXFW.Tools.Editor
                 }
 
                 // -- Interact / Process GUI
-                if (e.isMouse)
+                if (child.Interactable && reservedRect.Contains(e.mousePosition) && e.type == EventType.MouseUp && e.button == 0)
                 {
-                    if (e.type == EventType.MouseUp && e.button == 0 && reservedRect.Contains(e.mousePosition))
+                    // Push into the top of stack and stop drawing the rest
+                    // If the element has no more child, do a selected event + close
+                    m_ElementStack.Push(child);
+
+                    if (!child.HasChildren)
                     {
-                        // Push into the top of stack and stop drawing the rest
-                        // If the element has no more child, do a selected event + close
-                        m_ElementStack.Push(child);
-
-                        if (!child.HasChildren)
-                        {
-                            Close();
-                        }
-
-                        e.Use();
-                        break;
+                        Close();
                     }
+
+                    e.Use();
+                    break;
                 }
             }
 
             GUILayout.EndVertical();
-            
+
             GUILayout.EndScrollView();
 
             // If there's a searching process, show an HelpBox

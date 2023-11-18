@@ -7,6 +7,106 @@ namespace BXFW.Tools.Editor
     /// A list dropdown displayer. Similar to the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/>, it offers async searching and slightly better optimization.
     /// <br>This class is still in work-in-progress, but it is faster than the AdvancedDropdown.</br>
     /// </summary>
+    /// <remarks>
+    /// The usage of this class can be found in the source.
+    /// </remarks>
+    /// <example>
+    /// <![CDATA[
+    /// // Assembly-CSharp-Editor
+    /// // Example dropdown.
+    /// using UnityEngine;
+    /// using UnityEditor;
+    /// using BXFW.Tools.Editor;
+    /// 
+    /// public class ExampleDropdown : SearchDropdown
+    /// {
+    ///     protected override SearchDropdownElement BuildRoot()
+    ///     {
+    ///         // Create a root element to return
+    ///         // Other elements are to be attached to this root
+    ///         SearchDropdownElement root = new SearchDropdownElement("Root Element")
+    ///         {
+    ///             // Any element can be started as a c# collection
+    ///             new SearchDropdownElement("Child 1"),
+    ///             new SearchDropdownElement("Child 2"),
+    ///             new SearchDropdownElement("Child 3")
+    ///             {
+    ///                 // Every child can have it's own values and so on...
+    ///                 new SearchDropdownElement("Child Of Child 1"),
+    ///                 new SearchDropdownElement("Child Of Child 2")
+    ///             }
+    ///         };
+    ///         // The children can be also systematically be added using SearchDropdownElement.Add().        
+    /// 
+    ///         return root;
+    ///     }
+    ///     protected override void OnElementSelected(SearchDropdownElement element)
+    ///     {
+    ///         // .. Do anything with the element, there is also a global event on a 'SearchDropdown' called OnElementSelectedEvent
+    ///         // .. Which gets called with this ..
+    ///         // However this event gets called first before the property 'Event'.
+    ///     }
+    /// }
+    /// // ... Instantiation
+    /// // Assembly-CSharp
+    /// using UnityEngine;
+    /// 
+    /// public class SampleClass : MonoBehaviour
+    /// {
+    ///     public string dropdownSettingString;
+    /// }
+    /// // ...
+    /// // Assembly-CSharp-Editor
+    /// using UnityEngine;
+    /// using UnityEditor;
+    /// using BXFW.Tools.Editor;
+    /// 
+    /// [CustomEditor(typeof(SampleClass))]
+    /// public class SampleClassEditor : Editor
+    /// {
+    ///     // Unity gives a bogus/dummy rect on the Event.current.type == EventType.Layout
+    ///     private Rect lastRepaintDropdownParentRect;
+    /// 
+    ///     public override void OnInspectorGUI()
+    ///     {
+    ///         var target = base.target as SampleClass;    
+    /// 
+    ///         // Draw the private 'm_Script' field (optional)
+    ///         using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+    ///         {
+    ///             EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+    ///         }
+    ///         
+    ///         // Draw the dropdown button
+    ///         EditorGUILayout.LabelField($"Dropdown Value : {target.dropdownSettingString}");
+    ///         if (GUILayout.Button("Set Value From Dropdown"))
+    ///         {
+    ///             ExampleDropdown dropdown = new ExampleDropdown();
+    ///             dropdown.Show(lastRepaintDropdownParentRect);
+    ///             dropdown.OnElementSelectedEvent += (SearchDropdownElement element) =>
+    ///             {
+    ///                 // Will not take a 'SerializedProperty' inside a delegate
+    ///                 // Because SerializedObject and SerializedProperty disposes automatically after the OnGUI call
+    ///                 // But you can clone the entire SerializedObject and SerializedProperty just for this delegate, 
+    ///                 // then apply changed values and dispose of it inside this delegate
+    ///                 // -- 
+    ///                 // For this example, a basic undo with direct access to the object is used
+    ///                 Undo.RecordObject(target, "set value from dropdown");
+    ///                 target.dropdownSettingString = element.content.text;    
+    ///             };
+    ///         }
+    ///
+    ///         // Get the last rect for getting the proper value
+    ///         // This is only needed on automatically layouted GUI's, with the GUI's
+    ///         // that you know the rect to you can use that rect instead.
+    ///         if (Event.current.type == EventType.Repaint)
+    ///         {
+    ///             lastRepaintDropdownParentRect = GUILayoutUtility.GetLastRect();
+    ///         }
+    ///     }
+    /// }
+    /// ]]>
+    /// </example>
     public abstract class SearchDropdown
     {
         /// <summary>

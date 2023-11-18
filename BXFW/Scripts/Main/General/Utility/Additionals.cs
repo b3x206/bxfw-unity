@@ -430,7 +430,8 @@ namespace BXFW
         }
         /// <summary>
         /// Returns whether if the <paramref name="genericArg"/> allows the <paramref name="checkType"/> as it's value on the given class/struct/whatever's generic argument.
-        /// <br>Note : This is not as good as the CLR checks of <see cref="Type.MakeGenericType(Type[])"/>. If there is a smaller amount of types available for you to test for
+        /// <br>Note : This is not as good as the CLR checks of <see cref="Type.MakeGenericType(Type[])"/>. </br>
+        /// <br>If there is a smaller amount of types available for you to test for
         /// use the <see cref="Type.MakeGenericType(Type[])"/> method in a <c>try {} catch</c> block instead of using this method.</br>
         /// </summary>
         /// <param name="genericArg">The generic argument to check against. This mustn't be null and must be <see cref="Type.IsGenericType"/>.</param>
