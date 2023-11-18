@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -70,13 +72,109 @@ namespace BXFW.Tools.Editor
         /// </summary>
         private readonly Stack<SearchDropdownElement> m_ElementStack = new Stack<SearchDropdownElement>(16);
         /// <summary>
-        /// A manager used for it's settings.
+        /// The search filter elements.
+        /// <br>This list is cleared once searching is done.</br>
         /// </summary>
-        private SearchDropdown parentManager;
+        private SearchDropdownElement searchFilteredElements = new SearchDropdownElement("Results", 128);
+        /// <summary>
+        /// Task dispatched for searching the 'searchString'.
+        /// </summary>
+        private Task searchingTask;
+        /// <summary>
+        /// Cancellation token used for the <see cref="searchingTask"/>.
+        /// </summary>
+        private CancellationTokenSource searchingTaskCancellationSource = new CancellationTokenSource();
         /// <summary>
         /// The current string query to apply for the searching filtering.
         /// </summary>
-        public string searchString;
+        private string m_SearchString;
+        /// <summary>
+        /// State of whether if the searching task reached limit.
+        /// </summary>
+        private bool reachedSearchLimit = false;
+        /// <summary>
+        /// The used element's size on the last <see cref="EventType.Layout"/> on the <see cref="OnGUI"/> call.
+        /// <br>This is used in the <see cref="EventType.Repaint"/> event.</br>
+        /// </summary>
+        private int lastLayoutElementsSize = -1;
+        public string SearchString
+        {
+            get
+            {
+                return m_SearchString;
+            }
+            set
+            {
+                if (m_SearchString == value)
+                {
+                    return;
+                }
+
+                // Reset state
+                reachedSearchLimit = false;
+                lastLayoutElementsSize = 0;
+
+                // Set values
+                m_SearchString = value;
+
+                // Dispatch searching event
+                searchingTaskCancellationSource.Cancel();
+                searchingTaskCancellationSource.Dispose();
+                searchingTaskCancellationSource = new CancellationTokenSource();
+
+                searchFilteredElements.Clear();
+
+                if (string.IsNullOrWhiteSpace(m_SearchString))
+                {
+                    return;
+                }
+
+                // Set filteredElements (async?)
+                searchingTask = new Task(() =>
+                {
+                    SearchResultsRecursive(parentManager.RootElement);
+                }, searchingTaskCancellationSource.Token);
+                searchingTask.Start();
+            }
+        }
+        /// <summary>
+        /// Recursively searches and adds results to <see cref="searchFilteredElements"/>.
+        /// <br>Added elements won't contain children.</br>
+        /// </summary>
+        private void SearchResultsRecursive(SearchDropdownElement element)
+        {
+            // TODO : Insert and sort according to the 'm_SearchString's IndexOf presence.
+            foreach (SearchDropdownElement child in element)
+            {
+                // This will set the 'TaskStatus' to 'TaskStatus.RanToCompletion'
+                if (searchingTaskCancellationSource.IsCancellationRequested)
+                {
+                    return;
+                }
+                // Place this here to be have it constantly checked
+                if (parentManager.SearchElementsResultLimit > 0 && searchFilteredElements.Count >= parentManager.SearchElementsResultLimit)
+                {
+                    searchingTaskCancellationSource.Cancel();
+                    reachedSearchLimit = true;
+                    return;
+                }
+
+                if (child.HasChildren)
+                {
+                    SearchResultsRecursive(child);
+                }
+                else if (child.content.text.IndexOf(m_SearchString, parentManager.SearchComparison) != -1)
+                {
+                    searchFilteredElements.Add(child);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A manager used for it's settings.
+        /// </summary>
+        private SearchDropdown parentManager;
+
         /// <summary>
         /// Called when the window is to be closed.
         /// </summary>
@@ -101,9 +199,10 @@ namespace BXFW.Tools.Editor
 
             // Create window without 'CreateWindow' as that adds / injects titlebar GUI
             // Which i don't want. It is only useful when IMGUI debugger is needed
-            //SearchDropdownWindow window = CreateWindow<SearchDropdownWindow>();
+            // SearchDropdownWindow window = CreateWindow<SearchDropdownWindow>();
             SearchDropdownWindow window = CreateInstance<SearchDropdownWindow>();
             window.parentManager = parentManager;
+            window.wantsMouseMove = true;
 
             // Show with size constraints.
             // - Calculate the height (for the time being use this, can use 'GetElementsHeight' after this)
@@ -139,6 +238,14 @@ namespace BXFW.Tools.Editor
         }
 
         private Vector2 scrollRectPosition = Vector2.zero;
+
+        // The optimized version is still TODO.
+#pragma warning disable IDE0051
+#pragma warning disable IDE0060
+        ///// <summary>
+        ///// Used for keyboard navigation.
+        ///// </summary>
+        // private int selectedElementIndex;
         // Child elements are matched to this list by index
         // A dictionary would have been more suitable but index matching for the time being will do.
         //private List<float> elementHeightsCache = new List<float>(64);
@@ -153,7 +260,7 @@ namespace BXFW.Tools.Editor
             int i = 0;
             foreach (SearchDropdownElement child in element)
             {
-                height += child.GetHeight(GetElementState(element, i));
+                height += child.GetHeight();
                 i++;
             }
 
@@ -183,6 +290,20 @@ namespace BXFW.Tools.Editor
             // TODO
             return false;
         }
+#pragma warning restore
+        /// <summary>
+        /// An AABB collision check.
+        /// <br>If the rects are colliding this will return true.</br>
+        /// </summary>
+        /// <param name="lhs">First rect to check</param>
+        /// <param name="rhs">Second rect to check</param>
+        private bool AreRectsColliding(Rect lhs, Rect rhs)
+        {
+            return lhs.x < rhs.x + rhs.width &&
+                lhs.x + lhs.width > rhs.x &&
+                lhs.y < rhs.y + rhs.height &&
+                lhs.y + lhs.height > rhs.y;
+        }
 
         private void OnGUI()
         {
@@ -196,28 +317,49 @@ namespace BXFW.Tools.Editor
                 DrawSearchBar();
             }
 
-            DrawElementNameBar();
-            DrawElement(m_ElementStack.Peek());
+            bool labelStyleAllowsRich = StyleList.LabelStyle.richText;
+            bool centeredLabelStyleAllowsRich = StyleList.LabelStyle.richText;
+            StyleList.LabelStyle.richText = parentManager.AllowRichText;
+            StyleList.CenteredLabelStyle.richText = parentManager.AllowRichText;
+            // Don't let the exception stop the execution
+            // So only log the exception and reset the drawing settings
+            try
+            {
+                DrawElementNameBar(string.IsNullOrEmpty(SearchString) ? GetLastSelected() : searchFilteredElements);
+                // Draw the search filter if there's a query
+                DrawElement(string.IsNullOrWhiteSpace(SearchString) ? m_ElementStack.Peek() : searchFilteredElements);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            StyleList.LabelStyle.richText = labelStyleAllowsRich;
+            StyleList.CenteredLabelStyle.richText = centeredLabelStyleAllowsRich;
+
+            // EventType.MouseMove doesn't repaint by itself
+            if (Event.current.type == EventType.MouseMove)
+            {
+                Repaint();
+            }
         }
         private void OnDisable()
         {
             OnClosed?.Invoke();
         }
-
         private void DrawSearchBar()
         {
             Rect searchBarRect = GUILayoutUtility.GetRect(position.width, SearchBarHeight);
             // Draw a centered + padded search bar.
             EditorGUI.DrawRect(searchBarRect, StyleList.SearchBarBackgroundColor);
-            searchString = EditorGUI.TextField(new Rect()
+            SearchString = EditorGUI.TextField(new Rect()
             {
                 x = searchBarRect.x + SearchBarPadding,
                 y = searchBarRect.y + 1f,
                 height = SearchBarHeight - 2f,
                 width = searchBarRect.width - (SearchBarPadding * 2f)
-            }, searchString, StyleList.SearchBarStyle);
+            }, SearchString, StyleList.SearchBarStyle);
         }
-        private void DrawElementNameBar()
+        private void DrawElementNameBar(SearchDropdownElement lastElement)
         {
             // ElementNameBar will contain a clickable back arrow and the name of the selected
             // The name of the selected may or may not get truncated, so please don't make your names that long
@@ -227,8 +369,7 @@ namespace BXFW.Tools.Editor
             EditorGUI.DrawRect(elementBarRect, StyleList.NameBarBackgroundColor);
 
             // Back button
-            SearchDropdownElement last = GetLastSelected();
-            if (last != parentManager.RootElement)
+            if (lastElement != parentManager.RootElement)
             {
                 if (GUI.Button(new Rect()
                 {
@@ -238,18 +379,27 @@ namespace BXFW.Tools.Editor
                     height = StyleList.LeftArrowStyle.fixedHeight,
                 }, GUIContent.none, StyleList.LeftArrowStyle))
                 {
-                    m_ElementStack.Pop();
+                    // depending on which element is the 'lastElement', either pop the stack or clear the search query
+                    if (lastElement == searchFilteredElements)
+                    {
+                        SearchString = string.Empty;
+                        EditorGUIUtility.editingTextField = false;
+                    }
+                    else
+                    {
+                        m_ElementStack.Pop();
+                    }
                 }
             }
 
-            // Name display
+            // Name display + Count
             EditorGUI.LabelField(new Rect(elementBarRect)
             {
                 x = elementBarRect.x + ElementNameBarPadding + StyleList.LeftArrowStyle.fixedWidth + 5f,
                 width = elementBarRect.width - ((ElementNameBarPadding * 2f) + StyleList.LeftArrowStyle.fixedWidth + 5f)
-            }, last.content.text, StyleList.CenteredLabelStyle);
+            }, parentManager.DisplayCurrentElementsCount ? $"{lastElement.content.text} | {lastElement.Count}" : lastElement.content.text, StyleList.CenteredLabelStyle);
         }
-        private PropertyRectContext elementCtx = new PropertyRectContext(0f);
+        private readonly PropertyRectContext elementCtx = new PropertyRectContext(0f);
         /// <summary>
         /// Draws the current element tree/node.
         /// <br>Also handles selection events for the elements.</br>
@@ -257,8 +407,22 @@ namespace BXFW.Tools.Editor
         /// <param name="element">Element to draw it's children.</param>
         private void DrawElement(SearchDropdownElement element)
         {
+            // FIXME :
+            // * Rect Visibility calculation is incorrect [ X ]
+            // * Elements are not getting state           [   ]
+            // TODO 1 : 
+            // * Add keyboard nav                         [   ]
+            // * Add visual interactions                  [ FIX 2 ]
+            // TODO 2 : 
+            // * General optimization to be done (such as accumulating up the rect heights) [  ]
+
             Event e = Event.current;
             elementCtx.Reset();
+
+            if (e.type == EventType.Layout)
+            {
+                lastLayoutElementsSize = element.Count;
+            }
 
             scrollRectPosition = GUILayout.BeginScrollView(scrollRectPosition, false, true);
             // Draw ONLY the visible elements
@@ -276,21 +440,53 @@ namespace BXFW.Tools.Editor
             // FIXME : Unoptimized ver
             // Reason : pushed rect quantity is too large
             // all elements are checked, which makes this o(n)
-            int i = 0;
-            foreach (SearchDropdownElement child in element)
+            // --
+            // Wait, what? This is actually faster than the AdvancedDropdown
+            // Okay, unity does cull non-rendered GUI stuff, but i think the AdvancedDropdown always calls GUI.Draw on all elements
+            // Which causes immense lagging.
+            // --
+            // And the 'AdvancedDropdown' allocation was also very wasteful, we couldn't define an array size.
+            for (int i = 0; i < Mathf.Min(element.Count, lastLayoutElementsSize); i++)
             {
+                SearchDropdownElement child = element[i];
+
+                // This can happen on some cases 
+                // Such as while searching on a seperate thread
+                if (child == null)
+                {
+                    continue;
+                }
+
                 // -- Draw GUI
-                ElementGUIDrawingState state = GetElementState(child, i);
+                // The 'Getting control X's position in a group with only X controls'
+                // error occurs due to the inconsistent amount of rects pushed on different events
+                // To fix this, get the results in a thread and event safe way?
+                // --
                 // GUILayoutUtility is bad and will always reserve the width as maximum
                 // Which causes the scroll box to overflow a bit
                 // So, what do? Begin an area? or something else?
                 // Yes, but use 'BeginVertical'
-                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(state));
+                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight());
 
+                // Check if the rect is visible in any way
                 // Rect.max : bottom-right corner
-                if (!localWindowPosition.Contains(reservedRect.max))
+                //if (!localWindowPosition.Contains(reservedRect.max))
+                if (!AreRectsColliding(localWindowPosition, reservedRect))
                 {
                     continue;
+                }
+
+                ElementGUIDrawingState state = ElementGUIDrawingState.Default;
+                if (reservedRect.Contains(e.mousePosition))
+                {
+                    if (e.isMouse && e.button == 0 && e.type == EventType.MouseDown)
+                    {
+                        state = ElementGUIDrawingState.Pressed;
+                    }
+                    else
+                    {
+                        state = ElementGUIDrawingState.Hover;
+                    }
                 }
 
                 child.OnGUI(reservedRect, state);
@@ -315,8 +511,7 @@ namespace BXFW.Tools.Editor
                     }
                 }
 
-                // -- Interact GUI
-                // TODO : Send global state to the element object
+                // -- Interact / Process GUI
                 if (e.isMouse)
                 {
                     if (e.type == EventType.MouseUp && e.button == 0 && reservedRect.Contains(e.mousePosition))
@@ -334,12 +529,21 @@ namespace BXFW.Tools.Editor
                         break;
                     }
                 }
-
-                i++;
             }
-            GUILayout.EndVertical();
 
+            GUILayout.EndVertical();
+            
             GUILayout.EndScrollView();
+
+            // If there's a searching process, show an HelpBox
+            if (searchingTask != null && !searchingTask.IsCompleted)
+            {
+                EditorGUILayout.HelpBox($"Searching \"{SearchString}\"...", MessageType.Info);
+            }
+            if (reachedSearchLimit)
+            {
+                EditorGUILayout.HelpBox($"Reached the search limit of {parentManager.SearchElementsResultLimit}.\nMake your search query more accurate.", MessageType.Info);
+            }
         }
 
         /// <summary>

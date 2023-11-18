@@ -63,6 +63,13 @@ namespace BXFW.Tools.Editor
             set => m_Children.Capacity = Mathf.Clamp(value, 0, int.MaxValue);
         }
         public bool IsReadOnly => false;
+        /// <summary>
+        /// An indiced access operator for this element.
+        /// </summary>
+        public SearchDropdownElement this[int index]
+        {
+            get => m_Children[index];
+        }
 
         /// <inheritdoc cref="SearchDropdownElement(GUIContent)"/>
         public SearchDropdownElement(string label)
@@ -107,7 +114,7 @@ namespace BXFW.Tools.Editor
         /// <br>The default height is <see cref="EditorGUIUtility.singleLineHeight"/> + <see cref="drawingContext"/>.Padding</br>
         /// </summary>
         /// <param name="drawingState">GUI drawing state for this element.</param>
-        public virtual float GetHeight(ElementGUIDrawingState drawingState)
+        public virtual float GetHeight()
         {
             return EditorGUIUtility.singleLineHeight + drawingContext.Padding;
         }
@@ -143,40 +150,31 @@ namespace BXFW.Tools.Editor
             };
 
             // -- Background box tint
-            Color gColor = GUI.color;
+            Color stateColor = new Color(0.3f, 0.3f, 0.3f);
             switch (drawingState)
             {
                 case ElementGUIDrawingState.Selected:
-                    GUI.color = new Color(0.25f, 0.45f, 0.49f);
+                    stateColor = new Color(0.25f, 0.45f, 0.49f);
                     break;
                 case ElementGUIDrawingState.Hover:
-                    GUI.color = new Color(0.9f, 0.9f, 0.9f);
+                    stateColor = new Color(0.2f, 0.2f, 0.2f);
                     break;
                 case ElementGUIDrawingState.Pressed:
-                    GUI.color = new Color(0.7f, 0.7f, 0.7f);
+                    stateColor = new Color(0.15f, 0.15f, 0.15f);
                     break;
 
                 default:
                     break;
             }
-            GUI.Box(position, GUIContent.none);
-            GUI.color = gColor;
+            EditorGUI.DrawRect(position, stateColor);
+            //GUI.Box(position, GUIContent.none);
             // -- Elements
             if (content.image != null)
             {
                 GUI.DrawTexture(iconRect, content.image, ScaleMode.ScaleToFit);
             }
             // This also sets tooltips, etc.
-            //GUI.Label(textRect, content);
-            EditorGUI.LabelField(textRect, content);
-            //if (HasChildren)
-            //{
-            //    if (Event.current.type == EventType.Repaint)
-            //    {
-            //        bool isSelected = drawingState == ElementGUIDrawingState.Selected;
-            //        SearchDropdownWindow.StyleList.RightArrowStyle.Draw(nextElementsRect, GUIContent.none, false, false, isSelected, isSelected);
-            //    }
-            //}
+            GUI.Label(textRect, content);
         }
 
         /// <summary>

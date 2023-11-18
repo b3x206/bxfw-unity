@@ -5,7 +5,7 @@ namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// A list dropdown displayer. Similar to the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/>, it offers async searching and slightly better optimization.
-    /// <br>This class is still in work-in-progress. Most things will change.</br>
+    /// <br>This class is still in work-in-progress, but it is faster than the AdvancedDropdown.</br>
     /// </summary>
     public abstract class SearchDropdown
     {
@@ -50,7 +50,8 @@ namespace BXFW.Tools.Editor
         }
         /// <summary>
         /// Whether to allow rich text reprensentation on the OptimizedSearchDropdown elements. 
-        /// <br>Note : Any <see cref="SearchDropdownElement"/> can override this. This only applies to the global label styling.</br>
+        /// <br>Note : Any <see cref="SearchDropdownElement"/> can override or ignore this. This only applies
+        /// to the global label (<see cref="SearchDropdownWindow.StyleList"/>) styling.</br>
         /// </summary>
         protected internal virtual bool AllowRichText => false;
         /// <summary>
@@ -58,7 +59,23 @@ namespace BXFW.Tools.Editor
         /// <br>This will affect the height.</br>
         /// </summary>
         protected internal virtual bool IsSearchable => true;
-        // Search children using some haystack algorithm
+        /// <summary>
+        /// Amount of maximum children count of search result.
+        /// <br>After this many elements the searching will stop.</br>
+        /// <br/>
+        /// <br>Setting this zero or lower than zero will set this limit to infinite which is not really recommended.</br>
+        /// </summary>
+        protected internal virtual int SearchElementsResultLimit => 10000;
+        /// <summary>
+        /// The string comparison mode used to search for text.
+        /// </summary>
+        protected internal virtual StringComparison SearchComparison => StringComparison.Ordinal;
+        /// <summary>
+        /// Whether to display the current elements count inside the header text.
+        /// </summary>
+        protected internal virtual bool DisplayCurrentElementsCount => true;
+
+        // ?? TODO : Search children using some haystack algorithm
         // Sorting can be done by the caller who builds the root.
 
         /// <summary>
@@ -111,7 +128,7 @@ namespace BXFW.Tools.Editor
         /// </summary>
         protected void SetFilter(string searchString)
         {
-            m_Window.searchString = searchString;
+            m_Window.SearchString = searchString;
         }
 
         /// <summary>
