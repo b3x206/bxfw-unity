@@ -56,11 +56,11 @@ namespace BXFW.Tools.Editor
             /// <summary>
             /// Background color used to draw the SearchBar.
             /// </summary>
-            public static Color SearchBarBackgroundColor = new Color(.4f, .4f, .4f);
+            public static Color SearchBarBackgroundColor = new Color(0.27f, 0.27f, 0.27f);
             /// <summary>
             /// Background color used to draw the NameBar.
             /// </summary>
-            public static Color NameBarBackgroundColor = new Color(.1f, .1f, .1f);
+            public static Color NameBarBackgroundColor = new Color(0.16f, 0.16f, 0.16f);
             /// <summary>
             /// String used for a checkmark.
             /// </summary>
@@ -82,8 +82,8 @@ namespace BXFW.Tools.Editor
                     m_PreviousRichTextStates = new Dictionary<GUIStyle, bool>()
                     {
                         { LabelStyle, LabelStyle.richText },
-                        { CenteredLabelStyle, LabelStyle.richText },
-                        { WrapLabelStyle, LabelStyle.richText }
+                        { CenteredLabelStyle, CenteredLabelStyle.richText },
+                        { WrapLabelStyle, WrapLabelStyle.richText }
                     };
 
                     foreach (GUIStyle style in m_PreviousRichTextStates.Keys)
@@ -142,8 +142,15 @@ namespace BXFW.Tools.Editor
         /// </summary>
         private bool reachedSearchLimit = false;
         /// <summary>
+        /// Whether if this window is closing with a selection intent.
+        /// <br>This value is only used with <see cref="SearchDropdown.AllowSelectionOfElementsWithChild"/>.</br>
+        /// </summary>
+        public bool IsClosingWithSelectionIntent { get; private set; } = true;
+        /// <summary>
         /// The used element's size on the last <see cref="EventType.Layout"/> on the <see cref="OnGUI"/> call.
         /// <br>This is used in the <see cref="EventType.Repaint"/> event.</br>
+        /// <br/>
+        /// <br>This is needed as asynchronous/seperate thread searching will add/remove values in different <see cref="OnGUI"/> calls.</br>
         /// </summary>
         private int lastLayoutElementsSize = -1;
         public string SearchString
@@ -218,12 +225,13 @@ namespace BXFW.Tools.Editor
                 }
             }
         }
+        private Vector2 scrollRectPosition = Vector2.zero;
 
+        // --
         /// <summary>
         /// A manager used for it's settings.
         /// </summary>
         private SearchDropdown parentManager;
-
         /// <summary>
         /// Called when the window is to be closed.
         /// </summary>
@@ -252,6 +260,7 @@ namespace BXFW.Tools.Editor
             SearchDropdownWindow window = CreateInstance<SearchDropdownWindow>();
             window.parentManager = parentManager;
             window.wantsMouseMove = true;
+            window.IsClosingWithSelectionIntent = !window.parentManager.AllowSelectionOfElementsWithChild;
 
             // Show with size constraints.
             // - Calculate the height (for the time being use this, can use 'GetElementsHeight' after this)
@@ -286,60 +295,7 @@ namespace BXFW.Tools.Editor
             return window;
         }
 
-        private Vector2 scrollRectPosition = Vector2.zero;
-
         // The optimized version is still TODO.
-#pragma warning disable IDE0051
-#pragma warning disable IDE0060
-        ///// <summary>
-        ///// Used for keyboard navigation.
-        ///// </summary>
-        // private int selectedElementIndex;
-        // Child elements are matched to this list by index
-        // A dictionary would have been more suitable but index matching for the time being will do.
-        //private List<float> elementHeightsCache = new List<float>(64);
-        //private float currentElementHeightsCache = 0f;
-
-        /// <summary>
-        /// Returns the current stack layers element.
-        /// </summary>
-        private float GetElementsHeight(SearchDropdownElement element)
-        {
-            float height = -1f;
-            int i = 0;
-            foreach (SearchDropdownElement child in element)
-            {
-                height += child.GetHeight(-1f);
-                i++;
-            }
-
-            return height;
-        }
-        /// <summary>
-        /// Returns the element's state from <paramref name="parent"/> on a child that has <paramref name="childIndex"/>.
-        /// </summary>
-        private ElementGUIDrawingState GetElementState(SearchDropdownElement parent, int childIndex)
-        {
-            // Get whether if the element is visible
-            if (!IsElementVisible(childIndex))
-            {
-                return ElementGUIDrawingState.Default;
-            }
-
-            // Depending on the current GUI thing action, use the Event.current
-            // .. TODO
-
-            return ElementGUIDrawingState.Default;
-        }
-        /// <summary>
-        /// Returns whether if the element of this search dropdown window is visible.
-        /// </summary>
-        private bool IsElementVisible(int elementIndex)
-        {
-            // TODO
-            return false;
-        }
-#pragma warning restore
         /// <summary>
         /// An AABB collision check.
         /// <br>If the rects are colliding this will return true.</br>
@@ -383,11 +339,7 @@ namespace BXFW.Tools.Editor
                 }
             }
 
-            // EventType.MouseMove doesn't repaint by itself
-            if (Event.current.type == EventType.MouseMove)
-            {
-                Repaint();
-            }
+            HandleGlobalGUIEvents();
         }
         private void OnDisable()
         {
@@ -456,12 +408,13 @@ namespace BXFW.Tools.Editor
         {
             // FIXME :
             // * Rect Visibility calculation is incorrect [ X ]
-            // * Elements are not getting state           [   ]
+            // * Elements are not getting state           [ X ]
             // TODO 1 : 
             // * Add keyboard nav                         [   ]
-            // * Add visual interactions                  [ FIX 2 ]
+            // * Add visual interactions                  [ X ]
             // TODO 2 : 
-            // * General optimization to be done (such as accumulating up the rect heights) [  ]
+            // * General optimization to be done (such as accumulating up the rect heights)             [   ]
+            // * Search results can contain elements with children (requires a seperate elements stack) [   ]
 
             Event e = Event.current;
             elementCtx.Reset();
@@ -517,8 +470,6 @@ namespace BXFW.Tools.Editor
                 Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(elementsViewWidth));
 
                 // Check if the rect is visible in any way
-                // Rect.max : bottom-right corner
-                //if (!localWindowPosition.Contains(reservedRect.max))
                 if (!AreRectsColliding(localWindowPosition, reservedRect))
                 {
                     continue;
@@ -571,6 +522,7 @@ namespace BXFW.Tools.Editor
 
                     if (!child.HasChildren)
                     {
+                        IsClosingWithSelectionIntent = true;
                         Close();
                     }
 
@@ -583,6 +535,16 @@ namespace BXFW.Tools.Editor
 
             GUILayout.EndScrollView();
 
+            // Only allow selection if we aren't displaying the 'filtered elements'
+            if (parentManager.AllowSelectionOfElementsWithChild && element != parentManager.RootElement && element != searchFilteredElements)
+            {
+                if (GUILayout.Button("Select Element"))
+                {
+                    IsClosingWithSelectionIntent = true;
+                    Close();
+                }
+            }
+
             // If there's a searching process, show an HelpBox
             if (searchingTask != null && !searchingTask.IsCompleted)
             {
@@ -593,10 +555,32 @@ namespace BXFW.Tools.Editor
                 EditorGUILayout.HelpBox($"Reached the search limit of {parentManager.SearchElementsResultLimit}.\nMake your search query more accurate.", MessageType.Info);
             }
         }
+        /// <summary>
+        /// Handles global dropdown events. (such as keyboard events)
+        /// <br>Has to be called from <see cref="OnGUI"/>.</br>
+        /// </summary>
+        private void HandleGlobalGUIEvents()
+        {
+            GUIAdditionals.CheckOnGUI();
+
+            // EventType.MouseMove doesn't repaint by itself
+            if (Event.current.type == EventType.MouseMove)
+            {
+                Repaint();
+            }
+
+            // Handle keyboard events (TODO : Keyboard Nav)
+            if (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Escape)
+            {
+                IsClosingWithSelectionIntent = false;
+                Close();
+            }
+        }
 
         /// <summary>
         /// Returns the last selected element from the selection stack.
-        /// <br>Ignores the root element and elements with children and only returns the final selection.</br>
+        /// <br>Ignores the root element only returns the final selection.</br>
+        /// <br>To get the closing intent of this window use the <see cref="IsClosingWithSelectionIntent"/>.</br>
         /// </summary>
         public SearchDropdownElement GetSelected()
         {
@@ -605,8 +589,8 @@ namespace BXFW.Tools.Editor
             {
                 return null;
             }
-            // Root element + elements with children is ignored
-            if (elem == parentManager.RootElement || elem.HasChildren)
+            // Root element is ignored
+            if (elem == parentManager.RootElement)
             {
                 return null;
             }

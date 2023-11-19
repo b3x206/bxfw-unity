@@ -165,6 +165,9 @@ namespace BXFW.Tweening.Next.Editor
                 {
                     return false;
                 }
+
+                // Copy the file
+                File.Copy(GenerateFileAbsolutePath, $"{GenerateFileAbsolutePath}.bak", false);
             }
 
             return true;
@@ -220,6 +223,7 @@ namespace BXFW.Tweening.Next.Editor
                     // The following code will cause you to remove your eyes
                     // It is chalice simulator tier. In fact it's probably worse.
                     // Complexity is probably StudentScript.cs and notation is o(n^31289391283)
+                    // Basically a perfect candidate for r/programminghorror
 
                     // Check for uniqueness of 'method.MethodName'
                     if (generatedMethodNames.Contains(method.MethodName))

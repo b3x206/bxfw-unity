@@ -37,16 +37,16 @@ namespace BXFW.Tools.Editor
         }
         private void OnDestroy()
         {
-            foreach (var v in currentTasksGen)
+            foreach (EditorTask task in currentTasksGen)
             {
                 // asset actually exists, we are going to lose reference anyways.
-                if (!string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(v)))
+                if (!string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(task)))
                 {
                     continue;
                 }
 
                 // since these could be temp, avoid memory leaks manually
-                DestroyImmediate(v);
+                DestroyImmediate(task);
             }
 
             currentTasksGen.Clear();
@@ -94,7 +94,7 @@ namespace BXFW.Tools.Editor
             GUILayout.EndScrollView();
 
             GUIAdditionals.DrawUILineLayout(Color.gray);
-            GUILayout.Space(10f);
+            GUILayout.Space(12f);
 
             // -----------------------------------------
             // DoTasks : Show progress bar until done.
@@ -147,7 +147,7 @@ namespace BXFW.Tools.Editor
             }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            GUILayout.Space(20f); // Line adds 10 padding
+            GUILayout.Space(14f); // Line adds 10 padding + 2 height
 
             if (taskTakenTime > .1f)
             {

@@ -161,17 +161,17 @@ namespace BXFW.Tools.Editor
             };
 
             // -- Background box tint
-            Color stateColor = new Color(0.3f, 0.3f, 0.3f);
+            Color stateColor = new Color(0.2f, 0.2f, 0.2f);
             switch (drawingState)
             {
                 case ElementGUIDrawingState.Selected:
-                    stateColor = new Color(0.25f, 0.45f, 0.49f);
+                    stateColor = new Color(0.15f, 0.35f, 0.39f);
                     break;
                 case ElementGUIDrawingState.Hover:
-                    stateColor = new Color(0.2f, 0.2f, 0.2f);
+                    stateColor = new Color(0.15f, 0.15f, 0.15f);
                     break;
                 case ElementGUIDrawingState.Pressed:
-                    stateColor = new Color(0.15f, 0.15f, 0.15f);
+                    stateColor = new Color(0.1f, 0.1f, 0.1f);
                     break;
 
                 default:
@@ -191,8 +191,14 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Adds a child element to this element.
         /// </summary>
+        /// <param name="item">The item to add. This mustn't be null. The overriding method should assert this unless null is suitable.</param>
         public virtual void Add(SearchDropdownElement item)
         {
+            if (item == null)
+            {
+                throw new ArgumentNullException(nameof(item), "[SearchDropdownElement::Add] Given argument was null.");
+            }
+
             m_Children.Add(item);
         }
         /// <summary>
@@ -219,6 +225,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Removes a child element if it exists.
         /// </summary>
+        /// <param name="item">The item to remove. This value can be anything.</param>
         public virtual bool Remove(SearchDropdownElement item)
         {
             return m_Children.Remove(item);

@@ -155,6 +155,11 @@ namespace BXFW.Tools.Editor
         /// </summary>
         protected internal virtual bool AllowRichText => false;
         /// <summary>
+        /// Whether to allow selection event to be fired for elements with children.
+        /// <br>This will show an extra button and will allow selection of elements with children.</br>
+        /// </summary>
+        protected internal virtual bool AllowSelectionOfElementsWithChild => false;
+        /// <summary>
         /// Whether if this 'OptimizedSearchDropdown' will have a search bar.
         /// <br>This will affect the height.</br>
         /// </summary>
@@ -211,6 +216,11 @@ namespace BXFW.Tools.Editor
             m_Window = SearchDropdownWindow.Create(rect, this, MinimumSize, MaximumHeight);
             m_Window.OnClosed += () =>
             {
+                if (!m_Window.IsClosingWithSelectionIntent)
+                {
+                    return;
+                }
+
                 SearchDropdownElement selected = m_Window.GetSelected();
 
                 if (selected != null)

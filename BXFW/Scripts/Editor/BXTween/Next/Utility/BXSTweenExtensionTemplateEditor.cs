@@ -1,9 +1,6 @@
-using System;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using UnityEditor.IMGUI.Controls;
 using BXFW.Tools.Editor;
 
 namespace BXFW.Tweening.Next.Editor
@@ -11,83 +8,6 @@ namespace BXFW.Tweening.Next.Editor
     [CustomPropertyDrawer(typeof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate))]
     public class BXSTweenExtensionTemplateEditor : PropertyDrawer
     {
-        /// <summary>
-        /// A member info selector. Also adds the ability to select get+set properties.
-        /// <br>Can only select public instance fields.</br>
-        /// </summary>
-        public class MemberInfoSelectorDropdown : AdvancedDropdown
-        {
-            /// <summary>
-            /// Item that contains extra data for selected.
-            /// </summary>
-            public class Item : AdvancedDropdownItem
-            {
-                /// <summary>
-                /// The member info that this item contains.
-                /// </summary>
-                public readonly MemberInfo memberInfo;
-
-                public Item(string name, MemberInfo info) : base(name)
-                {
-                    memberInfo = info;
-                }
-            }
-
-            public Action<AdvancedDropdownItem> onItemSelected;
-            private readonly Type targetType;
-
-            private static readonly GUIStyle AdvDropdownElementLineStyle = "DD ItemStyle";
-            private static readonly GUIStyle AdvDropdownElementHeaderStyle = "DD HeaderStyle";
-
-            protected override AdvancedDropdownItem BuildRoot()
-            {
-                AdvDropdownElementLineStyle.richText = true;
-                AdvDropdownElementHeaderStyle.richText = true;
-
-                AdvancedDropdownItem rootItem = new AdvancedDropdownItem("Select Member Info");
-
-                // Only draw public fields + properties with get+set
-                foreach (MemberInfo member in targetType.GetMembers())
-                {
-                    if ((member.MemberType & MemberTypes.Field) != MemberTypes.Field && (member.MemberType & MemberTypes.Property) != MemberTypes.Property)
-                    {
-                        continue;
-                    }
-                    string memberTypeName = "|unknown type|";
-                    if (member is PropertyInfo prop)
-                    {
-                        if (!prop.CanRead || !prop.CanWrite)
-                        {
-                            continue;
-                        }
-                        memberTypeName = prop.PropertyType.Name;
-                    }
-                    if (member is FieldInfo field)
-                    {
-                        memberTypeName = field.FieldType.Name;
-                    }
-
-                    Item memberItem = new Item($"<color=#2e9fa4>{memberTypeName}</color> {member.Name}", member);
-                    rootItem.AddChild(memberItem);
-                }
-
-                return rootItem;
-            }
-
-            protected override void ItemSelected(AdvancedDropdownItem item)
-            {
-                AdvDropdownElementLineStyle.richText = false;
-                AdvDropdownElementHeaderStyle.richText = false;
-
-                onItemSelected?.Invoke(item);
-            }
-
-            public MemberInfoSelectorDropdown(AdvancedDropdownState state, Type target) : base(state)
-            {
-                targetType = target;
-            }
-        }
-
         private const float NonUniqueValuesWarningBoxHeight = 36;
         private const string ChildListExpandedKey = "[BXSTwExtGenEditor].isChildListExpanded";
 
@@ -253,9 +173,11 @@ namespace BXFW.Tweening.Next.Editor
                         //SerializedObject copySo = new SerializedObject(targetMemberNameProperty.serializedObject.targetObjects);
                         //SerializedProperty memberNameCopyProperty = copySo.FindProperty(targetMemberNameProperty.propertyPath);
 
-                        MemberInfoSelectorDropdown dropdown = new MemberInfoSelectorDropdown(new AdvancedDropdownState(), currentTargetTemplate.targetType.Type);
+                        // For the time being this source generator doesn't expect multi level fields/properties
+                        // And multi level field/property setting string generation is not so trivial to implement.
+                        MemberInfoSelectorDropdown dropdown = new MemberInfoSelectorDropdown(currentTargetTemplate.targetType.Type, false);
                         dropdown.Show(dropdownSelfRect);
-                        dropdown.onItemSelected = (AdvancedDropdownItem item) =>
+                        dropdown.OnElementSelectedEvent += (SearchDropdownElement item) =>
                         {
                             if (!(item is MemberInfoSelectorDropdown.Item fieldItem))
                             {
