@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 // Serialization
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 
 namespace BXFW
 {
@@ -328,6 +329,88 @@ namespace BXFW
         public static bool IsTypeNameNumerical(string typeName)
         {
             return IsTypeNameInteger(typeName) || IsTypeNameFloat(typeName);
+        }
+
+        /// <summary>
+        /// A backtick used in the generic name definitions.
+        /// </summary>
+        private const char GenericArgumentsDefinitionChar = '`';
+        /// <summary>
+        /// A list of global type aliases/predefined types used by C# for System types.
+        /// <br>For example, <c>System.Int32</c> being aliased to <see cref="int"/>.</br>
+        /// </summary>
+        private static readonly Dictionary<Type, string> GlobalTypeAliasesMap = new Dictionary<Type, string>
+        {
+            // Value
+            { typeof(sbyte), "sbyte" },
+            { typeof(byte), "byte" },
+            { typeof(short), "short" },
+            { typeof(ushort), "ushort" },
+            { typeof(int), "int" },
+            { typeof(uint), "uint" },
+            { typeof(long), "long" },
+            { typeof(ulong), "ulong" },
+            { typeof(float), "float" },
+            { typeof(double), "double" },
+            { typeof(decimal), "decimal" },
+            // Reference
+            { typeof(object), "object" },
+            { typeof(string), "string" },
+        };
+        /// <summary>
+        /// Returns the pretty name/type definition string of the c# type.
+        /// <br>(like <c>Foo&lt;Parameter&gt;</c> instead of <c>Foo`1[[typeof(Parameter).QualifiedAssemblyName]]</c>).</br>
+        /// </summary>
+        /// <param name="type">Type to return it's name.</param>
+        /// <param name="includeNamespace">Whether to include the type's namespace in the start. This applies to all types.</param>
+        /// <param name="usePredefinedTypeAliases">Whether to use the shorthand aliases/type definitions for default c# types. Applies to all types.</param>
+        public static string GetTypeDefinitionString(this Type type, bool includeNamespace = false, bool usePredefinedTypeAliases = true)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type), "[Additionals::GetTypeDefinitionString] Given argument was null.");
+            }
+            
+            // Type exists on global aliases/predefined types
+            if (usePredefinedTypeAliases && GlobalTypeAliasesMap.TryGetValue(type, out string alias))
+            {
+                return alias;
+            }
+
+            string typeName = includeNamespace ? type.FullName : type.Name;
+            int indexOfGenericArgsChar = typeName.IndexOf(GenericArgumentsDefinitionChar);
+            if (indexOfGenericArgsChar < 0)
+            {
+                return typeName;
+            }
+
+            Type[] typeGenericArgs = type.GetGenericArguments();
+            StringBuilder typeNameSb = new StringBuilder(typeName.Substring(0, indexOfGenericArgsChar));
+            typeNameSb.Append('<');
+            for (int i = 0; i < typeGenericArgs.Length; i++)
+            {
+                Type genericArg = typeGenericArgs[i];
+                // Open type adding, add semicolons
+                if (genericArg.IsGenericParameter)
+                {
+                    if (i != typeGenericArgs.Length - 1)
+                    {
+                        // (all GenericArguments are likely open, so no space needed)
+                        typeNameSb.Append(',');
+                    }
+                    continue;
+                }
+
+                typeNameSb.Append(GetTypeDefinitionString(genericArg, includeNamespace, usePredefinedTypeAliases));
+                if (i != typeGenericArgs.Length - 1)
+                {
+                    // Leave a space for closed types
+                    typeNameSb.Append(", ");
+                }
+            }
+            typeNameSb.Append('>');
+
+            return typeNameSb.ToString();
         }
 
         /// <summary>

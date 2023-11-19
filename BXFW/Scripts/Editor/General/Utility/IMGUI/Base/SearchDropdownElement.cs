@@ -123,7 +123,7 @@ namespace BXFW.Tools.Editor
         /// (this method will be slow until the heights of non-visible is cached).
         /// </br>
         /// </summary>
-        /// <param name="drawingState">GUI drawing state for this element.</param>
+        /// <param name="viewWidth">Width of the draw area allocated for this element.</param>
         public virtual float GetHeight(float viewWidth)
         {
             // Calling 'GUI.skin.label.CalcHeight' like 10000 times is most likely not good
@@ -131,10 +131,15 @@ namespace BXFW.Tools.Editor
         }
         /// <summary>
         /// Draws the GUI of the default element.
-        /// <br>The default element has the following : An icon on the left, the description on the right and the </br>
+        /// <br>The default element has the following : An icon on the left and the description on the right.</br>
         /// </summary>
-        /// <param name="position"></param>
-        /// <param name="drawingState"></param>
+        /// <param name="position">Position to draw the GUI on.</param>
+        /// <param name="drawingState">
+        /// The element state, depending on the cursor interaction.
+        /// Elements can ignore this all together and use the <see cref="Event.current"/> but the default behaviour doesn't.
+        /// <br>This is just a more convenient way of receiveing events.
+        /// </br>
+        /// </param>
         public virtual void OnGUI(Rect position, ElementGUIDrawingState drawingState)
         {
             // * Left           : Reserve a Icon drawing rect
@@ -178,7 +183,6 @@ namespace BXFW.Tools.Editor
                     break;
             }
             EditorGUI.DrawRect(position, stateColor);
-            //GUI.Box(position, GUIContent.none);
             // -- Elements
             if (content.image != null)
             {

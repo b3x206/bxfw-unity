@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 namespace BXFW.Tools.Editor
 {
@@ -325,13 +326,14 @@ namespace BXFW.Tools.Editor
 
             // Don't let the exception stop the execution
             // So only log the exception and reset the drawing settings
+            SearchDropdownElement lastElement = string.IsNullOrEmpty(SearchString) ? GetLastSelected() : searchFilteredElements;
             using (StyleList.RichTextScope scope = new StyleList.RichTextScope(parentManager.AllowRichText))
             {
                 try
                 {
-                    DrawElementNameBar(string.IsNullOrEmpty(SearchString) ? GetLastSelected() : searchFilteredElements);
+                    DrawElementNameBar(lastElement);
                     // Draw the search filter if there's a query
-                    DrawElement(string.IsNullOrWhiteSpace(SearchString) ? m_ElementStack.Peek() : searchFilteredElements);
+                    DrawElement(lastElement);
                 }
                 catch (Exception e)
                 {
@@ -339,7 +341,7 @@ namespace BXFW.Tools.Editor
                 }
             }
 
-            HandleGlobalGUIEvents();
+            HandleGlobalGUIEvents(lastElement);
         }
         private void OnDisable()
         {
@@ -540,6 +542,7 @@ namespace BXFW.Tools.Editor
             {
                 if (GUILayout.Button("Select Element"))
                 {
+                    // Select the last element in the stack.
                     IsClosingWithSelectionIntent = true;
                     Close();
                 }
@@ -559,7 +562,7 @@ namespace BXFW.Tools.Editor
         /// Handles global dropdown events. (such as keyboard events)
         /// <br>Has to be called from <see cref="OnGUI"/>.</br>
         /// </summary>
-        private void HandleGlobalGUIEvents()
+        private void HandleGlobalGUIEvents(SearchDropdownElement lastElement)
         {
             GUIAdditionals.CheckOnGUI();
 
@@ -570,16 +573,45 @@ namespace BXFW.Tools.Editor
             }
 
             // Handle keyboard events (TODO : Keyboard Nav)
-            if (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Escape)
+            if (Event.current.type == EventType.KeyUp)
             {
-                IsClosingWithSelectionIntent = false;
-                Close();
+                switch (Event.current.keyCode)
+                {
+                    case KeyCode.Escape:
+                        IsClosingWithSelectionIntent = false;
+                        Close();
+                        break;
+                    case KeyCode.Return:
+                    case KeyCode.KeypadEnter:
+                        // Stop editing text
+                        EditorGUIUtility.editingTextField = false;
+                        SearchDropdownElement nextElement = lastElement.FirstOrDefault();
+                        
+                        // Check if next element actually exists
+                        if (nextElement == null)
+                        {
+                            return;
+                        }
+                        // Select the next child into stack
+                        m_ElementStack.Push(nextElement);
+                        // Click on the next element
+                        if (!nextElement.HasChildren)
+                        {
+                            IsClosingWithSelectionIntent = true;
+                            Close();
+                            return;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
             }
         }
 
         /// <summary>
         /// Returns the last selected element from the selection stack.
-        /// <br>Ignores the root element only returns the final selection.</br>
+        /// <br>Ignores the root element. (If the last selected is the root element this will return null)</br>
         /// <br>To get the closing intent of this window use the <see cref="IsClosingWithSelectionIntent"/>.</br>
         /// </summary>
         public SearchDropdownElement GetSelected()

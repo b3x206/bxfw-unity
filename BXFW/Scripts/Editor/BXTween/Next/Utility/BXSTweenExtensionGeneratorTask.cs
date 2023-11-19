@@ -264,12 +264,12 @@ namespace BXFW.Tweening.Next.Editor
 
                     // -> -> public static {twContextType.Name} {BXTw[method.MethodName]}
                     sb.Append(namespaceIndent).Append(TkIndent)
-                        .Append(TkPublic).Append(" ").Append(TkStatic).Append(" ").Append(twContextType.Name).Append(" ").Append(ExtensionMethodTemplate.MethodNamePrefix).Append(method.MethodName)
+                        .Append(TkPublic).Append(" ").Append(TkStatic).Append(" ").Append(twContextType.GetTypeDefinitionString()).Append(" ").Append(ExtensionMethodTemplate.MethodNamePrefix).Append(method.MethodName)
                         // The default parameters for the given context are : 
                         // (this {TargetTypeName} {TkTargetName},
-                        .Append(TkOpenParams).Append(TkExtensionThis).Append(" ").Append(template.targetType.Type.Name).Append(" ").Append(TkTargetParameterName).Append(TkParameterSep)
+                        .Append(TkOpenParams).Append(TkExtensionThis).Append(" ").Append(template.targetType.Type.GetTypeDefinitionString()).Append(" ").Append(TkTargetParameterName).Append(TkParameterSep)
                         // {MemberFieldType.Name} {TkLastValueParameterName},
-                        .Append(" ").Append(memberFieldType.Name).Append(" ").Append(TkLastValueParameterName).Append(TkParameterSep)
+                        .Append(" ").Append(memberFieldType.GetTypeDefinitionString()).Append(" ").Append(TkLastValueParameterName).Append(TkParameterSep)
                         // float {TkDurationParameterName})
                         .Append(" float ").Append(TkDurationParameterName).Append(TkCloseParams)
                      .AppendLine(); // )\n
@@ -283,7 +283,7 @@ namespace BXFW.Tweening.Next.Editor
                         .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkCloseScope).AppendLine() // }
                       .AppendLine() // Gap between the actual method calls
                                     // BXSTweenContext context = new BXSTweenContext(duration);
-                      .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(twContextType.Name).Append(" ").Append(TkContextValueName).Append(" = new ").Append(twContextType.Name).Append(TkOpenParams).Append(TkDurationParameterName).Append(TkCloseParams).Append(TkSemicolon).AppendLine()
+                      .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(twContextType.GetTypeDefinitionString()).Append(" ").Append(TkContextValueName).Append(" = new ").Append(twContextType.GetTypeDefinitionString()).Append(TkOpenParams).Append(TkDurationParameterName).Append(TkCloseParams).Append(TkSemicolon).AppendLine()
                       // context.SetupContext(() => target.{TargetMemberName},
                       .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkContextValueName).Append(".SetupContext(() => ").Append(TkTargetParameterName).Append(".").Append(method.TargetMemberName).Append(TkParameterSep).Append(" ")
                       // TkLastValueParameterName, (v) => target.{TargetMemberName} = v);\n
