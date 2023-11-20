@@ -10,7 +10,7 @@ namespace BXFW.Tweening.Editor
     /// Draws a fancy selector for the <see cref="EaseType"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(EaseType))]
-    public class TweenEaseTypePropertyDrawer : PropertyDrawer
+    public class EaseTypePropertyDrawer : PropertyDrawer
     {
         public class EaseTypeSelectorDropdown : SearchDropdown
         {
@@ -18,6 +18,9 @@ namespace BXFW.Tweening.Editor
             {
                 private const float PlotFieldHeight = 40f;
                 private const float PlotFieldWidth = 70f;
+                private const float EasePreviewDuration = 0.5f;
+
+                private float currentPreviewElapsed = 0f;
                 public readonly EaseType ease;
 
                 public Item(EaseType ease, string label) : base(label)
@@ -71,26 +74,47 @@ namespace BXFW.Tweening.Editor
                         width = PlotFieldWidth,
                     };
 
+                    // Elements | Background
                     // Background box tint
-                    Color stateColor = new Color(0.2f, 0.2f, 0.2f);
+                    // Initial background rect
+                    EditorGUI.DrawRect(position, new Color(0.2f, 0.2f, 0.2f));
+
+                    Color stateColor = new Color(0.15f, 0.15f, 0.15f);
+                    // Update 'currentPreviewElapsed' only in Repaint
+                    bool isRepaintEvent = Event.current.type == EventType.Repaint;
                     switch (drawingState)
                     {
                         case ElementGUIDrawingState.Selected:
                             stateColor = new Color(0.15f, 0.35f, 0.39f);
+                            if (isRepaintEvent)
+                            {
+                                currentPreviewElapsed = 1f;
+                            }
                             break;
+
                         case ElementGUIDrawingState.Hover:
-                            stateColor = new Color(0.15f, 0.15f, 0.15f);
-                            break;
-                        case ElementGUIDrawingState.Pressed:
-                            stateColor = new Color(0.1f, 0.1f, 0.1f);
+                            RequestsRepaint = !Mathf.Approximately(currentPreviewElapsed, 1f);
+                            if (RequestsRepaint && isRepaintEvent)
+                            {
+                                currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed + (WindowDeltaTime / EasePreviewDuration));
+                            }
                             break;
 
                         default:
+                            RequestsRepaint = !Mathf.Approximately(currentPreviewElapsed, 0f);
+                            if (RequestsRepaint && isRepaintEvent)
+                            {
+                                currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed - (WindowDeltaTime / EasePreviewDuration));
+                            }
                             break;
                     }
-                    // Elements
-                    // Background
-                    EditorGUI.DrawRect(position, stateColor);
+
+                    // Draw the partial animated rect 
+                    EditorGUI.DrawRect(new Rect(position)
+                    {
+                        width = position.width * Mathf.Clamp01(BXTweenEase.EasedValue(currentPreviewElapsed, ease))
+                    }, stateColor);
+
                     if (content.image != null)
                     {
                         // Icon

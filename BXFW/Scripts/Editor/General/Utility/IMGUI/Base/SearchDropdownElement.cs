@@ -41,6 +41,18 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public virtual bool Interactable { get; set; } = true;
         /// <summary>
+        /// Whether if this element requests a repaint.
+        /// <br>Useful for constantly updating elements.</br>
+        /// </summary>
+        public virtual bool RequestsRepaint { get; set; } = false;
+        /// <summary>
+        /// Delta time elapsed since the previous draw of window.
+        /// <br>This will give the total time elapsed between <see cref="EditorWindow.Repaint"/>'s,
+        /// to get correct delta time set <see cref="RequestsRepaint"/> to <see langword="true"/>.</br>
+        /// </summary>
+        public float WindowDeltaTime { get; protected internal set; } = 0f;
+
+        /// <summary>
         /// The rectangle reserving context.
         /// <br>The values can be overriden/changed.</br>
         /// </summary>

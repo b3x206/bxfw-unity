@@ -227,7 +227,14 @@ namespace BXFW.Tools.Editor
             }
         }
         private Vector2 scrollRectPosition = Vector2.zero;
-
+        /// <summary>
+        /// Last <see cref="EditorApplication.timeSinceStartup"/> on the <see cref="OnGUI"/>.
+        /// </summary>
+        private double lastTimeSinceStart = -1d;
+        /// <summary>
+        /// Last delta time given to <see cref="SearchDropdownElement"/>.
+        /// </summary>
+        private double editorDeltaTime = 0f;
         // --
         /// <summary>
         /// A manager used for it's settings.
@@ -343,8 +350,13 @@ namespace BXFW.Tools.Editor
 
             HandleGlobalGUIEvents(lastElement);
         }
+        private void OnEnable()
+        {
+            EditorApplication.update += GetGlobalDeltaTime;
+        }
         private void OnDisable()
         {
+            EditorApplication.update -= GetGlobalDeltaTime;
             OnClosed?.Invoke();
         }
         private void DrawSearchBar()
@@ -417,6 +429,8 @@ namespace BXFW.Tools.Editor
             // TODO 2 : 
             // * General optimization to be done (such as accumulating up the rect heights)             [   ]
             // * Search results can contain elements with children (requires a seperate elements stack) [   ]
+            // Added : 
+            // * Global DeltaTime passed per element (TODO : Maybe make an 'GlobalEditorDeltaTime'-like class)
 
             Event e = Event.current;
             elementCtx.Reset();
@@ -493,7 +507,14 @@ namespace BXFW.Tools.Editor
                     }
                 }
 
+                child.WindowDeltaTime = (float)editorDeltaTime;
                 child.OnGUI(reservedRect, state);
+                if (child.RequestsRepaint)
+                {
+                    Repaint();
+                    child.RequestsRepaint = false;
+                }
+
                 // Checkmark / More elements icon
                 Rect sideMarkRect = new Rect(reservedRect)
                 {
@@ -607,6 +628,20 @@ namespace BXFW.Tools.Editor
                         break;
                 }
             }
+        }
+        /// <summary>
+        /// Handles the delta time related events on <see cref="EditorApplication.update"/> to get the correct delta time.
+        /// </summary>
+        private void GetGlobalDeltaTime()
+        {
+            // Get delta time valid values
+            if (lastTimeSinceStart < 0f)
+            {
+                lastTimeSinceStart = EditorApplication.timeSinceStartup;
+            }
+
+            editorDeltaTime = EditorApplication.timeSinceStartup - lastTimeSinceStart;
+            lastTimeSinceStart = EditorApplication.timeSinceStartup;
         }
 
         /// <summary>

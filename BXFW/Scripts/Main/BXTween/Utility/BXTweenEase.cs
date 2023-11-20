@@ -7,8 +7,7 @@ namespace BXFW.Tweening
     /// <summary>
     /// Easing type of the tweenings, the easing functions are gathered from the <see cref="BXTweenEase"/>.
     /// <br>
-    /// You can see an approximation curve in the Window &gt; BXTween &gt; Settings by selecting 
-    /// the default curve or look at the website https://easings.net/
+    /// You can see an approximation curve in any <see cref="EaseType"/> property selector or look at the website https://easings.net/
     /// </br>
     /// </summary>
     public enum EaseType

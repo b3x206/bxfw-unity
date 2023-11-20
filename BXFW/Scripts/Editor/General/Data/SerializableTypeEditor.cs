@@ -61,6 +61,7 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private static Type GetFirstValidClosedType(Type openType)
         {
+            // TODO : Get normal types first, then get the weird ones.
             if (openType == null)
             {
                 return null;
