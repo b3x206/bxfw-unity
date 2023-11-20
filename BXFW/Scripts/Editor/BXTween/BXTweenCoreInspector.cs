@@ -73,15 +73,15 @@ namespace BXFW.ScriptEditor
             };
 
             // Draw a field for 'm_Script'
-            var gEnabled = GUI.enabled;
-            GUI.enabled = false;
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            }
 
             // Draw ReadOnly status properties 
             if (!Application.isPlaying)
             {
                 EditorGUILayout.HelpBox("BXTween only works in runtime.", MessageType.Warning);
-                GUI.enabled = gEnabled;
                 return;
             }
 
@@ -90,8 +90,6 @@ namespace BXFW.ScriptEditor
             // Draw stats from the BXTween class
             EditorGUILayout.LabelField(string.Format("Tween Amount (running) = {0}", BXTween.CurrentRunningTweens.Count));
             EditorGUILayout.LabelField(string.Format("Core Status = {0}", BXTween.CheckStatus() ? "OK" : "Error (null?)"));
-            // Re enable (or disable, we don't know) the GUI.
-            GUI.enabled = gEnabled;
 
             // Draw the list of running tweens
             const float scrollAreaHeight = 250;

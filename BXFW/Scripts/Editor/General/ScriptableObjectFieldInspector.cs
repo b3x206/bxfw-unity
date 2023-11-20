@@ -622,7 +622,6 @@ namespace BXFW
 
             // GUI related
             float previousWidth = position.width;
-            bool gEnabled = GUI.enabled;
 
             // Drag-Drop gui.
             EditorGUIAdditionals.MakeDragDropArea(() =>
@@ -667,13 +666,13 @@ namespace BXFW
                 GUI.Label(position, label);
                 position.x += previousWidth * .4f;
 
-                GUI.enabled = GUI.enabled && !targetParentIsPrefab;
+                using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targetParentIsPrefab);
 
                 position.width = previousWidth * .45f;
                 if (GUI.Button(position, new GUIContent(
                     targetParentIsPrefab || targetParentHasAssetPath ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
                     targetParentIsPrefab || targetParentHasAssetPath ? @"Prefab scenes / Project Assets can't serialize local scriptable objects in themselves.
-(This is due to how the unity serializer works, and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
+(This is due to how the unity serializer works and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
                     if (typeMenus != null)
                     {
@@ -695,7 +694,6 @@ namespace BXFW
                     TypeListProvider.Refresh();
                 }
 
-                GUI.enabled = gEnabled;
                 EditorGUI.EndProperty();
                 return;
             }
@@ -722,7 +720,7 @@ namespace BXFW
             // This GUI element is inserted (foldout space is squished for this property), so yeah.
             if (DisplayObjectNameEditor)
             {
-                GUI.enabled = GUI.enabled && !targetHasAssetPath;
+                using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targetHasAssetPath);
 
                 rInspectorInfo.x += previousWidth * BTN_FOLDOUT_MIN_WIDTH;
                 float lblNameEditorWidth = 1f - (1f - (rFoldoutRefWidth - BTN_FOLDOUT_MIN_WIDTH));
@@ -759,8 +757,6 @@ namespace BXFW
                     }
                 }
                 rInspectorInfo.x -= previousWidth * BTN_FOLDOUT_MIN_WIDTH;
-
-                GUI.enabled = gEnabled;
             }
 
             // 'Show On Project' button
@@ -900,7 +896,6 @@ namespace BXFW
                 }
             }
 
-            GUI.enabled = gEnabled;
             EditorGUI.EndProperty();
         }
 

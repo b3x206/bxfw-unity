@@ -208,8 +208,23 @@ namespace BXFW.Tools.Editor
             memberChildIterationPredicate = DefaultIterationPredicate;
         }
         /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <param name="allowMultiLevelMemberSelection">Whether to allow multi depth member info selection.</param>
         public MemberInfoSelectorDropdown(Type target, bool allowMultiLevelMemberSelection) : this(target)
         {
+            if (!allowMultiLevelMemberSelection)
+            {
+                memberChildIterationPredicate = null;
+            }
+        }
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <param name="allowMultiLevelMemberSelection">Whether to allow multi depth member info selection.</param>
+        public MemberInfoSelectorDropdown(Type target, SelectionDelegate memberPredicate, bool allowMultiLevelMemberSelection) : this(target)
+        {
+            if (memberPredicate != null)
+            {
+                memberSelectionPredicate = memberPredicate;
+            }
+
             if (!allowMultiLevelMemberSelection)
             {
                 memberChildIterationPredicate = null;

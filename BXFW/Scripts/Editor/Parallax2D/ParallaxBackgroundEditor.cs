@@ -285,35 +285,38 @@ namespace BXFW
                     }
 
                     // Refreshable BGLayer.
-                    int BGLayer = layerOrderStart - targetGroup.ChildLength;
+                    int bgLayer = layerOrderStart - targetGroup.ChildLength;
 
-                    var ParentSet = new GameObject($"BGHolderGroup{targetGroup.ChildLength}");
-                    var pObj = ParentSet.AddComponent<ParallaxBackgroundLayer>();
+                    GameObject parentSet = new GameObject($"BGHolderGroup{targetGroup.ChildLength}");
+                    ParallaxBackgroundLayer layerComponent = parentSet.AddComponent<ParallaxBackgroundLayer>();
 
-                    ParentSet.transform.SetParent(targetGroup.transform);
-                    pObj.parallaxEffectAmount = parallaxLayers[i].parallaxAmount;
-                    pObj.parentGroup = targetGroup;
+                    parentSet.transform.SetParent(targetGroup.transform);
+                    layerComponent.parallaxEffectAmount = parallaxLayers[i].parallaxAmount;
+                    layerComponent.parentGroup = targetGroup;
                     // Use the tiled sprite renderer.
-                    pObj.InitilazeTilingSpriteRenderer(parallaxLayers[i].sprite);
+                    layerComponent.InitilazeTilingSpriteRenderer(parallaxLayers[i].sprite);
 
                     switch (layerSortMethod)
                     {
                         case BackgroundLayerSortMethod.SpriteRendererIndex:
-                            pObj.TilingRendererComponent.SortOrder = BGLayer;
+                            layerComponent.TilingRendererComponent.SortOrder = bgLayer;
                             break;
                         default:
                         case BackgroundLayerSortMethod.ZAxisCoords:
                             // BGLayer is negative, so we make it positive to put it behind.
-                            ParentSet.transform.position =
-                                new Vector3(ParentSet.transform.position.x, ParentSet.transform.position.y,
-                                setZOrderPositionAsPositive ? BGLayer : -BGLayer);
+                            parentSet.transform.position =
+                                new Vector3(
+                                    parentSet.transform.position.x,
+                                    parentSet.transform.position.y,
+                                    setZOrderPositionAsPositive ? bgLayer : -bgLayer
+                                );
                             break;
                     }
 
-                    pObj.TilingRendererComponent.AutoTile = false;
-                    pObj.TilingRendererComponent.GridX = layerRendererXTileCount;
+                    layerComponent.TilingRendererComponent.AutoTile = false;
+                    layerComponent.TilingRendererComponent.GridX = layerRendererXTileCount;
 
-                    targetGroup.Backgrounds.Add(pObj);
+                    targetGroup.Backgrounds.Add(layerComponent);
                 }
 
                 Debug.Log("[ParallaxBackgroundEditor] Created background(s).");
@@ -509,30 +512,28 @@ namespace BXFW
             // Sorting settings
             if (modifyBGLayer)
             {
-                var gEnabled = GUI.enabled;
-
                 EditorGUILayout.PropertyField(so.FindProperty(nameof(setLayerOrderAuto)));
                 layerSortMethod = (BackgroundLayerSortMethod)EditorGUILayout.EnumPopup("Layer Sort Method", layerSortMethod);
 
-                GUI.enabled = !setLayerOrderAuto;
-                GUILayout.BeginHorizontal();
-                switch (layerSortMethod)
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(setLayerOrderAuto))
                 {
-                    case BackgroundLayerSortMethod.SpriteRendererIndex:
-                        EditorGUILayout.LabelField("Sprite Index Start", GUILayout.Width(150));
-                        break;
-                    case BackgroundLayerSortMethod.ZAxisCoords:
-                        GUILayout.EndHorizontal();
-                        EditorGUILayout.PropertyField(so.FindProperty(nameof(setZOrderPositionAsPositive)));
-                        GUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField("Z Index Start", GUILayout.Width(150));
-                        break;
+                    GUILayout.BeginHorizontal();
+                    switch (layerSortMethod)
+                    {
+                        case BackgroundLayerSortMethod.SpriteRendererIndex:
+                            EditorGUILayout.LabelField("Sprite Index Start", GUILayout.Width(150));
+                            break;
+                        case BackgroundLayerSortMethod.ZAxisCoords:
+                            GUILayout.EndHorizontal();
+                            EditorGUILayout.PropertyField(so.FindProperty(nameof(setZOrderPositionAsPositive)));
+                            GUILayout.BeginHorizontal();
+                            EditorGUILayout.LabelField("Z Index Start", GUILayout.Width(150));
+                            break;
+                    }
+                    layerOrderStart = EditorGUILayout.IntField(layerOrderStart);
+                    layerOrderStart = Mathf.Clamp(layerOrderStart, int.MinValue, -5);
+                    GUILayout.EndHorizontal();
                 }
-                layerOrderStart = EditorGUILayout.IntField(layerOrderStart);
-                layerOrderStart = Mathf.Clamp(layerOrderStart, int.MinValue, -5);
-                GUILayout.EndHorizontal();
-
-                GUI.enabled = gEnabled;
             }
             else
             {

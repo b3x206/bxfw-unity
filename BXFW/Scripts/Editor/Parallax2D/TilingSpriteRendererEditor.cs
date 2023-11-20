@@ -126,9 +126,7 @@ namespace BXFW.ScriptEditor
         {
             // -- Init
             m_undoRecord.Clear();
-            //if (undoRecord.Capacity <= 0)
-            //    undoRecord.Capacity = Target.AllRendererObjects.Count + 1;
-            var gEnabled = GUI.enabled;
+
             var showMixed = EditorGUI.showMixedValue;
 
             var DefaultLabelStyle = new GUIStyle(GUI.skin.label)
@@ -190,9 +188,10 @@ namespace BXFW.ScriptEditor
             EditorGUILayout.LabelField("Camera Resize Options", DefaultLabelStyle);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.cameraResize)));
 
-            GUI.enabled = targets.Any(t => t.cameraResize);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.resizeTargetCamera)));
-            GUI.enabled = gEnabled;
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targets.All(t => !t.cameraResize)))
+            {
+                EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.resizeTargetCamera)));
+            }
 
             // ---- Tile Options Start   ---- //
             EditorGUILayout.Space();
@@ -243,49 +242,51 @@ namespace BXFW.ScriptEditor
                 }
             }
 
-            GUI.enabled = targets.All(t => !t.AutoTile);
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
-
-            var checkGridX = targets[0].GridX;
-            EditorGUI.showMixedValue = targets.Any(t => t.GridX != checkGridX);
-            var tGridXValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridX), checkGridX);
-            if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue++; }
-            if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue--; }
-            EditorGUI.showMixedValue = showMixed;
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
+            // -- Manual Tile Management
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targets.Any(t => t.AutoTile)))
             {
-                foreach (var target in targets)
+                EditorGUI.BeginChangeCheck();
+                GUILayout.BeginHorizontal();
+
+                var checkGridX = targets[0].GridX;
+                EditorGUI.showMixedValue = targets.Any(t => t.GridX != checkGridX);
+                var tGridXValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridX), checkGridX);
+                if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue++; }
+                if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue--; }
+                EditorGUI.showMixedValue = showMixed;
+
+                GUILayout.EndHorizontal();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    UndoRecordGridGeneration(() => target.GridX = tGridXValue, $"change value {nameof(TilingSpriteRenderer.GridX)}", target);
+                    foreach (var target in targets)
+                    {
+                        UndoRecordGridGeneration(() => target.GridX = tGridXValue, $"change value {nameof(TilingSpriteRenderer.GridX)}", target);
+                    }
+
+                    SceneView.RepaintAll();
                 }
 
-                SceneView.RepaintAll();
-            }
+                EditorGUI.BeginChangeCheck();
+                GUILayout.BeginHorizontal();
 
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
+                var checkGridY = targets[0].GridY;
+                EditorGUI.showMixedValue = targets.Any(t => t.GridY != checkGridY);
+                var tGridYValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridY), checkGridY);
+                if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue++; }
+                if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue--; }
+                EditorGUI.showMixedValue = showMixed;
 
-            var checkGridY = targets[0].GridY;
-            EditorGUI.showMixedValue = targets.Any(t => t.GridY != checkGridY);
-            var tGridYValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridY), checkGridY);
-            if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue++; }
-            if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue--; }
-            EditorGUI.showMixedValue = showMixed;
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
-            {
-                foreach (var target in targets)
+                GUILayout.EndHorizontal();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    UndoRecordGridGeneration(() => target.GridY = tGridYValue, $"change value {nameof(TilingSpriteRenderer.GridY)}", target);
-                }
+                    foreach (var target in targets)
+                    {
+                        UndoRecordGridGeneration(() => target.GridY = tGridYValue, $"change value {nameof(TilingSpriteRenderer.GridY)}", target);
+                    }
 
-                SceneView.RepaintAll();
+                    SceneView.RepaintAll();
+                }
             }
-            GUI.enabled = true;
             so.ApplyModifiedProperties();
 
             GUILayout.BeginHorizontal();

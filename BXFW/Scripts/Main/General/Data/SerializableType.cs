@@ -195,6 +195,15 @@ namespace BXFW
         }
         public bool Equals(SerializableType value)
         {
+            if (value is null)
+            {
+                return false;
+            }
+            if (value.Type == null)
+            {
+                return Type == null;
+            }
+
             return value.Type.Equals(Type);
         }
         public static bool operator ==(SerializableType a, SerializableType b)
@@ -217,6 +226,14 @@ namespace BXFW
         public static bool operator !=(SerializableType a, SerializableType b)
         {
             return !(a == b);
+        }
+        /// <summary>
+        /// Converts a <see cref="SerializableType"/> to <see cref="Type"/>.
+        /// <br>Can be null depending on whether if the type was serialized.</br>
+        /// </summary>
+        public static explicit operator Type(SerializableType serializable)
+        {
+            return serializable.Type;
         }
 
         public override int GetHashCode()

@@ -148,10 +148,10 @@ namespace BXFW.ScriptEditor
                 scAssetGUIAreaRect.x += scAssetGUIareaWidth * scAssetGUISmallerWidth;
                 scAssetGUIAreaRect.width = scAssetGUIareaWidth * (1f - scAssetGUISmallerWidth);
 
-                var gEnabled = GUI.enabled;
-                GUI.enabled = false;
-                GUI.Label(scAssetGUIAreaRect, $"I:{target.SceneIndex}", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
-                GUI.enabled = gEnabled;
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+                {
+                    GUI.Label(scAssetGUIAreaRect, $"I:{target.SceneIndex}", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
+                }
             }
 
             string scenePath = AssetDatabase.GetAssetPath(m_targetSceneAsset);

@@ -38,11 +38,10 @@ namespace BXFW.ScriptEditor
             {
                 dict.Add(nameof(PlayerMovement.targetCamera), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
                 {
-                    var gEnabled = GUI.enabled;
-
-                    GUI.enabled = false;
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(PlayerMovement.targetCamera)));
-                    GUI.enabled = gEnabled;
+                    using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(PlayerMovement.targetCamera)));
+                    }
                 }));
             }
 

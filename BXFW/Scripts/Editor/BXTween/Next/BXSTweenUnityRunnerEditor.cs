@@ -30,6 +30,7 @@ namespace BXFW.Tweening.Editor
         }
         private EditorTweensViewOptions viewOptions;
 
+        private const float TweensScrollAreaHeight = 250;
         private GUIStyle boxStyle;
         private GUIStyle headerTextStyle;
         private GUIStyle miniTextStyle;
@@ -80,15 +81,15 @@ namespace BXFW.Tweening.Editor
             };
 
             // Draw a field for 'm_Script'
-            var gEnabled = GUI.enabled;
-            GUI.enabled = false;
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            }
 
             // Draw ReadOnly status properties 
             if (!Application.isPlaying)
             {
                 EditorGUILayout.HelpBox("BXSTween UnityRunner only works in runtime.", MessageType.Warning);
-                GUI.enabled = gEnabled;
                 return;
             }
 
@@ -99,10 +100,7 @@ namespace BXFW.Tweening.Editor
             EditorGUILayout.LabelField(string.Format("Sequence Amount = {0}", BXSTween.RunningTweens.Where(t => t is BXSTweenSequence).Count()));
             EditorGUILayout.LabelField(string.Format("BXSTween Status = {0}", BXSTween.NeedsInitialize ? "Error (Needs Initialize)" : "OK"));
 
-            GUI.enabled = gEnabled;
-
             // Draw the list of running tweens
-            const float scrollAreaHeight = 250;
             GUIAdditionals.DrawUILineLayout(Color.gray);
 
             // Draw filter button/toggle + info text
@@ -116,13 +114,17 @@ namespace BXFW.Tweening.Editor
 
                 // Draw filter tweens area
                 viewOptions.BreakAtTweenCount = Mathf.Clamp(EditorGUILayout.IntField(
-                    new GUIContent("Tween Amount To Pause (Break)",
-                        "Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower."),
+                    new GUIContent(
+                        "Tween Amount To Pause (Break)",
+                        "Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower."
+                    ),
                     viewOptions.BreakAtTweenCount), -1, int.MaxValue
                 );
                 viewOptions.ReverseIterateListObjects = EditorGUILayout.Toggle(
-                    new GUIContent("Reverse Tweens View",
-                        "Reverses the current view, so the last tween run is the topmost."),
+                    new GUIContent(
+                        "Reverse Tweens View",
+                        "Reverses the current view, so the last tween run is the topmost."
+                    ),
                     viewOptions.ReverseIterateListObjects
                 );
 
@@ -136,12 +138,11 @@ namespace BXFW.Tweening.Editor
 
             // Draw the list of current running tweens (with name)
             // Get a monospace font style with rich text coloring as well
-
-            tweensListScroll = GUILayout.BeginScrollView(tweensListScroll, GUILayout.Height(scrollAreaHeight));
+            tweensListScroll = GUILayout.BeginScrollView(tweensListScroll, GUILayout.Height(TweensScrollAreaHeight));
             for (int guiIndex = 0; guiIndex < BXSTween.RunningTweens.Count; guiIndex++)
             {
                 int tweenIndex = viewOptions.ReverseIterateListObjects ? BXSTween.RunningTweens.Count - (guiIndex + 1) : guiIndex;
-                var tween = BXSTween.RunningTweens[tweenIndex];
+                BXSTweenable tween = BXSTween.RunningTweens[tweenIndex];
 
                 // Allocate toggles (use 'i' parameter, as it's the only one that goes sequentially)
                 // We just want to reverse the 'CurrentRunningTweens'

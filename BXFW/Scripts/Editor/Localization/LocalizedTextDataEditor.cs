@@ -175,9 +175,8 @@ namespace BXFW.ScriptEditor
 
             // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
             // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
-            var targetPair = property.GetTarget();
-            var target = targetPair.value as LocalizedTextData;
-            var gEnabled = GUI.enabled;
+            PropertyTargetInfo targetPair = property.GetTarget();
+            LocalizedTextData target = targetPair.value as LocalizedTextData;
 
             Rect initialFoldoutRect = GetPropertyRect(position);
             label = EditorGUI.BeginProperty(initialFoldoutRect, label, property);
@@ -244,18 +243,19 @@ namespace BXFW.ScriptEditor
             }
 
             // Remove locale menu button
-            GUI.enabled = target.LocaleDatas.Keys.Count > 1;
-            Rect removeLocaleBtnRect = new Rect(baseDropdownRect) { x = baseDropdownRect.x + (baseDropdownRect.width - 30), width = 30 };
-            if (GUI.Button(removeLocaleBtnRect, new GUIContent("X")))
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(target.LocaleDatas.Keys.Count <= 1))
             {
-                // Remove from object
-                Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
-                target.LocaleDatas.Remove(editedLocaleValue);
-                // Set edited locale value
-                editedLocaleValue = target.LocaleDatas.Keys.First();
-                property.SetString(KeyEditLocale, editedLocaleValue);
+                Rect removeLocaleBtnRect = new Rect(baseDropdownRect) { x = baseDropdownRect.x + (baseDropdownRect.width - 30), width = 30 };
+                if (GUI.Button(removeLocaleBtnRect, new GUIContent("X", "Removes the currently selected locale key and value.")))
+                {
+                    // Remove from object
+                    Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
+                    target.LocaleDatas.Remove(editedLocaleValue);
+                    // Set edited locale value
+                    editedLocaleValue = target.LocaleDatas.Keys.First();
+                    property.SetString(KeyEditLocale, editedLocaleValue);
+                }
             }
-            GUI.enabled = gEnabled;
 
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
