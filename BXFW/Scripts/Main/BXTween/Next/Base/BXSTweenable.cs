@@ -520,6 +520,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Returns the BXSTweenable as a copy.
         /// </summary>
+        /// <typeparam name="T">The tween type to copy from. This should be equalivent to the type to create a copy from.</typeparam>
         public T AsCopy<T>()
             where T : BXSTweenable, new()
         {
@@ -533,6 +534,9 @@ namespace BXFW.Tweening.Next
         /// Starts the tween.
         /// <br>If the tween is already running, calling this will restart it. This won't call <see cref="Reset"/> on the tween.</br>
         /// <br>The base method calls the events and sets <see cref="IsPlaying"/> to true.</br>
+        /// <br/>
+        /// <br><b>Warning : </b> As soon as the tween starts, some parameters are locked in to the current state (such as the duration and loop count).</br>
+        /// <br>Because of this, <b>apply the settings before calling</b> <see cref="Play"/> or call/use <see cref="DelayedPlay"/> if applicable.</br>
         /// </summary>
         public virtual void Play()
         {

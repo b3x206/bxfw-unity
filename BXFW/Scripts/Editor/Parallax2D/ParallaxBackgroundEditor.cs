@@ -64,11 +64,11 @@ namespace BXFW
         [MenuItem("GameObject/2D Object/Parallax Group")]
         private static void CreateParallaxGroupGObj()
         {
-            var g = new GameObject("Parallax Group");
-            GameObjectUtility.SetParentAndAlign(g, Selection.activeGameObject);
-            g.AddComponent<ParallaxBackgroundGroup>();
+            GameObject group = new GameObject("Parallax Group");
+            GameObjectUtility.SetParentAndAlign(group, Selection.activeGameObject);
+            group.AddComponent<ParallaxBackgroundGroup>();
 
-            Selection.activeGameObject = g;
+            Selection.activeGameObject = group;
         }
     }
 
