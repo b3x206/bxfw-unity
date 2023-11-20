@@ -602,10 +602,10 @@ namespace BXFW.Tools.Editor
                             return;
                         }
                         break;
+
                     default:
                         break;
                 }
-
             }
         }
 
