@@ -218,6 +218,7 @@ namespace BXFW.Tools.Editor
             {
                 if (!m_Window.IsClosingWithSelectionIntent)
                 {
+                    OnDiscardEvent?.Invoke();
                     return;
                 }
 
@@ -257,5 +258,10 @@ namespace BXFW.Tools.Editor
         /// Called when an element is selected.
         /// </summary>
         public event Action<SearchDropdownElement> OnElementSelectedEvent;
+        /// <summary>
+        /// Called when the dropdown is discarded.
+        /// (No element selection intent was specified and the dropdown closed)
+        /// </summary>
+        public event Action OnDiscardEvent;
     }
 }

@@ -44,7 +44,7 @@ namespace BXFW.Tools.Editor
         /// The rectangle reserving context.
         /// <br>The values can be overriden/changed.</br>
         /// </summary>
-        protected PropertyRectContext drawingContext = new PropertyRectContext(2f);
+        protected readonly PropertyRectContext drawingContext = new PropertyRectContext(2f);
         
         /// <summary>
         /// Internal contained children.
@@ -154,15 +154,10 @@ namespace BXFW.Tools.Editor
             {
                 width = EditorGUIUtility.singleLineHeight
             };
-            Rect nextElementsRect = new Rect(contextRect)
-            {
-                x = contextRect.x + (contextRect.width - (EditorGUIUtility.singleLineHeight - 5f)),
-                width = EditorGUIUtility.singleLineHeight,
-            };
             Rect textRect = new Rect(contextRect)
             {
-                width = contextRect.width - (iconRect.width + nextElementsRect.width),
-                x = contextRect.x + EditorGUIUtility.singleLineHeight + 5f
+                x = contextRect.x + EditorGUIUtility.singleLineHeight + 5f,
+                width = contextRect.width - (iconRect.width + EditorGUIUtility.singleLineHeight)
             };
 
             // -- Background box tint

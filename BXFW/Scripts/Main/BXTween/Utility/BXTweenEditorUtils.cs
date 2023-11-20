@@ -105,7 +105,7 @@ namespace BXFW.Tweening.Editor
             var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
             GUIAdditionals.PlotLineLayout(
                 (v) => BXTweenEase.Methods[dEaseType](v), 
-                0f, 1f, 2.5f, 20, GUILayout.Width(80f), GUILayout.Height(50f)
+                0f, 1f, 2.5f, 25, GUILayout.Width(80f), GUILayout.Height(50f)
             );
             GUILayout.EndHorizontal();
             var dRepeatType = (RepeatType)EditorGUILayout.EnumPopup("Default Repeat Type", CurrentSettings.DefaultRepeatType);
