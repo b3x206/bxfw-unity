@@ -149,7 +149,10 @@ namespace BXFW.Tools.Editor
         /// <param name="drawingState">
         /// The element state, depending on the cursor interaction.
         /// Elements can ignore this all together and use the <see cref="Event.current"/> but the default behaviour doesn't.
-        /// <br>This is just a more convenient way of receiveing events.
+        /// <br>This is just a more convenient way of receiveing events.</br>
+        /// <br>
+        /// <b>Warning : </b> Check the <see cref="Event.current"/> for this state's correctness.
+        /// This event is usually only correct in <see cref="EventType.Repaint"/>.
         /// </br>
         /// </param>
         public virtual void OnGUI(Rect position, ElementGUIDrawingState drawingState)

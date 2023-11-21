@@ -79,7 +79,7 @@ namespace BXFW
                     return false;
                 }
 
-                return Type.ContainsGenericParameters && Type.GenericTypeArguments.Length != Type.GetGenericArguments().Length;
+                return Type.IsGenericTypeDefinition;
             }
         }
 

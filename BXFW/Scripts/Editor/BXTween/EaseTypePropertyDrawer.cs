@@ -20,6 +20,7 @@ namespace BXFW.Tweening.Editor
                 private const float PlotFieldWidth = 70f;
                 private const float EasePreviewDuration = 0.5f;
 
+                private ElementGUIDrawingState previousGUIState;
                 private float currentPreviewElapsed = 0f;
                 public readonly EaseType ease;
 
@@ -94,15 +95,24 @@ namespace BXFW.Tweening.Editor
 
                         case ElementGUIDrawingState.Hover:
                             RequestsRepaint = !Mathf.Approximately(currentPreviewElapsed, 1f);
-                            if (RequestsRepaint && isRepaintEvent)
+                            // Reset the hover rect to be zero sized
+                            if (isRepaintEvent)
                             {
-                                currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed + (WindowDeltaTime / EasePreviewDuration));
+                                if (previousGUIState == ElementGUIDrawingState.Selected)
+                                {
+                                    currentPreviewElapsed = 0f;
+                                }
+
+                                if (RequestsRepaint)
+                                {
+                                    currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed + (WindowDeltaTime / EasePreviewDuration));
+                                }
                             }
                             break;
 
                         default:
                             RequestsRepaint = !Mathf.Approximately(currentPreviewElapsed, 0f);
-                            if (RequestsRepaint && isRepaintEvent)
+                            if (isRepaintEvent && RequestsRepaint)
                             {
                                 currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed - (WindowDeltaTime / EasePreviewDuration));
                             }
@@ -127,6 +137,11 @@ namespace BXFW.Tweening.Editor
                     GUI.color = Color.green;
                     GUIAdditionals.PlotLine(plottingAreaRect, (float t) => BXTweenEase.EasedValue(t, ease), 0f, 1f, 1.5f, 28);
                     GUI.color = gColor;
+
+                    if (isRepaintEvent)
+                    {
+                        previousGUIState = drawingState;
+                    }
                 }
             }
 

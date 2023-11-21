@@ -78,7 +78,8 @@ namespace BXFW.Tools.Editor
     ///         }
     ///         
     ///         // Draw the dropdown button
-    ///         EditorGUILayout.LabelField($"Dropdown Value : {target.dropdownSettingString}");
+    ///         EditorGUILayout.BeginHorizontal();
+    ///         EditorGUILayout.LabelField($"Dropdown Value : {target.dropdownSettingString}", GUILayout.Width(EditorGUIUtility.labelWidth));
     ///         if (GUILayout.Button("Set Value From Dropdown"))
     ///         {
     ///             ExampleDropdown dropdown = new ExampleDropdown();
@@ -95,7 +96,8 @@ namespace BXFW.Tools.Editor
     ///                 target.dropdownSettingString = element.content.text;    
     ///             };
     ///         }
-    ///
+    ///         EditorGUILayout.EndHorizontal();
+    /// 
     ///         // Get the last rect for getting the proper value
     ///         // This is only needed on automatically layouted GUI's, with the GUI's
     ///         // that you know the rect to you can use that rect instead.
