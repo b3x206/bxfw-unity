@@ -25,8 +25,8 @@ namespace BXFW.Tweening.Editor
         /// </summary>
         private struct EditorTweensViewOptions
         {
-            public bool ReverseIterateListObjects;
-            public int BreakAtTweenCount;
+            public bool reverseTweensView;
+            public int breakAtTweenCount;
         }
         private EditorTweensViewOptions viewOptions;
 
@@ -113,25 +113,25 @@ namespace BXFW.Tweening.Editor
                 EditorGUI.indentLevel += 2;
 
                 // Draw filter tweens area
-                viewOptions.BreakAtTweenCount = Mathf.Clamp(EditorGUILayout.IntField(
+                viewOptions.breakAtTweenCount = Mathf.Clamp(EditorGUILayout.IntField(
                     new GUIContent(
                         "Tween Amount To Pause (Break)",
                         "Pause editor after the amount of current tweens that is >= from this value.\nTo stop pausing set this value to 0 or lower."
                     ),
-                    viewOptions.BreakAtTweenCount), -1, int.MaxValue
+                    viewOptions.breakAtTweenCount), -1, int.MaxValue
                 );
-                viewOptions.ReverseIterateListObjects = EditorGUILayout.Toggle(
+                viewOptions.reverseTweensView = EditorGUILayout.Toggle(
                     new GUIContent(
                         "Reverse Tweens View",
                         "Reverses the current view, so the last tween run is the topmost."
                     ),
-                    viewOptions.ReverseIterateListObjects
+                    viewOptions.reverseTweensView
                 );
 
                 EditorGUI.indentLevel -= 2;
             }
             // Pause editor if the tween amount exceeded
-            if (viewOptions.BreakAtTweenCount > 0 && BXSTween.RunningTweens.Count >= viewOptions.BreakAtTweenCount)
+            if (viewOptions.breakAtTweenCount > 0 && BXSTween.RunningTweens.Count >= viewOptions.breakAtTweenCount)
             {
                 EditorApplication.isPaused = true;
             }
@@ -141,7 +141,7 @@ namespace BXFW.Tweening.Editor
             tweensListScroll = GUILayout.BeginScrollView(tweensListScroll, GUILayout.Height(TweensScrollAreaHeight));
             for (int guiIndex = 0; guiIndex < BXSTween.RunningTweens.Count; guiIndex++)
             {
-                int tweenIndex = viewOptions.ReverseIterateListObjects ? BXSTween.RunningTweens.Count - (guiIndex + 1) : guiIndex;
+                int tweenIndex = viewOptions.reverseTweensView ? BXSTween.RunningTweens.Count - (guiIndex + 1) : guiIndex;
                 BXSTweenable tween = BXSTween.RunningTweens[tweenIndex];
 
                 // Allocate toggles (use 'i' parameter, as it's the only one that goes sequentially)
@@ -194,6 +194,7 @@ namespace BXFW.Tweening.Editor
             {
                 EditorGUILayout.HelpBox("There's no currently running tween.", MessageType.Info);
             }
+
             GUILayout.EndScrollView();
         }
     }

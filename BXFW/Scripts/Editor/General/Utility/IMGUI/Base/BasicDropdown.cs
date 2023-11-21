@@ -18,8 +18,8 @@ namespace BXFW.ScriptEditor
         private static Array GetPopupLocations()
         {
             Array retValue = Array.CreateInstance(popupLocationType, 2);
-            retValue.SetValue(Enum.ToObject(popupLocationType, 0), 0); /* PopupLocation.Below,  */
-            retValue.SetValue(Enum.ToObject(popupLocationType, 4), 1); /* PopupLocation.Overlay */
+            retValue.SetValue(Enum.ToObject(popupLocationType, 0), 0); // PopupLocation.Below,
+            retValue.SetValue(Enum.ToObject(popupLocationType, 4), 1); // PopupLocation.Overlay
 
             return retValue;
         }
@@ -32,7 +32,7 @@ namespace BXFW.ScriptEditor
             {
                 Instance = CreateInstance<BasicDropdown>();
             }
-            
+
             // EditorWindow.ShowAsDropdown's public version tries to be a real dropdown by using mouse unfocus events
             // With those events it also tries to hook itself to a conceivable parent
             // This window will require manual management so we can use the window however we like to do

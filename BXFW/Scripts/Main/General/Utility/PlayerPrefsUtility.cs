@@ -308,7 +308,7 @@ namespace BXFW
         {
 #if !CSHARP_7_3_OR_NEWER
             if (!typeof(T).IsEnum)
-                throw new InvalidOperationException(string.Format("[PlayerPrefsUtility::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+                throw new ArgumentException(string.Format("[PlayerPrefsUtility::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 #endif
             if (string.IsNullOrEmpty(key))
             {
@@ -327,9 +327,8 @@ namespace BXFW
         {
 #if !CSHARP_7_3_OR_NEWER
             if (!typeof(T).IsEnum)
-                throw new InvalidOperationException(string.Format("[PlayerPrefsUtility::GetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+                throw new ArgumentException(string.Format("[PlayerPrefsUtility::GetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
 #endif
-
             if (string.IsNullOrEmpty(key))
             {
                 Debug.LogError(string.Format("[PlayerPrefsUtility::SetEnum] Couldn't get the savekey because it is null. Key={0}", key));

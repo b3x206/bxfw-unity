@@ -114,30 +114,30 @@ namespace BXFW
         [CustomPropertyDrawer(typeof(LayerRegistry))]
         private class LayerRegistryEditor : PropertyDrawer
         {
-            private const float HEIGHT = 60f;
-            private const float PADDING = 2f;
+            private const float Height = 60f;
+            private const float Padding = 2f;
 
             public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
             {
-                return HEIGHT + PADDING;
+                return Height + Padding;
             }
             public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
             {
                 EditorGUI.BeginProperty(position, label, property);
 
-                position.height -= PADDING;
-                position.y += PADDING / 2f;
+                position.height -= Padding;
+                position.y += Padding / 2f;
 
                 using var spSprite = property.FindPropertyRelative(nameof(LayerRegistry.sprite));
                 using var spParallax = property.FindPropertyRelative(nameof(LayerRegistry.parallaxAmount));
                 // Draw both horizontally
                 Rect fieldRect = new Rect(position);
 
-                fieldRect.width -= (position.width + PADDING) / 2f;
+                fieldRect.width -= (position.width + Padding) / 2f;
                 spSprite.objectReferenceValue = (Sprite)EditorGUI.ObjectField(fieldRect, new GUIContent("Layer Sprite / Parallax Amount"), spSprite.objectReferenceValue, typeof(Sprite), false);
 
-                fieldRect.x += (position.width + PADDING) / 2f;
-                fieldRect.width += PADDING / 2f;
+                fieldRect.x += (position.width + Padding) / 2f;
+                fieldRect.width += Padding / 2f;
                 fieldRect.y += (position.height - EditorGUIUtility.singleLineHeight) / 2f;
                 fieldRect.height = EditorGUIUtility.singleLineHeight;
 
