@@ -271,8 +271,10 @@ namespace BXFW.Tools.Editor
             window.IsClosingWithSelectionIntent = !window.parentManager.AllowSelectionOfElementsWithChild;
 
             // Show with size constraints.
-            // - Calculate the height (for the time being use this, can use 'GetElementsHeight' after this)
-            float height = (window.parentManager.RootElement.Count * (EditorGUIUtility.singleLineHeight + 2f)) + SearchBarHeight + ElementNameBarHeight;
+            // - Calculate the height (for the time being use this, can use 'GetElementsHeight'
+            // after idk when, the most permanent solution is a tempoary one)
+            float elementsHeight = Mathf.Max(window.parentManager.RootElement.Count * (EditorGUIUtility.singleLineHeight + 2f), 64f);
+            float height = elementsHeight + SearchBarHeight + ElementNameBarHeight;
 
             // - Get the size constraints here as 'ShowAsDropDown' needs those.
             Vector2 dropdownSize = new Vector2(parentRect.width, height);
@@ -454,16 +456,18 @@ namespace BXFW.Tools.Editor
             float elementsViewWidth = position.width - GUI.skin.verticalScrollbar.fixedWidth;
             GUILayout.BeginVertical(GUILayout.Width(elementsViewWidth));
 
+            int elementSize = Mathf.Min(element.Count, lastLayoutElementsSize);
+
             // FIXME : Unoptimized ver
             // Reason : pushed rect quantity is too large
-            // all elements are checked, which makes this o(n)
+            // all element's heights are checked, which makes this o(n)
             // --
             // Wait, what? This is actually faster than the AdvancedDropdown
             // Okay, unity does cull non-rendered GUI stuff, but i think the AdvancedDropdown always calls GUI.Draw on all elements
             // Which causes immense lagging.
             // --
             // And the 'AdvancedDropdown' allocation was also very wasteful, we couldn't define an array size.
-            for (int i = 0; i < Mathf.Min(element.Count, lastLayoutElementsSize); i++)
+            for (int i = 0; i < elementSize; i++)
             {
                 SearchDropdownElement child = element[i];
 
@@ -552,6 +556,12 @@ namespace BXFW.Tools.Editor
                     e.Use();
                     break;
                 }
+            }
+
+            // Draw no elements thing
+            if (elementSize <= 0)
+            {
+                EditorGUILayout.LabelField(parentManager.NoElementPlaceholderText, StyleList.WrapLabelStyle);
             }
 
             GUILayout.EndVertical();

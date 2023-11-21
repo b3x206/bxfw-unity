@@ -47,18 +47,19 @@ namespace BXFW
         where T : ScriptableObject
     {
         // TODO (bit higher but still low priority) :
-        // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
-        // Or Allow for this way of creating UI, then on the Editor override for 'T' type
-        // use the GUILayoutUtility reserval things and create the Rect based interface in a standalone editor as well.
-        // 2. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
+        // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        // 2. AdvancedDropdown implementation for null field selector on UnityEditor.IMGUI.Controls
+        // Is Done but needs test :
+        // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
 
         /// <summary>
         /// Menu that contains the create names and delegates.
         /// </summary>
-        protected GenericMenu typeMenus;
+        protected TypeSelectorDropdown typeMenus;
+        // Bro just one more variable i promise bro this code finna be so clean
+        protected SerializedObject typeSelectorSo;
+        protected SerializedProperty typeSelectorProperty;
         /// <summary>
         /// <see cref="CustomEditor"/> attribute for <see cref="T"/>.
         /// <br>Set to a valid editor when <see cref="SetValueOfTarget(SerializedProperty, T)"/> is called.</br>
@@ -331,47 +332,77 @@ namespace BXFW
             property.Dispose(); // Dispose after being called from delegate, as the passed property is a clone.
         }
 
+        /// <summary>
+        /// Returns the new list of the <see cref="typeMenus"/>.
+        /// </summary>
+        protected void GetTypeMenuListFromProperty(SerializedProperty property)
+        {
+            // Use a 'TypeSelectorDropdown' as it's nicer than 'GenericMenu'
+            typeMenus = new TypeSelectorDropdown(null, (Type t) => t.IsSubclassOf(typeof(T)) && t != typeof(T) && !t.IsAbstract, false);
+
+            // The given 'property' parameter automatically disposes so copy the values.
+            typeSelectorSo = new SerializedObject(property.serializedObject.targetObject);
+            typeSelectorProperty = typeSelectorSo.FindProperty(property.propertyPath);
+            typeMenus.OnElementSelectedEvent += (SearchDropdownElement element) =>
+            {
+                if (!(element is TypeSelectorDropdown.Item item))
+                {
+                    return;
+                }
+
+                // Apply value
+                SetValueOfTargetDelegate(typeSelectorProperty, (T)ScriptableObject.CreateInstance(Type.GetType(item.assemblyQualifiedName)));
+                // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
+                // or it's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
+                typeSelectorSo.Dispose();
+                typeSelectorProperty.Dispose();
+                // Don't need to dispose those, as the way i wrote/handled the TypeMenuList setting is kinda sloppy
+                // This is because i dispose the 'copySo and 'copyProp', i need to check if those are valid and if not just create a new delegate.
+                // Time to create class globals B)
+            };
+            typeMenus.NoElementPlaceholderText = string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name);
+        }
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var propTarget = property.objectReferenceValue;
             var target = propTarget as T;
 
             // Get types inheriting from player powerup on all assemblies
-            if (typeMenus == null)
+            if (typeMenus == null || typeSelectorSo.IsDisposed() || typeSelectorSo.IsDisposed())
             {
-                // Use a 'GenericMenu' as it's nicer than using EditorGUIUtility.Popup
-                typeMenus = new GenericMenu();
+                GetTypeMenuListFromProperty(property);
 
-                foreach (Type type in TypeListProvider.GetDomainTypesByPredicate((Type t) =>
-                    t.IsSubclassOf(typeof(T)) && t != typeof(T) && !t.IsAbstract))
-                {
-                    T elem = ScriptableObject.CreateInstance(type) as T;
+                //foreach (Type type in TypeListProvider.GetDomainTypesByPredicate((Type t) =>
+                //    t.IsSubclassOf(typeof(T)) && t != typeof(T) && !t.IsAbstract))
+                //{
+                //    T elem = ScriptableObject.CreateInstance(type) as T;
 
-                    // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
-                    // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
-                    var copySO = new SerializedObject(property.serializedObject.targetObject);
-                    SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
+                //    // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
+                //    // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
+                //    var copySO = new SerializedObject(property.serializedObject.targetObject);
+                //    SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
 
-                    typeMenus.AddItem(
-                        new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
-                        false,
-                        () =>
-                        {
-                            // Apply value
-                            SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
-                            // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
-                            // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
-                            copySO.Dispose();
-                            copyProp.Dispose();
-                        }
-                    );
-                }
+                //    typeMenus.AddItem(
+                //        new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
+                //        false,
+                //        () =>
+                //        {
+                //            // Apply value
+                //            SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
+                //            // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
+                //            // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
+                //            copySO.Dispose();
+                //            copyProp.Dispose();
+                //        }
+                //    );
+                //}
 
-                // No items
-                if (typeMenus.GetItemCount() <= 0)
-                {
-                    typeMenus.AddDisabledItem(new GUIContent(string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name)), true);
-                }
+                //// No items
+                //if (!typeMenus.RootElement.HasChildren)
+                //{
+                //    typeMenus.AddDisabledItem(new GUIContent(), true);
+                //}
 
                 // Since the following scope is called only once, we can leech off that
                 // Get custom inspector
@@ -435,9 +466,22 @@ namespace BXFW
             else
             {
                 // We don't know the adaptable height yet
-                // Could use GUILayoutUtility.GetRect but wont't work because we need height before draw.
-                // As a workaround, jk there's no workaround
+                // Have to tally the Rect somehow in Layout and do something according to that.
+                // Maybe something with GUILayout.BeginVertical and EditorGUIUtility.GetLastRect's?
                 h = ReservedHeightCustomEditor;
+
+                // A :
+                // Only do this layout allocation here as GetPropertyHeight is also called on Repaint
+                if (Event.current.type == EventType.Layout)
+                {
+                    GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
+                    customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
+
+                    currentCustomInspector.OnInspectorGUI();
+
+                    GUILayout.EndScrollView();
+                    GUILayout.EndArea();
+                }
             }
 
             // Add label height
@@ -674,16 +718,12 @@ namespace BXFW
                     targetParentIsPrefab || targetParentHasAssetPath ? @"Prefab scenes / Project Assets can't serialize local scriptable objects in themselves.
 (This is due to how the unity serializer works and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
-                    if (typeMenus != null)
+                    if (typeMenus == null || typeSelectorSo.IsDisposed() || typeSelectorSo.IsDisposed())
                     {
-                        typeMenus.ShowAsContext();
+                        GetTypeMenuListFromProperty(property);
                     }
-                    else
-                    {
-                        var m = new GenericMenu();
-                        m.AddDisabledItem(new GUIContent("Click refresh to refresh the list."), true);
-                        m.ShowAsContext();
-                    }
+
+                    typeMenus.Show(position);
                 }
                 position.x += previousWidth * .46f;
 
@@ -845,54 +885,32 @@ namespace BXFW
                 }
                 else
                 {
-                    // apparently the only problem was that we weren't getting the correct PropertyDrawer position in Event.current.type == EventType.Layout
-                    // that was (not only) the issue.
-                    // Reserve gui area on the bottom and create a scrollable custom inspector rect
+                    // This, was, that easy?
+                    // Okay. Fine. I will be better next time. Or you know do more research.
+                    // Or maybe i got more experienced in GUI? Who knows. The stars have aligned.
+                    // --
+                    // Here's the workaround : 
+                    // A : Do the Event.current.type == EventType.Layout related laying out in GetPropertyHeight
+                    // B : Do the repaint and the rest of the events in here.
+                    // -- 
+                    // Note : Exceptions still may occur, this is NOT the finalized version.
+                    // --
+                    // B :
+                    EditorGUI.indentLevel += 1;
 
-                    // eh whatever this will do if it works, we can't out-inspector the unity inspector (because c# internal keyword and reflection trash).
-                    // in inspector we are doing nested GUILayout areas (which is big no-no)
-                    // If we are in an reorderable array however, the CustomPropertyDrawer allows us for some reason
+                    // Background Drawing Rect (for prettier display)
+                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
+                    EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.25f, 0.25f, 0.25f) : new Color(0.91f, 0.91f, 0.91f));
 
-                    // all of the effort, just to be able to be only drawn inside other nested CustomPropertyDrawers
-                    // unity W, me L
-                    // If you want to tackle this too (i have schizophrenia, there's no you) just know that unity will most likely win
-                    // because it likes to delete your GUILayout area, you also can't just call OnInspectorGUI inside other inspectors (nested GUILayout area moment)
+                    GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
+                    customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
 
-                    // As workaround, just open the entire ScriptableObject in the inspector
-                    // yes, waste of space. but unity won
-                    try
-                    {
-                        // Save the current GUILayout setting (?)
+                    currentCustomInspector.OnInspectorGUI();
 
-                        // Begin, draw, exit new area
-                        GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
-                        customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
+                    GUILayout.EndScrollView();
+                    GUILayout.EndArea();
 
-                        currentCustomInspector.OnInspectorGUI();
-
-                        GUILayout.EndScrollView();
-                        GUILayout.EndArea();
-
-                        // Load the previous GUILayout settings (?, again)
-                    }
-                    catch (Exception e)
-                    {
-                        if (DebugMode)
-                        {
-                            Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::DrawCustomInspector] Exception occurred while calling CustomInspector. Falling back to solely inspector view. This is a known issue. e={0}\n{1}", e.Message, e.StackTrace));
-                        }
-
-                        // OnInspectorGUI creates another area inside of another area, no matter what
-                        // We have to convince the inspector of unity that : yes we are totally drawing the CustomPropertyDrawer, there's no other editors drawn here
-
-                        // ok unity, you win. i give up
-                        // the button will just select scriptable object if we can't draw the OnInspectorGUI
-                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor),
-                            "View on Current Inspector\n(object has custom editor, thus cannot be\n viewed in a nested GUILayout area.)"))
-                        {
-                            AssetDatabase.OpenAsset(target);
-                        }
-                    }
+                    EditorGUI.indentLevel -= 1;
                 }
             }
 

@@ -181,6 +181,10 @@ namespace BXFW.Tools.Editor
         /// Whether to display the current elements count inside the header text.
         /// </summary>
         protected internal virtual bool DisplayCurrentElementsCount => true;
+        /// <summary>
+        /// Placeholder string displayed for dropdowns without any elements.
+        /// </summary>
+        public virtual string NoElementPlaceholderText { get; set; }
 
         // ?? TODO : Search children using some haystack algorithm
         // Sorting can be done by the caller who builds the root.
@@ -202,6 +206,7 @@ namespace BXFW.Tools.Editor
         public SearchDropdownElement RootElement => m_RootElement;
         /// <summary>
         /// Show the dropdown at the <paramref name="rect"/> position.
+        /// <br>This also creates a new root.</br>
         /// </summary>
         /// <param name="rect">Position of the button that opened the dropdown.</param>
         public void Show(Rect rect)
