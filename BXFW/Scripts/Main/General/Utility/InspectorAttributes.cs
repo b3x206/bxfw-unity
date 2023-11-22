@@ -262,7 +262,7 @@ namespace BXFW
             // EqualityComparer is used because of the IEquatable check and other things
             // ----- No Typeless EqualityComparer? -----
             Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(t);
-            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
             MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { t, t });
             return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { x, y });
         }

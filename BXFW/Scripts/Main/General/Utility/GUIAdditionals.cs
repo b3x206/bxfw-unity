@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -44,6 +45,69 @@ namespace BXFW
             // 'CheckOnGUI' checks whether if the guiDepth is less or equal to zero
             // Then it throws an exception.
             return (int)typeof(GUIUtility).GetProperty("guiDepth", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null) > 0;
+        }
+
+        /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        public static object BeginLayoutPosition(Vector2 position, float width)
+        {
+            return BeginLayoutPosition(position, width, GUIStyle.none, GUIContent.none);
+        }
+        /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        public static object BeginLayoutPosition(Vector2 position, float width, GUIStyle style)
+        {
+            return BeginLayoutPosition(position, width, style, GUIContent.none);
+        }
+        /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        public static object BeginLayoutPosition(Vector2 position, float width, GUIContent content)
+        {
+            return BeginLayoutPosition(position, width, GUIStyle.none, content);
+        }
+        /// <summary>
+        /// Begins a positioned layouted GUI.
+        /// <br>Basically creates a new GUILayout context with position from the given parameters.</br>
+        /// <br>Useful for <see cref="UnityEditor.PropertyDrawer"/>'s and other things.</br>
+        /// </summary>
+        /// <param name="position">Position to start the layout group from.</param>
+        /// <param name="width">Width of the layout to start.</param>
+        /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
+        /// <param name="content">Content of the layout group to accommodate for.</param>
+        /// <returns>The boxed <see cref="GUILayoutGroup"/> value. Use reflection to access the values for now.</returns>
+        public static object BeginLayoutPosition(Vector2 position, float width, GUIStyle style, GUIContent content)
+        {
+            CheckOnGUI();
+
+            Assembly layoutGroupAssembly = typeof(GUILayoutUtility).Assembly;
+            Type layoutGroupType = layoutGroupAssembly.GetType("UnityEngine.GUILayoutGroup", true);
+            MethodInfo miBeginLayoutArea = typeof(GUILayoutUtility).GetMethod("BeginLayoutArea", BindingFlags.NonPublic | BindingFlags.Static);
+
+            //GUILayoutGroup g = GUILayoutUtility.BeginLayoutArea(style, typeof(GUILayoutGroup));
+            object layoutGroupObject = miBeginLayoutArea.Invoke(null, new object[] { style, layoutGroupType });
+            FieldInfo layoutGroupRectField = layoutGroupType.GetField("rect");
+            if (Event.current.type == EventType.Layout)
+            {
+                // g.resetCoords = true;
+                layoutGroupType.GetField("resetCoords").SetValue(layoutGroupObject, true);
+                // TODO : Get the width from something else? And then use GUILayoutOption for custom width.
+                // g.minWidth = (g.maxWidth = width);
+                layoutGroupType.GetField("minWidth").SetValue(layoutGroupObject, width);
+                layoutGroupType.GetField("maxWidth").SetValue(layoutGroupObject, width);
+                // 'maxHeight' cannot be float.MaxValue due to the float imprecision (causes weird bugs)
+                // Use '100000f' as height limit.
+                layoutGroupType.GetField("maxHeight").SetValue(layoutGroupObject, 100000f);
+                // g.maxHeight = screenRect.height;
+                // g.rect = Rect.MinMaxRect(screenRect.xMin, screenRect.yMin, gUILayoutGroup.rect.xMax, gUILayoutGroup.rect.yMax);
+                Rect groupTypeRectValue = (Rect)layoutGroupRectField.GetValue(layoutGroupObject);
+
+                layoutGroupRectField.SetValue(layoutGroupObject, Rect.MinMaxRect(position.x, position.y, groupTypeRectValue.xMax, groupTypeRectValue.yMax));
+            }
+
+            GUI.BeginGroup((Rect)layoutGroupRectField.GetValue(layoutGroupObject), content, style);
+            return layoutGroupObject;
+        }
+
+        public static void EndLayoutPosition()
+        {
+            GUILayout.EndArea();
         }
 
         private const string JBMONO_FONT_NAME = "Jetbrains Mono";
@@ -180,8 +244,8 @@ namespace BXFW
         {
             if (options.Length > 0)
             {
-                FieldInfo guiOptionTypeField = typeof(GUILayoutOption).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic);
-                FieldInfo guiOptionValueField = typeof(GUILayoutOption).GetField("value", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo guiOptionTypeField = typeof(GUILayoutOption).GetField("type", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo guiOptionValueField = typeof(GUILayoutOption).GetField("value", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 // -- Dynamic size options
                 GUILayoutOption minWidthOption = options.SingleOrDefault(o =>
@@ -298,13 +362,13 @@ namespace BXFW
         /// <summary>
         /// Tiny value for <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
         /// </summary>
-        private const float PLOT_DRAW_EPSILON = .01f;
+        private const float PlotDrawEpsilon = .01f;
         /// <summary>
         /// Size of drawn label padding.
         /// </summary>
-        private const float PLOT_TEXT_PADDING_X = 24f;
-        private const float PLOT_TEXT_PADDING_Y = 12f;
-        private const int PLOT_TEXT_FONT_SIZE = 9;
+        private const float PlotTextPaddingX = 24f;
+        private const float PlotTextPaddingY = 12f;
+        private const int PlotTextFontSize = 9;
         private static GUIStyle PlotSmallerFontStyle;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
@@ -321,16 +385,16 @@ namespace BXFW
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
-            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PLOT_TEXT_FONT_SIZE, wordWrap = true };
+            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PlotTextFontSize, wordWrap = true };
 
             if (segments < 1)
             {
                 segments = 2;
             }
 
-            if ((vFrom + PLOT_DRAW_EPSILON) >= vTo)
+            if ((vFrom + PlotDrawEpsilon) >= vTo)
             {
-                vFrom = vTo - PLOT_DRAW_EPSILON;
+                vFrom = vTo - PlotDrawEpsilon;
             }
 
             // Draw dark box behind
@@ -381,32 +445,32 @@ namespace BXFW
             // TODO : Add a 'showLabels' parameter
             Rect plotPosition = new Rect
             {
-                x = position.x + PLOT_TEXT_PADDING_X,
+                x = position.x + PlotTextPaddingX,
                 y = position.y,
-                width = position.width - PLOT_TEXT_PADDING_X,  // reserve for max/min
-                height = position.height - PLOT_TEXT_PADDING_Y // reserve "
+                width = position.width - PlotTextPaddingX,  // reserve for max/min
+                height = position.height - PlotTextPaddingY // reserve "
             };
 
             // Draw from/to text (x, positioned bottom)
             GUI.Label(
-                new Rect { x = position.x + PLOT_TEXT_PADDING_X, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                new Rect { x = position.x + PlotTextPaddingX, y = position.yMax - PlotTextPaddingY, width = 32f, height = PlotTextPaddingY },
                 vFrom.ToString("0.0#"), PlotSmallerFontStyle
             ); // left
             PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
             GUI.Label(
-                new Rect { x = position.xMax - 32f, y = position.yMax - PLOT_TEXT_PADDING_Y, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                new Rect { x = position.xMax - 32f, y = position.yMax - PlotTextPaddingY, width = 32f, height = PlotTextPaddingY },
                 vTo.ToString("0.0#"), PlotSmallerFontStyle
             ); // right
             PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
 
             // Draw local min/max text (y, positioned left)
             GUI.Label(
-                new Rect { x = position.x, y = position.yMin, width = 32f, height = PLOT_TEXT_PADDING_Y },
+                new Rect { x = position.x, y = position.yMin, width = 32f, height = PlotTextPaddingY },
                 localMaximum.ToString("0.0#"), PlotSmallerFontStyle
             ); // up
             GUI.Label(
                 // multiply the offset by 2 to make it look better
-                new Rect { x = position.x, y = position.yMax - (PLOT_TEXT_PADDING_Y * 2f), width = 32f, height = PLOT_TEXT_PADDING_Y }, 
+                new Rect { x = position.x, y = position.yMax - (PlotTextPaddingY * 2f), width = 32f, height = PlotTextPaddingY }, 
                 localMinimum.ToString("0.0#"), PlotSmallerFontStyle
             ); // down
 

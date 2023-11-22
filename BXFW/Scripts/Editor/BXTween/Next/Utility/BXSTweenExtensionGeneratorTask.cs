@@ -83,7 +83,7 @@ namespace BXFW.Tweening.Next.Editor
             /// </summary>
             public MemberInfo[] GetTargets(Type t)
             {
-                return t.GetMember(m_TargetMemberName, MemberTypes.Field | MemberTypes.Property, BindingFlags.Instance | BindingFlags.Public);
+                return t.GetMember(m_TargetMemberName, MemberTypes.Field | MemberTypes.Property, BindingFlags.Public | BindingFlags.Instance);
             }
         }
         [Serializable]

@@ -9,6 +9,7 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using System.Collections;
+using System.Reflection;
 
 namespace BXFW
 {
@@ -50,8 +51,7 @@ namespace BXFW
         // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        // Is Done but needs test :
-        // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
+        // 2. Deprecate the 'DrawGUICommand<T>' DefaultInspector thing (note : do this slowly after ensuring everything works well)
 
         /// <summary>
         /// Menu that contains the create names and delegates.
@@ -103,6 +103,7 @@ namespace BXFW
         /// </br>
         /// </summary>
         protected virtual float ReservedHeightCustomEditor => 300;
+        protected float previousCustomInspectorHeight = 300f;
         /// <summary>
         /// Allows to change the scriptable object <see cref="UnityEngine.Object.name"/> directly using a input field.
         /// </summary>
@@ -373,37 +374,6 @@ namespace BXFW
             {
                 GetTypeMenuListFromProperty(property);
 
-                //foreach (Type type in TypeListProvider.GetDomainTypesByPredicate((Type t) =>
-                //    t.IsSubclassOf(typeof(T)) && t != typeof(T) && !t.IsAbstract))
-                //{
-                //    T elem = ScriptableObject.CreateInstance(type) as T;
-
-                //    // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
-                //    // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
-                //    var copySO = new SerializedObject(property.serializedObject.targetObject);
-                //    SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
-
-                //    typeMenus.AddItem(
-                //        new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
-                //        false,
-                //        () =>
-                //        {
-                //            // Apply value
-                //            SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
-                //            // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
-                //            // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
-                //            copySO.Dispose();
-                //            copyProp.Dispose();
-                //        }
-                //    );
-                //}
-
-                //// No items
-                //if (!typeMenus.RootElement.HasChildren)
-                //{
-                //    typeMenus.AddDisabledItem(new GUIContent(), true);
-                //}
-
                 // Since the following scope is called only once, we can leech off that
                 // Get custom inspector
                 if (currentCustomInspector == null && target != null)
@@ -465,23 +435,23 @@ namespace BXFW
             }
             else
             {
-                // We don't know the adaptable height yet
-                // Have to tally the Rect somehow in Layout and do something according to that.
-                // Maybe something with GUILayout.BeginVertical and EditorGUIUtility.GetLastRect's?
-                h = ReservedHeightCustomEditor;
-
                 // A :
                 // Only do this layout allocation here as GetPropertyHeight is also called on Repaint
+                // Note :
+                // In repaint, this will start drawing the GUI while the height is being calculated
+                // Because of this, the height may not be updated immediately causing excess height to stay (until interacted with ofc)?
                 if (Event.current.type == EventType.Layout)
                 {
-                    GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
-                    customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
+                    Rect screenRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
 
+                    GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
                     currentCustomInspector.OnInspectorGUI();
-
-                    GUILayout.EndScrollView();
-                    GUILayout.EndArea();
+                    GUIAdditionals.EndLayoutPosition();
                 }
+
+                // We don't know the adaptable height yet
+                // Didn't have to tally, just get access to the 'GUILayoutGroup' value after 'CalcHeight'.
+                h = previousCustomInspectorHeight;
             }
 
             // Add label height
@@ -650,9 +620,9 @@ namespace BXFW
             T target = propTarget as T;
 
             // Parent settings. If any of these are true, the following happens:
-            // Unity's unmodifiable serializer decides that 'inline ScriptableObject serialization' is too good and just serializes by fileid.
+            // Unity's unmodifiable serializer decides that 'inline ScriptableObject serialization' is too good and just serializes by FileID.
             // So, if any of these (next 2 vars) are true, the user may have a chance to lose all of their data! (exciting, i know)
-            // Kindly offer them a button to make it actually exist on the project so they don't lose their tempoary data.
+            // Kindly offer them a button to make it actually exist on the project so they don't lose their temporary data.
             bool targetParentIsPrefab = PrefabUtility.IsPartOfAnyPrefab(property.serializedObject.targetObject);
             bool targetParentHasAssetPath = !string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(property.serializedObject.targetObject));
             // Dynamic 'ShowOnProject' button + make unique is disabled if the prefab actually exists in project
@@ -777,7 +747,7 @@ namespace BXFW
                     tNameFieldStyle.normal.textColor = Color.gray;
                 }
 
-                string tName = EditorGUI.TextField(rInspectorInfo, target.name, tNameFieldStyle);
+                string tName = EditorGUI.TextField(new Rect(rInspectorInfo) { height = EditorGUIUtility.singleLineHeight }, target.name, tNameFieldStyle);
 
                 // Object name is only mutable through the 'Project' window changing file name if the target has an asset path
                 if (!targetHasAssetPath)
@@ -899,16 +869,21 @@ namespace BXFW
                     EditorGUI.indentLevel += 1;
 
                     // Background Drawing Rect (for prettier display)
-                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
+                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, correctPosition.height - PaddedSingleLineHeight);
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.25f, 0.25f, 0.25f) : new Color(0.91f, 0.91f, 0.91f));
 
-                    GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
-                    customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
-
+                    // Flex space with nesting? WE HAVE THOSE NOW!
+                    object boxedLayoutGroup = GUIAdditionals.BeginLayoutPosition(areaRect.position, areaRect.width);
                     currentCustomInspector.OnInspectorGUI();
+                    GUIAdditionals.EndLayoutPosition();
 
-                    GUILayout.EndScrollView();
-                    GUILayout.EndArea();
+                    // TODO : Find a way of doing this in PropertyDrawer.GetPropertyHeight without causing mayhem
+                    // Probably just calling these would work but i am unable to try today
+                    // Fixing this TODO will also fix height changing seizures (after the seizures the sizing is correct though)
+                    // Calculates height value into GUILayoutGroup.minHeight
+                    boxedLayoutGroup.GetType().GetMethod("CalcHeight").Invoke(boxedLayoutGroup, null);
+                    // Get value
+                    previousCustomInspectorHeight = (float)boxedLayoutGroup.GetType().GetField("minHeight").GetValue(boxedLayoutGroup);
 
                     EditorGUI.indentLevel -= 1;
                 }
