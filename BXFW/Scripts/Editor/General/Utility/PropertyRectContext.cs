@@ -24,7 +24,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Padding of this rect context.
         /// </summary>
-        public virtual float Padding { get; set; } = 2f;
+        public virtual float Padding { get; set; } = EditorGUIUtility.standardVerticalSpacing;
 
         /// <summary>
         /// Returns the <paramref name="property"/>'s rect.
@@ -54,8 +54,15 @@ namespace BXFW.Tools.Editor
             m_CurrentY = 0f;
         }
 
+        /// <summary>
+        /// Creates a PropertyRectContext where the <see cref="Padding"/> is <see cref="EditorGUIUtility.standardVerticalSpacing"/>.
+        /// </summary>
         public PropertyRectContext()
         { }
+        /// <summary>
+        /// Creates a PropertyRectContext where the <see cref="Padding"/> is the given parameter <paramref name="padding"/>.
+        /// </summary>
+        /// <param name="padding">Padding to set for this context.</param>
         public PropertyRectContext(float padding)
         {
             Padding = padding;

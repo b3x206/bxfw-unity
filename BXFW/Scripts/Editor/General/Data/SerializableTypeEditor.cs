@@ -87,7 +87,7 @@ namespace BXFW.ScriptEditor
             {
                 Type argument = genericArguments[i];
 
-                Type firstMatchingType = TypeListProvider.FirstDomainTypeByPredicate((Type t) => Additionals.GenericArgumentAllowsType(argument, openType));
+                Type firstMatchingType = TypeListProvider.FirstDomainTypeByPredicate((Type t) => TypeUtility.GenericArgumentAllowsType(argument, openType));
                 if (firstMatchingType == null)
                 {
                     throw new Exception($"[SerializableTypeEditor::GetFirstValidClosedType] There is no valid constraint compliant type for open type ({openType})'s generic {argument}.");
@@ -206,7 +206,7 @@ namespace BXFW.ScriptEditor
                     // A open generic argument type, only allow assignable types
                     if (editConstraintGeneric?.IsGenericParameter ?? false)
                     {
-                        return Additionals.GenericArgumentAllowsType(editConstraintGeneric, t);
+                        return TypeUtility.GenericArgumentAllowsType(editConstraintGeneric, t);
                     }
 
                     return true;

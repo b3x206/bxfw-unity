@@ -201,7 +201,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// String token used to define a <see cref="SerializedProperty"/> array element.
         /// </summary>
-        private const string SP_ARRAY_DATA_TK = "Array.data[";
+        private const string SPropArrayToken = "Array.data[";
 
         /// <summary>
         /// Returns a string that is traversed towards parent property names.
@@ -524,7 +524,7 @@ namespace BXFW.Tools.Editor
         public static int GetPropertyParentArrayIndex(this SerializedProperty property)
         {
             // Find whether if there's any array define token
-            int arrayDefLastIndex = property.propertyPath.LastIndexOf(SP_ARRAY_DATA_TK);
+            int arrayDefLastIndex = property.propertyPath.LastIndexOf(SPropArrayToken);
             // No define token
             if (arrayDefLastIndex < 0)
             {
@@ -532,7 +532,7 @@ namespace BXFW.Tools.Editor
             }
 
             // Remove the enclosing bracket ']' token
-            string indStr = property.propertyPath.Substring(arrayDefLastIndex + SP_ARRAY_DATA_TK.Length).TrimEnd(']');
+            string indStr = property.propertyPath.Substring(arrayDefLastIndex + SPropArrayToken.Length).TrimEnd(']');
             return int.Parse(indStr);
         }
         /// <summary>

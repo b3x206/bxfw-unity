@@ -444,9 +444,14 @@ namespace BXFW
                 {
                     Rect screenRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
 
-                    GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
+                    object boxedLayoutGroup = GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
                     currentCustomInspector.OnInspectorGUI();
                     GUIAdditionals.EndLayoutPosition();
+
+                    // Calculate height in layout as well (this method doesn't require Event to be something specific)
+                    boxedLayoutGroup.GetType().GetMethod("CalcHeight").Invoke(boxedLayoutGroup, null);
+                    // Get value (CalcHeight sets value to 'minHeight')
+                    previousCustomInspectorHeight = (float)boxedLayoutGroup.GetType().GetField("minHeight").GetValue(boxedLayoutGroup);
                 }
 
                 // We don't know the adaptable height yet
@@ -635,7 +640,7 @@ namespace BXFW
             }
 
             // GUI related
-            float previousWidth = position.width;
+            float previousWidth = position.width - EditorGUIAdditionals.IndentValue;
 
             // Drag-Drop gui.
             EditorGUIAdditionals.MakeDragDropArea(() =>
@@ -676,6 +681,7 @@ namespace BXFW
             // Null target gui.
             if (target == null)
             {
+                position = EditorGUI.IndentedRect(position);
                 position.width = previousWidth * .4f;
                 GUI.Label(position, label);
                 position.x += previousWidth * .4f;
@@ -713,7 +719,7 @@ namespace BXFW
             // buut, it works (and it has suprisingly ok performance) so why touch it?
 
             // -- Property label
-            Rect rInspectorInfo = GetPropertyRect(position, PaddedSingleLineHeight); // width is equal to 'previousWidth'
+            Rect rInspectorInfo = EditorGUI.IndentedRect(GetPropertyRect(position, PaddedSingleLineHeight)); // width is equal to 'previousWidth'
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
             const float BTN_FOLDOUT_MIN_WIDTH = .033f;
@@ -747,7 +753,7 @@ namespace BXFW
                     tNameFieldStyle.normal.textColor = Color.gray;
                 }
 
-                string tName = EditorGUI.TextField(new Rect(rInspectorInfo) { height = EditorGUIUtility.singleLineHeight }, target.name, tNameFieldStyle);
+                string tName = EditorGUI.TextField(new Rect(rInspectorInfo), target.name, tNameFieldStyle);
 
                 // Object name is only mutable through the 'Project' window changing file name if the target has an asset path
                 if (!targetHasAssetPath)
@@ -866,25 +872,21 @@ namespace BXFW
                     // Note : Exceptions still may occur, this is NOT the finalized version.
                     // --
                     // B :
-                    EditorGUI.indentLevel += 1;
-
                     // Background Drawing Rect (for prettier display)
-                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, correctPosition.height - PaddedSingleLineHeight);
-                    EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.25f, 0.25f, 0.25f) : new Color(0.91f, 0.91f, 0.91f));
+                    EditorGUI.indentLevel += 1;
+                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + rInspectorInfo.height, correctPosition.width, correctPosition.height - rInspectorInfo.height);
+                    EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));
 
                     // Flex space with nesting? WE HAVE THOSE NOW!
+                    // Note : Nested elements don't draw if we send a 'Used' event on this current 'OnInspectorGUI'
                     object boxedLayoutGroup = GUIAdditionals.BeginLayoutPosition(areaRect.position, areaRect.width);
                     currentCustomInspector.OnInspectorGUI();
                     GUIAdditionals.EndLayoutPosition();
 
-                    // TODO : Find a way of doing this in PropertyDrawer.GetPropertyHeight without causing mayhem
-                    // Probably just calling these would work but i am unable to try today
-                    // Fixing this TODO will also fix height changing seizures (after the seizures the sizing is correct though)
                     // Calculates height value into GUILayoutGroup.minHeight
                     boxedLayoutGroup.GetType().GetMethod("CalcHeight").Invoke(boxedLayoutGroup, null);
                     // Get value
                     previousCustomInspectorHeight = (float)boxedLayoutGroup.GetType().GetField("minHeight").GetValue(boxedLayoutGroup);
-
                     EditorGUI.indentLevel -= 1;
                 }
             }

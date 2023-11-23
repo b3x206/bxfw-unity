@@ -301,15 +301,8 @@ namespace BXFW
         /// Sets an enum value to <see cref="PlayerPrefs"/>.
         /// <br>The type is enforced by the string prefixing.</br>
         /// </summary>
-        public static void SetEnum<T>(string key, T value)
-#if CSHARP_7_3_OR_NEWER
-            where T : Enum
-#endif
+        public static void SetEnum<T>(string key, T value) where T : Enum
         {
-#if !CSHARP_7_3_OR_NEWER
-            if (!typeof(T).IsEnum)
-                throw new ArgumentException(string.Format("[PlayerPrefsUtility::SetEnum] Error while setting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
-#endif
             if (string.IsNullOrEmpty(key))
             {
                 Debug.LogError(string.Format("[PlayerPrefsUtility::SetEnum] Couldn't set the savekey because it is null. Key={0}", key));
@@ -320,15 +313,8 @@ namespace BXFW
         }
         /// <inheritdoc cref="GetEnum{T}(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
-        public static T GetEnum<T>(string key, T defaultValue)
-#if CSHARP_7_3_OR_NEWER
-            where T : Enum
-#endif
+        public static T GetEnum<T>(string key, T defaultValue) where T : Enum
         {
-#if !CSHARP_7_3_OR_NEWER
-            if (!typeof(T).IsEnum)
-                throw new ArgumentException(string.Format("[PlayerPrefsUtility::GetEnum] Error while getting enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
-#endif
             if (string.IsNullOrEmpty(key))
             {
                 Debug.LogError(string.Format("[PlayerPrefsUtility::SetEnum] Couldn't get the savekey because it is null. Key={0}", key));
@@ -346,10 +332,7 @@ namespace BXFW
         /// <summary>
         /// Returns a value set by <see cref="SetEnum{T}(string, T)"/>.
         /// </summary>
-        public static T GetEnum<T>(string key)
-#if CSHARP_7_3_OR_NEWER
-    where T : Enum
-#endif
+        public static T GetEnum<T>(string key) where T : Enum
         {
             return GetEnum<T>(key, default);
         }
@@ -386,9 +369,9 @@ namespace BXFW
             }
             if (tType == typeof(Color))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_R", key)) 
+                return PlayerPrefs.HasKey(string.Format("{0}_R", key))
                     && PlayerPrefs.HasKey(string.Format("{0}_G", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_B", key)) 
+                    && PlayerPrefs.HasKey(string.Format("{0}_B", key))
                     && PlayerPrefs.HasKey(string.Format("{0}_A", key));
             }
             if (tType == typeof(bool))

@@ -15,6 +15,19 @@ namespace BXFW.Tools.Editor
     public static class EditorGUIAdditionals
     {
         /// <summary>
+        /// Current Indent value of the <see cref="EditorGUI"/>, controlled by <see cref="EditorGUI.indentLevel"/>.
+        /// </summary>
+        public static float IndentValue
+        {
+            get
+            {
+                // This indent value is just 'EditorGUI.indentLevel * 15f'
+                return EditorGUI.indentLevel * 15f;
+                // return (float)typeof(EditorGUI).GetProperty("indent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
+            }
+        }
+
+        /// <summary>
         /// Make gui area drag and drop.
         /// <br>Usage : Use the <see cref="DragAndDrop"/> class for getting event details.</br>
         /// </summary>

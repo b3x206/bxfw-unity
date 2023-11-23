@@ -35,7 +35,7 @@ namespace BXFW
         /// </summary>
         public static void CheckOnGUI()
         {
-            typeof(GUIUtility).GetMethod("CheckOnGUI", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
+            typeof(GUIUtility).GetMethod("CheckOnGUI", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
         }
         /// <summary>
         /// Returns whether if there's a valid OnGUI context.
@@ -44,7 +44,7 @@ namespace BXFW
         {
             // 'CheckOnGUI' checks whether if the guiDepth is less or equal to zero
             // Then it throws an exception.
-            return (int)typeof(GUIUtility).GetProperty("guiDepth", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null) > 0;
+            return (int)typeof(GUIUtility).GetProperty("guiDepth", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) > 0;
         }
 
         /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>

@@ -252,7 +252,7 @@ namespace BXFW.Tweening.Next.Editor
                     {
                         currentNamespaceUsings.Add(twContextType.Namespace);
                     }
-                    if (!currentNamespaceUsings.Contains(memberFieldType.Namespace) && !Additionals.IsTypeNumerical(memberFieldType))
+                    if (!currentNamespaceUsings.Contains(memberFieldType.Namespace) && !TypeUtility.IsTypeNumerical(memberFieldType))
                     {
                         currentNamespaceUsings.Add(memberFieldType.Namespace);
                     }
