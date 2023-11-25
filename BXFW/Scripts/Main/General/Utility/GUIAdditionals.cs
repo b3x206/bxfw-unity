@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngineInternal;
 
 namespace BXFW
 {
@@ -14,7 +15,8 @@ namespace BXFW
         /// <summary>
         /// Hashes contained in the <see cref="GUI"/> class, 
         /// for use with <see cref="GUIUtility.GetControlID(int, FocusType, Rect)"/>.
-        /// <br>This is not the exact same hashlist unity internally uses, this is for custom ID usage.</br>
+        /// <br>This is not the exact same hashlist unity internally uses,
+        /// this is for custom ID usage for different interfaces that need a custom ID appended.</br>
         /// </summary>
         public static class HashList
         {
@@ -27,6 +29,129 @@ namespace BXFW
             public static readonly int SliderHash = "Slider".GetHashCode();
             public static readonly int BeginGroupHash = "BeginGroup".GetHashCode();
             public static readonly int ScrollViewHash = "scrollView".GetHashCode();
+        }
+
+        /// <summary>
+        /// Assembly that is the <c>UnityEngine.IMGUIModule</c>
+        /// </summary>
+        public static readonly Assembly ImguiAssembly = typeof(GUILayout).Assembly;
+
+        /// <summary>
+        /// Manages and allows access to the <see cref="GUILayoutUtility"/>'s current layout globals.
+        /// <br>This allows for more control of the <see cref="GUILayout"/>.</br>
+        /// </summary>
+        public static class CurrentLayout
+        {
+            /// <summary>
+            /// The internal <see cref="GUILayoutUtility.LayoutCache"/> type.
+            /// </summary>
+            public static readonly Type LayoutCacheType = ImguiAssembly.GetType("UnityEngine.GUILayoutUtility+LayoutCache", true);
+            /// <summary>
+            /// The field that contains the currently used cache value (in <see cref="GUILayoutUtility"/>).
+            /// </summary>
+            public static readonly FieldInfo CurrentLayoutCacheField = typeof(GUILayoutUtility).GetField("current", BindingFlags.NonPublic | BindingFlags.Static);
+
+            private static InternalGUILayoutGroup m_RootWindows;
+            /// <summary>
+            /// List/Group of the root windows.
+            /// <br>The current parent group that is being drawn on the cache.</br>
+            /// <br>This group also handles <see cref="Event"/>'s input related stuff.
+            /// Adding then removing at the same GUI call will cause the inputs to be ignored.
+            /// Keep and then only remove when the added <see cref="InternalGUILayoutGroup"/> is about to be a duplicate.
+            /// </br>
+            /// </summary>
+            public static InternalGUILayoutGroup RootWindows
+            {
+                get
+                {
+                    // Maybe make 'm_' values boxed WeakReferences?
+                    // So that when the root GUILayoutGroup is gone the 'InternalGUILayoutGroup' is also gone?
+                    if (m_RootWindows == null)
+                    {
+                        object current = CurrentLayoutCacheField.GetValue(null);
+                        FieldInfo fiWindows = LayoutCacheType.GetField("windows", BindingFlags.NonPublic | BindingFlags.Instance);
+                        m_RootWindows = new InternalGUILayoutGroup(fiWindows.GetValue(current));
+                    }
+
+                    return m_RootWindows;
+                }
+            }
+            /// <summary>
+            /// List of the layout groups in a stack.
+            /// <br>Always push/pop the <see cref="InternalGUILayoutEntry.BoxedEntry"/>ies.</br>
+            /// </summary>
+            public static GenericStack LayoutGroups
+            {
+                get
+                {
+                    object current = CurrentLayoutCacheField.GetValue(null);
+                    FieldInfo fiWindows = LayoutCacheType.GetField("layoutGroups", BindingFlags.NonPublic | BindingFlags.Instance);
+                    return (GenericStack)fiWindows.GetValue(current);
+                }
+            }
+            private static InternalGUILayoutGroup m_LastTopLevelGroup;
+            /// <summary>
+            /// The last group that is being proccessed.
+            /// <br>This can be changed by using <see cref="PushLayoutGroup"/></br>
+            /// </summary>
+            public static InternalGUILayoutGroup LastTopLevelGroup
+            {
+                get
+                {
+                    if (m_LastTopLevelGroup == null)
+                    {
+                        object current = CurrentLayoutCacheField.GetValue(null);
+                        FieldInfo fiTopLevel = LayoutCacheType.GetField("topLevel", BindingFlags.NonPublic | BindingFlags.Instance);
+                        m_LastTopLevelGroup = new InternalGUILayoutGroup(fiTopLevel.GetValue(current));
+                    }
+
+                    return m_LastTopLevelGroup;
+                }
+                private set
+                {
+                    object current = CurrentLayoutCacheField.GetValue(null);
+                    FieldInfo fiTopLevel = LayoutCacheType.GetField("topLevel", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fiTopLevel.SetValue(current, value.BoxedEntry);
+                }
+            }
+
+            /// <summary>
+            /// Pushes the <paramref name="group"/> and sets it to the last group.
+            /// <br>Calling this is only recommended when the <see cref="Event.current"/>.type is 
+            /// <see cref="EventType.Layout"/> (or <see cref="EventType.Used"/>), but this method doesn't prohibit/act differently on any event.</br>
+            /// <br/>
+            /// <br>To pop the pushed element, use <see cref="PopLastLayoutGroup"/> or 
+            /// <see cref="GUILayout.EndArea"/> (has <see cref="GUI.EndGroup"/> side effect) depending on which type of group you have pushed in.</br>
+            /// </summary>
+            /// <param name="layoutEventPush">
+            /// Whether to push the <paramref name="group"/> into the <see cref="RootWindows"/> stack,
+            /// acting like the <see cref="EventType.Layout"/> behaviour of <see cref="GUILayoutUtility.BeginLayoutArea"/>.
+            /// </param>
+            public static void PushLayoutGroup(InternalGUILayoutGroup group, bool layoutEventPush = true)
+            {
+                // Does the same as GUILayoutUtility.BeginLayoutArea's EventType.Layout behaviour
+                CheckOnGUI();
+
+                if (layoutEventPush)
+                {
+                    RootWindows.Add(group);
+                }
+
+                LayoutGroups.Push(group.BoxedEntry);
+                LastTopLevelGroup = group;
+            }
+
+            /// <summary>
+            /// Pops the last used <see cref="InternalGUILayoutGroup"/>.
+            /// <br>This doesn't remove the element from the <see cref="RootWindows"/>.</br>
+            /// </summary>
+            public static void PopLastLayoutGroup()
+            {
+                CheckOnGUI();
+
+                LayoutGroups.Pop();
+                LastTopLevelGroup = new InternalGUILayoutGroup(LayoutGroups.Peek());
+            }
         }
 
         /// <summary>
@@ -47,18 +172,47 @@ namespace BXFW
             return (int)typeof(GUIUtility).GetProperty("guiDepth", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) > 0;
         }
 
+        private static readonly Type GUILayoutGroupType = ImguiAssembly.GetType("UnityEngine.GUILayoutGroup", true);
+        /// <summary>
+        /// Begins a positioned layout GUI.
+        /// <br>Can accept custom functions that create in a different way.</br>
+        /// </summary>
+        /// <param name="position">Position to start the layout group from.</param>
+        /// <param name="width">Width of the layout to start.</param>
+        /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
+        /// <param name="content">Content of the layout group to accommodate for.</param>
+        /// <param name="createLayoutGroupFunc">Function to create the <see cref="GUILayoutGroup"/>.</param>
+        /// <returns>The boxed <see cref="GUILayoutGroup"/> value. Use reflection to access the values for now.</returns>
+        private static InternalGUILayoutGroup BeginLayoutPositionGroupInternal(Vector2 position, float width, GUIStyle style, GUIContent content, Func<GUIStyle, InternalGUILayoutGroup> createLayoutGroupFunc)
+        {
+            InternalGUILayoutGroup layoutGroupObject = createLayoutGroupFunc(style);
+
+            if (Event.current.type == EventType.Layout)
+            {
+                layoutGroupObject.ResetCoords = true;
+                layoutGroupObject.MinWidth = layoutGroupObject.MaxWidth = width;
+                layoutGroupObject.MaxHeight = 0f; // this can be 0, CalculateHeight will set this
+            }
+
+            Rect groupTypeRectValue = layoutGroupObject.EntryRect;
+            layoutGroupObject.EntryRect = Rect.MinMaxRect(position.x, position.y, groupTypeRectValue.xMax, groupTypeRectValue.yMax);
+
+            GUI.BeginGroup(layoutGroupObject.EntryRect, content, style);
+            return layoutGroupObject;
+        }
+
         /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        public static object BeginLayoutPosition(Vector2 position, float width)
+        public static InternalGUILayoutGroup BeginLayoutPosition(Vector2 position, float width)
         {
             return BeginLayoutPosition(position, width, GUIStyle.none, GUIContent.none);
         }
         /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        public static object BeginLayoutPosition(Vector2 position, float width, GUIStyle style)
+        public static InternalGUILayoutGroup BeginLayoutPosition(Vector2 position, float width, GUIStyle style)
         {
             return BeginLayoutPosition(position, width, style, GUIContent.none);
         }
         /// <inheritdoc cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        public static object BeginLayoutPosition(Vector2 position, float width, GUIContent content)
+        public static InternalGUILayoutGroup BeginLayoutPosition(Vector2 position, float width, GUIContent content)
         {
             return BeginLayoutPosition(position, width, GUIStyle.none, content);
         }
@@ -71,43 +225,97 @@ namespace BXFW
         /// <param name="width">Width of the layout to start.</param>
         /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
         /// <param name="content">Content of the layout group to accommodate for.</param>
-        /// <returns>The boxed <see cref="GUILayoutGroup"/> value. Use reflection to access the values for now.</returns>
-        public static object BeginLayoutPosition(Vector2 position, float width, GUIStyle style, GUIContent content)
+        /// <returns>The created <see cref="GUILayoutGroup"/> on a wrapper.</returns>
+        public static InternalGUILayoutGroup BeginLayoutPosition(Vector2 position, float width, GUIStyle style, GUIContent content)
         {
             CheckOnGUI();
 
-            Assembly layoutGroupAssembly = typeof(GUILayoutUtility).Assembly;
-            Type layoutGroupType = layoutGroupAssembly.GetType("UnityEngine.GUILayoutGroup", true);
             MethodInfo miBeginLayoutArea = typeof(GUILayoutUtility).GetMethod("BeginLayoutArea", BindingFlags.NonPublic | BindingFlags.Static);
-
-            //GUILayoutGroup g = GUILayoutUtility.BeginLayoutArea(style, typeof(GUILayoutGroup));
-            object layoutGroupObject = miBeginLayoutArea.Invoke(null, new object[] { style, layoutGroupType });
-            FieldInfo layoutGroupRectField = layoutGroupType.GetField("rect");
-            if (Event.current.type == EventType.Layout)
-            {
-                // g.resetCoords = true;
-                layoutGroupType.GetField("resetCoords").SetValue(layoutGroupObject, true);
-                // TODO : Get the width from something else? And then use GUILayoutOption for custom width.
-                // g.minWidth = (g.maxWidth = width);
-                layoutGroupType.GetField("minWidth").SetValue(layoutGroupObject, width);
-                layoutGroupType.GetField("maxWidth").SetValue(layoutGroupObject, width);
-                // 'maxHeight' cannot be float.MaxValue due to the float imprecision (causes weird bugs)
-                // Use '100000f' as height limit.
-                layoutGroupType.GetField("maxHeight").SetValue(layoutGroupObject, 100000f);
-                // g.maxHeight = screenRect.height;
-                // g.rect = Rect.MinMaxRect(screenRect.xMin, screenRect.yMin, gUILayoutGroup.rect.xMax, gUILayoutGroup.rect.yMax);
-                Rect groupTypeRectValue = (Rect)layoutGroupRectField.GetValue(layoutGroupObject);
-
-                layoutGroupRectField.SetValue(layoutGroupObject, Rect.MinMaxRect(position.x, position.y, groupTypeRectValue.xMax, groupTypeRectValue.yMax));
-            }
-
-            GUI.BeginGroup((Rect)layoutGroupRectField.GetValue(layoutGroupObject), content, style);
-            return layoutGroupObject;
+            return BeginLayoutPositionGroupInternal(position, width, style, content, (style) => new InternalGUILayoutGroup(miBeginLayoutArea.Invoke(null, new object[] { style, GUILayoutGroupType })));
         }
 
+        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
+        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width)
+        {
+            return BeginInjectableLayoutPosition(position, width, GUIStyle.none, GUIContent.none);
+        }
+        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
+        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIContent content)
+        {
+            return BeginInjectableLayoutPosition(position, width, GUIStyle.none, content);
+        }
+        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
+        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
+        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIStyle style)
+        {
+            return BeginInjectableLayoutPosition(position, width, style, GUIContent.none);
+        }
+        /// <summary>
+        /// Begins a positioned layouted GUI, but unlike the other <see cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/> method, 
+        /// this function returns an non-injected/added <see cref="GUILayoutGroup"/> object. It has to be manually injected on an appopriate condition
+        /// to the current <see cref="GUILayoutUtility.LayoutCache"/>.
+        /// </summary>
+        /// <param name="position">Position to start the layout group from.</param>
+        /// <param name="width">Width of the layout to start.</param>
+        /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
+        /// <param name="content">Content of the layout group to accommodate for.</param>
+        /// <returns>The created <see cref="GUILayoutGroup"/> on a wrapper.</returns>
+        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
+        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIStyle style, GUIContent content)
+        {
+            CheckOnGUI();
+
+            return BeginLayoutPositionGroupInternal(position, width, style, content, (style) => new InternalGUILayoutGroup(style));
+        }
+        
+        /// <summary>
+        /// Ends the positioned area.
+        /// <br>Both injected layout groups and normal layout groups can use this.</br>
+        /// </summary>
         public static void EndLayoutPosition()
         {
             GUILayout.EndArea();
+        }
+
+        /// <summary>
+        /// Returns whether if the previous OnGUI <see cref="Event"/> with 
+        /// <see cref="EventType.Layout"/> type allocated enough controls to create <paramref name="nextEntryCount"/> amount of GUI elements.
+        /// <br>Basically whether if we can allocate a <see cref="GUILayoutEntry"/> or not.</br>
+        /// <br>Always returns <see langword="false"/> <b>while NOT on a GUI method.</b></br>
+        /// </summary>
+        /// <param name="nextEntryCount">Amount of groups to create after this method. This value will never be lower than 1.</param>
+        public static bool CanCreateGUIEntry(int nextEntryCount = 1)
+        {
+            if (!IsOnGUI())
+            {
+                return false;
+            }
+
+            nextEntryCount = Mathf.Max(nextEntryCount, 1);
+
+            return CanGetNextInGroup(CurrentLayout.RootWindows, nextEntryCount);
+        }
+        /// <summary>
+        /// Returns whether if the <paramref name="group"/> has more entries beyond it's current cursor position.
+        /// </summary>
+        /// <param name="groupCount">Amount of groups to nest after this method. This value will never be lower than 1.</param>
+        public static bool CanGetNextInGroup(InternalGUILayoutGroup group, int nextCount)
+        {
+            if (!IsOnGUI())
+            {
+                return false;
+            }
+
+            nextCount = Mathf.Max(nextCount, 1);
+
+            if (group == null)
+            {
+                throw new ArgumentNullException(nameof(group), "[GUIAdditionals::CanGetNextInGroup] Given parameter was null.");
+            }
+
+            return (group.CursorPosition + nextCount) <= group.Count;
         }
 
         private const string JBMONO_FONT_NAME = "Jetbrains Mono";

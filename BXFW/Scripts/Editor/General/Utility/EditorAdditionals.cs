@@ -856,7 +856,7 @@ namespace BXFW.Tools.Editor
         {
             property = property.Copy();
             SerializedProperty nextElement = property.Copy();
-            
+
             bool hasNextElement = nextElement.NextVisible(false);
             if (!hasNextElement)
             {

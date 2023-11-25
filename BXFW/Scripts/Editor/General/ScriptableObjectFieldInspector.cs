@@ -49,6 +49,7 @@ namespace BXFW
     {
         // TODO (bit higher but still low priority) :
         // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
+        // 2. Refactor the script slightly to make it much neater
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
         // 2. Deprecate the 'DrawGUICommand<T>' DefaultInspector thing (note : do this slowly after ensuring everything works well)
@@ -189,7 +190,7 @@ namespace BXFW
 
             // Set value
             // If the parent is an array, set the target index into the 'obj'
-            var parentTargetPair = property.GetParentOfTargetField();
+            PropertyTargetInfo parentTargetPair = property.GetParentOfTargetField();
             object parent = parentTargetPair.value;
 
             if (obj != null)
@@ -364,12 +365,20 @@ namespace BXFW
             typeMenus.NoElementPlaceholderText = string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name);
         }
 
+        /// TODO : This has to be unique per ScriptableObject because it places to the same place
+        /// Use instance ID's as usual.
+        /// <summary>
+        /// The previous <see cref="GUILayoutGroup"/> accessed on the <see cref="EventType.Layout"/> event.
+        /// </summary>
+        protected InternalGUILayoutGroup previousGUILayoutGroup;
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            // Debug.Log($"GetPropertyHeight : Event.current.type = {Event.current.type}");
             var propTarget = property.objectReferenceValue;
-            var target = propTarget as T;
+            T target = propTarget as T;
 
-            // Get types inheriting from player powerup on all assemblies
+            // Get types inheriting from ScriptableObjectFieldInspector on all assemblies
+            // (this stayed as 'PlayerPowerup' from my other game, lol)
             if (typeMenus == null || typeSelectorSo.IsDisposed() || typeSelectorSo.IsDisposed())
             {
                 GetTypeMenuListFromProperty(property);
@@ -444,14 +453,16 @@ namespace BXFW
                 {
                     Rect screenRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
 
-                    object boxedLayoutGroup = GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
+                    // Remove from the cached layouts (to not leak)
+                    GUIAdditionals.CurrentLayout.RootWindows.Clear();
+                    // Removal doesn't work because of non-matching GUILayoutGroup's
+                    //Debug.Log($"remove result : {GUIAdditionals.CurrentLayout.RootWindows.Remove(previousGUILayoutGroup)},\nwindows : {GUIAdditionals.CurrentLayout.RootWindows}\ngroup : {previousGUILayoutGroup}");
+
+                    previousGUILayoutGroup = GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
                     currentCustomInspector.OnInspectorGUI();
                     GUIAdditionals.EndLayoutPosition();
 
-                    // Calculate height in layout as well (this method doesn't require Event to be something specific)
-                    boxedLayoutGroup.GetType().GetMethod("CalcHeight").Invoke(boxedLayoutGroup, null);
-                    // Get value (CalcHeight sets value to 'minHeight')
-                    previousCustomInspectorHeight = (float)boxedLayoutGroup.GetType().GetField("minHeight").GetValue(boxedLayoutGroup);
+                    previousCustomInspectorHeight = previousGUILayoutGroup.CalculateHeight();
                 }
 
                 // We don't know the adaptable height yet
@@ -711,6 +722,9 @@ namespace BXFW
                 }
 
                 EditorGUI.EndProperty();
+
+                // Remove group element to prevent it from leaking GUILayoutGroups
+                GUIAdditionals.CurrentLayout.RootWindows.Remove(previousGUILayoutGroup);
                 return;
             }
 
@@ -864,6 +878,9 @@ namespace BXFW
                     // This, was, that easy?
                     // Okay. Fine. I will be better next time. Or you know do more research.
                     // Or maybe i got more experienced in GUI? Who knows. The stars have aligned.
+                    // I knew this wasn't gonna be this easy.
+                    // So enter the 1238173 lines of more code and a day of research and here we are.
+
                     // --
                     // Here's the workaround : 
                     // A : Do the Event.current.type == EventType.Layout related laying out in GetPropertyHeight
@@ -878,15 +895,68 @@ namespace BXFW
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));
 
                     // Flex space with nesting? WE HAVE THOSE NOW!
-                    // Note : Nested elements don't draw if we send a 'Used' event on this current 'OnInspectorGUI'
-                    object boxedLayoutGroup = GUIAdditionals.BeginLayoutPosition(areaRect.position, areaRect.width);
-                    currentCustomInspector.OnInspectorGUI();
-                    GUIAdditionals.EndLayoutPosition();
+                    // Note : Nested elements don't draw if we send a 'Used' event on the parent 'OnInspectorGUI's
+                    // --
+                    // Whoops, ReorderableList is now trying to do it's own things
+                    // Time to inject GUILayoutEntry into the current window context while in Repaint. HAHAHAHAHAHAHA
 
-                    // Calculates height value into GUILayoutGroup.minHeight
-                    boxedLayoutGroup.GetType().GetMethod("CalcHeight").Invoke(boxedLayoutGroup, null);
-                    // Get value
-                    previousCustomInspectorHeight = (float)boxedLayoutGroup.GetType().GetField("minHeight").GetValue(boxedLayoutGroup);
+                    // Injection "works", *BUT
+                    // *1 : The 'OnInspectorGUI's layout elements are not taken to the account,
+                    // causing the same stupid "cannot make GUI element because EventType.Layout
+                    // didn't allocate elements" because the ReorderableList didn't call 'GetHeight' again
+                    // --
+                    // So the injection code will stay (until i refactor the stuff)
+                    // And the next method will just be forcing redraw if we are on a 'ReorderableList'
+                    // --
+                    // 2 : Cache the GUILayoutGroup of the 'OnInspectorGUI'
+                    // This will most likely work?
+                    // Yup that solved it. Caching the GUILayoutGroup and then pushing it to the layout from a cached layouting is working.
+
+                    // --
+                    // Because, RootWindows, has to do with IMGUI input
+                    // Yay. Who could have guessed it?
+                    if (previousGUILayoutGroup != null)
+                    {
+                        GUIAdditionals.CurrentLayout.PushLayoutGroup(previousGUILayoutGroup);
+                    }
+
+                    try
+                    {
+                        currentCustomInspector.OnInspectorGUI();
+                    }
+                    catch (Exception e)
+                    {
+                        // if (DebugMode)
+                        // {
+                        //     Debug.LogException(e);
+                        // }
+
+                        Debug.LogWarning("[ScriptableObjectFieldInspector::OnGUI] An exception occurred during drawing of the GUI. The next log will contain the details.");
+                        Debug.LogException(e);
+                    }
+
+                    // My beloved debugging box, useful for times where to see whether if we are leaking UI Groups / Entries of course
+                    if (DebugMode)
+                    {
+                        GUI.Box(new Rect(areaRect) { height = 55f }, new GUIContent($"[CustomInspector] PreviousGUILayoutGroup Count : {previousGUILayoutGroup?.Count ?? -1}\nRootWindows Count : {GUIAdditionals.CurrentLayout.RootWindows.Count}\n LastTopLevel Count : {GUIAdditionals.CurrentLayout.LastTopLevelGroup.Count}"));
+                    }
+
+                    // We aren't layouting
+                    // This means that 'RootWindows' won't clear itself
+                    // 'RootWindows' is used in event proccessing
+                    // So only remove it if it's gonna be a duplicate
+                    // --
+                    // oh and yes, we also have to manually manage this crap as well
+                    previousGUILayoutGroup.ResetCursor();
+                    GUIAdditionals.CurrentLayout.PopLastLayoutGroup();
+                    
+                    // and when injected, we aren't actually starting a new GUI group
+                    // starting a new GUI group offsets for no reason
+                    // --
+                    // TODO : Allow for creation of a clipped area
+                    // For some reason GUI.BeginArea and GUI.EndArea seems to shift the rect position by some value (huh i wonder why)
+                    // GUILayout.EndArea();
+
                     EditorGUI.indentLevel -= 1;
                 }
             }

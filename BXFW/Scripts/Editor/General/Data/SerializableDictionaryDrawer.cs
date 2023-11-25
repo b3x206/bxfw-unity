@@ -13,9 +13,9 @@ namespace BXFW.ScriptEditor
         // hooray, the editor works inside nested children
         // too bad it's fragile thanks to the 'ReorderableList' and it's joys
         // This isn't a good way of architecturing a dictionary, but if it works no problem.
-        private PropertyRectContext mainGUIContext = new PropertyRectContext(2);
+        private readonly PropertyRectContext mainGUIContext = new PropertyRectContext(2);
         private const float NonUniqueValuesWarningHeight = 32;
-        private PropertyRectContext reorderableListContext = new PropertyRectContext(2);
+        private readonly PropertyRectContext reorderableListContext = new PropertyRectContext(2);
         /// <summary>
         /// Current reorderable list drawing list.
         /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise
