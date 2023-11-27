@@ -8,7 +8,7 @@ namespace BXFW.Tweening.Next.Editor
     [CustomPropertyDrawer(typeof(BXSTweenSequence))]
     public class BXSTweenSequenceEditor : PropertyDrawer
     {
-        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
         /// <summary>
         /// Name list of fields to be omitted.
         /// </summary>

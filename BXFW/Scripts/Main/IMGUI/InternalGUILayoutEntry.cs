@@ -30,7 +30,7 @@ namespace BXFW
 
         // TODO : These dictionaries probably allocate a lot of garbage
         // Making them static readonly could help, but it will require to contain these dictionaries inside another datatype or something weird
-        // Time to replace the MonoBleedingEdge.dll and the csc.exe with my own things to make 'protected virtual static' a thing heheheh
+        // Time to replace the MonoBleedingEdge.dll and the csc.exe with my own hacked compilers/libraries to make 'protected virtual static' a thing heheheh
         private Dictionary<string, FieldInfo> m_Fields;
         /// <summary>
         /// List of the fields of <see cref="GuiLayoutEntryType"/>.
@@ -150,6 +150,7 @@ namespace BXFW
                 Fields["rect"].SetValue(BoxedEntry, value);
             }
         }
+
         /// <summary>
         /// <see cref="GUIStyle"/> stretching toggle. Value can be 0 or 1 in the base implementation of <see cref="GUILayoutEntry"/>.
         /// </summary>

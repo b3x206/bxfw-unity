@@ -11,7 +11,7 @@ namespace BXFW.Tweening.Next.Editor
         private const float NonUniqueValuesWarningBoxHeight = 36;
         private const string ChildListExpandedKey = "[BXSTwExtGenEditor].isChildListExpanded";
 
-        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2);
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         private BXSTweenExtensionGeneratorTask.ExtensionClassTemplate currentTargetTemplate;
         private SerializedProperty currentArrayProperty;

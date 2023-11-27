@@ -1,8 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BXFW
@@ -236,6 +236,46 @@ namespace BXFW
         public void ResetCursor()
         {
             CursorPosition = 0;
+        }
+
+        /// <summary>
+        /// Fixes all child entry rects according to the given coordinates.
+        /// </summary>
+        public void FixAllChildEntryRects(Vector2 correctStartingPosition, float correctWidth = 0f)
+        {
+            // Nothing to fix
+            if (Count < 0)
+            {
+                return;    
+            }
+            
+            // Since spacing is position based rather than being height based,
+            // We have to do it this way instead of just simply adding the widths
+            float incorrectFirstYPosition = this[0].EntryRect.y;
+            for (int i = 0; i < Count; i++)
+            {
+                // Offset the Y position according to the first incorrect position
+                InternalGUILayoutEntry targetEntry = this[i];
+
+                // Get the correctly positioned target entry
+                Rect targetEntryRect = targetEntry.EntryRect;
+                targetEntryRect.x = correctStartingPosition.x;
+                // Get the offset relative to the first element's y coordinates
+                targetEntryRect.y = correctStartingPosition.y + Mathf.Abs(targetEntryRect.y - incorrectFirstYPosition);
+                if (correctWidth > 0f)
+                {
+                    targetEntryRect.width = correctWidth;
+                }
+
+                targetEntry.EntryRect = targetEntryRect;
+            }
+        }
+        /// <summary>
+        /// Fixes all child entry rects according to this group's <see cref="InternalGUILayoutEntry.EntryRect"/>.
+        /// </summary>
+        public void FixAllChildEntryRects()
+        {
+            FixAllChildEntryRects(EntryRect.position, EntryRect.width);
         }
 
         /// <summary>
@@ -524,6 +564,17 @@ namespace BXFW
         /// <exception cref="ArgumentNullException"/>
         public InternalGUILayoutGroup(object layoutGroup) : base(layoutGroup)
         { }
+
+        /// <summary>
+        /// Creates a GUILayoutGroup with some settings.
+        /// </summary>
+        public InternalGUILayoutGroup(GUIStyle style)
+        {
+            SetMarginLeft(style.margin.left);
+            SetMarginRight(style.margin.right);
+            SetMarginTop(style.margin.top);
+            SetMarginBottom(style.margin.bottom);
+        }
 
         /// <summary>
         /// Creates a GUILayoutGroup with some settings, still empty.

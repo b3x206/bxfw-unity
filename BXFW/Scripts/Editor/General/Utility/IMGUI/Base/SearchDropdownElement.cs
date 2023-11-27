@@ -45,12 +45,6 @@ namespace BXFW.Tools.Editor
         /// <br>Useful for constantly updating elements.</br>
         /// </summary>
         public virtual bool RequestsRepaint { get; set; } = false;
-        /// <summary>
-        /// Delta time elapsed since the previous draw of window.
-        /// <br>This will give the total time elapsed between <see cref="EditorWindow.Repaint"/>'s,
-        /// to get correct delta time set <see cref="RequestsRepaint"/> to <see langword="true"/>.</br>
-        /// </summary>
-        public float WindowDeltaTime { get; protected internal set; } = 0f;
 
         /// <summary>
         /// The rectangle reserving context.

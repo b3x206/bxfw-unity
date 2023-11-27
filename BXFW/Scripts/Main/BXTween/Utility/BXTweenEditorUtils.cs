@@ -82,7 +82,7 @@ namespace BXFW.Tweening.Editor
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = EditorStyles.boldFont.fontSize + 2
             });
-
+            EditorGUILayout.HelpBox("Note : BXTween will not get updates from now on (other than bug fixes).", MessageType.Info);
             GUIAdditionals.DrawUILineLayout(Color.gray);
             EditorGUILayout.LabelField(new GUIContent(":: General"), EditorStyles.boldLabel);
             var enableTw = EditorGUILayout.Toggle(new GUIContent("Enable BXTween", "Enables BXTween. If this option is false, BXTween won't run on start."), CurrentSettings.enableBXTween);

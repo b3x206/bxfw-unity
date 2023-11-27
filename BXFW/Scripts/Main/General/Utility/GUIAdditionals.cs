@@ -387,11 +387,13 @@ namespace BXFW
         private static int lastInteractedControlID = -1; // Keep the last interacted one too
         public static int LastHotControlID => lastInteractedControlID;
 
+        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
         public static int DraggableBox(Rect rect, GUIContent content, Action<Vector2> onDrag)
         {
             return DraggableBox(rect, content, GUI.skin.box, onDrag);
         }
 
+        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
         public static int DraggableBox(Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
         {
             return DraggableBox(rect, (bool _) =>
@@ -406,6 +408,7 @@ namespace BXFW
         /// <br>The <paramref name="onDrag"/> is invoked when the box is being dragged.</br>
         /// </summary>
         /// <returns>The control id of this gui.</returns>
+        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
         public static int DraggableBox(Rect rect, Action<bool> onDrawButton, Action<Vector2> onDrag)
         {
             int controlID = GUIUtility.GetControlID(HashList.RepeatButtonHash, FocusType.Passive, rect);
@@ -442,7 +445,7 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Returns a optionally effectable by <paramref name="options"/> Rect.
+        /// Returns a optionally overridable by <paramref name="options"/> Rect.
         /// <br>Unfortunately, the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/> 
         /// doesn't care about the <paramref name="options"/> parameter being overrides.</br>
         /// <br>This method uses the <paramref name="options"/> as an override if the types match for the width+height.</br>
@@ -739,11 +742,11 @@ namespace BXFW
             }
         }
 
-        private const float PLOT_LINE_LAYOUTED_HEIGHT = 48;
-        private const float PLOT_LINE_LAYOUTED_MIN_WIDTH = 60;
+        private const float PlotLineLayoutedHeight = 48;
+        private const float PlotLineLayoutedMinWidth = 60;
         /// <summary>
         /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
-        /// <br>Reserves a rectangle on the <see cref="GUILayout"/> with a height of <see cref="PLOT_LINE_LAYOUTED_HEIGHT"/>, can be overriden.</br>
+        /// <br>Reserves a rectangle on the <see cref="GUILayout"/> with a height of <see cref="PlotLineLayoutedHeight"/>, can be overriden.</br>
         /// <br/>
         /// <br>Documentation for original 'PlotLine' : </br>
         /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>
@@ -755,7 +758,7 @@ namespace BXFW
         public static void PlotLineLayout(Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
-            Rect reservedRect = GetOptionalGUILayoutRect(PLOT_LINE_LAYOUTED_MIN_WIDTH, float.MaxValue, PLOT_LINE_LAYOUTED_HEIGHT, PLOT_LINE_LAYOUTED_HEIGHT, options);
+            Rect reservedRect = GetOptionalGUILayoutRect(PlotLineLayoutedMinWidth, float.MaxValue, PlotLineLayoutedHeight, PlotLineLayoutedHeight, options);
             // some padding
             reservedRect.x += 2f;
             reservedRect.width -= 4f;

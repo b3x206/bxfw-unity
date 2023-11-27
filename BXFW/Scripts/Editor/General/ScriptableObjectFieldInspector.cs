@@ -40,6 +40,13 @@ namespace BXFW
         public Action<T, MatchGUIActionOrder, Rect> DrawGUI;
     }
 
+    public struct DrawGUILayoutCommand
+    {
+        public MatchGUIActionOrder Order;
+
+        public Func<SerializedProperty, MatchGUIActionOrder> DrawGUI;
+    }
+
     /// <summary>
     /// Creates a ScriptableObject inspector.
     /// <br>Derive from this class and use the <see cref="CustomPropertyDrawer"/> attribute with same type as <typeparamref name="T"/>.</br>
@@ -49,11 +56,11 @@ namespace BXFW
     {
         // TODO (bit higher but still low priority) :
         // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
-        // 2. Refactor the script slightly to make it much neater
+        // 2. Refactor the script to make it much neater
+        // 3. Completely fix the IMGUI layouting injection hack (because it's terrible), but first fix the bugs of it.
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        // 2. Deprecate the 'DrawGUICommand<T>' DefaultInspector thing (note : do this slowly after ensuring everything works well)
-
+        
         /// <summary>
         /// Menu that contains the create names and delegates.
         /// </summary>
@@ -83,19 +90,11 @@ namespace BXFW
         /// </summary>
         public virtual Dictionary<string, DrawGUICommand<T>> DefaultInspectorCustomCommands => null;
         /// <summary>
-        /// Scroll position on the reserved rect.
-        /// </summary>
-        protected Vector2 customInspectorScrollPosition;
-        /// <summary>
         /// The target SerializedObject.
         /// <br>This is assigned as the target object on <see langword="base"/>.<see cref="GetPropertyHeight(SerializedProperty, GUIContent)"/>.</br>
         /// </summary>
         protected SerializedObject SObject { get; private set; }
 
-        /// <summary>
-        /// Padding height between ui elements (so that it's not claustrophobic)
-        /// </summary>
-        protected virtual float HEIGHT_PADDING => 2;
         /// <summary>
         /// Reserved height for the <see cref="currentCustomInspector"/>.
         /// <br>
@@ -124,7 +123,7 @@ namespace BXFW
         /// </summary> 
         /// The plan is that we control the parent of the drawn scriptable objects and if the parents of the scriptable object match we create a clone
         /// By doing this there's no duplicate scriptable objects on an array, so there's no problems.
-        protected readonly Dictionary<string, T> drawnScriptableObjects = new Dictionary<string, T>();
+        protected static readonly Dictionary<string, T> drawnScriptableObjects = new Dictionary<string, T>();
         /// <summary>
         /// Prefix to make the drawn object parent's unique, allowing for same objects on different parents.
         /// </summary>
@@ -169,7 +168,7 @@ namespace BXFW
         /// <summary>
         /// Size of a single line height with padding applied.
         /// </summary>
-        protected float PaddedSingleLineHeight => EditorGUIUtility.singleLineHeight + HEIGHT_PADDING;
+        protected float PaddedSingleLineHeight => EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
         /// <summary>
         /// Sets value of target safely.
@@ -365,16 +364,13 @@ namespace BXFW
             typeMenus.NoElementPlaceholderText = string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name);
         }
 
-        /// TODO : This has to be unique per ScriptableObject because it places to the same place
-        /// Use instance ID's as usual.
         /// <summary>
         /// The previous <see cref="GUILayoutGroup"/> accessed on the <see cref="EventType.Layout"/> event.
         /// </summary>
         protected InternalGUILayoutGroup previousGUILayoutGroup;
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            // Debug.Log($"GetPropertyHeight : Event.current.type = {Event.current.type}");
-            var propTarget = property.objectReferenceValue;
+            UnityEngine.Object propTarget = property.objectReferenceValue;
             T target = propTarget as T;
 
             // Get types inheriting from ScriptableObjectFieldInspector on all assemblies
@@ -401,11 +397,11 @@ namespace BXFW
             // If null, don't 
             if (target == null || !property.isExpanded)
             {
-                return PaddedSingleLineHeight;
+                return EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             }
 
             SObject ??= new SerializedObject(target);
-            float h = 0f; // instead of using currentY, use a different inline variable
+            float height = 0f; // instead of using currentY, use a different inline variable
 
             // This is only checked if there's a valid target, meaning there's a custom editor created.
             if (!UseCustomInspector)
@@ -426,17 +422,17 @@ namespace BXFW
                     {
                         if ((cmd.Order & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Order & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
                         {
-                            h += (cmd.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
+                            height += (cmd.GetGUIHeight?.Invoke(target) ?? 0) + mainCtx.Padding; // Height is agnostic of order
                         }
 
                         if ((cmd.Order & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                         {
-                            h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                            height += EditorGUI.GetPropertyHeight(prop, true) + mainCtx.Padding; // Add padding
                         }
                     }
                     else
                     {
-                        h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                        height += EditorGUI.GetPropertyHeight(prop, true) + mainCtx.Padding; // Add padding
                     }
 
                     expanded = false; // used for the expand arrow of unity
@@ -451,12 +447,11 @@ namespace BXFW
                 // Because of this, the height may not be updated immediately causing excess height to stay (until interacted with ofc)?
                 if (Event.current.type == EventType.Layout)
                 {
-                    Rect screenRect = new Rect(correctPosition.x, correctPosition.y + PaddedSingleLineHeight, correctPosition.width, ReservedHeightCustomEditor);
+                    Rect screenRect = new Rect(lastRepaintPosition.x, lastRepaintPosition.y + PaddedSingleLineHeight, lastRepaintPosition.width, ReservedHeightCustomEditor);
 
                     // Remove from the cached layouts (to not leak)
+                    // Clearing it does work for some reason?
                     GUIAdditionals.CurrentLayout.RootWindows.Clear();
-                    // Removal doesn't work because of non-matching GUILayoutGroup's
-                    //Debug.Log($"remove result : {GUIAdditionals.CurrentLayout.RootWindows.Remove(previousGUILayoutGroup)},\nwindows : {GUIAdditionals.CurrentLayout.RootWindows}\ngroup : {previousGUILayoutGroup}");
 
                     previousGUILayoutGroup = GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
                     currentCustomInspector.OnInspectorGUI();
@@ -467,44 +462,19 @@ namespace BXFW
 
                 // We don't know the adaptable height yet
                 // Didn't have to tally, just get access to the 'GUILayoutGroup' value after 'CalcHeight'.
-                h = previousCustomInspectorHeight;
+                height = previousCustomInspectorHeight;
             }
 
             // Add label height
-            h += PaddedSingleLineHeight;
+            height += PaddedSingleLineHeight;
 
-            return h;
+            return height;
         }
 
-        // hack : position given is incorrect on EventType.Layout
-        // drawing GUILayout editors require an GUILayout area, so we need the correct 'position'.
-        private Rect correctPosition;
-        private float currentY;
-        private Rect GetPropertyRect(Rect position, SerializedProperty prop)
-        {
-            return GetPropertyRect(position, EditorGUI.GetPropertyHeight(prop, true));
-        }
-        private Rect GetPropertyRect(Rect position, float height = -1f)
-        {
-            // Height == 0f => do nothing
-            if (Mathf.Approximately(height, 0f))
-            {
-                return position;
-            }
-
-            // Reuse the copied struct
-            position.y = currentY;
-            position.height = height + HEIGHT_PADDING;
-
-            // assuming that the height is added after first rect.
-            if (height < 0f)
-            {
-                height = PaddedSingleLineHeight;
-            }
-
-            currentY += height + HEIGHT_PADDING;
-            return position;
-        }
+        // Position given is incorrect on EventType.Layout
+        // Drawing GUILayout editors require a correct Repaint area, so we need the correct 'position'.
+        private Rect lastRepaintPosition;
+        protected readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         /// <summary>
         /// Handles drawn <see cref="ScriptableObject"/>s, doing as the default behaviour for drawn non-<see cref="UnityEngine.Object"/> objects.
@@ -622,12 +592,12 @@ namespace BXFW
             // correct position if we aren't layouting
             if (Event.current.type != EventType.Layout)
             {
-                correctPosition = position;
+                lastRepaintPosition = position;
             }
 
             // The 'property' is for the object field that is only for assigning.
             EditorGUI.BeginProperty(position, label, property);
-            currentY = position.y;
+            mainCtx.Reset();
 
             // Gather target info
             // This works, because we are working with ScriptableObject's
@@ -733,7 +703,8 @@ namespace BXFW
             // buut, it works (and it has suprisingly ok performance) so why touch it?
 
             // -- Property label
-            Rect rInspectorInfo = EditorGUI.IndentedRect(GetPropertyRect(position, PaddedSingleLineHeight)); // width is equal to 'previousWidth'
+            // width is equal to 'previousWidth'
+            Rect rInspectorInfo = EditorGUI.IndentedRect(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight));
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
             const float BTN_FOLDOUT_MIN_WIDTH = .033f;
@@ -849,22 +820,22 @@ namespace BXFW
                         {
                             if ((cmd.Order & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
                             {
-                                cmd.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.GetGUIHeight(target)));
+                                cmd.DrawGUI(target, MatchGUIActionOrder.Before, mainCtx.GetPropertyRect(position, cmd.GetGUIHeight(target)));
                             }
 
                             if ((cmd.Order & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                             {
-                                EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, prop), prop, true);
                             }
 
                             if ((cmd.Order & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
                             {
-                                cmd.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.GetGUIHeight(target)));
+                                cmd.DrawGUI(target, MatchGUIActionOrder.After, mainCtx.GetPropertyRect(position, cmd.GetGUIHeight(target)));
                             }
                         }
                         else
                         {
-                            EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                            EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, prop), prop, true);
                         }
 
                         expanded = false;
@@ -891,7 +862,7 @@ namespace BXFW
                     // B :
                     // Background Drawing Rect (for prettier display)
                     EditorGUI.indentLevel += 1;
-                    Rect areaRect = new Rect(correctPosition.x, correctPosition.y + rInspectorInfo.height, correctPosition.width, correctPosition.height - rInspectorInfo.height);
+                    Rect areaRect = new Rect(lastRepaintPosition.x, lastRepaintPosition.y + rInspectorInfo.height, lastRepaintPosition.width, lastRepaintPosition.height - rInspectorInfo.height);
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));
 
                     // Flex space with nesting? WE HAVE THOSE NOW!
@@ -911,50 +882,59 @@ namespace BXFW
                     // 2 : Cache the GUILayoutGroup of the 'OnInspectorGUI'
                     // This will most likely work?
                     // Yup that solved it. Caching the GUILayoutGroup and then pushing it to the layout from a cached layouting is working.
+                    // 3 :
+                    // EventType.Used > EventType.Layout causes nested GUI to be positioned incorrectly (position correction needed !!)
 
                     // --
                     // Because, RootWindows, has to do with IMGUI input
                     // Yay. Who could have guessed it?
+                    Rect correctEntryRect = new Rect(areaRect.x, areaRect.y, areaRect.width, 0f);
                     if (previousGUILayoutGroup != null)
                     {
+                        Rect previousEntryRect = previousGUILayoutGroup.EntryRect;
+                        // Fix the 'EntryRect' shifting around for absolutely no reason
+                        previousGUILayoutGroup.EntryRect = correctEntryRect;
+                        previousGUILayoutGroup.FixAllChildEntryRects(correctEntryRect.position, correctEntryRect.width);
+
                         GUIAdditionals.CurrentLayout.PushLayoutGroup(previousGUILayoutGroup);
+
+                        try
+                        {
+                            currentCustomInspector.OnInspectorGUI();
+                        }
+                        catch (Exception e)
+                        {
+                            // if (DebugMode)
+                            // {
+                            //     Debug.LogException(e);
+                            // }
+
+                            Debug.LogWarning("[ScriptableObjectFieldInspector::OnGUI] An exception occurred during drawing of the GUI. The next log will contain the details.");
+                            Debug.LogException(e);
+                        }
+
+                        // My beloved debugging box, useful for times where to see whether if we are leaking UI Groups / Entries of course
+                        if (DebugMode)
+                        {
+                            GUI.Box(new Rect(areaRect) { height = 95f }, new GUIContent($"[CustomInspector {Event.current.type}]\nEntryRect : {previousGUILayoutGroup?.EntryRect}\nPreviousGUILayoutGroup Count : {previousGUILayoutGroup?.Count ?? -1}\nRootWindows Count : {GUIAdditionals.CurrentLayout.RootWindows.Count}\n LastTopLevel Count : {GUIAdditionals.CurrentLayout.LastTopLevelGroup.Count}"));
+                        }
+
+                        // We aren't layouting
+                        // This means that 'RootWindows' won't clear itself
+                        // 'RootWindows' is used in event proccessing
+                        // So only remove it if it's gonna be a duplicate
+                        // --
+                        // oh and yes, we also have to manually manage this crap as well
+                        previousGUILayoutGroup.ResetCursor();
+                        GUIAdditionals.CurrentLayout.PopLastLayoutGroup();
                     }
 
-                    try
-                    {
-                        currentCustomInspector.OnInspectorGUI();
-                    }
-                    catch (Exception e)
-                    {
-                        // if (DebugMode)
-                        // {
-                        //     Debug.LogException(e);
-                        // }
-
-                        Debug.LogWarning("[ScriptableObjectFieldInspector::OnGUI] An exception occurred during drawing of the GUI. The next log will contain the details.");
-                        Debug.LogException(e);
-                    }
-
-                    // My beloved debugging box, useful for times where to see whether if we are leaking UI Groups / Entries of course
-                    if (DebugMode)
-                    {
-                        GUI.Box(new Rect(areaRect) { height = 55f }, new GUIContent($"[CustomInspector] PreviousGUILayoutGroup Count : {previousGUILayoutGroup?.Count ?? -1}\nRootWindows Count : {GUIAdditionals.CurrentLayout.RootWindows.Count}\n LastTopLevel Count : {GUIAdditionals.CurrentLayout.LastTopLevelGroup.Count}"));
-                    }
-
-                    // We aren't layouting
-                    // This means that 'RootWindows' won't clear itself
-                    // 'RootWindows' is used in event proccessing
-                    // So only remove it if it's gonna be a duplicate
-                    // --
-                    // oh and yes, we also have to manually manage this crap as well
-                    previousGUILayoutGroup.ResetCursor();
-                    GUIAdditionals.CurrentLayout.PopLastLayoutGroup();
-                    
                     // and when injected, we aren't actually starting a new GUI group
                     // starting a new GUI group offsets for no reason
                     // --
                     // TODO : Allow for creation of a clipped area
                     // For some reason GUI.BeginArea and GUI.EndArea seems to shift the rect position by some value (huh i wonder why)
+                    // And GUI.BeginClip only renders one UI with 'areaRect'
                     // GUILayout.EndArea();
 
                     EditorGUI.indentLevel -= 1;

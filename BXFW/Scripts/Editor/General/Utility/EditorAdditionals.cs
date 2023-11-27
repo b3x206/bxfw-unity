@@ -769,7 +769,14 @@ namespace BXFW.Tools.Editor
 
                                 if (Pair.Value != null)
                                 {
-                                    Pair.Value();
+                                    try
+                                    {
+                                        Pair.Value();
+                                    }
+                                    catch (ExitGUIException)
+                                    {
+                                        return true;
+                                    }
                                 }
                             }
 
@@ -784,7 +791,16 @@ namespace BXFW.Tools.Editor
 
                                 if (Pair.Value != null)
                                 {
-                                    Pair.Value();
+                                    try
+                                    {
+                                        Pair.Value();
+                                    }
+                                    // Stop drawing GUI if this was thrown
+                                    // This is how the unity does flow control to it's interface, amazing really.
+                                    catch (ExitGUIException)
+                                    {
+                                        return true;
+                                    }
                                 }
                             }
 
@@ -818,7 +834,7 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
             }
 
-            return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
+            return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj) == IntPtr.Zero;
         }
         /// <summary>
         /// Returns whether if this 'SerializedProperty' is disposed.
@@ -830,7 +846,7 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
             }
 
-            return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
+            return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj) == IntPtr.Zero;
         }
 
         /// <summary>
@@ -843,7 +859,7 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::IsEndOfData] Target was null.");
             }
 
-            return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(prop, null);
+            return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(prop, null);
         }
 
         /// <summary>

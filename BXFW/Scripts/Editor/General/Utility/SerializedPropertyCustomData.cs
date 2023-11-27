@@ -54,7 +54,8 @@ namespace BXFW.Tools.Editor
 
         // -- ID Binding
         /// <summary>
-        /// The md5 generator used.
+        /// The MD5 generator used.
+        /// <br>MD5 is not secure and should not be used if security is a high priority.</br>
         /// </summary>
         private static readonly MD5Cng m_md5 = new MD5Cng();
         /// <summary>
@@ -66,7 +67,7 @@ namespace BXFW.Tools.Editor
             byte[] hash = m_md5.ComputeHash(Encoding.Default.GetBytes(s));
             StringBuilder sb = new StringBuilder(hash.Length);
 
-            foreach (var b in hash)
+            foreach (byte b in hash)
             {
                 // will return 2 char hex representation.
                 sb.Append(Convert.ToString(b, 16));
@@ -217,7 +218,7 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
                 T propValue = targetDict.GetValueOrDefault($"{m_noAllocPropertyStrings[i]}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{key}");
                 if (EqualityComparer<T>.Default.Equals(propValue, initialValue))
                 {
-                    throw new ArgumentException($"[SerializedPropertyCustomData::Get{typeof(T).Name}] Different value values on a multi edit 'SerializedProperty' with key : {key}, Values were {propValue} != {initialValue}", nameof(property));
+                    throw new ArgumentException($"[SerializedPropertyCustomData::Get{typeof(T).GetTypeDefinitionString(false, false)}] Different value values on a multi edit 'SerializedProperty' with key : {key}, Values were {propValue} != {initialValue}", nameof(property));
                 }
             }
 
@@ -249,12 +250,12 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         {
             if (property == null || property.IsDisposed())
             {
-                throw new ArgumentNullException(nameof(property), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.");
+                throw new ArgumentNullException(nameof(property), $"[SerializedPropertyCustomData::Set{typeof(T).GetTypeDefinitionString(false, false)}] Given property is either null or disposed.");
             }
 
             if (string.IsNullOrWhiteSpace(key))
             {
-                throw new ArgumentNullException(nameof(key), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given key is null.");
+                throw new ArgumentNullException(nameof(key), $"[SerializedPropertyCustomData::Set{typeof(T).GetTypeDefinitionString(false, false)}] Given key is null.");
             }
 
             GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
@@ -287,12 +288,12 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
         {
             if (property == null || property.IsDisposed())
             {
-                throw new ArgumentException($"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given property is either null or disposed.", nameof(property));
+                throw new ArgumentException($"[SerializedPropertyCustomData::Set{typeof(T).GetTypeDefinitionString(false, false)}] Given property is either null or disposed.", nameof(property));
             }
 
             if (keyReturnPredicate == null)
             {
-                throw new ArgumentNullException(nameof(keyReturnPredicate), $"[SerializedPropertyCustomData::Set{typeof(T).Name}] Given argument is null.");
+                throw new ArgumentNullException(nameof(keyReturnPredicate), $"[SerializedPropertyCustomData::Set{typeof(T).GetTypeDefinitionString(false, false)}] Given argument is null.");
             }
 
             GetMultiPropertyStringsNoAlloc(property, m_noAllocPropertyStrings);
@@ -302,7 +303,7 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
                 string indexValue = keyReturnPredicate(i);
                 if (string.IsNullOrWhiteSpace(indexValue))
                 {
-                    throw new NullReferenceException($"[SerializedPropertyCustomData::Set{typeof(T).Name}] Key predicate returned null string at index {i}.");
+                    throw new NullReferenceException($"[SerializedPropertyCustomData::Set{typeof(T).GetTypeDefinitionString()}] Key predicate returned null string at index {i}.");
                 }
 
                 string propertyKey = $"{m_noAllocPropertyStrings[i]}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{indexValue}";

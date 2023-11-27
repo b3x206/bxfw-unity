@@ -12,7 +12,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(BezierPath))]
     public class BezierPathEditor : PropertyDrawer
     {
-        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

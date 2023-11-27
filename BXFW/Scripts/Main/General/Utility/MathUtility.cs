@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using static Codice.CM.Common.CmCallContext;
 
 namespace BXFW
 {
@@ -67,6 +68,24 @@ namespace BXFW
             return from + ((to - from) * ((value - vFrom) / (vTo - vFrom)));
         }
 
+        /// <summary>
+        /// Moves towards a value with a <paramref name="maxDelta"/> constraint.
+        /// <br>This version uses double precision floats.</br>
+        /// </summary>
+        /// <param name="current">Value to start from.</param>
+        /// <param name="target">Value to move into.</param>
+        /// <param name="maxDelta">Maximum change in <paramref name="current"/> to <paramref name="target"/> allowed.</param>
+        public static double MoveTowards(double current, double target, double maxDelta)
+        {
+            // Delta is larger than the given values difference
+            if (Math.Abs(target - current) <= maxDelta)
+            {
+                return target;
+            }
+
+            return current + (Math.Sign(target - current) * maxDelta);
+        }
+
         // ------------------
         // - Vector Utility -
         // ------------------
@@ -120,7 +139,8 @@ namespace BXFW
         /// <returns>The position value interpolated by <paramref name="t"/>.</returns>
         public static Vector3 BezierInterpolate(Vector3 point0, Vector3 handle0, Vector3 point1, Vector3 handle1, float t)
         {
-            // Pow
+            // Bezier is just a fancy combination of lerps
+            // Powers of values
             float tt = t * t;
             float ttt = t * tt;
             float u = 1.0f - t;

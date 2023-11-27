@@ -1,9 +1,6 @@
 ﻿using UnityEngine;
-
 using System;
 using System.IO;
-
-// Serialization
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace BXFW
@@ -73,11 +70,11 @@ namespace BXFW
             }
             Vector3 diff = targetPoint - pivotPoint;
 
-            // Scale relative to previous one (TODO : Make relativity calculation more accurate, this will do for uniform scales)
-            float relativeScale = scale.x / target.transform.localScale.x;
-            // damn operator precedence, please put paranthesis correctly before going insane for an hour
+            // Scale relativeScale to previous scale
+            // float relativeScale = scale.x / target.transform.localScale.x;
+            Vector3 relativeScaleVector = new Vector3(scale.x / target.transform.localScale.x, scale.y / target.transform.localScale.y, scale.z / target.transform.localScale.z);
             // Move the relative scale amount from pivot point (as we assume the pivot is the given 'pivotPoint')
-            Vector3 finalPos = pivotPoint + (diff * relativeScale);
+            Vector3 finalPos = pivotPoint + Vector3.Scale(diff, relativeScaleVector);
 
             target.localScale = scale;
             target.localPosition = finalPos;
@@ -220,18 +217,6 @@ namespace BXFW
                         new Vector3(sr.transform.localScale.x, worldScreenHeight / height, sr.transform.localScale.z);
                     break;
             }
-        }
-
-        // -- Random
-        /// <summary>
-        /// Returns a random boolean.
-        /// </summary>
-        [Obsolete("Use a Random.Range(0f, 1f) >= 0.5f inline boolean instead.")]
-        public static bool RandomBool()
-        {
-            // Using floats here is faster and more random.
-            // (for some reason, maybe the System.Convert.ToBoolean method takes more time than float comparison?)
-            return UnityEngine.Random.Range(0f, 1f) > .5f;
         }
 
         // -- FileSystem

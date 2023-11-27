@@ -10,7 +10,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(SerializableType), true)]
     public class SerializableTypeEditor : PropertyDrawer
     {
-        private PropertyRectContext mainCtx = new PropertyRectContext(2f);
+        private PropertyRectContext mainCtx = new PropertyRectContext();
         private static TypeSelectorDropdown typeSelector;
 
         private float GetDropdownHeightOfType(Type t)

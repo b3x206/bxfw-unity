@@ -9,7 +9,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(ValueAnimatorBase.Sequence), true)]
     public class ValueAnimatorSequenceEditor : PropertyDrawer
     {
-        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

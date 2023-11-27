@@ -53,6 +53,11 @@ namespace BXFW.Tweening.Editor
                 {
                     return Mathf.Max(base.GetHeight(viewWidth), PlotFieldHeight);
                 }
+
+                /// <summary>
+                /// Draws the tween name on the left, a graph preview on the right and when hovered, the background eases in with the same effect.
+                /// </summary>
+                /// <inheritdoc cref="SearchDropdownElement.OnGUI(Rect, ElementGUIDrawingState)"/>
                 public override void OnGUI(Rect position, ElementGUIDrawingState drawingState)
                 {
                     // Draw base labels
@@ -105,7 +110,7 @@ namespace BXFW.Tweening.Editor
 
                                 if (RequestsRepaint)
                                 {
-                                    currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed + (WindowDeltaTime / EasePreviewDuration));
+                                    currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed + (EditorTime.DeltaTime / EasePreviewDuration));
                                 }
                             }
                             break;
@@ -114,7 +119,7 @@ namespace BXFW.Tweening.Editor
                             RequestsRepaint = !Mathf.Approximately(currentPreviewElapsed, 0f);
                             if (isRepaintEvent && RequestsRepaint)
                             {
-                                currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed - (WindowDeltaTime / EasePreviewDuration));
+                                currentPreviewElapsed = Mathf.Clamp01(currentPreviewElapsed - (EditorTime.DeltaTime / EasePreviewDuration));
                             }
                             break;
                     }
@@ -171,7 +176,7 @@ namespace BXFW.Tweening.Editor
             }
         }
 
-        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2);
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
