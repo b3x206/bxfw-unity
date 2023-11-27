@@ -77,7 +77,7 @@ namespace BXFW.Tools.Editor
         public PropertyTargetInfo(FieldInfo fi, object target, object parent)
         {
             fieldInfo = fi;
-            this.value = target;
+            value = target;
             this.parent = parent;
         }
     }
@@ -860,6 +860,59 @@ namespace BXFW.Tools.Editor
             }
 
             return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(prop, null);
+        }
+
+        /// <summary>
+        /// Calls the 'OnValidate' method on <paramref name="obj"/>'s <see cref="SerializedObject.targetObjects"/>.
+        /// </summary>
+        /// <param name="obj">SerializedObject list to call 'OnValidate' on. This cannot be null or disposed.</param>
+        /// <returns>Whether if any of the objects had 'OnValidate' method and those were called.</returns>
+        public static bool CallOnValidate(this SerializedObject obj)
+        {
+            // GameObject.SendMessage is not viable due to the objects could be ScriptableObject,
+            // which can have a OnValidate but ScriptableObject has no SendMessage, so use Reflection
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::CallOnValidate] Target was null.");
+            }
+            if (obj.IsDisposed())
+            {
+                throw new ArgumentException("[EditorAdditionals::CallOnValidate] Given SerializedObject was disposed. Cannot do anything.", nameof(obj));
+            }
+
+            bool calledOnValidateOnce = false;
+            foreach (UnityEngine.Object target in obj.targetObjects)
+            {
+                if (CallOnValidate(target))
+                {
+                    calledOnValidateOnce = true;
+                }
+            }
+
+            return calledOnValidateOnce;
+        }
+
+        /// <summary>
+        /// Calls the 'OnValidate' method on <paramref name="target"/>.
+        /// </summary>
+        /// <param name="target">Target to call 'OnValidate' on. This can be null, but this method will always return in a case of null.</param>
+        /// <returns>Whether if any of the objects had 'OnValidate' method and those were called.</returns>
+        public static bool CallOnValidate(UnityEngine.Object target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            // Looking for parameterless 'OnValidate' method
+            MethodInfo onValidateMethod = target.GetType().GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[0], null);
+            if (onValidateMethod == null)
+            {
+                return false;
+            }
+
+            onValidateMethod.Invoke(target, null);
+            return true;
         }
 
         /// <summary>

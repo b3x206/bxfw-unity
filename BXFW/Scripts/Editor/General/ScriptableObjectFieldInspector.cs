@@ -56,18 +56,12 @@ namespace BXFW
     {
         // TODO (bit higher but still low priority) :
         // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
-        // 2. Refactor the script to make it much neater
+        // 2. Refactor the script to make it much neater (note : This script is actually simple, just a lot of boilerplate for things that should be simple to do)
         // 3. Completely fix the IMGUI layouting injection hack (because it's terrible), but first fix the bugs of it.
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
         
-        /// <summary>
-        /// Menu that contains the create names and delegates.
-        /// </summary>
-        protected TypeSelectorDropdown typeMenus;
-        // Bro just one more variable i promise bro this code finna be so clean
-        protected SerializedObject typeSelectorSo;
-        protected SerializedProperty typeSelectorProperty;
+
         /// <summary>
         /// <see cref="CustomEditor"/> attribute for <see cref="T"/>.
         /// <br>Set to a valid editor when <see cref="SetValueOfTarget(SerializedProperty, T)"/> is called.</br>
@@ -78,13 +72,13 @@ namespace BXFW
         /// <br/>
         /// <br>See class : <see cref="GenericInspector"/>. Only override this 'string' field if the name was changed or this '&lt;see&gt;' directs to nowhere.</br>
         /// </summary>
-        protected virtual string DEFAULT_INSPECTOR_TYPE_NAME => "GenericInspector";
+        protected virtual string DefalutInspectorTypeName => "GenericInspector";
         /// <summary>
         /// Returns whether if <see cref="currentCustomInspector"/> isn't null.
         /// <br>Only valid if there's a target object in the target property.</br>
         /// <br>Override to disable/enable this function, as it's <b>experimental</b>.</br>
         /// </summary>
-        public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DEFAULT_INSPECTOR_TYPE_NAME;
+        public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DefalutInspectorTypeName;
         /// <summary>
         /// Custom commands for the default inspector.
         /// </summary>
@@ -93,17 +87,8 @@ namespace BXFW
         /// The target SerializedObject.
         /// <br>This is assigned as the target object on <see langword="base"/>.<see cref="GetPropertyHeight(SerializedProperty, GUIContent)"/>.</br>
         /// </summary>
-        protected SerializedObject SObject { get; private set; }
+        protected SerializedObject TargetSerializedObject { get; private set; }
 
-        /// <summary>
-        /// Reserved height for the <see cref="currentCustomInspector"/>.
-        /// <br>
-        /// This can't be gathered directly as unlike <see cref="CustomPropertyDrawer"/>'s,
-        /// they don't report height information and expect a scrollable gui area.
-        /// </br>
-        /// </summary>
-        protected virtual float ReservedHeightCustomEditor => 300;
-        protected float previousCustomInspectorHeight = 300f;
         /// <summary>
         /// Allows to change the scriptable object <see cref="UnityEngine.Object.name"/> directly using a input field.
         /// </summary>
@@ -119,41 +104,21 @@ namespace BXFW
         protected virtual bool NameEditorEnforceNonNullName => false;
 
         /// <summary>
-        /// Currently drawn list of the scriptable objects. (or also known as a editor memory leak)
-        /// </summary> 
-        /// The plan is that we control the parent of the drawn scriptable objects and if the parents of the scriptable object match we create a clone
-        /// By doing this there's no duplicate scriptable objects on an array, so there's no problems.
-        protected static readonly Dictionary<string, T> drawnScriptableObjects = new Dictionary<string, T>();
-        /// <summary>
-        /// Prefix to make the drawn object parent's unique, allowing for same objects on different parents.
+        /// Position given is incorrect on EventType.Layout
+        /// <br>Drawing GUILayout editors require a correct Repaint area, so we need the correct 'position' from the <see cref="EventType.Repaint"/>.</br>
         /// </summary>
-        protected const string KEY_PREFIX = "::";
+        private Rect lastRepaintPosition;
         /// <summary>
-        /// Removes left of the string after the following char sequence of <see cref="KEY_PREFIX"/>.
+        /// Main rect context manager used.
         /// </summary>
-        protected static string TrimLeftPrefix(string s)
-        {
-            if (string.IsNullOrEmpty(s))
-            {
-                return string.Empty;
-            }
+        protected readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
-            return s.Substring(s.IndexOf(KEY_PREFIX) + KEY_PREFIX.Length);
-        }
         /// <summary>
-        /// Removes right of the string after the following char sequence of <see cref="KEY_PREFIX"/>.
+        /// Height of the drawn foldout options.
         /// </summary>
-        protected static string TrimRightPrefix(string s)
-        {
-            if (string.IsNullOrEmpty(s))
-            {
-                return string.Empty;
-            }
-
-            return s.Substring(0, s.IndexOf(KEY_PREFIX) + KEY_PREFIX.Length);
-        }
+        protected const float PropertyFoldoutOptionsHeight = 20f;
         /// <summary>
-        /// Flag to enable to copy the already existing Value on <see cref="drawnScriptableObjects"/>.
+        /// Flag to enable to copy the already existing Value on <see cref="DrawnScriptableObjects"/>.
         /// <br>1 : Object has to have the same parent object. (Using <see cref="UnityEngine.Object.GetInstanceID"/> here.)</br>
         /// <br>2 : Object has to have the same reference. (2 objects pointing to same <see cref="ScriptableObject"/>)</br>
         /// <br/>
@@ -164,7 +129,6 @@ namespace BXFW
         /// Enabling this will output diagnostic messages to the inspector.
         /// </summary>
         protected virtual bool DebugMode => false;
-
         /// <summary>
         /// Size of a single line height with padding applied.
         /// </summary>
@@ -334,6 +298,18 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Menu that contains the create names and delegates.
+        /// </summary>
+        protected TypeSelectorDropdown typeMenus;
+        /// <summary>
+        /// The <see cref="SearchDropdown.OnElementSelectedEvent"/>'s delegate callback serialized object for <see cref="typeMenus"/>.
+        /// </summary>
+        protected SerializedObject typeSelectorSo;
+        /// <summary>
+        /// The <see cref="SearchDropdown.OnElementSelectedEvent"/>'s delegate callback serialized property for <see cref="typeMenus"/>.
+        /// </summary>
+        protected SerializedProperty typeSelectorProperty;
+        /// <summary>
         /// Returns the new list of the <see cref="typeMenus"/>.
         /// </summary>
         protected void GetTypeMenuListFromProperty(SerializedProperty property)
@@ -364,6 +340,7 @@ namespace BXFW
             typeMenus.NoElementPlaceholderText = string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name);
         }
 
+        protected float previousCustomInspectorHeight = 1f;
         /// <summary>
         /// The previous <see cref="GUILayoutGroup"/> accessed on the <see cref="EventType.Layout"/> event.
         /// </summary>
@@ -373,7 +350,7 @@ namespace BXFW
             UnityEngine.Object propTarget = property.objectReferenceValue;
             T target = propTarget as T;
 
-            // Get types inheriting from ScriptableObjectFieldInspector on all assemblies
+            // Get types inheriting from 'T' on all assemblies
             // (this stayed as 'PlayerPowerup' from my other game, lol)
             if (typeMenus == null || typeSelectorSo.IsDisposed() || typeSelectorSo.IsDisposed())
             {
@@ -400,13 +377,15 @@ namespace BXFW
                 return EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             }
 
-            SObject ??= new SerializedObject(target);
-            float height = 0f; // instead of using currentY, use a different inline variable
+            // Total height calculated
+            float height = 0f;
+            // Always assign this as it's the previous behaviour (not needed outside of default inspectors though)
+            TargetSerializedObject ??= new SerializedObject(target);
 
             // This is only checked if there's a valid target, meaning there's a custom editor created.
             if (!UseCustomInspector)
             {
-                SerializedProperty prop = SObject.GetIterator();
+                SerializedProperty prop = TargetSerializedObject.GetIterator();
                 bool expanded = true;
                 while (prop.NextVisible(expanded))
                 {
@@ -447,13 +426,11 @@ namespace BXFW
                 // Because of this, the height may not be updated immediately causing excess height to stay (until interacted with ofc)?
                 if (Event.current.type == EventType.Layout)
                 {
-                    Rect screenRect = new Rect(lastRepaintPosition.x, lastRepaintPosition.y + PaddedSingleLineHeight, lastRepaintPosition.width, ReservedHeightCustomEditor);
-
                     // Remove from the cached layouts (to not leak)
                     // Clearing it does work for some reason?
                     GUIAdditionals.CurrentLayout.RootWindows.Clear();
 
-                    previousGUILayoutGroup = GUIAdditionals.BeginLayoutPosition(screenRect.position, screenRect.width);
+                    previousGUILayoutGroup = GUIAdditionals.BeginLayoutPosition(new Vector2(lastRepaintPosition.x, lastRepaintPosition.y + PaddedSingleLineHeight), lastRepaintPosition.width);
                     currentCustomInspector.OnInspectorGUI();
                     GUIAdditionals.EndLayoutPosition();
 
@@ -466,16 +443,54 @@ namespace BXFW
             }
 
             // Add label height
-            height += PaddedSingleLineHeight;
+            //height += PaddedSingleLineHeight;
+            height += PropertyFoldoutOptionsHeight + mainCtx.Padding;
 
             return height;
         }
 
-        // Position given is incorrect on EventType.Layout
-        // Drawing GUILayout editors require a correct Repaint area, so we need the correct 'position'.
-        private Rect lastRepaintPosition;
-        protected readonly PropertyRectContext mainCtx = new PropertyRectContext();
+        private const int DrawnListSizeLimit = 64;
+        /// <summary>
+        /// Currently drawn list of the scriptable objects. (or also known as a editor memory leak)
+        /// </summary> 
+        /// The plan is that we control the parent of the drawn scriptable objects and if the parents of the scriptable object match we create a clone
+        /// By doing this there's no duplicate scriptable objects on an array, so there's no problems.
+        protected static readonly Dictionary<string, T> DrawnScriptableObjects = new Dictionary<string, T>(DrawnListSizeLimit);
+        /// <summary>
+        /// Prefix to make the drawn object parent's unique, allowing for same objects on different parents.
+        /// </summary>
+        protected const string IDKeyPrefix = "::";
+        /// <summary>
+        /// Removes left of the string after the following char sequence of <see cref="IDKeyPrefix"/>.
+        /// </summary>
+        protected static string TrimLeftPrefix(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return string.Empty;
+            }
 
+            return s.Substring(s.IndexOf(IDKeyPrefix) + IDKeyPrefix.Length);
+        }
+        /// <summary>
+        /// Removes right of the string after the following char sequence of <see cref="IDKeyPrefix"/>.
+        /// </summary>
+        protected static string TrimRightPrefix(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return string.Empty;
+            }
+
+            return s.Substring(0, s.IndexOf(IDKeyPrefix) + IDKeyPrefix.Length);
+        }
+        /// <summary>
+        /// Returns the identification key of this property.
+        /// </summary>
+        protected static string GetPropertyKeyString(SerializedProperty property)
+        {
+            return string.Format("{0}{1}{2}", property.serializedObject.targetObject.GetInstanceID(), IDKeyPrefix, property.propertyPath);
+        }
         /// <summary>
         /// Handles drawn <see cref="ScriptableObject"/>s, doing as the default behaviour for drawn non-<see cref="UnityEngine.Object"/> objects.
         /// </summary>
@@ -498,29 +513,36 @@ namespace BXFW
             // ---
             // Unity targetObject names could be different or string.Empty, so use GetInstanceID as this PropertyDrawer only runs tempoarily
             // So instance ID's are feasible
-            string key = string.Format("{0}{1}{2}", property.serializedObject.targetObject.GetInstanceID().ToString(), KEY_PREFIX, property.propertyPath);
-            if (!drawnScriptableObjects.ContainsKey(key))
+            string key = GetPropertyKeyString(property);
+            if (!DrawnScriptableObjects.ContainsKey(key))
             {
+                // If the size of the added elements will exceed the size of limit, remove the first before adding
+                // This is because the dictionary ordering is undefined behaviour.
+                if (DrawnScriptableObjects.Count >= DrawnListSizeLimit)
+                {
+                    DrawnScriptableObjects.Remove(DrawnScriptableObjects.First().Key);
+                }
+
                 // Register key if it doesn't exist.
-                drawnScriptableObjects.Add(key, target);
+                DrawnScriptableObjects.Add(key, target);
             }
             else // do not check on the first OnGUI call as the target could not be ready.
             {
                 // Check if key is null, if so assign the target.
-                if (drawnScriptableObjects[key] == null)
+                if (DrawnScriptableObjects[key] == null)
                 {
-                    drawnScriptableObjects[key] = target;
+                    DrawnScriptableObjects[key] = target;
                 }
 
                 // If the key is not null (after assigning the target), don't ignore and start searching
-                if (drawnScriptableObjects[key] != null)
+                if (DrawnScriptableObjects[key] != null)
                 {
                     KeyValuePair<string, T> propPair;
 
                     try
                     {
                         // Same key pairs could be included, as this may not return a Single object.
-                        propPair = drawnScriptableObjects.SingleOrDefault(p =>
+                        propPair = DrawnScriptableObjects.SingleOrDefault(p =>
                            // Key is different && Same object parent (using InstanceID as temp) && Same reference to object
                            p.Key != key && TrimRightPrefix(p.Key) == TrimRightPrefix(key) && p.Value == target);
                     }
@@ -533,7 +555,7 @@ namespace BXFW
 
                         // just needs a refreshin clear.
                         // note : this is a crap solution and may cause issues.
-                        drawnScriptableObjects.Clear();
+                        DrawnScriptableObjects.Clear();
                         return;
                     }
 
@@ -551,7 +573,7 @@ namespace BXFW
                                 Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Property '{0}' doesn't exist, removing.", key));
                             }
 
-                            drawnScriptableObjects.Remove(key);
+                            DrawnScriptableObjects.Remove(key);
                         }
                         // Key is already contained on different drawn property, and is being planned to be drawn for different property path.
                         // The 'SingleOrDefault' returns null string if there's no matching target value.
@@ -580,7 +602,7 @@ namespace BXFW
                             EditorUtility.SetDirty(target);
 
                             // Set the current dictionary key to be the 'instObject' (so that the object isn't cloned twice, or more)
-                            drawnScriptableObjects[key] = target;
+                            DrawnScriptableObjects[key] = target;
                         }
                     }
                 }
@@ -620,10 +642,6 @@ namespace BXFW
                 HandleDifferentDrawers(property, target);
             }
 
-            // GUI related
-            float previousWidth = position.width - EditorGUIAdditionals.IndentValue;
-
-            // Drag-Drop gui.
             EditorGUIAdditionals.MakeDragDropArea(() =>
             {
                 if (DebugMode)
@@ -657,20 +675,26 @@ namespace BXFW
                     // notify the unity that we set a variable and scene is modified
                     EditorUtility.SetDirty(property.serializedObject.targetObject);
                 }
-            }, () => GUI.enabled, new Rect(position) { height = PaddedSingleLineHeight });
+            }, () => GUI.enabled, new Rect(position) { height = PropertyFoldoutOptionsHeight + mainCtx.Padding });
 
             // Null target gui.
             if (target == null)
             {
-                position = EditorGUI.IndentedRect(position);
-                position.width = previousWidth * .4f;
-                GUI.Label(position, label);
-                position.x += previousWidth * .4f;
+                // Since this has single element, we can change the 
+                position = mainCtx.GetPropertyRect(EditorGUI.IndentedRect(lastRepaintPosition), PropertyFoldoutOptionsHeight);
+
+                // EditorGUIUtility.labelWidth doesn't account for indentation
+                Rect labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth - EditorGUIAdditionals.IndentValue, position.height);
+                GUI.Label(labelRect, label);
 
                 using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targetParentIsPrefab);
+                Rect buttonsRect = new Rect(position.x + labelRect.width, position.y, Mathf.Max(position.width - labelRect.width, EditorGUIUtility.fieldWidth), position.height);
 
-                position.width = previousWidth * .45f;
-                if (GUI.Button(position, new GUIContent(
+                Rect createObjectButtonRect = new Rect(buttonsRect)
+                {
+                    width = buttonsRect.width * 0.75f
+                };
+                if (GUI.Button(createObjectButtonRect, new GUIContent(
                     targetParentIsPrefab || targetParentHasAssetPath ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
                     targetParentIsPrefab || targetParentHasAssetPath ? @"Prefab scenes / Project Assets can't serialize local scriptable objects in themselves.
 (This is due to how the unity serializer works and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
@@ -680,12 +704,15 @@ namespace BXFW
                         GetTypeMenuListFromProperty(property);
                     }
 
-                    typeMenus.Show(position);
+                    typeMenus.Show(createObjectButtonRect);
                 }
-                position.x += previousWidth * .46f;
 
-                position.width = previousWidth * .14f; // 1 - (.46f + .4f)
-                if (GUI.Button(position, "Refresh"))
+                Rect refreshListButtonRect = new Rect(buttonsRect)
+                {
+                    x = buttonsRect.x + createObjectButtonRect.width,
+                    width = buttonsRect.width * 0.25f
+                };
+                if (GUI.Button(refreshListButtonRect, "Refresh"))
                 {
                     typeMenus = null;
                     TypeListProvider.Refresh();
@@ -698,34 +725,32 @@ namespace BXFW
                 return;
             }
 
-            // why am i allowed to write GUI code? this is an abomination
-            // well, atleast this is 'fixable', unlike my life xDDxDXDXD
-            // buut, it works (and it has suprisingly ok performance) so why touch it?
-
             // -- Property label
-            // width is equal to 'previousWidth'
-            Rect rInspectorInfo = EditorGUI.IndentedRect(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight));
-            const float BTN_SHOWPRJ_WIDTH = .25f;
-            const float BTN_DELETE_WIDTH = .15f;
-            const float BTN_FOLDOUT_MIN_WIDTH = .033f;
-            float rFoldoutRefWidth = 1f - BTN_DELETE_WIDTH;
+            #region Property Collapse Header
+            float positionWidth = position.width - EditorGUIAdditionals.IndentValue;
+            Rect propertyFoldoutOptsRect = EditorGUI.IndentedRect(mainCtx.GetPropertyRect(position, PropertyFoldoutOptionsHeight));
+            const float ShowProjectBtnWidth = 0.25f;
+            const float DeleteBtnWidth = 0.15f;
+            const float FoldoutBtnMinWidth = 0.033f;
 
+            float foldoutOptsWidth = 1f - DeleteBtnWidth;
             if (targetHasAssetPath)
             {
-                rFoldoutRefWidth -= BTN_SHOWPRJ_WIDTH;
+                foldoutOptsWidth -= ShowProjectBtnWidth;
             }
-            // set DisplayObjectNameEditor condition inline as we need the 'rFoldoutRefWidth' reference for the label name editor.
-            rInspectorInfo.width = previousWidth * (DisplayObjectNameEditor ? BTN_FOLDOUT_MIN_WIDTH : rFoldoutRefWidth);
 
-            property.isExpanded = EditorGUI.Foldout(rInspectorInfo, property.isExpanded, DisplayObjectNameEditor ? GUIContent.none : label);
+            // set DisplayObjectNameEditor condition inline as we need the 'rFoldoutRefWidth' reference for the label name editor.
+            propertyFoldoutOptsRect.width = positionWidth * (DisplayObjectNameEditor ? FoldoutBtnMinWidth : foldoutOptsWidth);
+
+            property.isExpanded = EditorGUI.Foldout(propertyFoldoutOptsRect, property.isExpanded, DisplayObjectNameEditor ? GUIContent.none : label);
             // This GUI element is inserted (foldout space is squished for this property), so yeah.
             if (DisplayObjectNameEditor)
             {
                 using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targetHasAssetPath);
 
-                rInspectorInfo.x += previousWidth * BTN_FOLDOUT_MIN_WIDTH;
-                float lblNameEditorWidth = 1f - (1f - (rFoldoutRefWidth - BTN_FOLDOUT_MIN_WIDTH));
-                rInspectorInfo.width = previousWidth * lblNameEditorWidth;
+                propertyFoldoutOptsRect.x += positionWidth * FoldoutBtnMinWidth;
+                float lblNameEditorWidth = 1f - (1f - (foldoutOptsWidth - FoldoutBtnMinWidth));
+                propertyFoldoutOptsRect.width = positionWidth * lblNameEditorWidth;
 
                 // Make 'read-only' if the file actually exists in project
                 // Having Object.name and the file name different, unity doesn't like.
@@ -738,7 +763,7 @@ namespace BXFW
                     tNameFieldStyle.normal.textColor = Color.gray;
                 }
 
-                string tName = EditorGUI.TextField(new Rect(rInspectorInfo), target.name, tNameFieldStyle);
+                string tName = EditorGUI.TextField(new Rect(propertyFoldoutOptsRect), target.name, tNameFieldStyle);
 
                 // Object name is only mutable through the 'Project' window changing file name if the target has an asset path
                 if (!targetHasAssetPath)
@@ -757,26 +782,26 @@ namespace BXFW
                         target.name = tName;
                     }
                 }
-                rInspectorInfo.x -= previousWidth * BTN_FOLDOUT_MIN_WIDTH;
+                propertyFoldoutOptsRect.x -= positionWidth * FoldoutBtnMinWidth;
             }
 
             // 'Show On Project' button
-            rInspectorInfo.x += previousWidth * rFoldoutRefWidth;   // Start pos
-            rInspectorInfo.width = previousWidth * BTN_SHOWPRJ_WIDTH;
+            propertyFoldoutOptsRect.x += positionWidth * foldoutOptsWidth;   // Start pos
+            propertyFoldoutOptsRect.width = positionWidth * ShowProjectBtnWidth;
             if (targetHasAssetPath)
             {
                 // Display a button to highlight the asset source
-                if (GUI.Button(rInspectorInfo, "Show On Project"))
+                if (GUI.Button(propertyFoldoutOptsRect, "Show On Project"))
                 {
                     // Highlight the source object in the 'Project' folder
                     ProjectWindowUtil.ShowCreatedAsset(target);
                 }
 
-                rInspectorInfo.x += previousWidth * BTN_SHOWPRJ_WIDTH;    // Add 1 more button to pos
+                propertyFoldoutOptsRect.x += positionWidth * ShowProjectBtnWidth;    // Add 1 more button to pos
             }
 
-            rInspectorInfo.width = previousWidth * BTN_DELETE_WIDTH;
-            if (GUI.Button(rInspectorInfo, "Delete"))
+            propertyFoldoutOptsRect.width = positionWidth * DeleteBtnWidth;
+            if (GUI.Button(propertyFoldoutOptsRect, "Delete"))
             {
                 // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead just remove the reference
                 if (!targetHasAssetPath)
@@ -791,20 +816,21 @@ namespace BXFW
                 EditorGUI.EndProperty();
                 return;
             }
+            #endregion
 
-            // -- Main drawing
+            // -- Main GUI Drawing
             if (property.isExpanded)
             {
                 if (!UseCustomInspector)
                 {
                     // Draw the custom inspector if we have that.
-                    SObject ??= new SerializedObject(target);
-                    SObject.UpdateIfRequiredOrScript();
+                    TargetSerializedObject ??= new SerializedObject(target);
+                    TargetSerializedObject.UpdateIfRequiredOrScript();
 
                     // Draw fields
                     EditorGUI.indentLevel += 1;
 
-                    SerializedProperty prop = SObject.GetIterator();
+                    SerializedProperty prop = TargetSerializedObject.GetIterator();
                     bool expanded = true;
                     while (prop.NextVisible(expanded))
                     {
@@ -842,7 +868,7 @@ namespace BXFW
                     }
                     EditorGUI.indentLevel -= 1;
 
-                    SObject.ApplyModifiedProperties();
+                    TargetSerializedObject.ApplyModifiedProperties();
                 }
                 else
                 {
@@ -862,7 +888,10 @@ namespace BXFW
                     // B :
                     // Background Drawing Rect (for prettier display)
                     EditorGUI.indentLevel += 1;
-                    Rect areaRect = new Rect(lastRepaintPosition.x, lastRepaintPosition.y + rInspectorInfo.height, lastRepaintPosition.width, lastRepaintPosition.height - rInspectorInfo.height);
+                    Rect areaRect = new Rect(
+                        lastRepaintPosition.x, lastRepaintPosition.y + propertyFoldoutOptsRect.height + mainCtx.Padding, 
+                        lastRepaintPosition.width, lastRepaintPosition.height - (propertyFoldoutOptsRect.height + mainCtx.Padding)
+                    );
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));
 
                     // Flex space with nesting? WE HAVE THOSE NOW!
@@ -884,15 +913,15 @@ namespace BXFW
                     // Yup that solved it. Caching the GUILayoutGroup and then pushing it to the layout from a cached layouting is working.
                     // 3 :
                     // EventType.Used > EventType.Layout causes nested GUI to be positioned incorrectly (position correction needed !!)
+                    // This is fixed by also positioning the children because setting EntryRect doesn't position children.
 
                     // --
                     // Because, RootWindows, has to do with IMGUI input
                     // Yay. Who could have guessed it?
-                    Rect correctEntryRect = new Rect(areaRect.x, areaRect.y, areaRect.width, 0f);
                     if (previousGUILayoutGroup != null)
                     {
-                        Rect previousEntryRect = previousGUILayoutGroup.EntryRect;
                         // Fix the 'EntryRect' shifting around for absolutely no reason
+                        Rect correctEntryRect = new Rect(areaRect.x, areaRect.y, areaRect.width, 0f);
                         previousGUILayoutGroup.EntryRect = correctEntryRect;
                         previousGUILayoutGroup.FixAllChildEntryRects(correctEntryRect.position, correctEntryRect.width);
 
@@ -901,16 +930,19 @@ namespace BXFW
                         try
                         {
                             currentCustomInspector.OnInspectorGUI();
+
+                            if (EditorUtility.IsDirty(target))
+                            {
+                                EditorAdditionals.CallOnValidate(target);
+                            }
                         }
                         catch (Exception e)
                         {
-                            // if (DebugMode)
-                            // {
-                            //     Debug.LogException(e);
-                            // }
-
-                            Debug.LogWarning("[ScriptableObjectFieldInspector::OnGUI] An exception occurred during drawing of the GUI. The next log will contain the details.");
-                            Debug.LogException(e);
+                            if (DebugMode)
+                            {
+                                Debug.LogWarning("[ScriptableObjectFieldInspector::OnGUI] An exception occurred during drawing of the overriding Editor GUI. The next log will contain the details.");
+                                Debug.LogException(e);
+                            }
                         }
 
                         // My beloved debugging box, useful for times where to see whether if we are leaking UI Groups / Entries of course

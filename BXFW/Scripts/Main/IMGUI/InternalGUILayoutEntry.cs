@@ -9,6 +9,8 @@ namespace BXFW
     /// A <see cref="GUILayoutEntry"/> utility used to easily manage <see cref="GUILayoutEntry"/> and <see cref="GUILayoutGroup"/> classes.
     /// <br>Since these classes are internal, this utility allows easy public access to it's variables.</br>
     /// </summary>
+    /// This class is named weirdly like this because the UnityEngine assembly already would have the same name, which would cause clashes
+    /// But the thing is, the class cannot be accessed in any normal means so maybe rename it? Or call it something prefixed with 'Unity'?
     public class InternalGUILayoutEntry : IEquatable<InternalGUILayoutEntry>
     {
         /// <inheritdoc cref="BoxedEntry"/>
@@ -138,6 +140,10 @@ namespace BXFW
 
         /// <summary>
         /// Rectangle of this <see cref="GUILayoutEntry"/>.
+        /// <br>
+        /// Changing this only affects this <see cref="GUILayoutEntry"/>, it is not a property.
+        /// In fact most properties inside this <see cref="InternalGUILayoutEntry"/> wrappers are actually not properties, they are just fields wrapped.
+        /// </br>
         /// </summary>
         public Rect EntryRect
         {

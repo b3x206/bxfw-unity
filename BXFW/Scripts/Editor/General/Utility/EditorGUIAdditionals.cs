@@ -22,8 +22,8 @@ namespace BXFW.Tools.Editor
             get
             {
                 // This indent value is just 'EditorGUI.indentLevel * 15f'
-                return EditorGUI.indentLevel * 15f;
                 // return (float)typeof(EditorGUI).GetProperty("indent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
+                return EditorGUI.indentLevel * 15f;
             }
         }
 
