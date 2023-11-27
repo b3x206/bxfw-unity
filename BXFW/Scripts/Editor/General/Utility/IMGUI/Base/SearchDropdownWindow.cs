@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using static PlasticGui.LaunchDiffParameters;
 
 namespace BXFW.Tools.Editor
 {
@@ -45,6 +46,14 @@ namespace BXFW.Tools.Editor
             public static GUIStyle WrapLabelStyle = new GUIStyle(GUI.skin.label)
             {
                 wordWrap = true
+            };
+            /// <summary>
+            /// A GUIStyle that uses word wrapping and centering.
+            /// </summary>
+            public static GUIStyle CenteredWrapLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true,
             };
             /// <summary>
             /// The style used to draw a searching field.
@@ -431,6 +440,23 @@ namespace BXFW.Tools.Editor
                 lastLayoutElementsSize = element.Count;
             }
 
+            int elementSize = Mathf.Min(element.Count, lastLayoutElementsSize);
+
+            // Draw no elements thing if no elements
+            // We can return here as no elements to draw.
+            if (elementSize <= 0)
+            {
+                // Depending on what are we drawing, show a different text
+                if (element == searchFilteredElements)
+                {
+                    EditorGUILayout.LabelField(string.Format(parentManager.NoSearchResultsText, SearchString), StyleList.CenteredWrapLabelStyle);
+                    return;
+                }
+
+                EditorGUILayout.LabelField(parentManager.NoElementPlaceholderText, StyleList.CenteredWrapLabelStyle);
+                return;
+            }
+
             scrollRectPosition = GUILayout.BeginScrollView(scrollRectPosition, false, true);
             // Draw ONLY the visible elements
             // Get an index range for the drawing and only refresh that if needed
@@ -444,8 +470,6 @@ namespace BXFW.Tools.Editor
             // Since the scroll view is handled by rect calculations
             float elementsViewWidth = position.width - GUI.skin.verticalScrollbar.fixedWidth;
             GUILayout.BeginVertical(GUILayout.Width(elementsViewWidth));
-
-            int elementSize = Mathf.Min(element.Count, lastLayoutElementsSize);
 
             // FIXME : Unoptimized ver
             // Reason : pushed rect quantity is too large
@@ -546,14 +570,7 @@ namespace BXFW.Tools.Editor
                 }
             }
 
-            // Draw no elements thing
-            if (elementSize <= 0)
-            {
-                EditorGUILayout.LabelField(parentManager.NoElementPlaceholderText, StyleList.WrapLabelStyle);
-            }
-
             GUILayout.EndVertical();
-
             GUILayout.EndScrollView();
 
             // Only allow selection if we aren't displaying the 'filtered elements'

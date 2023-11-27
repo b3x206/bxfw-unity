@@ -10,9 +10,9 @@ namespace BXFW.Tools.Editor
     /// </summary>
     public class EditorInput
     {
-        // Since all Event related accesses are read-only, no need to call Event.Use
-        // Though i really don't know what 'Event.Use' is used for
-        // Oh well, this is probably fine.
+        // Since all Event related accesses are read-only for this class, no need to call Event.Use
+        // But this class is kinda dumb on it's concept so idk what to do about it.
+        // Ah well it's probably fine.
 
         // 'GetKey' / Poll related inputs.
         private readonly HashSet<KeyCode> editorInputBuffer = new HashSet<KeyCode>();

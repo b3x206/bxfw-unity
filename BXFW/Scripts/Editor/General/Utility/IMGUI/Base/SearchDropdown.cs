@@ -132,6 +132,7 @@ namespace BXFW.Tools.Editor
                 m_MinimumSize = value;
             }
         }
+        // TODO : Make these fields public virtual?
         private float m_MaximumHeight = 300f;
         /// <summary>
         /// The maximum height possible for this dropdown.
@@ -185,6 +186,11 @@ namespace BXFW.Tools.Editor
         /// Placeholder string displayed for dropdowns without any elements.
         /// </summary>
         public virtual string NoElementPlaceholderText { get; set; }
+        /// <summary>
+        /// String used to show that there's no results.
+        /// <br>Can have a format argument as {0}, where it will be replaced with the search query.</br>
+        /// </summary>
+        public virtual string NoSearchResultsText { get; set; } = "No results found on search query \"{0}\"\nTry searching for other elements or check if the search string matches.";
 
         // ?? TODO : Search children using some haystack algorithm
         // Sorting can be done by the caller who builds the root.
@@ -202,6 +208,7 @@ namespace BXFW.Tools.Editor
         private SearchDropdownElement m_RootElement;
         /// <summary>
         /// The root element.
+        /// <br>This element is null during <see cref="BuildRoot"/>.</br>
         /// </summary>
         public SearchDropdownElement RootElement => m_RootElement;
         /// <summary>

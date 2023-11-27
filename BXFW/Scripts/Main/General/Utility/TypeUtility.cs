@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace BXFW
 {
     /// <summary>
-    /// Contains type related utilities.
+    /// Contains <see cref="Type"/> utilities and other related utilities.
     /// </summary>
     public static class TypeUtility
     {
@@ -62,11 +62,14 @@ namespace BXFW
         /// <summary>
         /// A list of global type aliases/predefined types used by C# for System types.
         /// <br>For example, <c>System.Int32</c> being aliased to <see cref="int"/>.</br>
+        /// <br/>
+        /// <br>These types are also called built-in types as well.</br>
         /// </summary>
         private static readonly Dictionary<Type, string> GlobalTypeAliasesMap = new Dictionary<Type, string>
         {
             // Value
             { typeof(bool), "bool" },
+            { typeof(char), "char" },
             { typeof(sbyte), "sbyte" },
             { typeof(byte), "byte" },
             { typeof(short), "short" },
@@ -78,6 +81,10 @@ namespace BXFW
             { typeof(float), "float" },
             { typeof(double), "double" },
             { typeof(decimal), "decimal" },
+            // These types are pointer types which can be explicitly written
+            // And these shorthand names are more confusing anyways
+            // { typeof(nint), "nint" },   // Which is System.IntPtr
+            // { typeof(nuint), "nuint" }, // Which is System.UIntPtr
             // Reference
             { typeof(object), "object" },
             { typeof(string), "string" },

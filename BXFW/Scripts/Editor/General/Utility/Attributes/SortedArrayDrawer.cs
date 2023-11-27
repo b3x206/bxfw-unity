@@ -44,9 +44,9 @@ namespace BXFW.ScriptEditor
             }
         }
 
-        private const float warnHelpBoxRectHeight = 22f;
-        private SortedArrayAttribute SAttribute => attribute as SortedArrayAttribute;
-        private const float DR_PADDING = 2f;
+        private const float WarningBoxHeight = 22f;
+        private SortedArrayAttribute Attribute => attribute as SortedArrayAttribute;
+        private const float Padding = 2f;
 
         /// <summary>
         /// Must be true if the previously drawn property's type was integral or it has the 'IComparable'.
@@ -69,13 +69,13 @@ namespace BXFW.ScriptEditor
             // Just give the 'GetPropertyHeight'
             if (!propertyTypeValid)
             {
-                addHeight += warnHelpBoxRectHeight;
+                addHeight += WarningBoxHeight;
             }
             else
             {
                 // EditorGUI.GetPropertyHeight gets the height with respect to the parent type drawer.
                 // (and hopefully ignores the attribute 'GetPropertyHeight's, otherwise this will crash unity)
-                addHeight += EditorGUI.GetPropertyHeight(property) + DR_PADDING;
+                addHeight += EditorGUI.GetPropertyHeight(property) + Padding;
             }
 
             return addHeight;
@@ -104,8 +104,8 @@ namespace BXFW.ScriptEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            position.height -= DR_PADDING;
-            position.y += DR_PADDING / 2f;
+            position.height -= Padding;
+            position.y += Padding / 2f;
 
             if (propertyTypeValid)
             {
@@ -152,10 +152,10 @@ namespace BXFW.ScriptEditor
                     parentArrayList.Add(element);
                 }
 
-                if (!IsSorted(parentArrayList, SAttribute.Reverse))
+                if (!IsSorted(parentArrayList, Attribute.Reverse))
                 {
                     parentArrayList.Sort(Comparer<object>.Default);
-                    if (SAttribute.Reverse)
+                    if (Attribute.Reverse)
                     {
                         // Reverse the sorting (if reverse attribute)
                         parentArrayList.Reverse();
@@ -168,10 +168,10 @@ namespace BXFW.ScriptEditor
                 if (property.propertyType == SerializedPropertyType.Float)
                 {
                     EditorGUI.BeginChangeCheck();
-                    float lower = !SAttribute.Reverse ?
+                    float lower = !Attribute.Reverse ?
                         (propertyIndex == 0 ? float.MinValue : (float)parentArrayList[propertyIndex - 1]) :
                         (propertyIndex == parentArrayList.Count - 1 ? float.MinValue : (float)parentArrayList[propertyIndex + 1]);
-                    float upper = !SAttribute.Reverse ?
+                    float upper = !Attribute.Reverse ?
                         (propertyIndex == parentArrayList.Count - 1 ? float.MaxValue : (float)parentArrayList[propertyIndex + 1]) :
                         (propertyIndex == 0 ? float.MaxValue : (float)parentArrayList[propertyIndex - 1]);
 
@@ -185,10 +185,10 @@ namespace BXFW.ScriptEditor
                 else if (property.propertyType == SerializedPropertyType.Integer)
                 {
                     EditorGUI.BeginChangeCheck();
-                    int lower = !SAttribute.Reverse ?
+                    int lower = !Attribute.Reverse ?
                         (propertyIndex == 0 ? int.MinValue : (int)parentArrayList[propertyIndex - 1]) :
                         (propertyIndex == parentArrayList.Count - 1 ? int.MinValue : (int)parentArrayList[propertyIndex + 1]);
-                    int upper = !SAttribute.Reverse ?
+                    int upper = !Attribute.Reverse ?
                         (propertyIndex == parentArrayList.Count - 1 ? int.MaxValue : (int)parentArrayList[propertyIndex + 1]) :
                         (propertyIndex == 0 ? int.MaxValue : (int)parentArrayList[propertyIndex - 1]);
 

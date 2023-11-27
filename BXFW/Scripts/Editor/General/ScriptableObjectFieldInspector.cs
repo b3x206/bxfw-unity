@@ -329,7 +329,8 @@ namespace BXFW
                 // This is because i dispose the 'copySo and 'copyProp', i need to check if those are valid and if not just create a new delegate.
                 // Time to create class globals B)
             };
-            typeMenus.NoElementPlaceholderText = string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name);
+
+            typeMenus.NoElementPlaceholderText = string.Format("No Elements (Make classes inheriting from '{0}')", typeof(T).FullName);
         }
 
         protected float previousCustomInspectorHeight = 1f;

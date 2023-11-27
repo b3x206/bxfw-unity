@@ -15,6 +15,8 @@ namespace BXFW
     /// <br><see cref="Magenta"/> = r:1 g:0 b:1</br>
     /// <br><see cref="Yellow"/>  = r:1 g:0.92 b:0.016</br>
     /// <br><see cref="Cyan"/>    = r:0 g:1 b:1</br>
+    /// <br/>
+    /// <br>These colors are based on the <see cref="Color"/> struct's defaults.</br>
     /// </summary>
     public enum LineColor
     {
