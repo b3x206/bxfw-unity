@@ -658,10 +658,10 @@ namespace BXFW.Tools.Editor
 
             if (!TryGetPropertyDrawerFromType(requester.fieldInfo.FieldType, out PropertyDrawer resultDrawer))
             {
+                // No default drawer
                 return null;
             }
 
-            //PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
             {
                 // Leave m_Attribute as is, there's no need to access that (as this is most likely not a custom attribute property drawer)

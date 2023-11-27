@@ -94,7 +94,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="LoopType"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(IsLoopable))]
+        [SerializeField, DrawIf(nameof(IsLoopable))]
         protected LoopType m_LoopType = LoopType.Yoyo;
         /// <summary>
         /// Waits the <see cref="Delay"/> again when the tween loops.
@@ -103,7 +103,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="WaitDelayOnLoop"/> <c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(IsLoopable))]
+        [SerializeField, DrawIf(nameof(IsLoopable))]
         protected bool m_WaitDelayOnLoop = true;
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve), ConditionInverted = true)]
+        [SerializeField, DrawIf(nameof(UseEaseCurve), ConditionInverted = true)]
         private EaseType m_Ease = EaseType.QuadOut;
         /// <summary>
         /// The internal cached ease function.
@@ -173,7 +173,7 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// <inheritdoc cref="EaseCurve"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField, InspectorConditionalDraw(nameof(UseEaseCurve))]
+        [SerializeField, DrawIf(nameof(UseEaseCurve))]
         protected AnimationCurve m_EaseCurve;
         /// <summary>
         /// Evaluates the current selected easing curve of this <see cref="BXSTweenable"/>.

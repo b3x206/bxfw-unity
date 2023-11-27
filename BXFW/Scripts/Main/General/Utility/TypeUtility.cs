@@ -66,6 +66,7 @@ namespace BXFW
         private static readonly Dictionary<Type, string> GlobalTypeAliasesMap = new Dictionary<Type, string>
         {
             // Value
+            { typeof(bool), "bool" },
             { typeof(sbyte), "sbyte" },
             { typeof(byte), "byte" },
             { typeof(short), "short" },

@@ -14,9 +14,9 @@ namespace BXFW
 
         [Header("Camera Clamping")]
         public bool clampCameraRotation = true;
-        [InspectorConditionalDraw(nameof(clampCameraRotation))]
+        [DrawIf(nameof(clampCameraRotation))]
         public MinMaxValue xRotationRange = new MinMaxValue(-75f, 75f); 
-        [InspectorConditionalDraw(nameof(clampCameraRotation))]
+        [DrawIf(nameof(clampCameraRotation))]
         public MinMaxValue yRotationRange = new MinMaxValue(-20f, 75f); 
         public float lookSensitivity = 180f;
 

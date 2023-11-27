@@ -15,10 +15,10 @@ namespace BXFW.UI
         [Header(":: Settings")]
         public bool applyX = true;
         public bool applyY = true;
-        [InspectorConditionalDraw(nameof(applyX))] public float paddingX = 0f;
-        [InspectorConditionalDraw(nameof(applyX))] public MinMaxValue sizeLimitX = MinMaxValue.Zero;
-        [InspectorConditionalDraw(nameof(applyY))] public float paddingY = 0f;
-        [InspectorConditionalDraw(nameof(applyY))] public MinMaxValue sizeLimitY = MinMaxValue.Zero;
+        [DrawIf(nameof(applyX))] public float paddingX = 0f;
+        [DrawIf(nameof(applyX))] public MinMaxValue sizeLimitX = MinMaxValue.Zero;
+        [DrawIf(nameof(applyY))] public float paddingY = 0f;
+        [DrawIf(nameof(applyY))] public MinMaxValue sizeLimitY = MinMaxValue.Zero;
         [Tooltip("Disables this gameObject if the target is disabled too.")]
         public bool disableIfTargetIs = false;
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;

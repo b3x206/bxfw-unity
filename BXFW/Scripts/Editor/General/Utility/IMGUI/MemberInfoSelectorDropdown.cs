@@ -87,14 +87,14 @@ namespace BXFW.Tools.Editor
             if (info is PropertyInfo propertyInfo)
             {
                 accessModifierName = propertyInfo.GetAccessors().First().IsPublic ? "public" : "private/protected";
-                typeName = propertyInfo.PropertyType.Name;
+                typeName = propertyInfo.PropertyType.GetTypeDefinitionString();
 
                 return propertyInfo.CanRead && propertyInfo.CanWrite;
             }
             if (info is FieldInfo fieldInfo)
             {
                 accessModifierName = fieldInfo.IsPublic ? "public" : "private/protected";
-                typeName = fieldInfo.FieldType.Name;
+                typeName = fieldInfo.FieldType.GetTypeDefinitionString();
 
                 return true;
             }

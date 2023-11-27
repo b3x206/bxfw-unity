@@ -84,7 +84,7 @@ namespace BXFW.Tools.Editor
                         typeIdentifier = "<color=#b8d7a3>I</color>";
                     }
 
-                    Item categoryChildItem = new Item($"{typeIdentifier} | <color=white>{t.FullName}</color>", t.AssemblyQualifiedName);
+                    Item categoryChildItem = new Item($"{typeIdentifier} | <color=white>{t.FullName}</color>", t.FullName, t.AssemblyQualifiedName);
                     categoryChildItem.Selected = t == m_selectedType;
                     categoryItem.Add(categoryChildItem);
                 }

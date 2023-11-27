@@ -57,7 +57,7 @@ namespace BXFW.Tweening.Next.Editor
             /// <summary>
             /// Function name to generate.
             /// </summary>
-            [SerializeField, EditDisallowChars(ReMatchMethodName, isRegex = true)]
+            [SerializeField, DisallowChars(ReMatchMethodName, isRegex = true)]
             private string m_MethodName;
             public string MethodName
             {
@@ -93,14 +93,19 @@ namespace BXFW.Tweening.Next.Editor
             public List<ExtensionMethodTemplate> extensionMethods;
         }
 
-        [Tooltip("The '.cs' is appended to the last file name. The directory is local."), EditDisallowChars("?<>:*|\"")]
+        [Tooltip("The '.cs' is appended to the last file name. The directory is local."), DisallowChars("?<>:*|\"")]
         public string tweenExtensionsFileName = "Scripts/BXSTween/Extension/CustomExtension.cs";
         /// <summary>
         /// Same as <see cref="ExtensionMethodTemplate.ReMatchMethodName"/> but with dots allowed and no numbers on start of string.
         /// </summary>
         private const string ReMatchNamespaceName = "[^_.a-zA-Z0-9_]|^[\\d.]+";
-        [EditDisallowChars(ReMatchNamespaceName, isRegex = true)]
+        [DisallowChars(ReMatchNamespaceName, isRegex = true)]
         public string fileNamespace = "BXFW.Tweening.Next";
+        /// <summary>
+        /// Same as <see cref="ReMatchNamespaceName"/> without the dots allowed.
+        /// </summary>
+        private const string ReMatchClassName = "[^_a-zA-Z0-9_]|^[\\d]+";
+        [DisallowChars(ReMatchClassName, isRegex = true)]
         public string fileClassName = "BXSTweenExtensions";
 
         /// <summary>

@@ -28,9 +28,9 @@ namespace BXFW.Tools.Editor
             "3DModel", "Sounds", "Textures"
         };
         // disallow illegal folder chars (except for directory seperators for making directories)
-        [Tooltip("List of folders to generate."), EditDisallowChars("?<>:*|\"")]
+        [Tooltip("List of folders to generate."), DisallowChars("?<>:*|\"")]
         public List<string> genFolderPaths;
-        [Tooltip("Root directory to generate the folders into."), EditDisallowChars("?<>:*|\"")]
+        [Tooltip("Root directory to generate the folders into."), DisallowChars("?<>:*|\"")]
         public string RootDirectory = string.Empty;
 
         private void OnEnable()

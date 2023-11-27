@@ -40,13 +40,6 @@ namespace BXFW
         public Action<T, MatchGUIActionOrder, Rect> DrawGUI;
     }
 
-    public struct DrawGUILayoutCommand
-    {
-        public MatchGUIActionOrder Order;
-
-        public Func<SerializedProperty, MatchGUIActionOrder> DrawGUI;
-    }
-
     /// <summary>
     /// Creates a ScriptableObject inspector.
     /// <br>Derive from this class and use the <see cref="CustomPropertyDrawer"/> attribute with same type as <typeparamref name="T"/>.</br>
@@ -60,7 +53,6 @@ namespace BXFW
         // 3. Completely fix the IMGUI layouting injection hack (because it's terrible), but first fix the bugs of it.
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        
 
         /// <summary>
         /// <see cref="CustomEditor"/> attribute for <see cref="T"/>.

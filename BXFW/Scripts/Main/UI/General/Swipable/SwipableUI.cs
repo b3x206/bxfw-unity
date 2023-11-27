@@ -59,7 +59,7 @@ namespace BXFW.UI
         /// <summary>
         /// Cooldown time for scrolling delta applying OnEndDrag.
         /// </summary>
-        [InspectorConditionalDraw(nameof(IsScrollable)), Clamp(0f, float.MaxValue)]
+        [DrawIf(nameof(IsScrollable)), Clamp(0f, float.MaxValue)]
         public float scrollWaitTime = .16f;
 
         [Header(":: References")]
