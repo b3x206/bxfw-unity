@@ -5,7 +5,7 @@ namespace BXFW
     /// <summary>
     /// Animates a <see cref="SpriteRenderer"/>'s sprite property.
     /// </summary>
-    public class SpriteRendererAnimator : ValueAnimator<Sprite>
+    public sealed class SpriteRendererAnimator : ValueAnimator<Sprite>
     {
         [InspectorLine(LineColor.Gray)]
         public SpriteRenderer targetRenderer;

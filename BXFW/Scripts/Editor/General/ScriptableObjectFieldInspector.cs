@@ -865,11 +865,8 @@ namespace BXFW
                 }
                 else
                 {
-                    // This, was, that easy?
-                    // Okay. Fine. I will be better next time. Or you know do more research.
-                    // Or maybe i got more experienced in GUI? Who knows. The stars have aligned.
                     // I knew this wasn't gonna be this easy.
-                    // So enter the 1238173 lines of more code and a day of research and here we are.
+                    // So enter the 1238173 lines of more code and research and here we are.
 
                     // --
                     // Here's the workaround : 
@@ -882,7 +879,7 @@ namespace BXFW
                     // Background Drawing Rect (for prettier display)
                     EditorGUI.indentLevel += 1;
                     Rect areaRect = new Rect(
-                        lastRepaintPosition.x, lastRepaintPosition.y + propertyFoldoutOptsRect.height + mainCtx.Padding, 
+                        lastRepaintPosition.x, lastRepaintPosition.y + propertyFoldoutOptsRect.height + mainCtx.Padding,
                         lastRepaintPosition.width, lastRepaintPosition.height - (propertyFoldoutOptsRect.height + mainCtx.Padding)
                     );
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));

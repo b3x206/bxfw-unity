@@ -13,36 +13,24 @@ namespace BXFW.ScriptEditor
     public class MinMaxValueEditor : PropertyDrawer
     {
         private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
-        private const float PADDING = 2f;
+        private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight + PADDING;
+            return EditorGUIUtility.singleLineHeight + Padding;
         }
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             label = EditorGUI.BeginProperty(position, label, property);
-            position.y += PADDING / 2f;
-            position.height -= PADDING;
+            position.y += Padding / 2f;
+            position.height -= Padding;
 
             bool showMixed = EditorGUI.showMixedValue;
-
-            //Rect labelRect = new Rect(position) { width = EditorGUIUtility.labelWidth };
-            //EditorGUI.LabelField(labelRect, label);
-            //position.width -= labelRect.width;
-            //position.x += labelRect.width;
 
             // Do this becuase this is still technically not a property field GUI drawer
             property.GetTargetsNoAlloc(targetPairs);
             var firstValuePair = targetPairs.First();
             EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValue)p.value) != ((MinMaxValue)firstValuePair.value));
-
-            //Rect vectorsRect = new Rect(position) { x = position.x + labelRect.width, width = position.width - labelRect.width };
-            //Rect minRect = new Rect(vectorsRect) { width = vectorsRect.width / 2f };
-            //Rect maxRect = new Rect(vectorsRect) { x = vectorsRect.x + minRect.width, width = vectorsRect.width / 2f };
-            //EditorGUI.BeginChangeCheck();
-            //EditorGUI.PropertyField(minRect, property.FindPropertyRelative("m_Min"), new GUIContent("Min"));
-            //EditorGUI.PropertyField(maxRect, property.FindPropertyRelative("m_Max"), new GUIContent("Max"));
 
             Vector2 v = EditorGUI.Vector2Field(position, label, (MinMaxValue)firstValuePair.value);
 
@@ -83,17 +71,17 @@ namespace BXFW.ScriptEditor
     public class MinMaxValueIntEditor : PropertyDrawer
     {
         private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
-        private const float PADDING = 2f;
+        private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight + PADDING;
+            return EditorGUIUtility.singleLineHeight + Padding;
         }
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             label = EditorGUI.BeginProperty(position, label, property);
-            position.y += PADDING / 2f;
-            position.height -= PADDING;
+            position.y += Padding / 2f;
+            position.height -= Padding;
 
             bool showMixed = EditorGUI.showMixedValue;
 

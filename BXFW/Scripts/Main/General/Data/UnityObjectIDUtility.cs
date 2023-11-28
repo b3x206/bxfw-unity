@@ -1,14 +1,14 @@
 #if UNITY_EDITOR
 using UnityEngine;
-using System.Reflection;
 using UnityEditor;
+using System.Reflection;
 
 // - editor related data utils - //
 namespace BXFW.Data.Editor
 {
     /// <summary>
     /// <c>[ EDITOR ONLY ]</c> A utility script that only returns the FileID's / UUID's of <see cref="UnityEngine.Object"/>s.<br/>
-    /// (Instead of using this for serialization purposes please use OdinSerializer) <br/>
+    /// (Instead of using this for serialization purposes please use a better serializer)<br/>
     /// </summary>
     public static class UnityObjectIDUtility
     {

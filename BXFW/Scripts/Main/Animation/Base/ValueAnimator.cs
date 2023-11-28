@@ -79,8 +79,7 @@ namespace BXFW
         /// </summary>
         public BehaviourUpdateMode animUpdateMode = BehaviourUpdateMode.Update;
         /// <summary>
-        /// This setting is only valid when <see cref="animateInCoroutine"/> is <see langword="true"/>!
-        /// <br>Animates the sprite independent of the <see cref="Time.timeScale"/></br>
+        /// <br>Animates the sprite independent of the <see cref="Time.timeScale"/>, using the unscaled delta times.</br>
         /// </summary>
         public bool ignoreTimeScale = false;
 
