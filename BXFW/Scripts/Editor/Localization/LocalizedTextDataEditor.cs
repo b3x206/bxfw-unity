@@ -128,24 +128,24 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Height padding applied in the editor view.
         /// </summary>
-        private const float PADDING = 2f;
+        private const float Padding = 2f;
         /// <summary>
         /// Height of the text area.
         /// </summary>
-        private const float HEIGHT = 72f;
+        private const float Height = 72f;
         /// <summary>
         /// Indent applied (to child elements) when the property field is uncollapsed.
         /// </summary>
-        private const float INDENT = 15f;
+        private const float Indent = 15f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (!property.isExpanded)
             {
-                return EditorGUIUtility.singleLineHeight + PADDING;
+                return EditorGUIUtility.singleLineHeight + Padding;
             }
 
-            return currentPropY + PADDING;
+            return currentPropY + Padding;
         }
 
         private float currentPropY = -1f;
@@ -169,8 +169,8 @@ namespace BXFW.ScriptEditor
                 placeholderStyle.normal.textColor = Color.gray;
             }
 
-            position.height -= PADDING;
-            position.y += PADDING / 2f;
+            position.height -= Padding;
+            position.y += Padding / 2f;
             currentPropY = 0f;
 
             // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
@@ -189,8 +189,8 @@ namespace BXFW.ScriptEditor
             }
 
             // Indent
-            position.x += INDENT;
-            position.width -= INDENT;
+            position.x += Indent;
+            position.width -= Indent;
 
             // Gather currently edited locale value
             string editedLocaleValue = property.GetString(KeyEditLocale, LocalizedTextData.DefaultLocale); // default
@@ -211,7 +211,7 @@ namespace BXFW.ScriptEditor
             }
 
             // Get a empty property rect for nice spacing (yes this is a solution, i am expert at solving)
-            GetPropertyRect(position, PADDING * 2f);
+            GetPropertyRect(position, Padding * 2f);
 
             // Show the locale selector
             Rect baseDropdownRect = GetPropertyRect(position);
@@ -259,7 +259,7 @@ namespace BXFW.ScriptEditor
 
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
-            Rect txtEditAreaRect = GetPropertyRect(position, HEIGHT);
+            Rect txtEditAreaRect = GetPropertyRect(position, Height);
             string lValue = EditorGUI.TextArea(txtEditAreaRect, target.LocaleDatas[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))

@@ -20,18 +20,18 @@ namespace BXFW.ScriptEditor
             }
             if (!targets.All(m => m.useInternalInputMove))
             {
-                dict.Add(nameof(PlayerMovement.moveForwardInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveBackwardInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveLeftInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveRightInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveCrouchInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveJumpInput), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.moveRunInput), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.moveForwardInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveBackwardInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveLeftInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveRightInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveCrouchInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveJumpInput), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.moveRunInput), EditorAdditionals.OmitAction);
             }
             if (!targets.All(m => m.UseGravity))
             {
-                dict.Add(nameof(PlayerMovement.gravity), EditorAdditionals.OMIT_ACTION);
-                dict.Add(nameof(PlayerMovement.groundMask), EditorAdditionals.OMIT_ACTION);
+                dict.Add(nameof(PlayerMovement.gravity), EditorAdditionals.OmitAction);
+                dict.Add(nameof(PlayerMovement.groundMask), EditorAdditionals.OmitAction);
             }
             if (targets.Any(m => m.currentCameraView != PlayerMovement.CamViewType.TPS && m.currentCameraView != PlayerMovement.CamViewType.FreeRelativeCam))
             {

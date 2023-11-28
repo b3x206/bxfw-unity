@@ -28,6 +28,7 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Returns the <paramref name="property"/>'s rect.
+        /// (by getting the height with <see cref="EditorGUI.GetPropertyHeight(SerializedProperty)"/>)
         /// </summary>
         public Rect GetPropertyRect(Rect baseRect, SerializedProperty property)
         {
@@ -48,6 +49,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Resets the context's current Y positioning.
         /// <br>Can be used when the context is to be used for reserving new rects.</br>
+        /// <br>Always call this before starting new contexts to not have the positions shift forever.</br>
         /// </summary>
         public void Reset()
         {

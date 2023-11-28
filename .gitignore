@@ -1,13 +1,3 @@
-# Ignore these directories/files intentionally.
-/[Pp]layer[Cc]ontroller3[Dd]/
-/docs/
-
-# Ignore files (scripts that are not really nice / work)
-RigidbodyTransformConstraint3D.cs
-RigidbodyTransformConstraint2D.cs
-RangeFloat.cs
-RFAttribute.cs
-
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
@@ -69,4 +59,3 @@ sysinfo.txt
 
 # Crashlytics generated file
 crashlytics-build.properties
-

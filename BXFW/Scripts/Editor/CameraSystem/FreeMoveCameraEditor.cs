@@ -34,7 +34,6 @@ namespace BXFW.ScriptEditor
                             foreach (var target in Targets)
                             {
                                 Undo.RecordObject(target, string.Empty);
-
                                 target.IsEnabled = setIsEnabled;
                             }
                             Undo.CollapseUndoOperations(undoID);
