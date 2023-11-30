@@ -142,9 +142,11 @@ namespace BXFW
                 {
                     lookDir = Vector3.forward;
                 }
-                lookDir.y = 0f;
+                // Draw a line from/to the camera by it's distance
+                Gizmos.DrawLine(playerTransform.position, playerTransform.position + (lookDir * distanceFromTarget));
 
                 // Look towards inverted target transform
+                lookDir.y = 0f;
                 Quaternion centerRotation = Quaternion.LookRotation(lookDir, Vector3.up) * Quaternion.AngleAxis(-90f, Vector3.up);
                 // Move rotation to be centered
                 centerRotation *= Quaternion.AngleAxis((lookVerticalAngleRange.Min + lookVerticalAngleRange.Max) / 2f, Vector3.forward);
