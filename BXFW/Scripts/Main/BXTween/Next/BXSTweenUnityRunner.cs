@@ -12,12 +12,19 @@ namespace BXFW.Tweening.Next
     /// </summary>
     public class BXSTweenUnityRunner : MonoBehaviour, IBXSTweenRunner
     {
+        // Depending on the current frame, provide the delta time depending on the current frame and cache it (use 'lastFrameDeltaTime')
+        // This is because there's a 1ms access penalty for delta time on higher iteration counts (for some reason)
         public int ElapsedTickCount => Time.frameCount;
-        public float UnscaledDeltaTime => Time.unscaledDeltaTime;
+        private float m_PreviousUnscaledDeltaTime = 0f;
+        public float UnscaledDeltaTime => m_PreviousUnscaledDeltaTime;
+
+        // This also has performance penalty, but this one is okay as a tween MAY change Time.timeScale
+        // (bad practice, you shouldn't do it but it's possible)
         public float TimeScale => Time.timeScale;
 
         public bool SupportsFixedTick => true;
-        public float FixedUnscaledDeltaTime => Time.fixedUnscaledDeltaTime;
+        private float m_PreviousUnscaledFixedDeltaTime = 0f;
+        public float FixedUnscaledDeltaTime => m_PreviousUnscaledFixedDeltaTime;
 
         public event BXSAction OnRunnerStart;
         public event BXSSetterAction<IBXSTweenRunner> OnRunnerTick;
@@ -120,10 +127,12 @@ namespace BXFW.Tweening.Next
 
         private void Update()
         {
+            m_PreviousUnscaledDeltaTime = Time.unscaledDeltaTime;
             OnRunnerTick?.Invoke(this);
         }
         private void FixedUpdate()
         {
+            m_PreviousUnscaledFixedDeltaTime = Time.fixedUnscaledDeltaTime;
             OnRunnerFixedTick?.Invoke(this);
         }
 

@@ -49,6 +49,7 @@ namespace BXFW.Tweening.Editor
             // 1 : Clean up code + add filtering + searchbar filtering
             // 2 : Make sequences display it's children indented
             // 3 : After that add a raw tweens view
+            // 4 : Optimize further (laggy on larger than >500 elements)
             // For now this is just a direct port of the BXTweenCoreInspector with monospace font.
 
             boxStyle ??= new GUIStyle(GUI.skin.box)
@@ -151,6 +152,9 @@ namespace BXFW.Tweening.Editor
                 {
                     m_expandedTweens.Add(false);
                 }
+
+                // All of these do complex 'CalcHeight' and 'GUIStyle' stuff
+                // Which causes the extreme lag on the 10000 elements debug view
 
                 // Get target type using reflection instead, no need to pollute the interface,
                 // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.

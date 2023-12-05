@@ -135,12 +135,13 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public EaseType Ease
         {
-            get { return m_Ease; }
+            get
+            {
+                return m_Ease;
+            }
             protected set
             {
                 m_Ease = value;
-                // TODO : Get rid of this new delegate creation
-                m_EaseFunction = (f) => BXTweenEase.Methods[m_Ease](f);
             }
         }
         /// <summary>
@@ -148,23 +149,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         [SerializeField, DrawIf(nameof(UseEaseCurve), ConditionInverted = true)]
         private EaseType m_Ease = EaseType.QuadOut;
-        /// <summary>
-        /// The internal cached ease function.
-        /// <br>Use the <see cref="EaseFunction"/> to ensure a non-null easing function.</br>
-        /// </summary>
-        protected BXSEaseAction m_EaseFunction;
-        /// <summary>
-        /// The easing function set by setting the <see cref="Ease"/>.
-        /// </summary>
-        public BXSEaseAction EaseFunction
-        {
-            get
-            {
-                m_EaseFunction ??= (f) => BXTweenEase.Methods[m_Ease](f);
 
-                return m_EaseFunction;
-            }
-        }
         /// <summary>
         /// The used ease curve.
         /// <br>If this is non-null the animation curve will be used instead.</br>
@@ -181,7 +166,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public virtual float EvaluateEasing(float t)
         {
-            float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : EaseFunction(t);
+            float returnValue = UseEaseCurve ? EaseCurve.Evaluate(t) : BXTweenEase.EasedValue(t, Ease);
 
             if (Clamp01EasingSetter)
             {
@@ -516,7 +501,7 @@ namespace BXFW.Tweening.Next
 
             // Other values will be copied by the override casting the values to itself...
         }
-        
+
         /// <summary>
         /// Returns the BXSTweenable as a copy.
         /// </summary>
@@ -613,7 +598,7 @@ namespace BXFW.Tweening.Next
             float loopPartDuration = 1f / (Math.Max(0, StartingLoopCount) + 1);
             int loopsElapsed = (int)(totalElapsed / loopPartDuration);
             float currentElapsed = totalElapsed - (loopsElapsed * loopPartDuration);
-            
+
             PlayFrom(currentElapsed, loopsElapsed);
         }
         /// <summary>

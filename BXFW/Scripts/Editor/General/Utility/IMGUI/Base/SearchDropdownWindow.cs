@@ -123,6 +123,7 @@ namespace BXFW.Tools.Editor
         private const float ElementNameBarHeight = 22f;
         private const float ElementNameBarPadding = 15f;
         private const float CheckmarkIconWidth = 15f;
+        public const string SearchBarControlName = "SearchDropdownWindowBar";
 
         // -- State
         /// <summary>
@@ -363,6 +364,8 @@ namespace BXFW.Tools.Editor
             Rect searchBarRect = GUILayoutUtility.GetRect(position.width, SearchBarHeight);
             // Draw a centered + padded search bar.
             EditorGUI.DrawRect(searchBarRect, StyleList.SearchBarBackgroundColor);
+
+            GUI.SetNextControlName(SearchBarControlName);
             SearchString = EditorGUI.TextField(new Rect()
             {
                 x = searchBarRect.x + SearchBarPadding,
@@ -428,8 +431,6 @@ namespace BXFW.Tools.Editor
             // TODO 2 : 
             // * General optimization to be done (such as accumulating up the rect heights)             [   ]
             // * Search results can contain elements with children (requires a seperate elements stack) [   ]
-            // Added : 
-            // * Global DeltaTime passed per element (TODO : Maybe make an 'GlobalEditorDeltaTime'-like class)
 
             Event e = Event.current;
             elementCtx.Reset();
@@ -607,21 +608,31 @@ namespace BXFW.Tools.Editor
                 Repaint();
             }
 
-            // Handle keyboard events (TODO : Keyboard Nav)
+            // Handle keyboard events (TODO : Keyboard Arrow Key Navigation)
             if (Event.current.type == EventType.KeyUp)
             {
                 switch (Event.current.keyCode)
                 {
                     case KeyCode.Escape:
-                        IsClosingWithSelectionIntent = false;
-                        Close();
-                        break;
+                        // Pressing Escape while searching something should just clear the search query
+                        if (!string.IsNullOrEmpty(SearchString))
+                        {
+                            EditorGUIUtility.editingTextField = false;
+                            SearchString = string.Empty;
+                            Repaint();
+                        }
+                        else
+                        {
+                            IsClosingWithSelectionIntent = false;
+                            Close();
+                        }
+                        return;
                     case KeyCode.Return:
                     case KeyCode.KeypadEnter:
                         // Stop editing text
                         EditorGUIUtility.editingTextField = false;
                         SearchDropdownElement nextElement = lastElement.FirstOrDefault();
-                        
+
                         // Check if next element actually exists
                         if (nextElement == null)
                         {
@@ -640,6 +651,19 @@ namespace BXFW.Tools.Editor
 
                     default:
                         break;
+                }
+            }
+
+            // If the key is not a special key and is just a letter/number start searching
+            if (Event.current.type == EventType.KeyDown && !EditorGUIUtility.editingTextField)
+            {
+                // This could be janky? Unsure but it works good enough.
+                char character = Event.current.character;
+                if (!Event.current.functionKey && !char.IsControl(character))
+                {
+                    // Get the last key as nice key
+                    EditorGUI.FocusTextInControl(SearchBarControlName);
+                    SearchString += character;
                 }
             }
         }
