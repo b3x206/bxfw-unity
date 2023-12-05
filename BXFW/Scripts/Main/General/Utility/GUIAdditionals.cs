@@ -448,7 +448,8 @@ namespace BXFW
         /// Returns a optionally overridable by <paramref name="options"/> Rect.
         /// <br>Unfortunately, the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/> 
         /// doesn't care about the <paramref name="options"/> parameter being overrides.</br>
-        /// <br>This method uses the <paramref name="options"/> as an override if the types match for the width+height.</br>
+        /// <br>This method uses the <paramref name="options"/> as if it was an override if the option types match for the width+height.</br>
+        /// <br>Basically, passing an array with some elements that are unrelated to this layout rect + fixed height will not enforce itself.</br>
         /// </summary>
         /// <returns>Rect from the <see cref="GUILayoutUtility.GetRect(float, float, float, float, GUILayoutOption[])"/>.</returns>
         public static Rect GetOptionalGUILayoutRect(float minWidth, float maxWidth, float minHeight, float maxHeight, params GUILayoutOption[] options)

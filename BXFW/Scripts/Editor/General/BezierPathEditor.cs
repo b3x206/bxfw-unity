@@ -11,8 +11,60 @@ namespace BXFW.ScriptEditor
     /// A 'OnSceneGUI' based solution to be able to edit the paths on the editor window.
     /// <br>Supports 2D and 3D.</br>
     /// </summary>
+    /// <example>
+    /// <![CDATA[
+    /// using UnityEditor;
+    /// using UnityEngine;
+    /// using BXFW.ScriptEditor;
+    /// 
+    /// /// <summary>
+    /// /// An example class using this path editor on it's OnSceneGUI.
+    /// /// </summary>
+    /// [CustomEditor(typeof(PathContainer))]
+    /// public class PathContainerEditor : Editor
+    /// {
+    ///     private BezierPathSceneEditor sceneEditor;
+    ///     private SerializedProperty targetPathProperty;
+    ///     private GameObject targetObject;
+    /// 
+    ///     private void OnSceneGUI()
+    ///     {
+    ///         if (targetObject != null && sceneEditor?.TargetObject != targetObject)
+    ///         {
+    ///             sceneEditor = new BezierPathSceneEditor(targetObject);
+    ///             // 2D axis
+    ///             // sceneEditor.EditAxis = BXFW.TransformAxis.XAxis | BXFW.TransformAxis.YAxis;
+    ///         }
+    /// 
+    ///         // Move the path with the GameObject
+    ///         if (targetObject != null && sceneEditor != null)
+    ///         {
+    ///             sceneEditor.positionOffset = targetObject.transform.position;
+    ///         }
+    /// 
+    ///         // Draw the GUI
+    ///         if (targetPathProperty != null)
+    ///         {
+    ///             sceneEditor.OnSceneGUI(targetPathProperty);
+    ///         }
+    ///     }
+    /// 
+    ///     public override void OnInspectorGUI()
+    ///     {
+    ///         // Get values that cannot be accessed from 'OnSceneGUI'
+    ///         targetPathProperty = serializedObject.FindProperty(nameof(PathContainer.path));
+    ///         targetObject = (target as PathContainer).gameObject;
+    /// 
+    ///         base.OnInspectorGUI();
+    ///     }
+    /// }
+    /// ]]>
+    /// </example>
     public class BezierPathSceneEditor
     {
+        // TODO : Maybe a special editor tool would have been better?
+        // Unity has those, so add that after adding the OnSceneGUI version
+
         /// <summary>
         /// The currently editing axis.
         /// <br>This axis must have atleast 2 axis.</br> 
@@ -31,11 +83,12 @@ namespace BXFW.ScriptEditor
                 int flagsCount = 0;
                 foreach (TransformAxis flag in Enum.GetValues(typeof(TransformAxis)).Cast<TransformAxis>())
                 {
-                    if ((flag & value) == value)
+                    if ((value & flag) == flag)
                     {
                         flagsCount++;
                     }
                 }
+
                 // Otherwise print a warning and don't set.
                 if (flagsCount < 2)
                 {
@@ -46,6 +99,43 @@ namespace BXFW.ScriptEditor
                 m_EditAxis = value;
             }
         }
+
+        /// <summary>
+        /// The target game object.
+        /// </summary>
+        private GameObject m_TargetObject;
+        /// <summary>
+        /// The target game object.
+        /// <br>This cannot be null.</br>
+        /// </summary>
+        public GameObject TargetObject
+        {
+            get => m_TargetObject;
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value), "[BezierPathEditor::(set)TargetObject] Given target object is null.");
+                }
+
+                m_TargetObject = value;
+            }
+        }
+
+        /// <summary>
+        /// The control points offset position.
+        /// <br>This is not applied to the actual points itself.</br>
+        /// <br>
+        /// To rotate or change other matrix properties of the control points being edited, 
+        /// use the <see cref="Handles.DrawingScope"/> with a matrix. (Only applies for 'OnSceneGUI' versions)
+        /// </br>
+        /// </summary>
+        public Vector3 positionOffset = Vector3.zero;
+
+        /// <summary>
+        /// Makes the selectable point's drawn size constant regardless of distance to the point.
+        /// </summary>
+        public bool constantSelectableSize = true;
 
         /// <summary>
         /// Call this on your own implementation of OnSceneGUI.
@@ -71,7 +161,17 @@ namespace BXFW.ScriptEditor
             // path
             using SerializedProperty pathPointsArrayProperty = targetProperty.FindPropertyRelative(nameof(BezierPath.PathPoints));
 
-            (targetProperty.GetTarget().value as BezierPath)?.UpdatePath();
+            void SetPointInIndexDelegate(int index, BezierPoint setValue)
+            {
+                using SerializedProperty controlPointProperty = controlPointsArrayProperty.GetArrayElementAtIndex(index);
+
+                using SerializedProperty cpPositionProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.position));
+                using SerializedProperty cpHandleProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.handle));
+
+                cpPositionProperty.vector3Value = setValue.position;
+                cpHandleProperty.vector3Value = setValue.handle;
+            }
+
             OnSceneGUI(
                 controlPointsArrayProperty.arraySize,
                 (int index) =>
@@ -81,29 +181,31 @@ namespace BXFW.ScriptEditor
                     using SerializedProperty cpPositionProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.position));
                     using SerializedProperty cpHandleProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.handle));
 
-                    return new BezierPoint(cpPositionProperty.vector3Value, cpHandleProperty.vector3Value);
+                    return new BezierPoint(cpPositionProperty.vector3Value + positionOffset, cpHandleProperty.vector3Value + positionOffset);
                 },
-                (int index, BezierPoint setValue) =>
+                SetPointInIndexDelegate,
+                (BezierPoint addValue) =>
                 {
-                    using SerializedProperty controlPointProperty = controlPointsArrayProperty.GetArrayElementAtIndex(index);
-
-                    using SerializedProperty cpPositionProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.position));
-                    using SerializedProperty cpHandleProperty = controlPointProperty.FindPropertyRelative(nameof(BezierPoint.handle));
-
-                    cpPositionProperty.vector3Value = setValue.position;
-                    cpHandleProperty.vector3Value = setValue.handle;
+                    controlPointsArrayProperty.arraySize++;
+                    SetPointInIndexDelegate(controlPointsArrayProperty.arraySize - 1, addValue);
+                },
+                (int removeIndex) =>
+                {
+                    controlPointsArrayProperty.DeleteArrayElementAtIndex(removeIndex);
                 },
                 pathPointsArrayProperty.arraySize,
                 (int index) =>
                 {
                     using SerializedProperty pointProperty = pathPointsArrayProperty.GetArrayElementAtIndex(index);
 
-                    return pointProperty.vector3Value;
+                    return pointProperty.vector3Value + positionOffset;
                 }
             );
 
             controlPointsArrayProperty.serializedObject.ApplyModifiedProperties();
             pathPointsArrayProperty.serializedObject.ApplyModifiedProperties();
+
+            (targetProperty.GetTarget().value as BezierPath)?.UpdatePath();
         }
 
         /// <summary>
@@ -118,19 +220,36 @@ namespace BXFW.ScriptEditor
 
             path.UpdatePath();
             OnSceneGUI(
-                path.Count, (int index) => path[index], (int index, BezierPoint value) => path[index] = value,
+                path.Count, (int index) => path[index].Offset(positionOffset), (int index, BezierPoint value) => path[index] = value, path.Add, path.RemoveAt,
                 path.PathPoints.Count, (int index) => path.PathPoints[index]
             );
         }
 
-        // TODO : Add selection thing
-        private HashSet<int> m_SelectedHandles = new HashSet<int>();
+        private readonly HashSet<int> m_SelectedHandles = new HashSet<int>();
+
+        public bool AnySelected => m_SelectedHandles.Count > 0;
+        public bool IsSelected(int index)
+        {
+            return m_SelectedHandles.Contains(index);
+        }
+        public bool Deselect(int index)
+        {
+            return m_SelectedHandles.Remove(index);
+        }
+        public void DeselectAll()
+        {
+            m_SelectedHandles.Clear();
+        }
+        public void Select(int index)
+        {
+            m_SelectedHandles.Add(index);
+        }
 
         /// <summary>
         /// The internal delegate based drawer, using delegates to change values.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        private void OnSceneGUI(int controlPointsArraySize, Func<int, BezierPoint> getCPointOnIndex, Action<int, BezierPoint> setCPointOnIndex, int pathPointsArraySize, Func<int, Vector3> getPathPointOnIndex)
+        private void OnSceneGUI(int controlPointsArraySize, Func<int, BezierPoint> getCPointOnIndex, Action<int, BezierPoint> setCPointOnIndex, Action<BezierPoint> addCPoint, Action<int> removeCPoint, int pathPointsArraySize, Func<int, Vector3> getPathPointOnIndex)
         {
             if (getCPointOnIndex == null)
             {
@@ -145,24 +264,74 @@ namespace BXFW.ScriptEditor
                 throw new ArgumentNullException(nameof(getPathPointOnIndex), "[BezierPathSceneEditor::OnSceneGUI] Given 'getPathPointOnIndex' is null.");
             }
 
+            SceneView lastView = SceneView.lastActiveSceneView;
+
             // Draw the selectable control points
+            bool selectedAny = false;
             for (int i = 0; i < controlPointsArraySize; i++)
             {
                 BezierPoint previousPoint = getCPointOnIndex(i);
 
-                float previousAlpha = Handles.color.a;
-                Handles.color = new Color(Handles.color.r, Handles.color.g, Handles.color.b, 0.4f);
-                Handles.SphereHandleCap(0, previousPoint.position, Quaternion.identity, 0.2f, Event.current.type);
-                Handles.SphereHandleCap(0, previousPoint.handle, Quaternion.identity, 0.2f, Event.current.type);
-                Handles.color = new Color(Handles.color.r, Handles.color.g, Handles.color.b, previousAlpha);
+                bool isCurrentSelected = IsSelected(i);
 
-                previousPoint.position = Handles.DoPositionHandle(previousPoint.position, Quaternion.identity).AxisVector(m_EditAxis);
-                previousPoint.handle = Handles.DoPositionHandle(previousPoint.handle, Quaternion.identity).AxisVector(m_EditAxis);
+                Color previousColor = Handles.color;
+                Handles.color = new Color(Mathf.Clamp01(previousColor.r - 0.5f), previousColor.g, previousColor.b, 0.4f);
+                float positionHandleSize = constantSelectableSize ? HandleUtility.GetHandleSize(previousPoint.position) * 0.3f : 1.5f;
+                if (Handles.Button(previousPoint.position, Quaternion.identity, positionHandleSize, positionHandleSize, Handles.SphereHandleCap))
+                {
+                    if (!Event.current.control)
+                    {
+                        DeselectAll();
+                    }
+
+                    Select(i);
+                    selectedAny = true;
+                }
+
+                Handles.color = new Color(previousColor.r, previousColor.g, previousColor.b, 0.4f);
+                float handleHandleSize = constantSelectableSize ? HandleUtility.GetHandleSize(previousPoint.handle) * 0.25f : 1.3f;
+                if (Handles.Button(previousPoint.handle, Quaternion.identity, handleHandleSize, handleHandleSize, Handles.SphereHandleCap))
+                {
+                    if (!Event.current.control)
+                    {
+                        DeselectAll();
+                    }
+
+                    Select(i);
+                    selectedAny = true;
+                }
+
+                Handles.color = previousColor;
+
                 Handles.DrawLine(previousPoint.position, previousPoint.handle);
+
+                if (!isCurrentSelected)
+                {
+                    continue;
+                }
+
+                // Debug.Log($"complement axis : {TransformAxis.XYZAxis & (~EditAxis)}");
+                previousPoint.position = Handles.DoPositionHandle(previousPoint.position, Quaternion.identity).AxisVector(EditAxis) - positionOffset;
+                previousPoint.handle = Handles.DoPositionHandle(previousPoint.handle, Quaternion.identity).AxisVector(EditAxis) - positionOffset;
+
+                // Position handles were touched
+                // TODO : Maybe the only reliable way of detecting whether if the position
+                // handle was interacted with was creating a custom capped position handle function?
+                if (!selectedAny && GUIUtility.hotControl != 0)
+                {
+                    selectedAny = true;
+                }
 
                 setCPointOnIndex(i, previousPoint);
             }
-            
+            // None was selected + Mouse is down + Down button is the primary button
+            if (!selectedAny && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            {
+                DeselectAll();
+            }
+
+            // Draw the path
+            // (TODO : Path lags due to low amount of updates, maybe use the 'Interpolate' method?)
             for (int i = 0; i < pathPointsArraySize - 1; i++)
             {
                 Vector3 prevPoint = getPathPointOnIndex(i);
@@ -172,16 +341,73 @@ namespace BXFW.ScriptEditor
 
             // Draw the GUI for selection
             // Note : This is a deprecated way of doing this, figure out how to create a dockable window for SceneView?
-            SceneView lastView = SceneView.lastActiveSceneView;
-            Rect guiArea = new Rect(lastView.position.width - 110f, lastView.position.height - 135f, 100f, 100f);
+            float guiWidth = AnySelected ? 175f : 100f, guiHeight = AnySelected ? 80f : 37f;
+            Rect guiArea = new Rect(lastView.position.width - (guiWidth + 10f), lastView.position.height - (guiHeight + 35f), guiWidth, guiHeight);
             Handles.BeginGUI();
             GUI.Box(guiArea, GUIContent.none);
-            GUILayout.BeginArea(guiArea);
+            GUILayout.BeginArea(new RectOffset(6, 6, 6, 6).Remove(guiArea));
 
-            GUILayout.Label("stuff go here");
+            // Draw the add/remove buttons
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            int selectOption = GUILayout.Toolbar(-1, new string[] { "+", "-" }, GUILayout.Height(25f), GUILayout.Width(70f));
+            switch (selectOption)
+            {
+                case 0:
+                    // Add a point on to the front of the given scene view
+                    addCPoint(new BezierPoint(lastView.pivot.AxisVector(EditAxis), lastView.pivot.AxisVector(EditAxis) + (lastView.rotation * Vector3.one.AxisVector(EditAxis))));
+                    break;
+                case 1:
+                    // If a single element is selected, remove that
+                    int lastOnlySelectedIndex = m_SelectedHandles.Count == 1 ? m_SelectedHandles.Single() : -1;
+
+                    removeCPoint(lastOnlySelectedIndex < 0 ? controlPointsArraySize - 1 : lastOnlySelectedIndex);
+                    controlPointsArraySize--;
+                    break;
+
+                default:
+                    break;
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            // Draw the selected nodes information
+            for (int i = 0; i < controlPointsArraySize; i++)
+            {
+                if (!IsSelected(i))
+                {
+                    continue;
+                }
+
+                BezierPoint previousPoint = getCPointOnIndex(i);
+
+                EditorGUI.BeginChangeCheck();
+                GUILayout.Space(5f);
+                previousPoint.position = EditorGUIAdditionals.AxisVector3FieldGUILayout(EditAxis, previousPoint.position, "P:") - positionOffset;
+                previousPoint.handle = EditorGUIAdditionals.AxisVector3FieldGUILayout(EditAxis, previousPoint.handle, "H:") - positionOffset;
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    setCPointOnIndex(i, previousPoint);
+                }
+            }
 
             GUILayout.EndArea();
             Handles.EndGUI();
+        }
+
+        /// <summary>
+        /// Creates a BezierPathSceneEditor.
+        /// </summary>
+        /// <param name="targetObject">
+        /// The target object to inspect for.
+        /// This cannot be null, but it can be changed if the <see cref="TargetObject"/> is null.
+        /// </param>
+        public BezierPathSceneEditor(GameObject targetObject)
+        {
+            TargetObject = targetObject;
+            // Selection interaction (TODO : This will be most likely only possible as an editor tool)
+            // HandleUtility.pickGameObjectCustomPasses += OnPickElements;
         }
     }
 

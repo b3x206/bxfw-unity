@@ -173,6 +173,110 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
+        /// Draws a Vector3 field with only the given <paramref name="axis"/> editable.
+        /// </summary>
+        /// <param name="axis">Axis to draw the fields of. Depending on this value only the given axis fields will be drawn.</param>
+        /// <param name="position">Rect position to draw this vector3 field on.</param>
+        /// <param name="value">Value to have assigned. The return value will be the new modified value.</param>
+        /// <param name="content">The content to draw for.</param>
+        public static Vector3 AxisVector3Field(TransformAxis axis, Rect position, Vector3 value, GUIContent content)
+        {
+            content ??= GUIContent.none;
+
+            bool canDrawX = (axis & TransformAxis.XAxis) == TransformAxis.XAxis;
+            bool canDrawY = (axis & TransformAxis.YAxis) == TransformAxis.YAxis;
+            bool canDrawZ = (axis & TransformAxis.ZAxis) == TransformAxis.ZAxis;
+
+            int drawableAxisSize = Convert.ToInt32(canDrawX) + Convert.ToInt32(canDrawY) + Convert.ToInt32(canDrawZ);
+
+            // Today we are learning how 2 array
+            // First step : don't do this crap
+            // Second step : if it works it's fine though.
+            GUIContent[] subLabels = new GUIContent[drawableAxisSize];
+            int currentDrawableArrayIndex = 0;
+            if (canDrawX)
+            {
+                subLabels[currentDrawableArrayIndex] = new GUIContent("X");
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawY)
+            {
+                subLabels[currentDrawableArrayIndex] = new GUIContent("Y");
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawZ)
+            {
+                subLabels[currentDrawableArrayIndex] = new GUIContent("Z");
+            }
+
+            float[] vectorValues = new float[drawableAxisSize];
+            currentDrawableArrayIndex = 0;
+            if (canDrawX)
+            {
+                vectorValues[currentDrawableArrayIndex] = value.x;
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawY)
+            {
+                vectorValues[currentDrawableArrayIndex] = value.y;
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawZ)
+            {
+                vectorValues[currentDrawableArrayIndex] = value.z;
+            }
+
+            // The 'MultiFloatField' puts it's content label and other things in seperate columns
+            // Use 'GUIStyle.CalcWidth' and dynamically scale the label and the multi float field
+            // There's no 'CalcWidth' but we can do 'CalcMinMaxWidth'
+            Rect multiFloatRect = position;
+            if (content != GUIContent.none)
+            {
+                GUI.skin.label.CalcMinMaxWidth(content, out float minLabelWidth, out float _);
+                Rect labelRect = new Rect(position.x, position.y, minLabelWidth, position.height);
+                GUI.Label(labelRect, content);
+                multiFloatRect = new Rect(position.x + minLabelWidth, position.y, position.width - minLabelWidth, position.height);
+            }
+
+            EditorGUI.MultiFloatField(multiFloatRect, GUIContent.none, subLabels, vectorValues);
+
+            currentDrawableArrayIndex = 0;
+            if (canDrawX)
+            {
+                value.x = vectorValues[currentDrawableArrayIndex];
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawY)
+            {
+                value.y = vectorValues[currentDrawableArrayIndex];
+                currentDrawableArrayIndex++;
+            }
+            if (canDrawZ)
+            {
+                value.z = vectorValues[currentDrawableArrayIndex];
+            }
+
+            return value;
+        }
+        /// <inheritdoc cref="AxisVector3Field(TransformAxis, Rect, Vector3, GUIContent)"/>
+        public static Vector3 AxisVector3Field(TransformAxis axis, Rect position, Vector3 value, string label)
+        {
+            return AxisVector3Field(axis, position, value, new GUIContent(label));
+        }
+        /// <inheritdoc cref="AxisVector3Field(TransformAxis, Rect, Vector3, GUIContent)"/>
+        public static Vector3 AxisVector3FieldGUILayout(TransformAxis axis, Vector3 value, GUIContent content, params GUILayoutOption[] options)
+        {
+            Rect layoutRect = GUIAdditionals.GetOptionalGUILayoutRect(0f, float.MaxValue, EditorGUIUtility.singleLineHeight, float.MaxValue, options);
+
+            return AxisVector3Field(axis, layoutRect, value, content);
+        }
+        /// <inheritdoc cref="AxisVector3Field(TransformAxis, Rect, Vector3, GUIContent)"/>
+        public static Vector3 AxisVector3FieldGUILayout(TransformAxis axis, Vector3 value, string label, params GUILayoutOption[] options)
+        {
+            return AxisVector3FieldGUILayout(axis, value, new GUIContent(label), options);
+        }
+
+        /// <summary>
         /// Draws a custom array view with a delegate that contains resizing function, and a custom GUI drawing function supplied by the client.
         /// </summary>
         private static bool InternalDrawArrayGUILayout(bool toggle, GUIContent label, int arraySize, Action<int> onArrayResize, Action<int> onArrayFieldDrawn)

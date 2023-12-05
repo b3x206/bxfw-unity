@@ -28,6 +28,13 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Returns an offset point offset by given <paramref name="offset"/>.
+        /// </summary>
+        public BezierPoint Offset(Vector3 offset)
+        {
+            return new BezierPoint(position + offset, handle + offset);
+        }
+        /// <summary>
         /// Deconstructs the point.
         /// </summary>
         public void Deconstruct(out Vector3 position, out Vector3 handle)
@@ -331,6 +338,20 @@ namespace BXFW
                 UpdatePath();
             }
             return result;
+        }
+        /// <summary>
+        /// Removes an element at given <paramref name="index"/>.
+        /// </summary>
+        /// <param name="index"></param>
+        public void RemoveAt(int index)
+        {
+            if (index < 0 || index >= Count)
+            {
+                throw new IndexOutOfRangeException("[BezierPath::RemoveAt] Given index is out of range. The index cannot be negative and more than the size of the collection.");
+            }
+
+            m_ControlPoints.RemoveAt(index);
+            UpdatePath();
         }
 
         /// <summary>

@@ -357,6 +357,56 @@ namespace BXFW
             return max;
         }
 
+        /// <summary>
+        /// Returns the first value or the given <paramref name="defaultValue"/> if no elements exist.
+        /// <br>Useful for value types which cannot be nullable.</br>
+        /// </summary>
+        public static T FirstOrDefault<T>(this IEnumerable<T> collection, T defaultValue)
+        {
+            if (collection != null)
+            {
+                // Return the first element immediately as no predicates
+                // This foreach loop won't begin if there's no elements inside 'collection'.
+                foreach (T element in collection)
+                {
+                    return element;
+                }
+            }
+
+            return defaultValue;
+        }
+        /// <summary>
+        /// Returns the first value or the given <paramref name="defaultValue"/> if no elements exist.
+        /// <br>Useful for value types which cannot be nullable.</br>
+        /// </summary>
+        /// <param name="predicate">
+        /// The predicate to match for all elements. 
+        /// Matching first element is returned. This must not be null.
+        /// </param>
+        /// <exception cref="NullReferenceException"/>
+        public static T FirstOrDefault<T>(this IEnumerable<T> collection, Predicate<T> predicate, T defaultValue)
+        {
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate), "[CollectionUtility::FirstOrDefault] Given 'predicate' parameter is null.");
+            }
+
+            if (collection != null)
+            {
+                // Return the first element immediately as no predicates
+                // This foreach loop won't begin if there's no elements inside 'collection'.
+                foreach (T element in collection)
+                {
+                    if (predicate(element))
+                    {
+                        return element;
+                    }
+                }
+            }
+
+            return defaultValue;
+        }
+
         /// <summary>Replaces multiple chars in a string built by <paramref name="builder"/>.</summary>
         /// <param name="builder">The string to modify. Put in a string builder.</param>
         /// <param name="toReplace">Chars to replace.</param>
