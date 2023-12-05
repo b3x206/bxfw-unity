@@ -302,19 +302,19 @@ namespace BXFW.ScriptEditor
                     selectedAny = true;
                 }
 
-                Handles.color = previousColor;
-
+                Handles.color = new Color(0f, previousColor.g, 0f, previousColor.a);
                 Handles.DrawLine(previousPoint.position, previousPoint.handle);
+
+                Handles.color = previousColor;
 
                 if (!isCurrentSelected)
                 {
                     continue;
                 }
 
-                // Debug.Log($"complement axis : {TransformAxis.XYZAxis & (~EditAxis)}");
                 previousPoint.position = Handles.DoPositionHandle(previousPoint.position, Quaternion.identity).AxisVector(EditAxis) - positionOffset.AxisVector(EditAxis);
                 previousPoint.handle = Handles.DoPositionHandle(previousPoint.handle, Quaternion.identity).AxisVector(EditAxis) - positionOffset.AxisVector(EditAxis);
-
+                
                 // Position handles were touched
                 // TODO : Maybe the only reliable way of detecting whether if the position
                 // handle was interacted with was creating a custom capped position handle function?

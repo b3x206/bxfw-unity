@@ -59,7 +59,7 @@ namespace BXFW
                 return;
             }
 
-            if (interactionInput)
+            if (interactionInput.IsKeyDown())
             {
                 Interact();
             }
@@ -78,7 +78,7 @@ namespace BXFW
             }
 
             int overlapBoxInteractedCount = Physics.OverlapBoxNonAlloc(
-                center: transform.InverseTransformPoint(InteractionPoint),
+                center: InteractionPoint,
                 halfExtents: interactionBoxSize, 
                 results: overlapBoxInteractables,
                 orientation: transform.rotation,
@@ -104,8 +104,8 @@ namespace BXFW
             // The shown gizmo draws the desired interaction bounds
             // If the interaction logic on 'Update' doesn't work as intended
             // update with the correct behaviour (OnDrawGizmosSelected OverlapBox)
-            var prevMatrix = Gizmos.matrix;
-            var prevColor = Gizmos.color;
+            Matrix4x4 prevMatrix = Gizmos.matrix;
+            Color prevColor = Gizmos.color;
 
             // Apply parent matrix to get rotation too
             Vector3 intPoint = transform.InverseTransformPoint(InteractionPoint);

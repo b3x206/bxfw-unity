@@ -103,7 +103,7 @@ namespace BXFW
         /// <summary>
         /// Uses the polled event.
         /// <br>Returns <c>None &amp; 0f</c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
-        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// <br>Note that after using the event, the event values are reset.</br>
         /// </summary>
         public void Use(out InputEventType type, out KeyCode key, out float time)
         {
@@ -138,7 +138,7 @@ namespace BXFW
         /// Uses the polled event.
         /// <br>Returns <c><see cref="InputEventType.None"/> &amp; <see cref="KeyCode.None"/></c> / 
         /// default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
-        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// <br>Note that after using the event, the event values are reset.</br>
         /// </summary>
         public void Use(out InputEventType type, out KeyCode key)
         {
@@ -147,7 +147,7 @@ namespace BXFW
         /// <summary>
         /// Uses the polled event.
         /// <br>Returns <c><see cref="InputEventType.None"/></c> / default values if <see cref="isPolled"/> is <see langword="false"/>.</br>
-        /// <br>Note that after using the event, the event valeus are reset.</br>
+        /// <br>Note that after using the event, the event values are reset.</br>
         /// </summary>
         public void Use(out InputEventType type)
         {
