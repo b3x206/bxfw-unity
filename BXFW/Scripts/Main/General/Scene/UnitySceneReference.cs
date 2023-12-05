@@ -6,12 +6,15 @@ namespace BXFW.SceneManagement
 {
     /// <summary>
     /// Allows for scripts to reference a unity scene, but only in editor. (has no support for 'StreamingAssets' or 'AssetBundles')
-    /// The scene should be registered in the build settings.
+    /// <br>The scene should be registered in the build settings to be loadable, otherwise only the GUID of the scene is contained.</br>
     /// </summary>
     [Serializable]
     public sealed class UnitySceneReference
     {
         // Serialize the GUID as it never changes (unless the scene was deleted, etc.)
+        // TODO : Serialize the GUID as string, this is a dumb way of doing this
+        // We have no access to the GUID on runtime for anything except the scenes, which are in forms of strings
+        // This entire 'SerializableGUID' class is a dumb addition (?)
         [SerializeField] private SerializableGUID sceneGUID;
         [SerializeField] private int sceneIndex = -1;
 

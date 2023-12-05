@@ -2,6 +2,16 @@ namespace BXFW.Tweening.Next.Events
 {
     /// <summary>
     /// A way of setting the event value if plausible.
+    /// <br>
+    /// <see cref="Add"/> =&gt; Adds to the MulticastDelegate.
+    /// If this type of addition throws an exception use <see cref="Equals"/>.
+    /// </br>
+    /// <br>
+    /// <see cref="Equals"/> =&gt; Equates to the given delegate.
+    /// </br>
+    /// <br>
+    /// <see cref="Subtract"/> =&gt; Removes from the MulticastDelegate.
+    /// </br>
     /// </summary>
     public enum EventSetMode
     {

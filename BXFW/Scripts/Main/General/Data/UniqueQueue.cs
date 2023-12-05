@@ -186,16 +186,15 @@ namespace BXFW
             m_queue.CopyTo(array, index);
         }
         /// <summary>
-        /// Returns the <see langword="foreach"/> provider, to get elements sequentially.
+        /// Returns the <see langword="foreach"/> iteration provider, to get elements sequentially.
         /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
             return m_queue.GetEnumerator();
         }
         /// <summary>
-        /// Returns the same enumerator, but don't use this one.
-        /// (It's not typed so it's harmful for your foot, but it won't blow nor shoot it.
-        /// Instead (on a invalid type cast) it will bite it hardly)
+        /// Returns the same enumerator.
+        /// <br>What was i thinking while writing this one's summary?</br>
         /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
         {

@@ -393,8 +393,6 @@ namespace BXFW
 
             if (collection != null)
             {
-                // Return the first element immediately as no predicates
-                // This foreach loop won't begin if there's no elements inside 'collection'.
                 foreach (T element in collection)
                 {
                     if (predicate(element))

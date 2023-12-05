@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using UnityEngine;
 
 namespace BXFW
@@ -10,6 +11,7 @@ namespace BXFW
     public class ScriptableObjectSingleton<T> : ScriptableObject
         where T : ScriptableObject
     {
+        [NonSerialized]
         private static T m_Instance;
         public static T Instance
         {
@@ -42,11 +44,6 @@ namespace BXFW
 
 #if UNITY_EDITOR
         /// <summary>
-        /// Directory of the 'Resources' file.
-        /// </summary>
-        private static readonly string LoadableResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
-        private const string ASSET_EXT_PREFIX = ".asset";
-        /// <summary>
         /// <c>EDITOR ONLY : </c>
         /// Creates instance at given relative directory. Handles <see cref="UnityEditor.AssetDatabase"/> related methods.
         /// <br>NOTE : Only one instance can be created. <see cref="Resources.Load(string)"/> method is called.</br>
@@ -54,7 +51,7 @@ namespace BXFW
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
         // Yes, this is a terrible workaround to bypass the 'ScriptableObject size is not the same1!1!!' errors
-        // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions
+        // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions solely
         public
 #else
         private
@@ -70,9 +67,10 @@ namespace BXFW
 
             // Create & serialize instance of the resource.
             // Find the directory
-            var checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(LoadableResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
-            var relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
-            var absoluteParentDir = Path.Combine(LoadableResourcesDirectory, checkedRelativeDir);
+            string loadableResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "/Assets/Resources");
+            string checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(loadableResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
+            string relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
+            string absoluteParentDir = Path.Combine(loadableResourcesDirectory, checkedRelativeDir);
 
             // If the relative directory isn't created, the creation will fail.
             // For that, i will actually get the combined path.
@@ -82,11 +80,12 @@ namespace BXFW
             }
 
             // Actually create the thing.
-            var cInstance = CreateInstance<T>();
+            T cInstance = CreateInstance<T>();
 
-            if (enforceAssetPrefix && !fileName.EndsWith(ASSET_EXT_PREFIX))
+            string AssetExtensionPrefix = ".asset";
+            if (enforceAssetPrefix && !fileName.EndsWith(AssetExtensionPrefix))
             {
-                fileName += ASSET_EXT_PREFIX;
+                fileName += AssetExtensionPrefix;
             }
 
             UnityEditor.AssetDatabase.CreateAsset(cInstance, Path.Combine(relativeParentDir, fileName));

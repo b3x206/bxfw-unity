@@ -16,7 +16,7 @@ namespace BXFW.Tweening.Next
     }
     /// <summary>
     /// The suspension type for the <see cref="BXSTweenable.TickConditionAction"/>'s suspendType return.
-    /// <br><see cref="None"/>  = Tween won't suspend and will keep ticking.</br>
+    /// <br><see cref="None"/>  = Tween won't suspend and will keep ticking and moving.</br>
     /// <br><see cref="Tick"/>  = Keeps ticking the tween without elapsing it. This will make the tween keep playing but not move.</br>
     /// <br><see cref="Pause"/> = Pauses the base tween.</br>
     /// <br><see cref="Stop"/>  = Stops the base tween.</br>

@@ -45,15 +45,15 @@ namespace BXFW
 
         public override bool Equals(object obj)
         {
-            return base.Equals(obj);
-        }
-        public bool Equals(BezierPoint other)
-        {
-            if (other == null)
+            if (!(obj is BezierPoint point))
             {
                 return false;
             }
 
+            return Equals(point);
+        }
+        public bool Equals(BezierPoint other)
+        {
             return this == other;
         }
         public static bool operator ==(BezierPoint p1, BezierPoint p2)
@@ -96,23 +96,22 @@ namespace BXFW
             public Vector3 from;
             public Vector3 to;
 
+            /// <summary>
+            /// Returns a offseted from-to value.
+            /// </summary>
+            public FromToValues Offset(Vector3 offset)
+            {
+                return new FromToValues(from + offset, to + offset);
+            }
+
             public FromToValues(Vector3 fromPoint, Vector3 toPoint)
             {
                 from = fromPoint;
                 to = toPoint;
             }
-
             public bool Equals(FromToValues other)
             {
                 return from == other.from && to == other.to;
-            }
-
-            /// <summary>
-            /// Returns a offseted value.
-            /// </summary>
-            public FromToValues Offset(Vector3 offset)
-            {
-                return new FromToValues(from + offset, to + offset);
             }
         }
 

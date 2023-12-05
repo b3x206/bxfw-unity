@@ -55,6 +55,7 @@ namespace BXFW.ScriptEditor
     ///         targetPathProperty = serializedObject.FindProperty(nameof(PathContainer.path));
     ///         targetObject = (target as PathContainer).gameObject;
     /// 
+    ///         // Your inspector here.. Or keep the default one (like this) if you don't care.
     ///         base.OnInspectorGUI();
     ///     }
     /// }
@@ -311,8 +312,8 @@ namespace BXFW.ScriptEditor
                 }
 
                 // Debug.Log($"complement axis : {TransformAxis.XYZAxis & (~EditAxis)}");
-                previousPoint.position = Handles.DoPositionHandle(previousPoint.position, Quaternion.identity).AxisVector(EditAxis) - positionOffset;
-                previousPoint.handle = Handles.DoPositionHandle(previousPoint.handle, Quaternion.identity).AxisVector(EditAxis) - positionOffset;
+                previousPoint.position = Handles.DoPositionHandle(previousPoint.position, Quaternion.identity).AxisVector(EditAxis) - positionOffset.AxisVector(EditAxis);
+                previousPoint.handle = Handles.DoPositionHandle(previousPoint.handle, Quaternion.identity).AxisVector(EditAxis) - positionOffset.AxisVector(EditAxis);
 
                 // Position handles were touched
                 // TODO : Maybe the only reliable way of detecting whether if the position
@@ -344,7 +345,7 @@ namespace BXFW.ScriptEditor
             float guiWidth = AnySelected ? 175f : 100f, guiHeight = AnySelected ? 80f : 37f;
             Rect guiArea = new Rect(lastView.position.width - (guiWidth + 10f), lastView.position.height - (guiHeight + 35f), guiWidth, guiHeight);
             Handles.BeginGUI();
-            GUI.Box(guiArea, GUIContent.none);
+            EditorGUI.DrawRect(guiArea, new Color(0.3f, 0.3f, 0.3f, 0.8f));
             GUILayout.BeginArea(new RectOffset(6, 6, 6, 6).Remove(guiArea));
 
             // Draw the add/remove buttons
