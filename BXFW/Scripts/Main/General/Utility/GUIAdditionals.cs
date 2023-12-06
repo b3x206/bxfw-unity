@@ -344,36 +344,25 @@ namespace BXFW
             }
         }
 
-        private static bool isBeingDragged = false; // Since we only have one mouse cursor lol
-        private static int hotControlID = -1; // Gotta keep the id otherwise we can't differentiate what we are dragging
-                                              // We could also use GUIUtility.hotControl or some field like that
-        public static int HotControlID => hotControlID;
-        private static int lastInteractedControlID = -1; // Keep the last interacted one too
-        public static int LastHotControlID => lastInteractedControlID;
-
-        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
-        public static int DraggableBox(Rect rect, GUIContent content, Action<Vector2> onDrag)
-        {
-            return DraggableBox(rect, content, GUI.skin.box, onDrag);
-        }
-
-        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
-        public static int DraggableBox(Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
-        {
-            return DraggableBox(rect, (bool _) =>
-            {
-                GUI.Box(rect, content, style);
-            }, onDrag);
-        }
-
         /// <summary>
-        /// <br>Usage: Create a global rect for your draggable box. Pass the global variables here.</br>
-        /// Puts a draggable box.
+        /// A drag box variable to check if a drag box is being dragged.
+        /// </summary>
+        private static bool isDragged = false;
+        /// <summary>
+        /// <br>Usage: Create a draggable box. The box can intercept drag events and invoke a callback.</br>
         /// <br>The <paramref name="onDrag"/> is invoked when the box is being dragged.</br>
         /// </summary>
+        /// <param name="rect">
+        /// The rectangle that this box is contained in.
+        /// The <paramref name="onDrag"/> callback can modify this, this method 
+        /// does not modify anything, only intercepts the dragging event.
+        /// </param>
+        /// <param name="onDrawButton">
+        /// Called when the button GUI is to be drawn.
+        /// The bool parameter is whether if the button is being dragged or not.
+        /// </param>
         /// <returns>The control id of this gui.</returns>
-        [Obsolete("Obsolete for refactoring a newer method/using the GUILayout globals instead of it's own values.")]
-        public static int DraggableBox(Rect rect, Action<bool> onDrawButton, Action<Vector2> onDrag)
+        public static int DragBox(Rect rect, Action<bool> onDrawButton, Action<Vector2> onDrag)
         {
             int controlID = GUIUtility.GetControlID(HashList.RepeatButtonHash, FocusType.Passive, rect);
 
@@ -381,31 +370,47 @@ namespace BXFW
             {
                 if (Event.current.type == EventType.MouseDown)
                 {
-                    isBeingDragged = true;
-                    hotControlID = controlID;
-                    lastInteractedControlID = controlID;
+                    isDragged = true;
+                    GUIUtility.hotControl = controlID;
+                    Event.current.Use();
                 }
             }
-            if (isBeingDragged && hotControlID == controlID)
+            
+            if (isDragged && GUIUtility.hotControl == controlID)
             {
                 if (Event.current.type == EventType.MouseDrag)
                 {
                     onDrag(Event.current.delta);
+                    Event.current.Use();
                 }
                 else if (Event.current.type == EventType.MouseUp)
                 {
-                    isBeingDragged = false;
-                    hotControlID = -1;
+                    isDragged = false;
+                    GUIUtility.hotControl = 0;
+                    Event.current.Use();
                 }
             }
 
-            // Or use an <see cref="GUI.RepeatButton"/> for 'isBeingDragged' lol
-            // This is required for event to be drag.
-            // This may allow more styles, but we are already using 'onDrawButton' delegate anyways
-            GUI.Button(rect, GUIContent.none, GUIStyle.none);
-            onDrawButton(isBeingDragged && hotControlID == controlID);
+            // Can intercept events manually so do that
+            // GUI's change state is also not set when we use
+            // the event and do something so set it manually
+            GUI.changed = Event.current.type == EventType.Used;
+            onDrawButton(isDragged && GUIUtility.hotControl == controlID);
 
             return controlID;
+        }
+        /// <inheritdoc cref="DragBox(Rect, Action{bool}, Action{Vector2})"/>
+        public static int DragBox(Rect rect, GUIContent content, GUIStyle style, Action<Vector2> onDrag)
+        {
+            return DragBox(rect, (bool _) =>
+            {
+                GUI.Box(rect, content, style);
+            }, onDrag);
+        }
+        /// <inheritdoc cref="DragBox(Rect, Action{bool}, Action{Vector2})"/>
+        public static int DragBox(Rect rect, GUIContent content, Action<Vector2> onDrag)
+        {
+            return DragBox(rect, content, GUI.skin.box, onDrag);
         }
 
         /// <summary>

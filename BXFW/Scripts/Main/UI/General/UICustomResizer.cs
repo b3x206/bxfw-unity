@@ -98,6 +98,11 @@ namespace BXFW.UI
 
         // Update
         // -- Editor Update
+        /// <summary>
+        /// The update method.
+        /// <br>The base only contains an editor method, it is <b>optional only in 
+        /// standalone player</b> so the base call can be '#if'def'd to UNITY_EDITOR:</br>
+        /// </summary>
         protected virtual void Update()
         {
 #if UNITY_EDITOR

@@ -14,7 +14,7 @@ namespace BXFW.UI
     public abstract class InteractableMultiUIManager<TElement> : MultiUIManager<TElement>
         where TElement : Component
     {
-        [InspectorLine(LineColor.Gray), Tooltip("Can the UI element be interacted with?"), SerializeField]
+        [SerializeField, InspectorLine(LineColor.Gray), Tooltip("Can the UI element be interacted with?")]
         private bool interactable = true;
         /// <summary>
         /// Defines whether if this object is interactable with.

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Contains a minimum/maximum value.
+    /// Contains a minimum/maximum value range.
     /// <br><see cref="Min"/> cannot be larger than <see cref="Max"/> and the other way around.</br>
     /// <br/>
     /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
@@ -194,7 +194,7 @@ namespace BXFW
     }
 
     /// <summary>
-    /// Same as <see cref="MinMaxValue"/>, but integers.
+    /// Same as <see cref="MinMaxValue"/> range, but integers.
     /// <br/>
     /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
     /// </summary>

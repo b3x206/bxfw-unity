@@ -663,7 +663,7 @@ namespace BXFW.Tools.Editor
                 {
                     // Get the last key as nice key
                     EditorGUI.FocusTextInControl(SearchBarControlName);
-                    // SearchString += character;
+                    SearchString += character;
                 }
             }
         }

@@ -86,12 +86,12 @@ namespace BXFW
     /// Represents a bezier path.
     /// </summary>
     [Serializable]
-    public class BezierPath : ICollection<BezierPoint>, IEnumerable<BezierPath.FromToValues>, IEquatable<List<BezierPoint>>, IEquatable<BezierPath>
+    public class BezierPath : ICollection<BezierPoint>, IEnumerable<BezierPath.FromToValue>, IEquatable<List<BezierPoint>>, IEquatable<BezierPath>
     {
         /// <summary>
         /// Contains a path enumeration from-&gt;to value.
         /// </summary>
-        public struct FromToValues : IEquatable<FromToValues>
+        public struct FromToValue : IEquatable<FromToValue>
         {
             public Vector3 from;
             public Vector3 to;
@@ -99,17 +99,17 @@ namespace BXFW
             /// <summary>
             /// Returns a offseted from-to value.
             /// </summary>
-            public FromToValues Offset(Vector3 offset)
+            public FromToValue Offset(Vector3 offset)
             {
-                return new FromToValues(from + offset, to + offset);
+                return new FromToValue(from + offset, to + offset);
             }
 
-            public FromToValues(Vector3 fromPoint, Vector3 toPoint)
+            public FromToValue(Vector3 fromPoint, Vector3 toPoint)
             {
                 from = fromPoint;
                 to = toPoint;
             }
-            public bool Equals(FromToValues other)
+            public bool Equals(FromToValue other)
             {
                 return from == other.from && to == other.to;
             }
@@ -363,12 +363,12 @@ namespace BXFW
         /// <summary>
         /// The iterator that is the evaluated line.
         /// </summary>
-        public IEnumerator<FromToValues> GetEnumerator()
+        public IEnumerator<FromToValue> GetEnumerator()
         {
             // Use a for loop instead of a (while - int loop)
             for (int i = 0; i < PathPoints.Count - 1; i++)
             {
-                yield return new FromToValues(PathPoints[i], PathPoints[i + 1]);
+                yield return new FromToValue(PathPoints[i], PathPoints[i + 1]);
             }
         }
         /// <summary>
