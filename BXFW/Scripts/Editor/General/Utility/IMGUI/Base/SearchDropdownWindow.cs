@@ -609,7 +609,7 @@ namespace BXFW.Tools.Editor
             }
 
             // Handle keyboard events (TODO : Keyboard Arrow Key Navigation)
-            if (Event.current.type == EventType.KeyUp)
+            if (Event.current.type == EventType.KeyDown)
             {
                 switch (Event.current.keyCode)
                 {
@@ -663,7 +663,7 @@ namespace BXFW.Tools.Editor
                 {
                     // Get the last key as nice key
                     EditorGUI.FocusTextInControl(SearchBarControlName);
-                    SearchString += character;
+                    // SearchString += character;
                 }
             }
         }

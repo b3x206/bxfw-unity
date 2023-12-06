@@ -234,42 +234,6 @@ namespace BXFW
             return BeginLayoutPositionGroupInternal(position, width, style, content, (style) => new InternalGUILayoutGroup(miBeginLayoutArea.Invoke(null, new object[] { style, GUILayoutGroupType })));
         }
 
-        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
-        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width)
-        {
-            return BeginInjectableLayoutPosition(position, width, GUIStyle.none, GUIContent.none);
-        }
-        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
-        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIContent content)
-        {
-            return BeginInjectableLayoutPosition(position, width, GUIStyle.none, content);
-        }
-        /// <inheritdoc cref="BeginInjectableLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/>
-        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
-        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIStyle style)
-        {
-            return BeginInjectableLayoutPosition(position, width, style, GUIContent.none);
-        }
-        /// <summary>
-        /// Begins a positioned layouted GUI, but unlike the other <see cref="BeginLayoutPosition(Vector2, float, GUIStyle, GUIContent)"/> method, 
-        /// this function returns an non-injected/added <see cref="GUILayoutGroup"/> object. It has to be manually injected on an appopriate condition
-        /// to the current <see cref="GUILayoutUtility.LayoutCache"/>.
-        /// </summary>
-        /// <param name="position">Position to start the layout group from.</param>
-        /// <param name="width">Width of the layout to start.</param>
-        /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
-        /// <param name="content">Content of the layout group to accommodate for.</param>
-        /// <returns>The created <see cref="GUILayoutGroup"/> on a wrapper.</returns>
-        [Obsolete("Injectable GUILayoutGroup's are not useful for now? (doesn't contain child elements?)")]
-        public static InternalGUILayoutGroup BeginInjectableLayoutPosition(Vector2 position, float width, GUIStyle style, GUIContent content)
-        {
-            CheckOnGUI();
-
-            return BeginLayoutPositionGroupInternal(position, width, style, content, (style) => new InternalGUILayoutGroup(style));
-        }
-        
         /// <summary>
         /// Ends the positioned area.
         /// <br>Both injected layout groups and normal layout groups can use this.</br>
@@ -595,8 +559,15 @@ namespace BXFW
         /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
+            // Only do this plotting if we are actually drawing and not layouting
+            // As this plotter has no interactions and will only paint
+            if (Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+
             PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PlotTextFontSize, wordWrap = true };
 
             if (segments < 1)
@@ -613,7 +584,7 @@ namespace BXFW
             var guiPrevColor = GUI.color;
             GUI.color = new Color(.4f, .4f, .4f, .2f);
             GUI.DrawTexture(
-                position, 
+                position,
                 Texture2D.whiteTexture, ScaleMode.StretchToFill
             );
             GUI.color = guiPrevColor;
@@ -654,37 +625,78 @@ namespace BXFW
             }
 
             // Labels have a reserved 'PLOT_TEXT_PADDING' width
-            // TODO : Add a 'showLabels' parameter
-            Rect plotPosition = new Rect
-            {
-                x = position.x + PlotTextPaddingX,
-                y = position.y,
-                width = position.width - PlotTextPaddingX,  // reserve for max/min
-                height = position.height - PlotTextPaddingY // reserve "
-            };
+            Rect plotPosition = position;
 
             // Draw from/to text (x, positioned bottom)
-            GUI.Label(
-                new Rect { x = position.x + PlotTextPaddingX, y = position.yMax - PlotTextPaddingY, width = 32f, height = PlotTextPaddingY },
-                vFrom.ToString("0.0#"), PlotSmallerFontStyle
-            ); // left
-            PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
-            GUI.Label(
-                new Rect { x = position.xMax - 32f, y = position.yMax - PlotTextPaddingY, width = 32f, height = PlotTextPaddingY },
-                vTo.ToString("0.0#"), PlotSmallerFontStyle
-            ); // right
-            PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+            if (showFromToLabels)
+            {
+                plotPosition.height -= PlotTextPaddingY;
 
-            // Draw local min/max text (y, positioned left)
-            GUI.Label(
-                new Rect { x = position.x, y = position.yMin, width = 32f, height = PlotTextPaddingY },
-                localMaximum.ToString("0.0#"), PlotSmallerFontStyle
-            ); // up
-            GUI.Label(
-                // multiply the offset by 2 to make it look better
-                new Rect { x = position.x, y = position.yMax - (PlotTextPaddingY * 2f), width = 32f, height = PlotTextPaddingY }, 
-                localMinimum.ToString("0.0#"), PlotSmallerFontStyle
-            ); // down
+                PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+                Rect leftLabelRect = new Rect
+                {
+                    x = position.x,
+                    y = position.yMax - PlotTextPaddingY,
+                    width = 32f,
+                    height = PlotTextPaddingY
+                };
+                if (showMinMaxLabels)
+                {
+                    leftLabelRect.x += PlotTextPaddingX;
+                }
+                GUI.Label(
+                    leftLabelRect,
+                    vFrom.ToString("0.0#"), PlotSmallerFontStyle
+                ); // left
+
+                PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
+                Rect rightLabelRect = new Rect
+                {
+                    x = position.xMax - 32f,
+                    y = position.yMax - PlotTextPaddingY,
+                    width = 32f,
+                    height = PlotTextPaddingY
+                };
+                GUI.Label(
+                    rightLabelRect,
+                    vTo.ToString("0.0#"), PlotSmallerFontStyle
+                ); // right
+            }
+            if (showMinMaxLabels)
+            {
+                plotPosition.x += PlotTextPaddingX;
+                plotPosition.width -= PlotTextPaddingX;
+
+                PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+                // Draw local min/max text (y, positioned left)
+                Rect topLabelRect = new Rect
+                {
+                    x = position.x,
+                    y = position.yMin,
+                    width = 32f,
+                    height = PlotTextPaddingY
+                };
+                GUI.Label(
+                    topLabelRect,
+                    localMaximum.ToString("0.0#"), PlotSmallerFontStyle
+                ); // up
+                Rect bottomLabelRect = new Rect
+                {
+                    x = position.x,
+                    y = position.yMax - PlotTextPaddingY,
+                    width = 32f,
+                    height = PlotTextPaddingY
+                };
+                if (showFromToLabels)
+                {
+                    // Offset again for the 'from-to' labels
+                    bottomLabelRect.y -= PlotTextPaddingY;
+                }
+                GUI.Label(
+                    bottomLabelRect,
+                    localMinimum.ToString("0.0#"), PlotSmallerFontStyle
+                ); // down
+            }
 
             // This will throw a lot of errors, especially if the values are 0.
             if (allValuesZero)
@@ -715,12 +727,6 @@ namespace BXFW
                 DrawLine(new Vector2(plotPosition.xMin, xDividerYpos), new Vector2(plotPosition.xMax, xDividerYpos), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
             }
 
-            // Only do this plotting if we are actually drawing and not layouting
-            if (Event.current.type != EventType.Repaint)
-            {
-                return;
-            }
-
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
                 // Initial plot position
@@ -742,21 +748,26 @@ namespace BXFW
                 previousPosition = new Vector2(currentX, currentY);
             }
         }
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, int)"/>
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
+        {
+            PlotLine(position, plotFunction, true, true, vFrom, vTo, lineWidth, segments);
+        }
 
         private const float PlotLineLayoutedHeight = 48;
         private const float PlotLineLayoutedMinWidth = 60;
         /// <summary>
-        /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
+        /// A layouted version of <see cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, int)"/>.
         /// <br>Reserves a rectangle on the <see cref="GUILayout"/> with a height of <see cref="PlotLineLayoutedHeight"/>, can be overriden.</br>
         /// <br/>
         /// <br>Documentation for original 'PlotLine' : </br>
-        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, int)"/>
         /// </summary>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
         /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLineLayout(Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
+        public static void PlotLineLayout(Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
             Rect reservedRect = GetOptionalGUILayoutRect(PlotLineLayoutedMinWidth, float.MaxValue, PlotLineLayoutedHeight, PlotLineLayoutedHeight, options);
@@ -766,7 +777,18 @@ namespace BXFW
             reservedRect.y += 2f;
             reservedRect.height -= 4f;
 
-            PlotLine(reservedRect, plotFunction, vFrom, vTo, lineWidth, segments);
+            PlotLine(reservedRect, plotFunction, showFromToLabels, showMinMaxLabels, vFrom, vTo, lineWidth, segments);
+        }
+
+        /// <summary>
+        /// <br>This version always shows the from-to labels and the min-max labels.</br>
+        /// <br/>
+        /// <inheritdoc cref="PlotLineLayout(Func{float, float}, bool, bool, float, float, float, int, GUILayoutOption[])"/>
+        /// </summary>
+        /// <inheritdoc cref="PlotLineLayout(Func{float, float}, bool, bool, float, float, float, int, GUILayoutOption[])"/>
+        public static void PlotLineLayout(Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
+        {
+            PlotLineLayout(plotFunction, true, true, vFrom, vTo, lineWidth, segments, options);
         }
 
         /// <summary>

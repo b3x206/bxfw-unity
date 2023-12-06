@@ -140,7 +140,7 @@ namespace BXFW.Tweening.Editor
                     // Plotting
                     Color gColor = GUI.color;
                     GUI.color = Color.green;
-                    GUIAdditionals.PlotLine(plottingAreaRect, (float t) => BXTweenEase.EasedValue(t, ease), 0f, 1f, 1.5f, 28);
+                    GUIAdditionals.PlotLine(plottingAreaRect, (float t) => BXTweenEase.EasedValue(t, ease), true, false, 0f, 1f, 1.5f, 28);
                     GUI.color = gColor;
 
                     if (isRepaintEvent)

@@ -141,7 +141,7 @@ namespace BXFW.Tweening.Next
                 return HashCode.Combine(targetAction, callerHash);
             }
         }
-        private static List<DelayedAction> waitingActions = new List<DelayedAction>();
+        private static readonly List<DelayedAction> waitingActions = new List<DelayedAction>();
         /// <summary>
         /// Queues an action to be called.
         /// <br>Used with the 'DelayDoFoo()' methods of BXSTween. Uses 'IBXSTweenRunner's non-fixed ticking to manage.</br>
@@ -293,8 +293,7 @@ namespace BXFW.Tweening.Next
                 try
                 {
                     tween.OnStartAction?.Invoke();
-                    // tween.Stop alreadycalls OnEndAction
-                    //tween.OnEndAction?.Invoke();
+                    // tween.Stop already calls OnEndAction
                 }
                 catch (Exception e)
                 {

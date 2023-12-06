@@ -104,7 +104,7 @@ namespace BXFW.Tweening.Editor
             GUILayout.BeginHorizontal();
             var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
             GUIAdditionals.PlotLineLayout(
-                (v) => BXTweenEase.LegacyMethods[dEaseType](v), 
+                (v) => BXTweenEase.EasedValue(v, dEaseType), 
                 0f, 1f, 2.5f, 25, GUILayout.Width(80f), GUILayout.Height(50f)
             );
             GUILayout.EndHorizontal();
