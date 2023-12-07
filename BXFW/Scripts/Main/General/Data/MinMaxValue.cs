@@ -21,7 +21,7 @@ namespace BXFW
             get { return m_Min; }
             set
             {
-                m_Min = Mathf.Clamp(value, float.NegativeInfinity, Max);
+                m_Min = Math.Clamp(value, float.NegativeInfinity, Max);
             }
         }
         public float Max
@@ -29,7 +29,7 @@ namespace BXFW
             get { return m_Max; }
             set
             {
-                m_Max = Mathf.Clamp(value, Min, float.PositiveInfinity);
+                m_Max = Math.Clamp(value, Min, float.PositiveInfinity);
             }
         }
 
@@ -92,7 +92,7 @@ namespace BXFW
         /// Multiplies the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
         /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
         /// </summary>
-        public static MinMaxValue operator*(MinMaxValue lhs, float rhs)
+        public static MinMaxValue operator *(MinMaxValue lhs, float rhs)
         {
             lhs.m_Min *= rhs;
             lhs.m_Max *= rhs;
@@ -143,7 +143,7 @@ namespace BXFW
             return lhs;
         }
 
-        public static bool operator==(MinMaxValue lhs, MinMaxValue rhs)
+        public static bool operator ==(MinMaxValue lhs, MinMaxValue rhs)
         {
             // Epsilon equals
             float diffMin = lhs.Min - rhs.Min;
@@ -153,7 +153,7 @@ namespace BXFW
             // epsilon is multiplied by 4 for possible 4x epsilons difference
             return (diffMin * diffMin) + (diffMax * diffMax) < float.Epsilon * 4f;
         }
-        public static bool operator!=(MinMaxValue lhs, MinMaxValue rhs)
+        public static bool operator !=(MinMaxValue lhs, MinMaxValue rhs)
         {
             return !(lhs == rhs);
         }

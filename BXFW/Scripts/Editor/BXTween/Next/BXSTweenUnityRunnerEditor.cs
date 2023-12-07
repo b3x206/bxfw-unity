@@ -99,7 +99,7 @@ namespace BXFW.Tweening.Editor
             // Draw stats from the BXSTween class
             EditorGUILayout.LabelField(string.Format("Tween Amount = {0}", BXSTween.RunningTweens.Count));
             EditorGUILayout.LabelField(string.Format("Sequence Amount = {0}", BXSTween.RunningTweens.Where(t => t is BXSTweenSequence).Count()));
-            EditorGUILayout.LabelField(string.Format("BXSTween Status = {0}", BXSTween.NeedsInitialize ? "Error (Needs Initialize)" : "OK"));
+            EditorGUILayout.LabelField(string.Format("BXSTween Status = {0}", BXSTween.NeedsInitializeParameters ? "Error (Needs Initialize)" : "OK"));
 
             // Draw the list of running tweens
             GUIAdditionals.DrawUILineLayout(Color.gray);

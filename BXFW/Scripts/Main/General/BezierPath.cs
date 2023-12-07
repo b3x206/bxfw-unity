@@ -210,7 +210,7 @@ namespace BXFW
             // (meh, this will do for now, even though it's not ""particularly efficient"" + normalized)
 
             // Lerp
-            float targetIndexLerp = (t / 1f) * (PathPoints.Count - 1); // Subtract from actual path point count for full lerp
+            float targetIndexLerp = t * (PathPoints.Count - 1); // Subtract from actual path point count for full lerp
             int targetIndex = Mathf.FloorToInt(targetIndexLerp);
             float targetInterpBetweenPoints = Mathf.Abs(targetIndex - targetIndexLerp);
 

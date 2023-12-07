@@ -381,11 +381,18 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Returns the type of the property's target.
+        /// <br>If the parent '<see cref="PropertyTargetInfo.fieldInfo"/>' is an array, the child type will be the result.</br>
         /// </summary>
         /// <param name="property">Property to get type from.</param>
         public static Type GetPropertyType(this SerializedProperty property)
         {
-            return property.GetTarget().fieldInfo.FieldType;
+            PropertyTargetInfo info = property.GetTarget();
+            if (info.value != null)
+            {
+                return info.value.GetType();
+            }
+
+            return info.fieldInfo.FieldType;
         }
         /// <summary>
         /// Returns the (last array) index of this property in the array.

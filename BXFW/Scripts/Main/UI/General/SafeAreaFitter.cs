@@ -3,7 +3,7 @@ using UnityEngine;
 namespace BXFW.UI
 {
     /// <summary>
-    /// Resizes a <see cref="RectTransform"/> to fit <see cref="Screen.safeArea"/>.
+    /// Resizes a <see cref="UnityEngine.RectTransform"/> to fit <see cref="Screen.safeArea"/>.
     /// <br>Useful for fitting gui to a phone with notch.</br>
     /// <br>Portrait only.</br>
     /// </summary>
@@ -17,6 +17,21 @@ namespace BXFW.UI
         private float m_OffsetTop = 0f;
         private float m_OffsetBottom = 0f;
 
+        private Vector2 m_previousSizeDelta;
+        private RectTransform m_RectTransform;
+        public RectTransform RectTransform
+        {
+            get
+            {
+                if (m_RectTransform == null)
+                {
+                    m_RectTransform = GetComponent<RectTransform>();
+                }
+
+                return m_RectTransform;
+            }
+        }
+
         private void Awake()
         {
             Resize();
@@ -26,25 +41,34 @@ namespace BXFW.UI
         {
             if (!AllowResize)
             {
-                return; // Size can be modified after initial calculation. 
+                // Size can be modified after initial calculation. 
+                return;
             }
 
-            // I have no idea why i added this
-            // FIXME :  The 'SafeAreaFitter' should not constantly size itself (?)
-            if (transform.hasChanged)
+            // In a case of the Rect Transform resizing unintentionally
+            // Resize the SafeAreaFitter's RectTransform again.
+            if (transform.hasChanged && m_previousSizeDelta != RectTransform.sizeDelta)
             {
                 Resize();
             }
         }
-        
+
         /// <summary>
-        /// Resizes the safe area.
+        /// Resizes to fit to the <see cref="Screen.safeArea"/>.
         /// </summary>
-        /// <param name="offset">Offset of the safe area. Modify if dynamic content is displayed.</param>
+        /// <param name="heightOffsetTop">
+        /// Offset of the safe area.
+        /// Modify if dynamic content is displayed.
+        /// Values that are 0 or lower is ignored and the previous offset will be used.
+        /// </param>
+        /// <param name="heightOffsetBottom">
+        /// Offset of the safe area.
+        /// Modify if dynamic content is displayed.
+        /// Values that are 0 or lower is ignored and the previous offset will be used.
+        /// </param>
         public void Resize(float heightOffsetTop = -1f, float heightOffsetBottom = -1f)
         {
-            var rTransform = GetComponent<RectTransform>();
-            var safeArea = Screen.safeArea;
+            Rect safeArea = Screen.safeArea;
 
             if (heightOffsetTop >= 0f)
             {
@@ -69,18 +93,21 @@ namespace BXFW.UI
                 safeArea.yMin -= m_OffsetBottom;
             }
 
-            var anchorMin = safeArea.position;
-            var anchorMax = anchorMin + safeArea.size;
+            Vector2 anchorMin = safeArea.position;
+            Vector2 anchorMax = anchorMin + safeArea.size;
             anchorMin.x /= Screen.width;
             anchorMin.y /= Screen.height;
             anchorMax.x /= Screen.width;
             anchorMax.y /= Screen.height;
 
-            rTransform.anchorMin = anchorMin;
-            rTransform.anchorMax = anchorMax;
+            RectTransform.anchorMin = anchorMin;
+            RectTransform.anchorMax = anchorMax;
             // Resize expand (to anchors)
-            rTransform.offsetMin = Vector2.zero;
-            rTransform.offsetMax = Vector2.zero;
+            RectTransform.offsetMin = Vector2.zero;
+            RectTransform.offsetMax = Vector2.zero;
+
+            // Store size delta
+            m_previousSizeDelta = RectTransform.sizeDelta;
         }
     }
 }

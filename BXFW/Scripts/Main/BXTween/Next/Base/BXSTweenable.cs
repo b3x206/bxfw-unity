@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
+using System.Collections.Generic;
 
 namespace BXFW.Tweening.Next
 {
@@ -42,7 +43,7 @@ namespace BXFW.Tweening.Next
     /// <br>Any class inheriting from this moves/receives a value from <c>a-&gt;b</c>.</br>
     /// </summary>
     [Serializable]
-    public abstract class BXSTweenable
+    public abstract class BXSTweenable : IEquatable<BXSTweenable>
     {
         // -- Settings
         /// <summary>
@@ -219,7 +220,7 @@ namespace BXFW.Tweening.Next
                     return BXSTween.MainRunner.SupportsFixedTick ? TickType : TickType.Variable;
                 }
 
-                // No 'MainRunner', just return the normal value.
+                // No 'MainRunner', just return the current value.
                 return TickType;
             }
         }
@@ -658,7 +659,7 @@ namespace BXFW.Tweening.Next
             Reset();
         }
         /// <summary>
-        /// Resets the state. (like the elapsed, the current loop count [only resets when !<see cref="IsPlaying"/>], whether if values are switched etc.)
+        /// Resets the state. (like the elapsed, the current loop count [only resets when not <see cref="IsPlaying"/>], whether if values are switched etc.)
         /// <br>Calling this while the tween is playing will reset all elapsed progress, but not the looping progress.</br>
         /// </summary>
         public virtual void Reset()
@@ -695,6 +696,30 @@ namespace BXFW.Tweening.Next
             BXSTween.DelayFramesCall(Play, 1, this);
         }
         /// <summary>
+        /// Waits 1 frame before calling <see cref="PlayFrom(float, int)"/> function.
+        /// <br>
+        /// Can be useful to be able to receive settings after the tween was created,
+        /// calling <see cref="PlayFrom(float, int)"/> will immediately lock the loop count and duration values.
+        /// </br>
+        /// </summary>
+        /// <inheritdoc cref="PlayFrom(float, int)"/>
+        public void DelayedPlayFrom(float currentElapsed, int loopsElapsed)
+        {
+            BXSTween.DelayFramesCall(() => PlayFrom(currentElapsed, loopsElapsed), 1, this);
+        }
+        /// <summary>
+        /// Waits 1 frame before calling <see cref="PlayFrom(float)"/> function.
+        /// <br>
+        /// Can be useful to be able to receive settings after the tween was created,
+        /// calling <see cref="PlayFrom(float)"/> will immediately lock the loop count and duration values.
+        /// </br>
+        /// </summary>
+        /// <inheritdoc cref="PlayFrom(float)"/>
+        public void DelayedPlayFrom(float totalElapsed)
+        {
+            BXSTween.DelayFramesCall(() => PlayFrom(totalElapsed), 1, this);
+        }
+        /// <summary>
         /// Waits 1 frame before calling <see cref="Pause"/> function.
         /// </summary>
         public void DelayedPause()
@@ -713,9 +738,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         protected void CancelDelayedActions()
         {
-            BXSTween.StopDelayCall(Play, this);
-            BXSTween.StopDelayCall(Pause, this);
-            BXSTween.StopDelayCall(Stop, this);
+            BXSTween.StopAllDelayCall(this);
         }
 
         /// <summary>
@@ -774,6 +797,93 @@ namespace BXFW.Tweening.Next
                 .Append(pSep).Append(" TickConditionAction=").Append(TickConditionAction);
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="Equals(BXSTweenable)"/>
+        /// <br/>
+        /// <br>This also type tests the given <paramref name="obj"/> to be a <see cref="BXSTweenable"/>.</br>
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as BXSTweenable);
+        }
+
+        /// <summary>
+        /// Returns whether if the tweenable is equal to the <paramref name="other"/>.
+        /// <br>This comparison returns whether if the tween parameters are the same, but ignores state variables and whether if it's the same reference.</br>
+        /// <br>To check if both objects are the same reference/object pointer use <see cref="object.ReferenceEquals(object, object)"/>.</br>
+        /// </summary>
+        public bool Equals(BXSTweenable other)
+        {
+            return other is not null &&
+                   Duration == other.Duration &&
+                   m_Delay == other.m_Delay &&
+                   m_LoopCount == other.m_LoopCount &&
+                   m_LoopType == other.m_LoopType &&
+                   m_WaitDelayOnLoop == other.m_WaitDelayOnLoop &&
+                   m_UseEaseCurve == other.m_UseEaseCurve &&
+                   m_Ease == other.m_Ease &&
+                   EqualityComparer<AnimationCurve>.Default.Equals(m_EaseCurve, other.m_EaseCurve) &&
+                   m_Speed == other.m_Speed &&
+                   m_Clamp01EasingSetter == other.m_Clamp01EasingSetter &&
+                   m_TickType == other.m_TickType &&
+                   m_IgnoreTimeScale == other.m_IgnoreTimeScale &&
+                   m_ID == other.m_ID &&
+                   EqualityComparer<object>.Default.Equals(m_IDObject, other.m_IDObject) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnPlayAction, other.OnPlayAction) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnStartAction, other.OnStartAction) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnTickAction, other.OnTickAction) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnPauseAction, other.OnPauseAction) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnRepeatAction, other.OnRepeatAction) &&
+                   EqualityComparer<BXSAction>.Default.Equals(OnEndAction, other.OnEndAction) &&
+                   EqualityComparer<BXSTickConditionAction>.Default.Equals(TickConditionAction, other.TickConditionAction) &&
+                   IsValid == other.IsValid &&
+                   IsSequence == other.IsSequence &&
+                   EqualityComparer<BXSTweenable>.Default.Equals(ParentTweenable, other.ParentTweenable);
+        }
+
+        /// <summary>
+        /// Returns the hash code calculated from the non-state variables.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            HashCode hash = new HashCode();
+            hash.Add(Duration);
+            hash.Add(m_Delay);
+            hash.Add(m_LoopCount);
+            hash.Add(m_LoopType);
+            hash.Add(m_WaitDelayOnLoop);
+            hash.Add(m_UseEaseCurve);
+            hash.Add(m_Ease);
+            hash.Add(m_EaseCurve);
+            hash.Add(m_Speed);
+            hash.Add(m_Clamp01EasingSetter);
+            hash.Add(ActualTickType);
+            hash.Add(m_IgnoreTimeScale);
+            hash.Add(m_ID);
+            hash.Add(m_IDObject);
+            hash.Add(OnPlayAction);
+            hash.Add(OnStartAction);
+            hash.Add(OnTickAction);
+            hash.Add(OnPauseAction);
+            hash.Add(OnRepeatAction);
+            hash.Add(OnEndAction);
+            hash.Add(TickConditionAction);
+            hash.Add(IsValid);
+            hash.Add(IsSequence);
+            hash.Add(ParentTweenable);
+            return hash.ToHashCode();
+        }
+
+        public static bool operator ==(BXSTweenable left, BXSTweenable right)
+        {
+            return EqualityComparer<BXSTweenable>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(BXSTweenable left, BXSTweenable right)
+        {
+            return !(left == right);
         }
     }
 }

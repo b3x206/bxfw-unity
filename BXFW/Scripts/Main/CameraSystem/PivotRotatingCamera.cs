@@ -15,13 +15,14 @@ namespace BXFW
         [Header("Camera Clamping")]
         public bool clampCameraRotation = true;
         [DrawIf(nameof(clampCameraRotation))]
-        public MinMaxValue xRotationRange = new MinMaxValue(-75f, 75f); 
+        public MinMaxValue xRotationRange = new MinMaxValue(-75f, 75f);
         [DrawIf(nameof(clampCameraRotation))]
-        public MinMaxValue yRotationRange = new MinMaxValue(-20f, 75f); 
+        public MinMaxValue yRotationRange = new MinMaxValue(-20f, 75f);
         public float lookSensitivity = 180f;
 
         [Header("Camera Zooming")]
-        [Range(.5f, 200f)] public float cameraScrollZoomSensitivity = 2f;
+        [Range(.5f, 200f)]
+        public float cameraScrollZoomSensitivity = 2f;
         public MinMaxValue distanceZoomLimits = new MinMaxValue(5f, 50f);
         private float m_currentZoom = 0f;
 
@@ -113,14 +114,14 @@ namespace BXFW
                 // Base arc rotation for X axis
                 Gizmos.color = Color.red;
                 Quaternion xRangeArcRotation = Quaternion.AngleAxis(90f, Vector3.up) * // Rotate towards inverse direction the camera is looking
-                    // Rota-te sideways so that it's X axis
+                                                                                       // Rota-te sideways so that it's X axis
                     Quaternion.AngleAxis(-90f, Vector3.right) *
                     // Arc difference rotation (as the given DrawArc is center aligned)
                     Quaternion.AngleAxis((xRotationRange.Min + xRotationRange.Max) / 2f, Vector3.forward);
                 // Upper arc rotation = AngleAxis(yRotation.Max, Vector3.down)
                 GizmoUtility.DrawArc(
-                    origin: pivotObj.position, 
-                    rotation: xRangeArcRotation * Quaternion.AngleAxis(yRotationRange.Max, Vector3.down), 
+                    origin: pivotObj.position,
+                    rotation: xRangeArcRotation * Quaternion.AngleAxis(yRotationRange.Max, Vector3.down),
                     distance: distanceBetweenPivot,
                     arcAngle: xRotationRange.Size()
                 );

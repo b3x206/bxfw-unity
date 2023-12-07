@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BXFW.Tools.Editor
 {
     /// <summary>
-    /// A list dropdown displayer. Similar to the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/>, it offers async searching and slightly better optimization.
+    /// A list dropdown displayer. Similar to the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/>, it also offers async searching and slightly better optimization.
     /// <br>This class is still in work-in-progress, but it is faster than the AdvancedDropdown.</br>
     /// </summary>
     /// <remarks>
@@ -12,6 +12,7 @@ namespace BXFW.Tools.Editor
     /// </remarks>
     /// <example>
     /// <![CDATA[
+    /// // ExampleDropdown.cs
     /// // Assembly-CSharp-Editor
     /// // Example dropdown.
     /// using UnityEngine;
@@ -36,8 +37,11 @@ namespace BXFW.Tools.Editor
     ///                 new SearchDropdownElement("Child Of Child 2")
     ///             }
     ///         };
-    ///         // The children can be also systematically be added using SearchDropdownElement.Add().        
-    /// 
+    ///         // The children can be also systematically be added using SearchDropdownElement.Add()
+    ///         // Basically a 'SearchDropdownElement' is an ICollection of 'SearchDropdownElement'
+    ///         // Which technically is a tree data type. (or not, you are reading the notes of the guy who failed DSA)
+    ///         
+    ///         // Return the root after creating it, this is required as a part of the abstract class 'SearchDropdown'.
     ///         return root;
     ///     }
     ///     protected override void OnElementSelected(SearchDropdownElement element)
@@ -47,7 +51,7 @@ namespace BXFW.Tools.Editor
     ///         // However this event gets called first before the property 'Event'.
     ///     }
     /// }
-    /// // ... Instantiation
+    /// // ... SampleClass.cs
     /// // Assembly-CSharp
     /// using UnityEngine;
     /// 
@@ -55,7 +59,7 @@ namespace BXFW.Tools.Editor
     /// {
     ///     public string dropdownSettingString;
     /// }
-    /// // ...
+    /// // ... SampleClassEditor.cs
     /// // Assembly-CSharp-Editor
     /// using UnityEngine;
     /// using UnityEditor;
@@ -93,7 +97,9 @@ namespace BXFW.Tools.Editor
     ///                 // -- 
     ///                 // For this example, a basic undo with direct access to the object is used
     ///                 Undo.RecordObject(target, "set value from dropdown");
-    ///                 target.dropdownSettingString = element.content.text;    
+    ///                 // You can create custom Element/Item classes that inherit from 'SearchDropdownElement' and type test it to get it's values
+    ///                 // For now we are just assigning the content text set to the element.
+    ///                 target.dropdownSettingString = element.content.text;
     ///             };
     ///         }
     ///         EditorGUILayout.EndHorizontal();
@@ -101,6 +107,9 @@ namespace BXFW.Tools.Editor
     ///         // Get the last rect for getting the proper value
     ///         // This is only needed on automatically layouted GUI's, with the GUI's
     ///         // that you know the rect to you can use that rect instead.
+    ///         // ..
+    ///         // This is not a problem with BXFW, it's a problem of the IMGUI system invoking 'Show' in Layout with wrong rect
+    ///         // (maybe it can be prevented, but idk. this workaround works)
     ///         if (Event.current.type == EventType.Repaint)
     ///         {
     ///             lastRepaintDropdownParentRect = GUILayoutUtility.GetLastRect();

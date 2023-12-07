@@ -3,12 +3,14 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace BXFW
 {
     /// <summary>
     /// <see cref="KeyCode"/> event that can be remapped from inspector.
     /// </summary>
+    /// <br>FIXME / TODO : Polling does not work on lower frame rates.</br>
     [Serializable]
     public class CustomInputEvent : IEquatable<CustomInputEvent>
     {
@@ -19,7 +21,11 @@ namespace BXFW
         /// as this will keep the last state until one of the <c>IsKey</c> methods are invoked.</br>
         /// </summary>
         public bool isPolled = false;
-        public List<KeyCode> KeyCodeReq;
+        /// <summary>
+        /// List of the keys that this event listens for.
+        /// </summary>
+        [SearchableKeyCodeField, FormerlySerializedAs("KeyCodeReq")]
+        public List<KeyCode> keyBinds;
 
         [Flags]
         public enum InputEventType
@@ -71,7 +77,7 @@ namespace BXFW
                 return;
             }
 
-            foreach (KeyCode key in KeyCodeReq)
+            foreach (KeyCode key in keyBinds)
             {
                 if (Input.GetKey(key))
                 {
@@ -176,7 +182,7 @@ namespace BXFW
 
             bool IsInvokable = false;
 
-            foreach (KeyCode key in KeyCodeReq)
+            foreach (KeyCode key in keyBinds)
             {
                 if (Input.GetKey(key))
                 {
@@ -203,7 +209,7 @@ namespace BXFW
             }
 
             bool isInvokable = false;
-            foreach (KeyCode key in KeyCodeReq)
+            foreach (KeyCode key in keyBinds)
             {
                 if (Input.GetKeyDown(key))
                 {
@@ -231,7 +237,7 @@ namespace BXFW
 
             // -- Non-polled
             bool isInvokable = false;
-            foreach (KeyCode key in KeyCodeReq)
+            foreach (KeyCode key in keyBinds)
             {
                 if (Input.GetKeyUp(key))
                 {
@@ -248,7 +254,7 @@ namespace BXFW
         /// </summary>
         public CustomInputEvent()
         {
-            KeyCodeReq = new List<KeyCode>();
+            keyBinds = new List<KeyCode>();
         }
         /// <summary>
         /// Creates a CustomInputEvent with <see cref="KeyCode"/>s assigned.
@@ -262,9 +268,9 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(keyCodes), "[CustomInputEvent::ctor()] Given List<KeyCode> parameter is null.");
             }
 
-            // For a participation trophy i added this ctor, enjoy (if you absolutely need performance)
+            // For a participation trophy i added this ctor, enjoy (if you absolutely need 10us more performance)
             // This class will migrate to a 'List<KeyCode>' because then now you can add new keys from code.
-            KeyCodeReq = keyCodes;
+            keyBinds = keyCodes;
         }
         /// <summary>
         /// Creates a CustomInputEvent with <see cref="KeyCode"/>s assigned.
@@ -284,7 +290,7 @@ namespace BXFW
             // 'CustomInputEvent' is meant to be attached to stuff like the main player (the input giver)
             // + IEnumerable isn't that big of a performance penalty, unless you add the entire KeyCode list
             // If this causes issues in the future, know that this is because i was lazy
-            KeyCodeReq = new List<KeyCode>(keyCodes);
+            keyBinds = new List<KeyCode>(keyCodes);
         }
         /// <summary>
         /// Creates a CustomInputEvent with <see cref="KeyCode"/>s assigned.
@@ -331,7 +337,7 @@ namespace BXFW
                 return false;
             }
 
-            return Enumerable.SequenceEqual(KeyCodeReq, other.KeyCodeReq);
+            return Enumerable.SequenceEqual(keyBinds, other.keyBinds);
         }
         public override bool Equals(object obj)
         {
@@ -345,13 +351,12 @@ namespace BXFW
         public override string ToString()
         {
             // Average 'KeyCode' key name string length : 4.157131960335621
-            // Calculated with python, rounding to nearest int
-            var sb = new StringBuilder(KeyCodeReq.Count * 4);
-            for (int i = 0; i < KeyCodeReq.Count; i++)
+            StringBuilder sb = new StringBuilder(keyBinds.Count * 4);
+            for (int i = 0; i < keyBinds.Count; i++)
             {
-                sb.Append($"{KeyCodeReq[i]}");
+                sb.Append($"{keyBinds[i]}");
 
-                if (i != KeyCodeReq.Count - 1)
+                if (i != keyBinds.Count - 1)
                 {
                     sb.Append(", ");
                 }
@@ -362,7 +367,7 @@ namespace BXFW
         public override int GetHashCode()
         {
             int hashCode = 1734127663;
-            hashCode = (hashCode * -1521134295) + EqualityComparer<List<KeyCode>>.Default.GetHashCode(KeyCodeReq);
+            hashCode = (hashCode * -1521134295) + EqualityComparer<List<KeyCode>>.Default.GetHashCode(keyBinds);
             return hashCode;
         }
     }

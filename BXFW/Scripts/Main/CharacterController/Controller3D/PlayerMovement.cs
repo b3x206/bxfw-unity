@@ -56,13 +56,13 @@ namespace BXFW
         /// </summary>
         [InspectorLine(.4f, .4f, .4f), Header("Input")]
         public bool useInternalInputMove = true;
-        public CustomInputEvent moveForwardInput  = new CustomInputEvent(true, new KeyCode[] { KeyCode.W, KeyCode.UpArrow });
-        public CustomInputEvent moveBackwardInput = new CustomInputEvent(true, new KeyCode[] { KeyCode.S, KeyCode.DownArrow });
-        public CustomInputEvent moveLeftInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.A, KeyCode.LeftArrow });
-        public CustomInputEvent moveRightInput    = new CustomInputEvent(true, new KeyCode[] { KeyCode.D, KeyCode.RightArrow });
-        public CustomInputEvent moveRunInput      = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftShift });
-        public CustomInputEvent moveJumpInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.Space });
-        public CustomInputEvent moveCrouchInput   = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftControl });
+        public CustomInputEvent moveForwardInput  = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
+        public CustomInputEvent moveBackwardInput = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
+        public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
+        public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
+        public CustomInputEvent moveJumpInput     = new KeyCode[] { KeyCode.Space };
+        public CustomInputEvent moveCrouchInput   = new KeyCode[] { KeyCode.LeftControl };
         /// <summary>
         /// Given external input movement to the player.
         /// <br>Can be used to give the <see cref="PlayerMovement"/> scripted movement or attaching your own input implementation.</br>
@@ -320,7 +320,7 @@ namespace BXFW
             return moveActualDir * moveCurrentSpeed;
         }
 
-        private const float DEFAULT_GROUNDED_GRAVITY = -2f;
+        private const float DefaultGroundedGravity = -2f;
         /// <summary>
         /// Player gravity.
         /// Applies the velocity to <see cref="m_gravityVelocity"/>.
@@ -344,7 +344,7 @@ namespace BXFW
             // If player is grounded but the player still has falling velocity.
             if (IsGrounded && m_gravityVelocity.MaxAxis() <= 0f && m_internalVelocity.MaxAxis() <= 0f)
             {
-                m_gravityVelocity = -gravity.normalized * DEFAULT_GROUNDED_GRAVITY;
+                m_gravityVelocity = -gravity.normalized * DefaultGroundedGravity;
             }
         }
 
@@ -361,7 +361,7 @@ namespace BXFW
 
             /// The '2f' added to this is required as <see cref="PlayerGravity()"/> function sets player gravity to -2f always.
             //m_gravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
-            m_gravityVelocity = -gravity.normalized * (jumpSpeed + DEFAULT_GROUNDED_GRAVITY);
+            m_gravityVelocity = -gravity.normalized * (jumpSpeed + DefaultGroundedGravity);
         }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {

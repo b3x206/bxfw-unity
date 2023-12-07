@@ -57,7 +57,7 @@ namespace BXFW.Tweening.Next
             {
                 if (m_MainRunner == null)
                 {
-                    if (NeedsInitialize)
+                    if (NeedsInitializeParameters)
                     {
                         return null;
                     }
@@ -69,10 +69,10 @@ namespace BXFW.Tweening.Next
             }
         }
         /// <summary>
-        /// Whether if the BXSTween needs it's <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> called.
+        /// Whether if the BXSTween needs it's initial <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> called.
         /// <br>After calling <see cref="Initialize(BXSGetterAction{IBXSTweenRunner}, Logger)"/> once will make this false.</br>
         /// </summary>
-        public static bool NeedsInitialize => m_GetMainRunnerAction == null || MainLogger == null;
+        public static bool NeedsInitializeParameters => m_GetMainRunnerAction == null || MainLogger == null;
 
         /// <summary>
         /// The <see cref="BXSTween"/> logger.
@@ -100,7 +100,7 @@ namespace BXFW.Tweening.Next
             /// <summary>
             /// Hash of the caller object.
             /// </summary>
-            private readonly int callerHash;
+            public readonly int callerHash;
 
             public bool UseWaitFrames { get; private set; }
 
@@ -185,6 +185,15 @@ namespace BXFW.Tweening.Next
 
             waitingActions.RemoveAt(indexOfTarget);
             return true;
+        }
+        /// <summary>
+        /// Stops all delay calls requested from <paramref name="caller"/>.
+        /// <br>The stopped delay call's actions are not invoked.</br>
+        /// </summary>
+        /// <param name="caller">The caller object to stop it's all calls. If this is null, all null object calls are stopped.</param>
+        internal static void StopAllDelayCall(object caller)
+        {
+            waitingActions.RemoveAll((a) => a.callerHash == (caller?.GetHashCode() ?? 0));
         }
 
         /// <summary>

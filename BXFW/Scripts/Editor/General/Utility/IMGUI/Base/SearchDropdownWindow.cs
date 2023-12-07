@@ -359,20 +359,23 @@ namespace BXFW.Tools.Editor
         {
             OnClosed?.Invoke();
         }
+
         private void DrawSearchBar()
         {
             Rect searchBarRect = GUILayoutUtility.GetRect(position.width, SearchBarHeight);
             // Draw a centered + padded search bar.
             EditorGUI.DrawRect(searchBarRect, StyleList.SearchBarBackgroundColor);
 
-            GUI.SetNextControlName(SearchBarControlName);
-            SearchString = EditorGUI.TextField(new Rect()
+            Rect paddedSearchBarRect = new Rect()
             {
                 x = searchBarRect.x + SearchBarPadding,
                 y = searchBarRect.y + 1f,
                 height = SearchBarHeight - 2f,
                 width = searchBarRect.width - (SearchBarPadding * 2f)
-            }, SearchString, StyleList.SearchBarStyle);
+            };
+
+            GUI.SetNextControlName(SearchBarControlName);
+            SearchString = EditorGUI.TextField(paddedSearchBarRect, SearchString, StyleList.SearchBarStyle);
         }
         private void DrawElementNameBar(SearchDropdownElement lastElement)
         {
@@ -655,9 +658,10 @@ namespace BXFW.Tools.Editor
             }
 
             // If the key is not a special key and is just a letter/number start searching
-            if (Event.current.type == EventType.KeyDown && !EditorGUIUtility.editingTextField)
+            if (parentManager.IsSearchable && Event.current.type == EventType.KeyDown && !EditorGUIUtility.editingTextField)
             {
-                // This could be janky? Unsure but it works good enough.
+                // TODO : FocusTextInControl does selection of the previous characters
+                // If no characters are appended then an input is missed, either way both behaviours are annoying
                 char character = Event.current.character;
                 if (!Event.current.functionKey && !char.IsControl(character))
                 {

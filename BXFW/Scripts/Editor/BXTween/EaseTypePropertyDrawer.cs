@@ -9,7 +9,7 @@ namespace BXFW.Tweening.Editor
     /// <summary>
     /// Draws a fancy selector for the <see cref="EaseType"/>.
     /// </summary>
-    [CustomPropertyDrawer(typeof(EaseType))]
+    [CustomPropertyDrawer(typeof(EaseType)), CanEditMultipleObjects]
     public class EaseTypePropertyDrawer : PropertyDrawer
     {
         public class EaseTypeSelectorDropdown : SearchDropdown
