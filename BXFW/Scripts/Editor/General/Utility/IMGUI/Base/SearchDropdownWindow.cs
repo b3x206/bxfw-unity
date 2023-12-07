@@ -71,9 +71,14 @@ namespace BXFW.Tools.Editor
             /// </summary>
             public static Color NameBarBackgroundColor = new Color(0.16f, 0.16f, 0.16f);
             /// <summary>
-            /// String used for a checkmark.
+            /// Default string used for a checkmark.
+            /// <br>To change this, use <see cref="CheckMarkContent"/>.</br>
             /// </summary>
-            public static string CheckMarkString = "✔";
+            public const string CheckMarkString = "✔";
+            /// <summary>
+            /// Content used to display the check mark string.
+            /// </summary>
+            public static GUIContent CheckMarkContent = new GUIContent(CheckMarkString);
 
             /// <summary>
             /// Manages a rich text scope for the text styles.
@@ -355,9 +360,14 @@ namespace BXFW.Tools.Editor
             HandleGlobalGUIEvents(lastElement);
         }
 
+        private void OnEnable()
+        {
+            Undo.undoRedoPerformed += HandleUndoRedo;
+        }
         private void OnDisable()
         {
             OnClosed?.Invoke();
+            Undo.undoRedoPerformed -= HandleUndoRedo;
         }
 
         private void DrawSearchBar()
@@ -387,7 +397,9 @@ namespace BXFW.Tools.Editor
             EditorGUI.DrawRect(elementBarRect, StyleList.NameBarBackgroundColor);
 
             // Back button
-            if (lastElement != parentManager.RootElement)
+            // Only show 'lastElement' back button if 'lastElement' is not root element
+            // if we are on the filtered elements, show only if it's a searchable window
+            if (lastElement != parentManager.RootElement && (lastElement != searchFilteredElements || parentManager.IsSearchable))
             {
                 if (GUI.Button(new Rect()
                 {
@@ -544,13 +556,23 @@ namespace BXFW.Tools.Editor
                 {
                     if (child.Selected)
                     {
-                        GUI.Label(sideMarkRect, StyleList.CheckMarkString);
+                        // Instead of just simply creating a 'GUIStyle(GUI.skin.label)' with centered text alignment i did this
+                        // Eh it's faster if we are going for optimization i guess
+                        float checkmarkHeight = GUI.skin.label.CalcHeight(StyleList.CheckMarkContent, sideMarkRect.width);
+                        // Center inside rect
+                        sideMarkRect.y += (sideMarkRect.height - checkmarkHeight) / 2f;
+                        sideMarkRect.height = checkmarkHeight;
+                        GUI.Label(sideMarkRect, StyleList.CheckMarkContent);
                     }
                 }
                 else
                 {
                     if (e.type == EventType.Repaint)
                     {
+                        // Center this style as well, it's not centered
+                        float rightArrowHeight = StyleList.RightArrowStyle.CalcHeight(GUIContent.none, sideMarkRect.width);
+                        sideMarkRect.y += (sideMarkRect.height - rightArrowHeight) / 2f;
+                        sideMarkRect.height = rightArrowHeight;
                         StyleList.RightArrowStyle.Draw(sideMarkRect, GUIContent.none, false, false, false, false);
                     }
                 }
@@ -612,64 +634,79 @@ namespace BXFW.Tools.Editor
             }
 
             // Handle keyboard events (TODO : Keyboard Arrow Key Navigation)
-            if (Event.current.type == EventType.KeyDown)
+            switch (Event.current.type)
             {
-                switch (Event.current.keyCode)
-                {
-                    case KeyCode.Escape:
-                        // Pressing Escape while searching something should just clear the search query
-                        if (!string.IsNullOrEmpty(SearchString))
-                        {
+                case EventType.KeyDown:
+                    // Handle function keys
+                    switch (Event.current.keyCode)
+                    {
+                        case KeyCode.Escape:
+                            // Pressing Escape while searching something should just clear the search query
+                            // Do this double clear only in 'IsSearchable' parent managers,
+                            // escape will close the window (on not 'IsSearchable') regardless of whether having a SearchString query or not.
+                            if (!string.IsNullOrEmpty(SearchString) && parentManager.IsSearchable)
+                            {
+                                EditorGUIUtility.editingTextField = false;
+                                SearchString = string.Empty;
+                                Repaint();
+                            }
+                            else
+                            {
+                                IsClosingWithSelectionIntent = false;
+                                Close();
+                            }
+                            return;
+                        case KeyCode.Return:
+                        case KeyCode.KeypadEnter:
+                            // Stop editing text
                             EditorGUIUtility.editingTextField = false;
-                            SearchString = string.Empty;
-                            Repaint();
-                        }
-                        else
-                        {
-                            IsClosingWithSelectionIntent = false;
-                            Close();
-                        }
-                        return;
-                    case KeyCode.Return:
-                    case KeyCode.KeypadEnter:
-                        // Stop editing text
-                        EditorGUIUtility.editingTextField = false;
-                        SearchDropdownElement nextElement = lastElement.FirstOrDefault();
+                            SearchDropdownElement nextElement = lastElement.FirstOrDefault();
 
-                        // Check if next element actually exists
-                        if (nextElement == null)
-                        {
-                            return;
-                        }
-                        // Select the next child into stack
-                        m_ElementStack.Push(nextElement);
-                        // Click on the next element
-                        if (!nextElement.HasChildren)
-                        {
-                            IsClosingWithSelectionIntent = true;
-                            Close();
-                            return;
-                        }
-                        break;
+                            // Check if next element actually exists
+                            if (nextElement == null)
+                            {
+                                return;
+                            }
+                            // Select the next child into stack
+                            m_ElementStack.Push(nextElement);
+                            // Click on the next element
+                            if (!nextElement.HasChildren)
+                            {
+                                IsClosingWithSelectionIntent = true;
+                                Close();
+                                return;
+                            }
+                            break;
 
-                    default:
-                        break;
-                }
+                        default:
+                            break;
+                    }
+
+                    // If the key is not a special key and is just a letter/number start searching
+                    if (parentManager.IsSearchable && !EditorGUIUtility.editingTextField)
+                    {
+                        // TODO : FocusTextInControl does selection of the previous characters
+                        // If no characters are appended then an input is missed, either way both behaviours are annoying
+                        char character = Event.current.character;
+                        if (!Event.current.functionKey && !char.IsControl(character))
+                        {
+                            // Get the last key as nice key
+                            EditorGUI.FocusTextInControl(SearchBarControlName);
+                            SearchString += character;
+                        }
+                    }
+                    break;
             }
+        }
+        /// <summary>
+        /// Closes the window in a case of an undo or redo.
+        /// </summary>
+        private void HandleUndoRedo()
+        {
+            if (parentManager.CloseOnUndoRedoAction)
 
-            // If the key is not a special key and is just a letter/number start searching
-            if (parentManager.IsSearchable && Event.current.type == EventType.KeyDown && !EditorGUIUtility.editingTextField)
-            {
-                // TODO : FocusTextInControl does selection of the previous characters
-                // If no characters are appended then an input is missed, either way both behaviours are annoying
-                char character = Event.current.character;
-                if (!Event.current.functionKey && !char.IsControl(character))
-                {
-                    // Get the last key as nice key
-                    EditorGUI.FocusTextInControl(SearchBarControlName);
-                    SearchString += character;
-                }
-            }
+            IsClosingWithSelectionIntent = false;
+            Close();
         }
 
         /// <summary>

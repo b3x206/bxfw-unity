@@ -164,16 +164,19 @@ namespace BXFW.Tools.Editor
         /// Whether to allow rich text reprensentation on the OptimizedSearchDropdown elements. 
         /// <br>Note : Any <see cref="SearchDropdownElement"/> can override or ignore this. This only applies
         /// to the global label (<see cref="SearchDropdownWindow.StyleList"/>) styling.</br>
+        /// <br>By default, this value is <see langword="false"/>.</br>
         /// </summary>
         protected internal virtual bool AllowRichText => false;
         /// <summary>
         /// Whether to allow selection event to be fired for elements with children.
         /// <br>This will show an extra button and will allow selection of elements with children.</br>
+        /// <br>By default, this value is <see langword="false"/>.</br>
         /// </summary>
         protected internal virtual bool AllowSelectionOfElementsWithChild => false;
         /// <summary>
         /// Whether if this 'OptimizedSearchDropdown' will have a search bar.
-        /// <br>This will affect the height.</br>
+        /// <br>This will affect the height of the dropdown depending on whether to have a search bar.</br>
+        /// <br>By default, this value is <see langword="true"/>.</br>
         /// </summary>
         protected internal virtual bool IsSearchable => true;
         /// <summary>
@@ -189,8 +192,17 @@ namespace BXFW.Tools.Editor
         protected internal virtual StringComparison SearchComparison => StringComparison.Ordinal;
         /// <summary>
         /// Whether to display the current elements count inside the header text.
+        /// <br>The header text will be shown as "RootElement.content.name | RootElement.Count".
+        /// The "| RootElement.Count" is added/controlled by this value.</br>
+        /// <br>By default, this value is <see langword="true"/>.</br>
         /// </summary>
         protected internal virtual bool DisplayCurrentElementsCount => true;
+        /// <summary>
+        /// Whether to close the 'SearchDropdown' in an event of an undo.
+        /// <br>Setting this <see langword="false"/> does not break anything, it is just added for nicer experience.</br>
+        /// <br>By default, this value is <see langword="true"/>.</br>
+        /// </summary>
+        public virtual bool CloseOnUndoRedoAction { get; set; } = true;
         /// <summary>
         /// Placeholder string displayed for dropdowns without any elements.
         /// </summary>
@@ -205,14 +217,10 @@ namespace BXFW.Tools.Editor
         // Sorting can be done by the caller who builds the root.
 
         /// <summary>
-        /// Creates a search dropdown, nothing fancy is done here.
+        /// Creates a search dropdown, nothing fancy is done here except for the c# stuff.
         /// </summary>
         public SearchDropdown()
-        {
-            // Q : What is the purpose of making the state visible and public if we can't change anything on it?
-            // A : State can be serialized, spawning windows at the current given state
-            // But, like, editor windows are SerializableObject's anyway so, i may or may not make the state visible
-        }
+        { }
 
         private SearchDropdownElement m_RootElement;
         /// <summary>
@@ -254,11 +262,14 @@ namespace BXFW.Tools.Editor
                 }
                 m_RootElement = null;
             };
+
+            PostBuildDropdown();
         }
 
         /// <summary>
         /// Sets the searching filter of the window.
-        /// <br>Only applies to <see cref="IsSearchable"/> dropdowns.</br>
+        /// On non-searchable dropdowns, this will make the window display an unclearable search results display.
+        /// <br>This is <b>not safe</b> to be called from <see cref="BuildRoot"/>, use <see cref="PostBuildDropdown"/> for calling this.</br>
         /// </summary>
         protected void SetFilter(string searchString)
         {
@@ -268,8 +279,16 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Build the root of this searching dropdown.
         /// </summary>
-        /// <returns>The root element containing the elements. If the root element has no children nothing will happen.</returns>
+        /// <returns>
+        /// The root element containing the elements. 
+        /// If the root element has no children a dropdown with <see cref="NoElementPlaceholderText"/> will appear.
+        /// </returns>
         protected abstract SearchDropdownElement BuildRoot();
+        /// <summary>
+        /// Called after everything of the dropdown was initialized on <see cref="Show(Rect)"/>.
+        /// </summary>
+        protected virtual void PostBuildDropdown()
+        { }
 
         /// <summary>
         /// Callback when an element is selected.

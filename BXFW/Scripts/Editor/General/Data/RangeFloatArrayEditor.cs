@@ -15,11 +15,11 @@ namespace BXFW.ScriptEditor
         /// Padding applied to the GUI.
         /// <br>The padded area will be subtracted from the <see cref="OnGUI(Rect, SerializedProperty, GUIContent)"/>'s position parameter.</br>
         /// </summary>
-        private const float PADDING = 2f;
+        private const float Padding = 2f;
         /// <summary>
         /// Padding between horizontal GUI elements.
         /// </summary>
-        private const float HORIZONTAL_PADDING = 3f;
+        private const float HorizontalPadding = 3f;
 
         /// <summary>
         /// Increment/Decrement element count button's width.
@@ -83,7 +83,7 @@ namespace BXFW.ScriptEditor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight + PADDING;
+            return EditorGUIUtility.singleLineHeight + Padding;
         }
 
         /// <summary>
@@ -111,9 +111,9 @@ namespace BXFW.ScriptEditor
             float maxTextWidth = TextValueInitialWidth + (NumberStringLength(target.Max) * TextValueCharWidth);
             // Compensate for padding?
             Rect dragAreaBoxRect = new Rect(
-                position.x + minTextWidth + HORIZONTAL_PADDING,
+                position.x + minTextWidth + HorizontalPadding,
                 position.y,
-                position.width - (minTextWidth + HORIZONTAL_PADDING + maxTextWidth + HORIZONTAL_PADDING + ((IncDecElemBtnWidth + HORIZONTAL_PADDING) * 2f)),
+                position.width - (minTextWidth + HorizontalPadding + maxTextWidth + HorizontalPadding + ((IncDecElemBtnWidth + HorizontalPadding) * 2f)),
                 position.height
             );
             GUI.Box(dragAreaBoxRect, GUIContent.none, GUI.skin.horizontalSlider);
@@ -126,7 +126,7 @@ namespace BXFW.ScriptEditor
             );
             float minValue = EditorGUI.FloatField(minValueFieldRect, target.Min);
             Rect maxValueFieldRect = new Rect(
-                position.x + minTextWidth + dragAreaBoxRect.width + HORIZONTAL_PADDING,
+                position.x + minTextWidth + dragAreaBoxRect.width + HorizontalPadding,
                 position.y,
                 maxTextWidth,
                 position.height
@@ -136,7 +136,7 @@ namespace BXFW.ScriptEditor
             // Draw the 'increment/decrement array elements'
             int arrayLength = target.Count;
             Rect incArrayCntRect = new Rect(
-                maxValueFieldRect.x + maxValueFieldRect.width + HORIZONTAL_PADDING,
+                maxValueFieldRect.x + maxValueFieldRect.width + HorizontalPadding,
                 position.y,
                 IncDecElemBtnWidth,
                 position.height
@@ -146,7 +146,7 @@ namespace BXFW.ScriptEditor
                 arrayLength++;
             }
             Rect decArrayCntRect = new Rect(
-                incArrayCntRect.x + incArrayCntRect.width + HORIZONTAL_PADDING,
+                incArrayCntRect.x + incArrayCntRect.width + HorizontalPadding,
                 position.y,
                 IncDecElemBtnWidth,
                 position.height
@@ -172,7 +172,7 @@ namespace BXFW.ScriptEditor
             }
 
             // Modify Dropdown UI
-            float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (HORIZONTAL_PADDING * 2f)); // The corrected drag area width. !! correction needed !!
+            float dragAreaWidth = dragAreaBoxRect.width - (DraggableBoxWidth + (HorizontalPadding * 2f)); // The corrected drag area width. !! correction needed !!
             Rect modifyValueRect = modifyIndex >= 0 && (interactedPropertyID == currentPropertyID) ?
             new Rect(
                 x: MathUtility.Map(dragAreaBoxRect.x, dragAreaBoxRect.x + dragAreaWidth, target.Min, target.Max, target[modifyIndex]) - (DraggableBoxModifyValueWidth / 2f),
@@ -405,8 +405,8 @@ namespace BXFW.ScriptEditor
                 position = previousRepaintRect;
             }
             // top/bottom paddings
-            position.height -= PADDING;
-            position.y += PADDING / 2f;
+            position.height -= Padding;
+            position.y += Padding / 2f;
 
             // -- Label Field
             EditorGUI.BeginChangeCheck();

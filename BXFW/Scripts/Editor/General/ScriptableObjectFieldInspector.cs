@@ -9,7 +9,6 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using System.Collections;
-using System.Reflection;
 
 namespace BXFW
 {
@@ -884,8 +883,9 @@ namespace BXFW
                     );
                     EditorGUI.DrawRect(areaRect, EditorGUIUtility.isProSkin ? new Color(0.2f, 0.2f, 0.2f) : new Color(0.91f, 0.91f, 0.91f));
 
-                    // Flex space with nesting? WE HAVE THOSE NOW!
-                    // Note : Nested elements don't draw if we send a 'Used' event on the parent 'OnInspectorGUI's
+                    // Flex space with nesting? We have those now!
+                    // Nested elements used to not draw if we send a 'Used' then 'Layout' event on the parent 'OnInspectorGUI's
+                    // This is no longer valid, it was an issue with the injected GUILayoutGroup element positioning (on EventType.Layout)
                     // --
                     // Whoops, ReorderableList is now trying to do it's own things
                     // Time to inject GUILayoutEntry into the current window context while in Repaint. HAHAHAHAHAHAHA
@@ -957,6 +957,8 @@ namespace BXFW
                     // TODO : Allow for creation of a clipped area
                     // For some reason GUI.BeginArea and GUI.EndArea seems to shift the rect position by some value (huh i wonder why)
                     // And GUI.BeginClip only renders one UI with 'areaRect'
+                    // GUI.BeginClip for some reason offsets the UI rendering/clipping as well
+                    // Have to check the current clip stack positioning methods? Which i don't want to do now, it's ok to not have a clip for now.
                     // GUILayout.EndArea();
 
                     EditorGUI.indentLevel -= 1;

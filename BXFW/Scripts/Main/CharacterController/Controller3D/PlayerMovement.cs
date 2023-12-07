@@ -61,8 +61,8 @@ namespace BXFW
         public CustomInputEvent moveLeftInput     = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
         public CustomInputEvent moveRightInput    = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
         public CustomInputEvent moveRunInput      = new KeyCode[] { KeyCode.LeftShift };
-        public CustomInputEvent moveJumpInput     = new KeyCode[] { KeyCode.Space };
-        public CustomInputEvent moveCrouchInput   = new KeyCode[] { KeyCode.LeftControl };
+        public CustomInputEvent moveJumpInput     = new CustomInputEvent(true, new KeyCode[] { KeyCode.Space });
+        public CustomInputEvent moveCrouchInput   = new CustomInputEvent(true, new KeyCode[] { KeyCode.LeftControl });
         /// <summary>
         /// Given external input movement to the player.
         /// <br>Can be used to give the <see cref="PlayerMovement"/> scripted movement or attaching your own input implementation.</br>

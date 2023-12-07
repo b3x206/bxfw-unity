@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using static Codice.CM.Common.CmCallContext;
 
 namespace BXFW
 {
@@ -565,7 +564,6 @@ namespace BXFW
             }
 
             Vector3 upwards = new Vector3(matrix.m01, matrix.m11, matrix.m21);
-
             return Quaternion.LookRotation(forward, upwards);
         }
         /// <summary>

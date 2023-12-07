@@ -12,13 +12,16 @@ namespace BXFW.Tweening.Editor
     [CustomPropertyDrawer(typeof(EaseType))]
     public class EaseTypePropertyDrawer : PropertyDrawer
     {
-        public class EaseTypeSelectorDropdown : SearchDropdown
+        /// <summary>
+        /// A selection dropdown for <see cref="EaseType"/>.
+        /// </summary>
+        public class SelectorDropdown : SearchDropdown
         {
             public class Item : SearchDropdownElement
             {
                 private const float PlotFieldHeight = 40f;
-                private const float PlotFieldWidth = 70f;
-                private const float EasePreviewDuration = 0.5f;
+                private const float PlotFieldWidth = 60f;
+                private const float EasePreviewDuration = 0.6f;
 
                 private ElementGUIDrawingState previousGUIState;
                 private float currentPreviewElapsed = 0f;
@@ -170,7 +173,7 @@ namespace BXFW.Tweening.Editor
                 return rootElement;
             }
 
-            public EaseTypeSelectorDropdown(EaseType selected)
+            public SelectorDropdown(EaseType selected)
             {
                 selectedEase = selected;
             }
@@ -206,7 +209,7 @@ namespace BXFW.Tweening.Editor
             EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
             if (EditorGUI.DropdownButton(dropdownSelectorPosition, new GUIContent(ObjectNames.NicifyVariableName(selectedValue.ToString()), label.tooltip), FocusType.Keyboard))
             {
-                EaseTypeSelectorDropdown selectorDropdown = new EaseTypeSelectorDropdown(selectedValue);
+                SelectorDropdown selectorDropdown = new SelectorDropdown(selectedValue);
                 selectorDropdown.Show(dropdownSelectorPosition);
 
                 SerializedObject copySo = new SerializedObject(property.serializedObject.targetObjects);
@@ -214,7 +217,7 @@ namespace BXFW.Tweening.Editor
 
                 selectorDropdown.OnElementSelectedEvent += (SearchDropdownElement element) =>
                 {
-                    if (!(element is EaseTypeSelectorDropdown.Item item))
+                    if (!(element is SelectorDropdown.Item item))
                     {
                         return;
                     }

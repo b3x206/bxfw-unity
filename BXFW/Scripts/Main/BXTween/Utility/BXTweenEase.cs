@@ -1,7 +1,4 @@
 ﻿using UnityEngine;
-using BXFW.Tweening.Events;
-using System.Collections.Generic;
-using BXFW.Tweening.Next.Events;
 using System.Runtime.CompilerServices;
 
 namespace BXFW.Tweening

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -132,13 +133,22 @@ namespace BXFW.Tools.Editor
                         }
 
                         EditorTask t = currentTasksGen[i];
-                        // pretty sure the user can see that there's null tasks, we also put a helpbox there.
+                        // pretty sure the user can see that there's null tasks, i also put a helpbox there.
                         if (t == null)
                         {
                             continue;
                         }
 
-                        t.Run();
+                        try
+                        {
+                            t.Run();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning("[EditorTasksWindow::OnGUI(Begin Tasks)] An exception occured during running of a task. The next log will contain details. Other tasks will not be run.");
+                            Debug.LogException(e);
+                            break;
+                        }
                     }
 
                     EditorUtility.ClearProgressBar();

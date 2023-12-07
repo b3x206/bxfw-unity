@@ -20,6 +20,8 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public bool sortKeysAlphabetically = false;
 
+        protected internal override bool AllowRichText => true;
+
         /// <summary>
         /// Item that contains extra data for selection.
         /// </summary>
@@ -30,7 +32,7 @@ namespace BXFW.Tools.Editor
             /// </summary>
             public readonly KeyCode keyValue;
 
-            public Item(KeyCode keyCodeValue) : base(keyCodeValue.ToString())
+            public Item(KeyCode keyCodeValue) : base($"{keyCodeValue} <color=#a8d799> | {(long)keyCodeValue}</color>")
             {
                 keyValue = keyCodeValue;
             }
@@ -69,11 +71,16 @@ namespace BXFW.Tools.Editor
         protected override SearchDropdownElement BuildRoot()
         {
             IEnumerable<KeyCode> keyCodes = Enum.GetValues(typeof(KeyCode)).Cast<KeyCode>();
+            string[] keyEnumNames = Enum.GetNames(typeof(KeyCode));
             SearchDropdownElement rootElement = new SearchDropdownElement("Select KeyCode", keyCodes.Count());
 
-            foreach (KeyCode key in keyCodes)
+            foreach (KeyValuePair<int, KeyCode> pair in keyCodes.Indexed())
             {
-                rootElement.Add(new Item(key) { Selected = key != KeyCode.None && key == selectedKeyCode });
+                // Append the name like this as 'GetEnumName' or 'Enum.ToString' always only gets the first alias for 'ToString'
+                rootElement.Add(new Item(pair.Value, $"{keyEnumNames[pair.Key]} <color=#a8d799> | {(long)pair.Value}</color>") 
+                { 
+                    Selected = pair.Value != KeyCode.None && pair.Value == selectedKeyCode
+                });
             }
 
             if (sortKeysAlphabetically)

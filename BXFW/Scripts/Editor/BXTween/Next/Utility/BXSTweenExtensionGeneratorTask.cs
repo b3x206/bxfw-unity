@@ -136,6 +136,7 @@ namespace BXFW.Tweening.Next.Editor
         private const string TkPartial = "partial";
         private const string TkClass = "class";
         private const string TkExtensionThis = "this";
+        private const string TkExtensionNameOf = "nameof";
         private const string TkParameterSep = ",";
         private const string TkIndent = "    ";
         private const string TkReturn = "return";
@@ -172,7 +173,26 @@ namespace BXFW.Tweening.Next.Editor
                 }
 
                 // Copy the file
-                File.Copy(GenerateFileAbsolutePath, $"{GenerateFileAbsolutePath}.bak", false);
+                // Get unique backup file name
+                string backupFileName = $"{GenerateFileAbsolutePath}.bak";
+                ulong fileNameExtensionId = 0;
+                while (File.Exists(backupFileName))
+                {
+                    backupFileName = $"{GenerateFileAbsolutePath}.{fileNameExtensionId}.bak";
+                    unchecked
+                    {
+                        fileNameExtensionId++;
+                    }
+
+                    // Check if we overflowed
+                    // This is just for fun or if i made a stupid bug.
+                    if (fileNameExtensionId == 0)
+                    {
+                        throw new Exception($"[BXSTweenExtensionGeneratorTask::GetWarning] I have no idea how you managed to cram {ulong.MaxValue} amount of files into your file system, but congratulations.");
+                    }
+                }
+
+                File.Copy(GenerateFileAbsolutePath, backupFileName, false);
             }
 
             return true;
@@ -226,9 +246,10 @@ namespace BXFW.Tweening.Next.Editor
                 foreach (ExtensionMethodTemplate method in template.extensionMethods)
                 {
                     // The following code will cause you to remove your eyes
-                    // It is chalice simulator tier. In fact it's probably worse.
-                    // Complexity is probably StudentScript.cs and notation is o(n^31289391283)
+                    // Complexity and notation is o(n!*n!)
                     // Basically a perfect candidate for r/programminghorror
+                    // (this is partially a joke, generation is relatively fast but this looks terrible)
+                    // (just don't ctrl+f12 StringBuilder.Append)
 
                     // Check for uniqueness of 'method.MethodName'
                     if (generatedMethodNames.Contains(method.MethodName))
@@ -253,6 +274,11 @@ namespace BXFW.Tweening.Next.Editor
                     }
 
                     Type twContextType = ReturnContextTypeForType(memberFieldType);
+                    if (twContextType == null)
+                    {
+                        throw new InvalidOperationException($"[BXSTweenExtensionGeneratorTask::Run] Given memberFieldType \"{memberFieldType}\" does not have a corresponding BXSTweenContextType.");
+                    }
+
                     if (!currentNamespaceUsings.Contains(twContextType.Namespace))
                     {
                         currentNamespaceUsings.Add(twContextType.Namespace);
@@ -284,7 +310,7 @@ namespace BXFW.Tweening.Next.Editor
                     // Target null check
                     sb.Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append("if (").Append(TkTargetParameterName).Append(" == null)").AppendLine()
                         .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkOpenScope).AppendLine()  // {
-                            .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkIndent).Append("throw new System.ArgumentNullException(\"[").Append(ExtensionMethodTemplate.MethodNamePrefix).Append(method.MethodName).Append("] Given argument was null.\")").Append(TkSemicolon).AppendLine()
+                            .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkIndent).Append("throw new System.ArgumentNullException(").Append(TkExtensionNameOf).Append(TkOpenParams).Append(TkTargetParameterName).Append(TkCloseParams).Append(", ").Append("\"[").Append(ExtensionMethodTemplate.MethodNamePrefix).Append(method.MethodName).Append("] Given argument was null.\")").Append(TkSemicolon).AppendLine()
                         .Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkCloseScope).AppendLine() // }
                       .AppendLine() // Gap between the actual method calls
                                     // BXSTweenContext context = new BXSTweenContext(duration);
@@ -300,7 +326,7 @@ namespace BXFW.Tweening.Next.Editor
                     sb.Append(namespaceIndent).Append(TkIndent).Append(TkIndent).Append(TkReturn).Append(" ").Append(TkContextValueName).Append(TkSemicolon).AppendLine();
                     sb.Append(namespaceIndent).Append(TkIndent).Append(TkCloseScope).AppendLine(); // }\n
 
-                    // StringBuilder after this : •'_'• (angery)
+                    // StringBuilder after this : •`_´• (angery)
                     generatedMethodNames.Add(method.MethodName);
                 }
             }

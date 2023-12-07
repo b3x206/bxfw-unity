@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 namespace BXFW
 {
     /// <summary>
-    /// Acts like an regular float array, but the values can't be equal and they are clamped between <see cref="Min"/> and <see cref="Max"/>.
+    /// Acts like a regular float array, but the values can't be equal and they are clamped between <see cref="Min"/> and <see cref="Max"/>.
     /// </summary>
     [Serializable]
     public class RangeFloatArray : IList<float>, IEquatable<RangeFloatArray>, IEquatable<IEnumerable<float>>
@@ -22,7 +22,7 @@ namespace BXFW
         /// <summary>
         /// The minimum difference between the minimum and maximum values.
         /// </summary>
-        private const float MINMAX_OFFSET = .0001f;
+        private const float MinMaxOffset = .0001f;
 
         /// <summary>
         /// Minimum value of the elements in the array defined.
@@ -33,7 +33,7 @@ namespace BXFW
             get { return m_Min; }
             set 
             { 
-                m_Min = Mathf.Clamp(value, float.MinValue, Max - (MINMAX_OFFSET + Mathf.Epsilon));
+                m_Min = Mathf.Clamp(value, float.MinValue, Max - (MinMaxOffset + Mathf.Epsilon));
             
                 // Check array
                 for (int i = 0; i < Count; i++)
@@ -53,7 +53,7 @@ namespace BXFW
             get { return m_Max; }
             set
             { 
-                m_Max = Mathf.Clamp(value, Min + (MINMAX_OFFSET + Mathf.Epsilon), float.MaxValue);
+                m_Max = Mathf.Clamp(value, Min + (MinMaxOffset + Mathf.Epsilon), float.MaxValue);
 
                 // Check array
                 for (int i = 0; i < Count; i++)

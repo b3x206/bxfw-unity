@@ -1,4 +1,4 @@
-#if UNITY_ANDROID || UNITY_ANDROID_API || UNITY_IOS
+#if UNITY_ANDROID || UNITY_IOS
 using UnityEngine;
 
 namespace BXFW
