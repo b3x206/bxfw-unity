@@ -20,10 +20,8 @@ namespace BXFW
         /// </summary>
         public ParallaxBackgroundGroup parentGroup;
 
-        public TilingSpriteRenderer TilingRendererComponent
-        {
-            get { return m_TilingRendererComponent; }
-        }
+        public TilingSpriteRenderer TilingRendererComponent => m_TilingRendererComponent;
+
         [SerializeField] private TilingSpriteRenderer m_TilingRendererComponent;
 
         public void InitilazeTilingSpriteRenderer(Sprite rendSprite)

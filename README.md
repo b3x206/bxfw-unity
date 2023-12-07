@@ -8,7 +8,7 @@ It may contain half-baked scripts for the time being, but at the beta-ish releas
 
 The code is &lt;summary/&gt; ified, basically what the code does is in the code file (which is not docs, but as soon as i feel like adding `docfx` as github pages it will be slightly better, i don't want to write docs one by one).
 
-* Supported version(s) : `2021.3` or higher, but may work on `2020` versions.
+* Supported version(s) : `2021.3` or higher, but may work on `2020.x` versions.
 
 ## How to use : 
 * Clone using ```$ git clone https://github.com/b3x206/bxfw-unity.git``` to desired directory (somewhere inside Assets folder, it has to be inside Assets). (Or download the zip of source code)
@@ -20,8 +20,9 @@ The code is &lt;summary/&gt; ified, basically what the code does is in the code 
 
 ## Problem / Bug? :
 * Create an issue about the problem with the offending files / minimal repro files (or instructions) and a concise description.
-* Or try to solve in this undocumented hellhole codebase and if you succeed open pull
+* Or try to solve in this undocumented one hell of a codebase and if you succeed open PR
 
 ## Other Stuff / Licenses : 
 * Portions of the project have been copied from https://github.com/nothke/unity-utils and is owned by Ivan Notaroš under the terms of the MIT license. See https://github.com/nothke/unity-utils/blob/9ba0ae06674f4a6be67ddbbfcc876f72ee6eb2b1/Runtime/RTUtils.cs for the exact file copied.
 * Portions of the project have been copied from https://github.com/gkjohnson/unity-dithered-transparency-shader and is owned by Garrett Johnson under the terms of the MIT license.
+* These need to be attributed inside some portion of your game, whether if it be credits or not. If these files are completely removed or not included with compiled builds of your game it may not be needed, but i am not a lawyer.

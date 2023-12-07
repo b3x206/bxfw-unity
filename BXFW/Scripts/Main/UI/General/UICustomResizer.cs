@@ -1,12 +1,12 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 namespace BXFW.UI
 {
     /// <summary>
-    /// Resizes itself according to rect transform constraint. (Acts like an <see cref="UnityEngine.UI.ContentSizeFitter"/>)
+    /// Resizes itself according to rect transform constraint. (Acts like an <see cref="ContentSizeFitter"/>)
     /// <br>The inheriting class can use the '<see cref="ResizeTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
@@ -15,10 +15,14 @@ namespace BXFW.UI
         [Header(":: Settings")]
         public bool applyX = true;
         public bool applyY = true;
-        [DrawIf(nameof(applyX))] public float paddingX = 0f;
-        [DrawIf(nameof(applyX))] public MinMaxValue sizeLimitX = MinMaxValue.Zero;
-        [DrawIf(nameof(applyY))] public float paddingY = 0f;
-        [DrawIf(nameof(applyY))] public MinMaxValue sizeLimitY = MinMaxValue.Zero;
+        [DrawIf(nameof(applyX))] 
+        public float paddingX = 0f;
+        [DrawIf(nameof(applyX)), Clamp(0f, float.MaxValue)] 
+        public MinMaxValue sizeLimitX = MinMaxValue.Zero;
+        [DrawIf(nameof(applyY))] 
+        public float paddingY = 0f;
+        [DrawIf(nameof(applyY)), Clamp(0f, float.MaxValue)] 
+        public MinMaxValue sizeLimitY = MinMaxValue.Zero;
         [Tooltip("Disables this gameObject if the target is disabled too.")]
         public bool disableIfTargetIs = false;
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;

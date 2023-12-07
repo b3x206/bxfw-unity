@@ -95,11 +95,11 @@ namespace BXFW
         }
 
         [InspectorLine(.4f, .4f, .4f), Header("Player Kinematic Physics")]
-        [SerializeField] private bool useGravity = true;
+        [SerializeField] private bool m_UseGravity = true;
         public bool UseGravity
         {
-            get { return useGravity; }
-            set { useGravity = value; }
+            get => m_UseGravity;
+            set => m_UseGravity = value;
         }
         /// <summary>
         /// Current gravity for the player controller.
@@ -214,7 +214,7 @@ namespace BXFW
             }
 
             //// Is Player Grounded? 
-            IsGrounded = useGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
+            IsGrounded = m_UseGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
 
             //// Main Movement    ///
             if (useInternalInputMove)
@@ -328,7 +328,7 @@ namespace BXFW
         private void PlayerGravity()
         {
             // -- No gravity
-            if (!useGravity)
+            if (!m_UseGravity)
             {
                 m_gravityVelocity = Vector3.zero;
                 return;

@@ -26,7 +26,7 @@ namespace BXFW
                 // If instance isn't loaded, we need to load it.
                 // Simplest way to find instance is to call Resources.LoadAll<>() with a empty directory.
                 // While inefficient and 'u call load on MonoBehaviour Constructor thats illegal' types of error prone, it will work for now.
-                var soCurrent = Resources.LoadAll<T>(string.Empty);
+                T[] soCurrent = Resources.LoadAll<T>(string.Empty);
 
                 if (soCurrent.Length <= 0)
                 {

@@ -145,6 +145,7 @@ namespace BXFW.Tools.Editor
                         }
                         catch (Exception e)
                         {
+                            // Do this caching as the ProgressBar is never cleared if the exception is unhandled
                             Debug.LogWarning("[EditorTasksWindow::OnGUI(Begin Tasks)] An exception occured during running of a task. The next log will contain details. Other tasks will not be run.");
                             Debug.LogException(e);
                             break;

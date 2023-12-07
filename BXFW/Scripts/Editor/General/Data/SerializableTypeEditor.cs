@@ -102,6 +102,10 @@ namespace BXFW.ScriptEditor
 
         private static void SetTypeInType(ref Type check, Type target, int targetTypeIndex, Type setValue)
         {
+            // FIXME / TODO : This method's impl is kinda faulty
+            // Get the target type and the depth + generic type index
+            // Otherwise it sets it incorrectly
+
             // Non-generic type, it is way easier to set the type
             if (check == target)
             {
@@ -126,7 +130,7 @@ namespace BXFW.ScriptEditor
                     // We cannot set the type like this
                     //check.GenericTypeArguments[i] = setValue;
                     // So there's two options left : 
-                    // A : Create a generic type with placeholder types for the remaining arguments (System.Object is what i am thinking now)
+                    // A : Create a generic type with placeholder types for the remaining arguments
                     // B : Pass a sliceable type datatype, which has the ability to have resizable GenericTypeArguments
                     // A will suffice for now. This method will trust any class given to it as the dropdown is meant to set this normally.
                     // --
