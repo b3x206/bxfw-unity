@@ -47,6 +47,7 @@ using static BXFW.Tweening.BXTween;
 ///     2 : Runs with very high performance (about 1 tween per 3 hours!! [that is equal to 1,54320987654321e-6 tweens per second] wow such fast)
 ///     3 : Very coding pattern (what)
 ///     4 : Who cares about consistency? if the code works it's good enough.
+///     5 : Throws exceptions while loading <see cref="BXFW.Tweening.BXTweenSettings"/>
 /// 
 /// But why did you spend effort on this? there are better alternatives :
 ///     I don't know

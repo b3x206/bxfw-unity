@@ -26,7 +26,7 @@ namespace BXFW
                 // If instance isn't loaded, we need to load it.
                 // Simplest way to find instance is to call Resources.LoadAll<>() with a empty directory.
                 // While inefficient and 'u call load on MonoBehaviour Constructor thats illegal' types of error prone, it will work for now.
-                var soCurrent = Resources.LoadAll<T>(string.Empty);
+                T[] soCurrent = Resources.LoadAll<T>(string.Empty);
 
                 if (soCurrent.Length <= 0)
                 {
@@ -50,7 +50,9 @@ namespace BXFW
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
-        // Yes, this is a terrible workaround to bypass the 'ScriptableObject size is not the same1!1!!' errors
+        // we cannot fix the 'Scriptable Object size not same !!!11!'
+        // but the load also works fine, wtf? this seems to be some sort of bug that i can't solve because i don't know what's going on
+        // The built game and it's data structures look completely fine (checked using AssetRipper)
         // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions solely
         [MethodImpl(MethodImplOptions.NoOptimization)]
 #if UNITY_EDITOR

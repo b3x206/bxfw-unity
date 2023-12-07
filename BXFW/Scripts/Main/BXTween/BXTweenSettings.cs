@@ -21,7 +21,7 @@ namespace BXFW.Tweening
         public RepeatType DefaultRepeatType = RepeatType.PingPong;
 
         // :: Debug
-        public bool diagnosticMode = false; // TODO : Make a diagnosticMode attribute for debug log methods for advanced filtering? (+ add a filtering enum)
+        public bool diagnosticMode = false;
         
         // :: BXTweenStrings
         public Color LogColor = new Color(.68f, .61f, .43f);
