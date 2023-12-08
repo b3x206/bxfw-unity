@@ -198,7 +198,7 @@ namespace BXFW.Tools.Editor
         /// </summary>
         protected internal virtual bool DisplayCurrentElementsCount => true;
         /// <summary>
-        /// Whether to close the 'SearchDropdown' in an event of an undo.
+        /// Whether to close the 'SearchDropdown' in an event of an undo or a redo.
         /// <br>Setting this <see langword="false"/> does not break anything, it is just added for nicer experience.</br>
         /// <br>By default, this value is <see langword="true"/>.</br>
         /// </summary>
@@ -206,7 +206,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Placeholder string displayed for dropdowns without any elements.
         /// </summary>
-        public virtual string NoElementPlaceholderText { get; set; }
+        public virtual string NoElementPlaceholderText { get; set; } = "No elements added to dropdown.";
         /// <summary>
         /// String used to show that there's no results.
         /// <br>Can have a format argument as {0}, where it will be replaced with the search query.</br>

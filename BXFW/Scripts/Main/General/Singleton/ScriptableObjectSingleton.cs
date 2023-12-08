@@ -69,7 +69,7 @@ namespace BXFW
 
             // Create & serialize instance of the resource.
             // Find the directory
-            string loadableResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "/Assets/Resources");
+            string loadableResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/");
             string checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(loadableResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
             string relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
             string absoluteParentDir = Path.Combine(loadableResourcesDirectory, checkedRelativeDir);

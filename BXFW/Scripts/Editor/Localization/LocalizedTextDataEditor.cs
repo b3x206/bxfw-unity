@@ -9,6 +9,9 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// A <see cref="CultureInfo.TwoLetterISOLanguageName"/> names selector <see cref="SearchDropdown"/>.
+    /// </summary>
     public class LocalizationKeySelectorDropdown : SearchDropdown
     {
         public class Item : SearchDropdownElement
@@ -34,6 +37,10 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private readonly LocalizedTextData m_referenceData;
         private readonly string m_editedLocale;
+        /// <summary>
+        /// Whether to add a none element, which selects an item with null <see cref="Item.localeKey"/>.
+        /// </summary>
+        public bool addNoneElement;
         protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
 
         private class CultureInfoTwoLetterComparer : IEqualityComparer<CultureInfo>
@@ -70,7 +77,13 @@ namespace BXFW.ScriptEditor
             SearchDropdownElement rootItem = new SearchDropdownElement("Languages");
             List<CultureInfo> addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures).Distinct(CultureInfoTwoLetterComparer.Default));
             addableLanguageList.Sort((x, y) => x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName));
-            
+
+            if (addNoneElement)
+            {
+                rootItem.Add(new Item("None", string.Empty, false));
+                rootItem.Add(new SearchDropdownSeperatorElement());
+            }
+
             // Show selected ones if 'm_referenceData' does exist
             if (m_referenceData != null)
             {
@@ -105,7 +118,10 @@ namespace BXFW.ScriptEditor
             for (int i = 0; i < addableLanguageList.Count; i++)
             {
                 CultureInfo info = addableLanguageList[i];
-                Item keyOption = new Item($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false);
+                Item keyOption = new Item($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false)
+                {
+                    Selected = info.TwoLetterISOLanguageName == m_editedLocale
+                };
                 rootItem.Add(keyOption);
             }
 
@@ -115,6 +131,16 @@ namespace BXFW.ScriptEditor
 
         public LocalizationKeySelectorDropdown()
         { }
+        /// <summary>
+        /// Adds the currently selected locale as <paramref name="editedLocale"/>.
+        /// </summary>
+        public LocalizationKeySelectorDropdown(string editedLocale)
+        {
+            m_editedLocale = editedLocale;
+        }
+        /// <summary>
+        /// Adds the currently selected locale as <paramref name="editedLocale"/> and the contained locale data keys as <paramref name="data"/>.
+        /// </summary>
         public LocalizationKeySelectorDropdown(LocalizedTextData data, string editedLocale)
         {
             m_referenceData = data;
@@ -264,9 +290,9 @@ namespace BXFW.ScriptEditor
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
             {
-                EditorGUI.LabelField(new Rect(txtEditAreaRect) 
+                EditorGUI.LabelField(new Rect(txtEditAreaRect)
                 {
-                    x = txtEditAreaRect.x + 2f, 
+                    x = txtEditAreaRect.x + 2f,
                     height = EditorGUIUtility.singleLineHeight
                 }, "<empty>", placeholderStyle);
             }

@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using System.Linq;
 
 namespace BXFW.Tools.Editor
 {
@@ -704,9 +704,10 @@ namespace BXFW.Tools.Editor
         private void HandleUndoRedo()
         {
             if (parentManager.CloseOnUndoRedoAction)
-
-            IsClosingWithSelectionIntent = false;
-            Close();
+            {
+                IsClosingWithSelectionIntent = false;
+                Close();
+            }
         }
 
         /// <summary>

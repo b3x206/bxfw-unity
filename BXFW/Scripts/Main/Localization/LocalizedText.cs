@@ -1,5 +1,6 @@
 ﻿using BXFW.Data;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace BXFW
     /// <summary>
     /// Localizes a text (with current locale).
     /// </summary>
-    public class LocalizedText : MonoBehaviour
+    public class LocalizedText : MonoBehaviour, IEnumerable<LocalizedTextData>
     {
         [Header(":: Reference")]
         public TMP_Text target;
@@ -20,13 +21,11 @@ namespace BXFW
         [Header(":: Settings")]
         public TextAsset localeData;
         public string textID;
-#if UNITY_EDITOR
         /// <summary>
         /// Locale to spoof.
         /// <br>Only works in editor.</br>
         /// </summary>
         [SerializeField] internal string spoofLocale;
-#endif
         [NonSerialized] private List<LocalizedTextData> localeTextData;
         internal IList<LocalizedTextData> TextData
         {
@@ -53,12 +52,17 @@ namespace BXFW
                 return localeTextData;
             }
         }
+        /// <summary>
+        /// The currently selected data.
+        /// <br>Depending on the <see cref="textID"/>, this selects something.</br>
+        /// </summary>
+        public LocalizedTextData CurrentSelectedData => TextData.FirstOrDefault(data => data.TextID == textID);
 
         /// <summary>
         /// Locale file pragma definition to replace tmp chars that doesn't exist.
         /// (Removes diacritics from string)
         /// </summary>
-        public const string PRAGMA_REPLACE_TMP_CHARS = "ReplaceTMPInvalidChars";
+        public const string ReplaceTMPCharsPragma = "ReplaceTMPInvalidChars";
 
         private void OnValidate()
         {
@@ -187,7 +191,7 @@ namespace BXFW
                 // unity doesn't compile 'out string v'
                 string v = string.Empty;
                 // will throw an exception if the pragma value is invalid.
-                if (data?.PragmaDefinitions.TryGetValue(PRAGMA_REPLACE_TMP_CHARS, out v) ?? false)
+                if (data?.PragmaDefinitions.TryGetValue(ReplaceTMPCharsPragma, out v) ?? false)
                 {
                     replaceInvalidChars = bool.Parse(v);
                 }
@@ -239,6 +243,15 @@ namespace BXFW
         public void ApplyFormatted(params object[] formatArgs)
         {
             ApplyInternal(true, true, formatArgs);
+        }
+
+        public IEnumerator<LocalizedTextData> GetEnumerator()
+        {
+            return localeTextData.GetEnumerator();
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

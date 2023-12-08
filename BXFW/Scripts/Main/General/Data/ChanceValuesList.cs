@@ -76,7 +76,7 @@ namespace BXFW
             {
                 if (float.IsNaN(value))
                 {
-                    Debug.LogWarning($"[ChanceData<{typeof(T)}>] Tried to set value to NaN.");
+                    Debug.LogError($"[ChanceData<{typeof(T).GetTypeDefinitionString()}>] Tried to set value to NaN.");
                     return;
                 }
 
