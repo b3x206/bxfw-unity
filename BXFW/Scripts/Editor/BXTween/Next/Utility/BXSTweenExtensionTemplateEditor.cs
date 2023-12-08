@@ -170,9 +170,6 @@ namespace BXFW.Tweening.Next.Editor
                     string tooltipString = currentTargetTemplate.targetType.Type == null ? "Assign a type to the parent target template to be able to edit this value." : targetMemberNameProperty.tooltip;
                     if (EditorGUI.DropdownButton(dropdownSelfRect, new GUIContent(displayString, tooltipString), FocusType.Passive))
                     {
-                        //SerializedObject copySo = new SerializedObject(targetMemberNameProperty.serializedObject.targetObjects);
-                        //SerializedProperty memberNameCopyProperty = copySo.FindProperty(targetMemberNameProperty.propertyPath);
-
                         // For the time being this source generator doesn't expect multi level fields/properties
                         // And multi level field/property setting string generation is not so trivial to implement.
                         MemberInfoSelectorDropdown dropdown = new MemberInfoSelectorDropdown(currentTargetTemplate.targetType.Type, false);
@@ -186,14 +183,6 @@ namespace BXFW.Tweening.Next.Editor
 
                             targetMemberNameProperty.stringValue = fieldItem.memberInfo.Name;
                             targetMemberNameProperty.serializedObject.ApplyModifiedProperties();
-
-                            /*
-                            memberNameCopyProperty.stringValue = fieldItem.memberInfo.Name;
-                            copySo.ApplyModifiedProperties();
-
-                            copySo.Dispose();
-                            memberNameCopyProperty.Dispose();
-                            */
                         };
                     }
                 }

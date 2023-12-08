@@ -96,8 +96,8 @@ namespace BXFW.ScriptEditor
             {
                 // Apparently text files are dark magic ._.
                 // And you have to guess it's encoding by luck
-                // why save a localization file as ansi? lol
-                
+                // why save a localization file as ansi? visual studio moment
+
                 { nameof(LocalizedText.localeData), new KeyValuePair<MatchGUIActionOrder, System.Action>(
                     MatchGUIActionOrder.After, () =>
                     {
@@ -178,12 +178,15 @@ namespace BXFW.ScriptEditor
                 { nameof(LocalizedText.spoofLocale), new KeyValuePair<MatchGUIActionOrder, System.Action>(
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
-                        // Bro got a 'ToString' format provider :skull:
-                        // Teacher is now grading papers of coding yay. OOP is easier than DSA lul.
-                        // DSA is just leetcode, the class. OOP is what i am doing now yay
+                        // Teacher is now grading papers of coding yay.
+                        // DSA is just leetcode, the class.
+                        // But unlike leetcode it isn't very fun to solve.
                         // --
                         // tbh dsa would have been enjoyable if the teacher wasn't such an
                         // egoistical maniac, acting like he's the interviever for FAANG (idk the new acronym) companies
+                        // --
+                        // i got 100 and 91, amazing really. rest of the classes is 10.
+                        // ah yes, enguinering.
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));
                         if (GUILayout.Button(string.IsNullOrWhiteSpace(target.spoofLocale) ?

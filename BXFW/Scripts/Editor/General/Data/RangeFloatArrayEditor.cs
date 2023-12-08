@@ -277,8 +277,8 @@ namespace BXFW.ScriptEditor
                                 // Show custom basic menu if no 'modifyIndex'
                                 if (modifyIndex < 0)
                                 {
-                                    GenericMenu menu = new GenericMenu();
-                                    menu.AddItem(new GUIContent("Scatter Values"), false, () =>
+                                    GenericMenu rmbDropdown = new GenericMenu();
+                                    rmbDropdown.AddItem(new GUIContent("Scatter Values"), false, () =>
                                     {
                                         for (int i = 0; i < target.Count; i++)
                                         {
@@ -291,11 +291,11 @@ namespace BXFW.ScriptEditor
                                             target[i] = Mathf.Lerp(target.Min, target.Max, (float)i / Mathf.Max(1, target.Count - 1));
                                         }
                                     });
-                                    menu.AddItem(new GUIContent("Copy Property Path"), false, () =>
+                                    rmbDropdown.AddItem(new GUIContent("Copy Property Path"), false, () =>
                                     {
                                         GUIUtility.systemCopyBuffer = property.propertyPath;
                                     });
-                                    menu.ShowAsContext();
+                                    rmbDropdown.ShowAsContext();
                                 }
                             }
                             break;
