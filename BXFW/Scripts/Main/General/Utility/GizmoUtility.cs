@@ -80,7 +80,9 @@ namespace BXFW
                 // Rotate using 'direction'.
                 Vector3 setVector = new Vector3(c, s, 0f);
                 if (direction != Vector3.zero)
+                {
                     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+                }
 
                 v[i] = setVector;
             }
@@ -125,7 +127,9 @@ namespace BXFW
             var restoreColor = GUI.color;
             GUI.color = color;
             if (textStyle == null)
+            {
                 textStyle = GUI.skin.label;
+            }
 
             var view = SceneView.currentDrawingSceneView;
             Vector3 screenPos = view.camera.WorldToScreenPoint(worldPos);

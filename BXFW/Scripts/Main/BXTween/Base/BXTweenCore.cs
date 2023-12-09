@@ -6,72 +6,50 @@ using UnityEngine;
 using BXFW.Tweening.Events;
 using static BXFW.Tweening.BXTween;
 
-/// Oh, you are actually reading this? well, this is actually not really in 'alpha' and there is a stable-ish game made (see Fall Xtra) using BXTween
-/// I think at this state, BXTween is complete except for missing some features and not really following conventions for standard tweening scripts
-/// Because of this, i will only add new features if i like them or i will only (only is a strong word, i could change it if there's a better way 
-/// of doing stuff) change the code if there is a bug. Or i could add support to unity Dots system, if i feel enough interest to it.
-/// For the time being, it works fine enough™ so yeah, this will do.
-/// 
-/// (alright bye)
-/// 
-/// <remarks>
-/// BXTween :
-///     It does tweens.
-/// 
-/// How do use? :
-///     <example>
-///     // basically dotween but crappier
-///     objectOrPropertyThatHasTypeThatSupportsBXTweenExtensions.BXTw{ExtensionContext}({EndValue}, {Duration});
-///     // or you can start a manual one (note : method signature may change)
-///     BXTween.To({StartValue}, {EndValue}, {Duration}, (supportedType t) => 
-///     {
-///         // Setter function goes here, example one looks like :
-///         variableThatNeedTween.somethingThatIsTweenable = t; 
-///     });
-///     
-///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version if you want it to appear in the inspector}
-///     // .. This example code interpolates the alpha of a canvas group.
-///     ... declared in the monobehaviour/scriptableobject/anything unity can serialize, serializable variable scope 'public or private with serialize field', 
-///     BXTweenPropertyFloat interpolateThing = new BXTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
-///     ... called inside a method, you should already know this
-///     // Always setup property before calling StartTween!!
-///     if (!interpolateThing.IsSetup)
-///         interpolateThing.SetupProperty((float f) => { canvasGroupThatExists.alpha = f; }); // you can also declare start-end values like ({StartValue}, {EndValue}, {Setter})
-///     
-///     interpolateThing.StartTween(canvasGroupThatExists.alpha, 1f);
-///     // congrats now you know how to use bxtween enjoy very performance
-///     </example>
-/// 
-/// What else?  :
-///     1 : Has many features (bugs, but i call them features)
-///     2 : Runs with very high performance (about 1 tween per 3 hours!! [that is equal to 1,54320987654321e-6 tweens per second] wow such fast)
-///     3 : Very coding pattern (what)
-///     4 : Who cares about consistency? if the code works it's good enough.
-///     5 : Throws exceptions while loading <see cref="BXFW.Tweening.BXTweenSettings"/>
-/// 
-/// But why did you spend effort on this? there are better alternatives :
-///     I don't know
-/// 
-/// Okay, but i am still not convinced yet.
-///     cool, i will convince
-///     It has, uh, properties. yeah and it also has lackluster support of shortcut methods
-///     In fact quarter (yes quarter now we are doing REAL oop) of the source code lines are shortcut methods (this {type name}BXTw{variableName}).
-/// 
-/// </remarks>
-/// TODO : 
-/// Uh, replace this with a BXSimpleTween that is similar to this, but less features, more control over the update method and get rid of coroutines (lower gc.alloc)?
-/// Basically just have delegates that do the most of the stuff.
-/// Because this is not really a complete tweening solution, so go with the simpler tweening option.
-/// TODO 2 :
-/// Oh and also, add a 'CompilationDefineConstraints' class for defining define constraints for things if the file exists
-/// (and it can disable BXTween with '#if' statement)
-
 namespace BXFW.Tweening
 {
     /// <summary>
     /// Core of the BXTweenCore.
     /// <br>Dispatches the coroutines.</br>
     /// </summary>
+    /// <example>
+    /// BXTween :
+    ///     It does tweens.
+    /// 
+    /// How do use? :
+    /// <![CDATA[
+    ///     // basically dotween but crappier
+    ///     objectOrPropertyThatHasTypeThatSupportsBXTweenExtensions.BXTw{ExtensionContext}({EndValue}, {Duration});
+    ///     // or you can start a manual one (note : method signature may change)
+    ///     BXTween.To({StartValue}, {EndValue}, {Duration}, (supportedType t) => 
+    ///     {
+    ///         // Setter function goes here, example one looks like :
+    ///         variableThatNeedTween.somethingThatIsTweenable = t; 
+    ///     });
+    ///     
+    ///     // even better, you can declare a BXTweenProperty{Type goes here, don't use the generic version if you want it to appear in the inspector}
+    ///     // .. This example code interpolates the alpha of a canvas group.
+    ///     ... declared in the monobehaviour/scriptableobject/anything unity can serialize, serializable variable scope 'public or private with serialize field', 
+    ///     BXTweenPropertyFloat interpolateThing = new BXTweenPropertyFloat({DurationDefault}, {DelayDefault}, {Curve/Ease Overshoot allow}, {CurveDefault})
+    ///     ... called inside a method, you should already know this
+    ///     // Always setup property before calling StartTween!!
+    ///     if (!interpolateThing.IsSetup)
+    ///         interpolateThing.SetupProperty((float f) => { canvasGroupThatExists.alpha = f; }); // you can also declare start-end values like ({StartValue}, {EndValue}, {Setter})
+    ///     
+    ///     interpolateThing.StartTween(canvasGroupThatExists.alpha, 1f);
+    ///     // congrats now you know how to use bxtween enjoy very performance
+    /// ]]>
+    /// 
+    /// What else?  :
+    ///     1 : Has many features (bugs, but i call them features)
+    ///     2 : Runs with very high performance (about 1 tween per 3 hours!! [that is equal to 1,54320987654321e-6 tweens per second] wow such fast)
+    ///     3 : Very coding pattern (what)
+    ///     4 : Who cares about consistency? if the code works it's good enough.
+    ///     5 : Throws exceptions while loading <see cref="BXTweenSettings"/> (epic and wholsum)
+    /// 
+    /// But why did you spend effort on this? there are better alternatives :
+    ///     I don't know, and i made a new version. You are viewing the legacy version which will be not updated.
+    /// </example>
     [ExecuteAlways]
     public class BXTweenCore : MonoBehaviour
     {
@@ -82,7 +60,9 @@ namespace BXFW.Tweening
             // Unity Editor Checks
 #if UNITY_EDITOR
             if (Current != null)
-            { EditorDisposeBXTwObject(); }
+            {
+                EditorDisposeBXTwObject();
+            }
 #endif
 
             if (!CurrentSettings.enableBXTween)
@@ -95,12 +75,12 @@ namespace BXFW.Tweening
             GameObject twObject = new GameObject("BXTweenCore");
             DontDestroyOnLoad(twObject);
 
-            var BXTwComponent = twObject.AddComponent<BXTweenCore>();
-            Current = BXTwComponent;
+            BXTweenCore mainComponent = twObject.AddComponent<BXTweenCore>();
+            Current = mainComponent;
         }
         // -- Editor Initilazation (Experimental)
 #if UNITY_EDITOR
-        private GameObject previewObject;
+        [NonSerialized] private GameObject previewObject;
         /// <summary>
         /// Initilaze BXTween on editor.
         /// The object gets destroyed after the tweens are done.
@@ -122,8 +102,8 @@ namespace BXFW.Tweening
                 tag = "EditorOnly"
             };
 
-            var BXTWComp = previewObject.AddComponent<BXTweenCore>();
-            Current = BXTWComp;
+            BXTweenCore mainComponent = previewObject.AddComponent<BXTweenCore>();
+            Current = mainComponent;
             Current.previewObject = previewObject;
         }
         /// <summary>
@@ -172,22 +152,32 @@ namespace BXFW.Tweening
                         if (ctx.InvokeDelayOnRepeat)
                         {
                             if (!CurrentSettings.ignoreTimeScale)
+                            {
                                 yield return new WaitForSeconds(ctx.Delay);
+                            }
                             else
+                            {
                                 yield return new WaitForSecondsRealtime(ctx.Delay);
+                            }
                         }
                     }
                     else
                     {
                         if (!CurrentSettings.ignoreTimeScale)
+                        {
                             yield return new WaitForSeconds(ctx.Delay);
+                        }
                         else
+                        {
                             yield return new WaitForSecondsRealtime(ctx.Delay);
+                        }
                     }
                 }
 
                 if (ctx.OnStartAction != null)
+                {
                     ctx.OnStartAction.Invoke();
+                }
 
                 // Main loop
                 float Elapsed = ctx.CurrentElapsed;
@@ -204,7 +194,9 @@ namespace BXFW.Tweening
                         // Check if the timescale is tampered with
                         // if it's below zero, just skip the frame
                         if (Time.timeScale <= 0f)
+                        {
                             canTick = false;
+                        }
                     }
                     // Tick cond check (should be true to tick)
                     if (ctx.TickTweenConditionFunction != null)
@@ -282,7 +274,9 @@ namespace BXFW.Tweening
                 {
                     // Infinitely loop if the 'RepeatAmount' is less than 0.
                     if (ctx.RepeatAmount > 0)
+                    {
                         ctx.SetRepeatAmount(ctx.RepeatAmount - 1);
+                    }
 
                     // Repeat
                     // Invoke ending method on repeat.

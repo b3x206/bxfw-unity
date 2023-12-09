@@ -41,7 +41,10 @@ namespace BXFW.UI
                 // -- Hardcoded defaults
                 // Add layout group & content resizer as this is 'probably' the first time this gameobject is created.
                 if (!gameObject.TryGetComponent(out HorizontalLayoutGroup contentLayout))
+                {
                     contentLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
+                }
+
                 contentLayout.spacing = 10f;
                 contentLayout.childAlignment = TextAnchor.MiddleCenter;
 
@@ -50,7 +53,10 @@ namespace BXFW.UI
                 baseChildProgressImage.transform.localScale = Vector3.one;
 
                 if (!gameObject.TryGetComponent(out ContentSizeFitter contentSizeFitter))
+                {
                     contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
+                }
+
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
                 contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
@@ -80,7 +86,10 @@ namespace BXFW.UI
 
         private void OnMenuChanged(int menuIndex)
         {
-            if (prevMenuIndex == menuIndex) return; // Don't do anything if the menu index is the same.
+            if (prevMenuIndex == menuIndex)
+            {
+                return; // Don't do anything if the menu index is the same.
+            }
 
             // Change images using the current fade type
             switch (ChildImageFadeType)
@@ -123,22 +132,36 @@ namespace BXFW.UI
         /// </summary>
         public void GenerateDisplay()
         {
-            if (TargetSwipableUI == null) return;
-            if (childProgressImages == null) GenerateChildImage();
+            if (TargetSwipableUI == null)
+            {
+                return;
+            }
+
+            if (childProgressImages == null)
+            {
+                GenerateChildImage();
+            }
+
             if (TargetSwipableUI.ClampItemMenu == 0)
             {
                 // 0 is special case for only the base object being enabled.
                 if (!baseChildProgressImage.gameObject.activeInHierarchy)
+                {
                     baseChildProgressImage.gameObject.SetActive(true);
+                }
 
                 // Destroy all except base
                 // Disable primary gameobject & destroy until 0
                 for (int i = 1; i < childProgressImages.Count; i++)
                 {
                     if (!Application.isPlaying)
+                    {
                         DestroyImmediate(childProgressImages[i].gameObject);
+                    }
                     else
+                    {
                         Destroy(childProgressImages[i].gameObject);
+                    }
                 }
 
                 CleanChildImageList();
@@ -150,7 +173,9 @@ namespace BXFW.UI
             while (childProgressImages.Count < TargetSwipableUI.ClampItemMenu + 1)
             {
                 if (!baseChildProgressImage.gameObject.activeInHierarchy)
+                {
                     baseChildProgressImage.gameObject.SetActive(true);
+                }
 
                 Image imageInst = Instantiate(baseChildProgressImage, transform);
 
@@ -180,9 +205,13 @@ namespace BXFW.UI
                     for (int i = 1; i < childProgressImages.Count; i++)
                     {
                         if (!Application.isPlaying)
+                        {
                             DestroyImmediate(childProgressImages[i].gameObject);
+                        }
                         else
+                        {
                             Destroy(childProgressImages[i].gameObject);
+                        }
                     }
 
                     CleanChildImageList();
@@ -193,9 +222,13 @@ namespace BXFW.UI
 
                 // Destroy normally
                 if (!Application.isPlaying)
+                {
                     DestroyImmediate(childProgressImages[childProgressImages.Count - 1].gameObject);
+                }
                 else
+                {
                     Destroy(childProgressImages[childProgressImages.Count - 1].gameObject);
+                }
 
                 CleanChildImageList();
             }

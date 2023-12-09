@@ -148,6 +148,7 @@ namespace BXFW.Tweening
 
         // --- Private Fields
         // Coroutine / Iterator 
+        // Note : These are very extra for ensuring that the tween works, the coroutine takes the context by reference lol.
         private readonly Func<BXTweenCTX<T>, IEnumerator> _GetTweenIteratorFn;   // Delegate to get coroutine suitable for this class
         private IEnumerator _IteratorCoroutine;                     // Current setup iterator (not running)
         private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
@@ -306,7 +307,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Sets the easing of the tween.
         /// </summary>
-        public BXTweenCTX<T> SetEase(EaseType ease, bool Clamp01 = true)
+        public BXTweenCTX<T> SetEase(EaseType ease, bool clamp01 = true)
         {
             // Setup curve 
             Easing = ease;
@@ -321,15 +322,16 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            BXTweenEaseSetMethod EaseMethod = BXTweenEase.Methods[Easing];
-            TimeSetLerp = (float progress) => { return Clamp01 ? Mathf.Clamp01(EaseMethod.Invoke(progress)) : EaseMethod.Invoke(progress); };
+            TimeSetLerp = (float progress) => clamp01 ? Mathf.Clamp01(BXTweenEase.EasedValue(progress, Easing)) : BXTweenEase.EasedValue(progress, Easing);
 
             return this;
         }
-        /// <summary> Sets a custom animation curve. Pass null to disable custom curve. </summary>
+        /// <summary>
+        /// Sets a custom animation curve. Pass null to disable custom curve.
+        /// </summary>
         /// <param name="curve">Curve to set.</param>
-        /// <param name="clamp">Should the curve be clamped?</param>
-        public BXTweenCTX<T> SetCustomCurve(AnimationCurve curve, bool clamp = true)
+        /// <param name="clamp01">Should the curve be clamped?</param>
+        public BXTweenCTX<T> SetCustomCurve(AnimationCurve curve, bool clamp01 = true)
         {
             // Check curve status
             if (curve == null)
@@ -356,7 +358,7 @@ namespace BXFW.Tweening
             CustomTimeCurve = curve;
 
             // Clamp value between 0-1
-            if (clamp)
+            if (clamp01)
             {
                 TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
             }
@@ -405,7 +407,9 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetTargetObject(UnityEngine.Object obj, bool overrideNull = false)
         {
             if (obj == null && !overrideNull)
+            {
                 return this;
+            }
 
             _TargetObj = obj;
 
@@ -532,11 +536,19 @@ namespace BXFW.Tweening
 
             // Classes that need to be copied in other ways require other methods.
             if (copyFrom.CustomTimeCurve != null)
+            {
                 SetCustomCurve(new AnimationCurve(copyFrom.CustomTimeCurve.keys));
+            }
+
             if (copyFrom.OnEndAction != null)
+            {
                 SetEndingEvent(copyFrom.OnEndAction);
+            }
+
             if (copyFrom.OnEndActionUnityEvent != null)
+            {
                 SetEndingEvent(copyFrom.OnEndActionUnityEvent);
+            }
 
             // !! setter(s), must not be null
             SetEase(copyFrom.Easing);
@@ -586,7 +598,10 @@ namespace BXFW.Tweening
 
             // Checks
             if (IsRunning)
+            {
                 StopTween();
+            }
+
             if (!UpdateContextCoroutine())
             {
                 // Iterator coroutine failed.
@@ -623,7 +638,9 @@ namespace BXFW.Tweening
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
+                {
                     Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+                }
 
                 return;
             }
@@ -676,7 +693,9 @@ namespace BXFW.Tweening
             if (!IsRunning)
             {
                 if (CurrentSettings.diagnosticMode)
+                {
                     Debug.Log(BXTweenStrings.DLog_BXTwCTXStopInvalidCall);
+                }
 
                 return;
             }
@@ -741,13 +760,24 @@ namespace BXFW.Tweening
             try
             {
                 if (OnEndAction != null)
+                {
                     OnEndAction.Invoke();
+                }
+
                 if (PersistentOnEndAction != null)
+                {
                     PersistentOnEndAction.Invoke();
+                }
+
                 if (TweenCompleteAction != null)
+                {
                     TweenCompleteAction.Invoke();
+                }
+
                 if (OnEndActionUnityEvent != null)
+                {
                     OnEndActionUnityEvent.Invoke(this);
+                }
             }
             catch (Exception e)
             {

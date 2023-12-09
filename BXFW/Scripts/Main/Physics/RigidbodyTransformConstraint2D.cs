@@ -27,11 +27,15 @@ namespace BXFW
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (!collision.TryGetComponent(out Rigidbody2D rb))
+            {
                 return;
+            }
 
             // This body already exists.
             if (bodiesEntered.ContainsKey(rb))
+            {
                 return;
+            }
 
             bodiesEntered.Add(rb, rb.transform.parent);
             rb.transform.SetParent(transform);
@@ -39,7 +43,9 @@ namespace BXFW
         private void OnTriggerExit2D(Collider2D collision)
         {
             if (!collision.TryGetComponent(out Rigidbody2D rb))
+            {
                 return;
+            }
 
             rb.transform.SetParent(bodiesEntered[rb]);
             bodiesEntered.Remove(rb);

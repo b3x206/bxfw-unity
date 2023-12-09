@@ -73,7 +73,10 @@ namespace BXFW
 
         public void InitSetupSnapTransform()
         {
-            if (Snappable_IsSetup) return;
+            if (Snappable_IsSetup)
+            {
+                return;
+            }
 
             SnapPoints = new Dictionary<SnapPoint, Transform>();
 
@@ -231,11 +234,21 @@ namespace BXFW
         public bool SnapTransform(MBCubeSnappableTransform transformTarget, SnapPoint pointThis, SnapPoint pointTarget, bool snapTarget = false)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+            {
+                return false;
+            }
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
-            if (!transformTarget.Snappable_IsSetup) transformTarget.InitSetupSnapTransform();
+            if (!Snappable_IsSetup)
+            {
+                InitSetupSnapTransform();
+            }
+
+            if (!transformTarget.Snappable_IsSetup)
+            {
+                transformTarget.InitSetupSnapTransform();
+            }
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -269,7 +282,9 @@ namespace BXFW
 
             Destroy(SnapHelper.gameObject);
             if (OnSnapTransformCall != null)
+            {
                 OnSnapTransformCall();
+            }
 
             return true;
         }
@@ -282,10 +297,16 @@ namespace BXFW
         public bool SnapTransform(Transform transformTarget, SnapPoint pointThis, Vector3 transformTargetPosOffset = default)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null) return false;
+            if (transformTarget == null)
+            {
+                return false;
+            }
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
+            if (!Snappable_IsSetup)
+            {
+                InitSetupSnapTransform();
+            }
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -307,7 +328,9 @@ namespace BXFW
 
             Destroy(SnapHelper.gameObject);
             if (OnSnapTransformCall != null)
+            {
                 OnSnapTransformCall();
+            }
 
             return true;
         }
@@ -326,11 +349,21 @@ namespace BXFW
             Vector3 alignAxis, bool alignToTarget = true, float? customTargetDist = null)
         {
             // Check target. (if null do nothing)
-            if (transformTarget == null || alignAxis == Vector3.zero) return false;
+            if (transformTarget == null || alignAxis == Vector3.zero)
+            {
+                return false;
+            }
 
             // Check and setup transforms.
-            if (!Snappable_IsSetup) InitSetupSnapTransform();
-            if (!transformTarget.Snappable_IsSetup) transformTarget.InitSetupSnapTransform();
+            if (!Snappable_IsSetup)
+            {
+                InitSetupSnapTransform();
+            }
+
+            if (!transformTarget.Snappable_IsSetup)
+            {
+                transformTarget.InitSetupSnapTransform();
+            }
 
             /// -- Create snap helper --
             /// --> So here's the way snap helper works:
@@ -424,7 +457,9 @@ namespace BXFW
 
             Destroy(SnapHelper.gameObject);
             if (OnAlignTransformCall != null)
+            {
                 OnAlignTransformCall();
+            }
 
             return true;
         }

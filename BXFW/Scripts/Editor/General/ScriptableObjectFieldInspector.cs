@@ -126,7 +126,9 @@ namespace BXFW
         protected static string TrimLeftPrefix(string s)
         {
             if (string.IsNullOrEmpty(s))
+            {
                 return string.Empty;
+            }
 
             return s.Substring(s.IndexOf(KEY_PREFIX) + KEY_PREFIX.Length);
         }
@@ -136,7 +138,9 @@ namespace BXFW
         protected static string TrimRightPrefix(string s)
         {
             if (string.IsNullOrEmpty(s))
+            {
                 return string.Empty;
+            }
 
             return s.Substring(0, s.IndexOf(KEY_PREFIX) + KEY_PREFIX.Length);
         }
@@ -171,7 +175,9 @@ namespace BXFW
 
             UnityEngine.Object dirtyTargetObject = property.serializedObject.targetObject;
             if (allowUndo)
+            {
                 Undo.RecordObject(dirtyTargetObject, string.Format("Set value of {0}", property.name));
+            }
 
             // Set value
             // If the parent is an array, set the target index into the 'obj'
@@ -182,12 +188,16 @@ namespace BXFW
             {
                 // Refresh the CustomInspector with a new target, because we can't set target (we can, but unity seems to not really like it).
                 if (currentCustomInspector != null)
+                {
                     UnityEngine.Object.DestroyImmediate(currentCustomInspector);
+                }
 
                 currentCustomInspector = Editor.CreateEditor(obj);
 
                 if (DebugMode && currentCustomInspector == null)
+                {
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget(Search Custom Editor)] No suitable editor found for obj '{0}'.", obj));
+                }
             }
 
             // why (c# array moment)
@@ -223,7 +233,9 @@ namespace BXFW
                     // This most likely shouldn't happen (unless using a custom field parent that has IEnumerable interface)
                     // as unity doesn't serialize read-only Lists or weird c# lists.
                     if (DebugMode)
+                    {
                         Debug.LogWarning("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget] Target is in field parent with interface 'IEnumerable' but falling back to default FieldInfo set method.");
+                    }
 
                     try
                     {
@@ -245,7 +257,9 @@ namespace BXFW
             // Forces unity to serialize the assigned object
             // (Undo.RecordObject does this anyways, this is no undo force serialization)
             if (!allowUndo)
+            {
                 EditorUtility.SetDirty(dirtyTargetObject);
+            }
 
             // This is very necessary to save the reference!
             // (Otherwise it doesn't save the file reference unless it's a default, non-prefab unity scene)
@@ -262,7 +276,9 @@ namespace BXFW
         protected void SetValueOfTargetDelegate(SerializedProperty property, T obj)
         {
             if (property == null)
+            {
                 throw new NullReferenceException("[ScriptableObjectFieldInspector::SetValueOfTarget] Passed property parameter 'property' is null.");
+            }
 
             // property.serializedObject could be disposed if this is called from a delegate
             // If this is disposed, assume this isn't in an prefab or it has an asset path.
@@ -358,7 +374,9 @@ namespace BXFW
 
                 // No items
                 if (typeMenus.GetItemCount() <= 0)
+                {
                     typeMenus.AddDisabledItem(new GUIContent(string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name)), true);
+                }
 
                 // Since the following scope is called only once, we can leech off that
                 // Get custom inspector
@@ -368,14 +386,18 @@ namespace BXFW
                     currentCustomInspector = Editor.CreateEditor(target);
 
                     if (DebugMode && currentCustomInspector == null)
+                    {
                         Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::GetPropertyHeight(Search Custom Editor)] No suitable editor found for obj '{0}'.", target));
+                    }
                 }
             }
 
             // Check if object is null (generically)
             // If null, don't 
             if (target == null || !property.isExpanded)
+            {
                 return SingleLineHeight;
+            }
 
             SObject ??= new SerializedObject(target);
             float h = 0f; // instead of using currentY, use a different inline variable
@@ -398,10 +420,14 @@ namespace BXFW
                     if (hasCustomEditorCommands)
                     {
                         if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                        {
                             h += (cmd.Value.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
+                        }
 
                         if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                        {
                             h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                        }
                     }
                     else
                     {
@@ -437,7 +463,9 @@ namespace BXFW
         {
             // Height == 0f => do nothing
             if (Mathf.Approximately(height, 0f))
+            {
                 return position;
+            }
 
             // Reuse the copied struct
             position.y = currentY;
@@ -445,7 +473,9 @@ namespace BXFW
 
             // assuming that the height is added after first rect.
             if (height < 0f)
+            {
                 height = SingleLineHeight;
+            }
 
             currentY += height + HEIGHT_PADDING;
             return position;
@@ -460,7 +490,9 @@ namespace BXFW
             // Because : prefabs can't store local scriptable objects (only scenes)
             // :: If the object exists in project view, no need to clone; it's very easy to clone anyways + we can use 'Delete' to lose reference on the current object.
             if (!MakeDrawnScriptableObjectsUnique)
+            {
                 return;
+            }
 
             // Get whether if the same item was drawn twice on the same array / SerializedProperty
             // If so, clone the second (current) item, as it's a reference to the previous item
@@ -500,8 +532,10 @@ namespace BXFW
                     catch (Exception e)
                     {
                         if (DebugMode)
+                        {
                             Debug.LogWarning(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Exception occured while HandleDifferentDrawers. Not handling e={0}\n{1}", e.Message, e.StackTrace));
-                        
+                        }
+
                         // just needs a refreshin clear.
                         // note : this is a crap solution and may cause issues.
                         drawnScriptableObjects.Clear();
@@ -518,7 +552,9 @@ namespace BXFW
                         if (!uniquePropertyExists)
                         {
                             if (DebugMode)
+                            {
                                 Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Property '{0}' doesn't exist, removing.", key));
+                            }
 
                             drawnScriptableObjects.Remove(key);
                         }
@@ -532,7 +568,9 @@ namespace BXFW
                             // other inspectors 'probably' could contain a reference to the 'target'
 
                             if (DebugMode)
+                            {
                                 Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] Copied target {0} to property {1}", target, existingProp.propertyPath));
+                            }
 
                             // Copy cloned object reference into an actual clone
                             T instObject = UnityEngine.Object.Instantiate(propPair.Value);
@@ -583,7 +621,9 @@ namespace BXFW
 
             // 'target' passes as reference because it has to be a class.
             if (!targetParentIsPrefab && !targetHasAssetPath)
+            {
                 HandleDifferentDrawers(property, target);
+            }
 
             // GUI related
             float previousWidth = position.width;
@@ -593,7 +633,9 @@ namespace BXFW
             EditorAdditionals.MakeDroppableAreaGUI(onDragAcceptAction: () =>
             {
                 if (DebugMode)
+                {
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Dragged object stats => Length:{0}, Object:{1}", DragAndDrop.objectReferences.Length, DragAndDrop.objectReferences[0].GetType().BaseType));
+                }
 
                 if (
                     DragAndDrop.objectReferences.Length == 1 &&
@@ -603,13 +645,17 @@ namespace BXFW
                 {
                     // Clear if there is previous object.
                     if (targetHasAssetPath)
+                    {
                         SetValueOfTarget(property, null);
+                    }
 
                     SetValueOfTarget(property, DragAndDrop.objectReferences[0] as T);
                     target = DragAndDrop.objectReferences[0] as T;
 
                     if (DebugMode)
+                    {
                         Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)] DragDrop: Accepted & assigned target to '{0}'.", target));
+                    }
 
                     // this repaints the propertydrawer
                     property.serializedObject.Update();
@@ -635,7 +681,9 @@ namespace BXFW
 (This is due to how the unity serializer works, and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
                     if (typeMenus != null)
+                    {
                         typeMenus.ShowAsContext();
+                    }
                     else
                     {
                         var m = new GenericMenu();
@@ -668,7 +716,9 @@ namespace BXFW
             float rFoldoutRefWidth = 1f - BTN_DELETE_WIDTH;
 
             if (targetHasAssetPath)
+            {
                 rFoldoutRefWidth -= BTN_SHOWPRJ_WIDTH;
+            }
             // set DisplayObjectNameEditor condition inline as we need the 'rFoldoutRefWidth' reference for the label name editor.
             rInspectorInfo.width = previousWidth * (DisplayObjectNameEditor ? BTN_FOLDOUT_MIN_WIDTH : rFoldoutRefWidth);
 
@@ -689,7 +739,9 @@ namespace BXFW
                 // Display a 'placeholder colored text' that is actually the name, if enforcing non-null names
                 GUIStyle tNameFieldStyle = new GUIStyle(GUI.skin.textField);
                 if (target.name == target.GetType().Name && NameEditorEnforceNonNullName)
+                {
                     tNameFieldStyle.normal.textColor = Color.gray;
+                }
 
                 string tName = EditorGUI.TextField(rInspectorInfo, target.name, tNameFieldStyle);
 
@@ -764,7 +816,9 @@ namespace BXFW
                     while (prop.NextVisible(expanded))
                     {
                         if (prop.propertyPath == "m_Script")
+                        {
                             continue;
+                        }
 
                         KeyValuePair<MatchGUIActionOrder, DrawGUICommand<T>> cmd = default;
                         bool hasCustomEditorCommands = DefaultInspectorCustomCommands != null && DefaultInspectorCustomCommands.TryGetValue(prop.name, out cmd);
@@ -772,13 +826,19 @@ namespace BXFW
                         if (hasCustomEditorCommands)
                         {
                             if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
+                            {
                                 cmd.Value.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                            }
 
                             if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            {
                                 EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                            }
 
                             if ((cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
+                            {
                                 cmd.Value.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                            }
                         }
                         else
                         {
@@ -826,7 +886,9 @@ namespace BXFW
                     catch (Exception e)
                     {
                         if (DebugMode)
+                        {
                             Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::DrawCustomInspector] Exception occurred while calling CustomInspector. Falling back to solely inspector view. This is a known issue. e={0}\n{1}", e.Message, e.StackTrace));
+                        }
 
                         // OnInspectorGUI creates another area inside of another area, no matter what
                         // We have to convince the inspector of unity that : yes we are totally drawing the CustomPropertyDrawer, there's no other editors drawn here
@@ -850,7 +912,9 @@ namespace BXFW
         {
             // Dispose required objects
             if (currentCustomInspector != null)
+            {
                 UnityEngine.Object.DestroyImmediate(currentCustomInspector);
+            }
         }
     }
 }

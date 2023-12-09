@@ -16,7 +16,9 @@ namespace BXFW.ScriptEditor
             var targets = base.targets.Cast<SwipableUIProgressDisplay>().ToArray();
 
             foreach (var target in targets)
+            {
                 target.GenerateChildImage();
+            }
 
             var dictDraw = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {

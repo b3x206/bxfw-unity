@@ -1,39 +1,3 @@
-/// CoroutineTaskManager.cs
-///
-/// This is a convenient coroutine API for Unity.
-///
-/// Example usage:
-///   IEnumerator MyAwesomeTask()
-///   {
-///       while(true) 
-///       {
-///           // ...
-///           yield return null;
-////      }
-///   }
-///
-///   IEnumerator TaskKiller(float delay, Task t)
-///   {
-///       yield return new WaitForSeconds(delay);
-///       t.Stop();
-///   }
-///
-///   // From anywhere
-///   CoroutineTask my_task = new CoroutineTask(MyAwesomeTask());
-///   new CoroutineTask(TaskKiller(5, my_task));
-///
-/// The code above will schedule MyAwesomeTask() and keep it running
-/// concurrently until either it terminates on its own, or 5 seconds elapses
-/// and triggers the TaskKiller Task that was created.
-///
-/// Note that to facilitate this API's behavior, a "CoroutineTaskManager" GameObject is
-/// created lazily on first use of the Task API and placed in the scene root
-/// with the internal TaskManager component attached. All coroutine dispatch
-/// for Tasks is done through this component.
-/// 
-/// TODO : (maybe) Add editor support?
-/// NOTE : <see cref="BXFW.Tweening.BXTween"/> does not use this task manager. Instead it uses it's own task manager.
-
 using UnityEngine;
 using System.Collections;
 
@@ -43,6 +7,38 @@ namespace BXFW
     /// A CoroutineTask object represents a coroutine. Tasks can be started, paused, and stopped.
     /// <br>NOTE : It is an error to attempt to start a task that has been stopped or which has naturally terminated.</br>
     /// </summary>
+    /// <example>
+    /// Example usage:
+    /// <![CDATA[
+    ///   IEnumerator MyAwesomeTask()
+    ///   {
+    ///       while(true) 
+    ///       {
+    ///           // ... Do your Task
+    ///           yield return null;
+    ///      }
+    ///   }
+    ///
+    ///   IEnumerator TaskKiller(float delay, Task t)
+    ///   {
+    ///       yield return new WaitForSeconds(delay);
+    ///       t.Stop();
+    ///   }
+    ///
+    ///   // .. From anywhere
+    ///   CoroutineTask my_task = new CoroutineTask(MyAwesomeTask());
+    ///   new CoroutineTask(TaskKiller(5, my_task));
+    /// ]]>
+    ///
+    /// The code above will schedule MyAwesomeTask() and keep it running
+    /// concurrently until either it terminates on its own, or 5 seconds elapses
+    /// and triggers the TaskKiller Task that was created.
+    ///
+    /// Note that to facilitate this API's behavior, a "CoroutineTaskManager" GameObject is
+    /// created lazily on first use of the Task API and placed in the scene root
+    /// with the internal TaskManager component attached. All coroutine dispatch
+    /// for Tasks is done through this component.
+    /// </example>
     public class CoroutineTask
     {
         /// Returns true if and only if the coroutine is running. Paused tasks
@@ -83,7 +79,9 @@ namespace BXFW
             task.Finished += TaskFinished;
 
             if (autoStart)
+            {
                 Start();
+            }
         }
 
         /// <summary> Begins execution of the coroutine. </summary>
@@ -115,7 +113,9 @@ namespace BXFW
             FinishedHandler handler = Finished;
 
             if (handler != null)
+            {
                 handler(manual);
+            }
         }
 
         private readonly CoroutineTaskManager.TaskState task;
@@ -219,7 +219,9 @@ namespace BXFW
                 while (running)
                 {
                     if (paused)
+                    {
                         yield return null;
+                    }
                     else
                     {
                         if (e != null && e.MoveNext())
@@ -235,7 +237,9 @@ namespace BXFW
 
                 FinishedHandler handler = Finished;
                 if (handler != null)
+                {
                     handler(stopped);
+                }
             }
         }
 
@@ -243,8 +247,6 @@ namespace BXFW
         /// Constructs a <see cref="TaskState"/> object.
         /// <br>Initilazes <see cref="CoroutineTaskManager"/> if it isn't initilazed.</br>
         /// </summary>
-        /// <param name="coroutine"></param>
-        /// <returns></returns>
         public static TaskState CreateTask(IEnumerator coroutine)
         {
             if (instance == null)

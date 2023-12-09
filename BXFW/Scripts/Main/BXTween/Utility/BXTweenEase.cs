@@ -48,8 +48,9 @@ namespace BXFW.Tweening
     {
         /// <summary>
         /// All hardcoded ease methods in a dictionary.
+        /// <br>This is less efficient to use and initialize, if possible, use the <see cref="EasedValue(float, EaseType)"/> function.</br>
         /// </summary>
-        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>
+        public static readonly IReadOnlyDictionary<EaseType, BXTweenEaseSetMethod> Methods = new Dictionary<EaseType, BXTweenEaseSetMethod>(28)
         {
             // None = Linear
             // The option 'None' was added to detect default settings.
@@ -82,6 +83,79 @@ namespace BXFW.Tweening
             { EaseType.ExponentialOut, ExponentialOut },
             { EaseType.ExponentialInOut, ExponentialInOut }
         };
+
+        /// <summary>
+        /// Returns a eased in value.
+        /// <br>The returned value is not clamped between 0-1.</br>
+        /// </summary>
+        /// <param name="time">The time parameter. This is expected to be between 0-1 but it's not enforced.</param>
+        /// <param name="easing">
+        /// The corresponding easing to get for this type.
+        /// By easing out the time parameter of a unclamped lerp you can get differently animated values.
+        /// </param>
+        public static float EasedValue(float time, EaseType easing)
+        {
+            switch (easing)
+            {
+                default:
+                case EaseType.Linear:
+                    return Linear(time);
+                case EaseType.QuadIn:
+                    return QuadIn(time);
+                case EaseType.QuadOut:
+                    return QuadOut(time);
+                case EaseType.QuadInOut:
+                    return QuadInOut(time);
+                case EaseType.CubicIn:
+                    return CubicIn(time);
+                case EaseType.CubicOut:
+                    return CubicOut(time);
+                case EaseType.CubicInOut:
+                    return CubicInOut(time);
+                case EaseType.QuartIn:
+                    return QuartIn(time);
+                case EaseType.QuartOut:
+                    return QuartOut(time);
+                case EaseType.QuartInOut:
+                    return QuartInOut(time);
+                case EaseType.QuintIn:
+                    return QuintIn(time);
+                case EaseType.QuintOut:
+                    return QuintOut(time);
+                case EaseType.QuintInOut:
+                    return QuintInOut(time);
+                case EaseType.BounceIn:
+                    return BounceIn(time);
+                case EaseType.BounceOut:
+                    return BounceOut(time);
+                case EaseType.BounceInOut:
+                    return BounceInOut(time);
+                case EaseType.ElasticIn:
+                    return ElasticIn(time);
+                case EaseType.ElasticOut:
+                    return ElasticOut(time);
+                case EaseType.ElasticInOut:
+                    return ElasticInOut(time);
+                case EaseType.CircularIn:
+                    return CircularIn(time);
+                case EaseType.CircularOut:
+                    return CircularOut(time);
+                case EaseType.CircularInOut:
+                    return CircularInOut(time);
+                case EaseType.SinusIn:
+                    return SinusIn(time);
+                case EaseType.SinusOut:
+                    return SinusOut(time);
+                case EaseType.SinusInOut:
+                    return SinusInOut(time);
+                case EaseType.ExponentialIn:
+                    return ExponentialIn(time);
+                case EaseType.ExponentialOut:
+                    return ExponentialOut(time);
+                case EaseType.ExponentialInOut:
+                    return ExponentialInOut(time);
+            }
+        }
 
         #region Ease Methods
         // Note : All ease methods change between -Infinity~Infinity.

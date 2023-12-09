@@ -72,9 +72,14 @@ namespace BXFW.ScriptEditor
             StyleLabel.normal.textColor = Color.white;
             var inspectorDict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>();
             if (targets.Any(cam => cam.UseFollowVecInstead))
+            {
                 inspectorDict.Add(nameof(FollowCamera.FollowTransform), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            }
+
             if (targets.Any(cam => cam.FollowTransform != null && !cam.UseFollowVecInstead))
+            {
                 inspectorDict.Add(nameof(FollowCamera.FollowVector3), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+            }
 
             // Base Inspector
             serializedObject.DrawCustomDefaultInspector(inspectorDict);

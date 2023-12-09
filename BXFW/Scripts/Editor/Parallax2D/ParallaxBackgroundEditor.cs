@@ -172,7 +172,9 @@ namespace BXFW
                         {
                             var spriteAddList = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                             if (spriteAddList == null)
+                            {
                                 continue;
+                            }
 
                             listSprite.Add(spriteAddList);
                         }
@@ -405,7 +407,9 @@ namespace BXFW
                             foreach (var obj in InspectedBGObj.ParallaxBGObjs)
                             {
                                 if (obj == null)
+                                {
                                     return;
+                                }
 
                                 DestroyImmediate(obj.gameObject);
                             }
@@ -422,7 +426,9 @@ namespace BXFW
                             foreach (var obj in InspectedBGObj.ParallaxBGObjs)
                             {
                                 if (obj == null)
+                                {
                                     return;
+                                }
 
                                 DestroyImmediate(obj);
                             }

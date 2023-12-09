@@ -52,7 +52,9 @@ namespace BXFW.Tweening
             {
                 // Get singleton
                 if (currentSettings == null)
+                {
                     currentSettings = BXTweenSettings.Instance;
+                }
 
                 // Still null? Create new settings.
                 if (currentSettings == null)
@@ -87,7 +89,9 @@ namespace BXFW.Tweening
             foreach (var tween in m_CurrentRunningTweens)
             {
                 if (tween == null)
+                {
                     continue;
+                }
 
                 tween.StopTween();
             }
@@ -104,7 +108,9 @@ namespace BXFW.Tweening
         public static bool HasTweenRunningOnObject(UnityEngine.Object cObject)
         {
             if (cObject == null)
+            {
                 throw new ArgumentNullException(nameof(cObject), BXTweenStrings.UtilityExcept_NullArgument());
+            }
 
             return CurrentRunningTweens.Any((ITweenCTX ctx) => ctx.TargetObject == cObject);
         }
@@ -242,20 +248,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<int>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<int> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -285,20 +292,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<float>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<float> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -328,20 +336,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<Color>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Color> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -371,20 +380,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<Vector2>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Vector2> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -414,20 +424,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<Vector3>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Vector3> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -457,20 +468,21 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             // Note that the lambda expression '(BXTweenCTX<T> ctx) => { return Current.To(ctx); }' is used to refresh the coroutine with current context.
             var Context = new BXTweenCTX<Quaternion>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Quaternion> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;
@@ -500,19 +512,20 @@ namespace BXFW.Tweening
                 Debug.LogError(BXTweenStrings.Err_SetterFnNull);
                 return null;
             }
-            if (Duration <= 0f)
-            {
-                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
-                Setter(TargetValue);
-
-                return null;
-            }
 
             // -- Make Context -- //
             var Context = new BXTweenCTX<Matrix4x4>(StartValue, TargetValue, TargetObject, Duration, Setter, (BXTweenCTX<Matrix4x4> ctx) => { return Current.To(ctx); });
 
             if (StartTween)
+            {
                 Context.StartTween();
+            }
+
+            if (Duration <= 0f)
+            {
+                Debug.Log(BXTweenStrings.GetLog_BXTwDurationZero());
+                Setter(TargetValue);
+            }
 
             // Return Context
             return Context;

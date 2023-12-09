@@ -35,7 +35,9 @@ namespace BXFW
         private void Update()
         {
             if (UseDragHandler)
+            {
                 return;
+            }
 
             if (Pressed)
             {
@@ -58,7 +60,9 @@ namespace BXFW
                 }
 
                 if (DragDelta != Vector2.zero)
+                {
                     OnDragField?.Invoke(DragDelta);
+                }
             }
             else
             {
@@ -71,7 +75,9 @@ namespace BXFW
         public override void OnPointerDown(PointerEventData eventData)
         {
             if (!IsInteractable())
+            {
                 return;
+            }
 
             Pressed = true;
             PointerId = eventData.pointerId;
@@ -80,7 +86,9 @@ namespace BXFW
         public override void OnPointerUp(PointerEventData eventData)
         {
             if (!IsInteractable())
+            {
                 return;
+            }
 
             Pressed = false;
             DragDelta = Vector2.zero;
@@ -89,11 +97,15 @@ namespace BXFW
         public void OnDrag(PointerEventData eventData)
         {
             if (!UseDragHandler || !IsInteractable())
+            {
                 return;
- 
+            }
+
             DragDelta = eventData.delta;
             if (eventData.delta != Vector2.zero)
+            {
                 OnDragField?.Invoke(eventData.delta);
+            }
         }
     }
 }

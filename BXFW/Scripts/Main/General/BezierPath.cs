@@ -284,7 +284,9 @@ namespace BXFW
 
             // Nothing to generate if there's only 1 control point.
             if (ControlPoints.Count <= 1)
+            {
                 return;
+            }
 
             for (int s = 0; s < ControlPoints.Count - 1; s++)
             {
@@ -302,7 +304,9 @@ namespace BXFW
                 // p should be <= for last point check
                 // Generate beizered points.
                 if (PathPoints.Capacity < pointCount * s)
+                {
                     PathPoints.Capacity = pointCount * s; // lazily add more point capacity
+                }
 
                 for (int p = 0; p <= (pointCount / Segments); p++)
                 {
@@ -342,7 +346,9 @@ namespace BXFW
         public bool Equals(List<BezierPoint> other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             return m_ControlPoints.SequenceEqual(other);
         }

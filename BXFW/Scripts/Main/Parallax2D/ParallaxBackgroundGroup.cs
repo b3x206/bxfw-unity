@@ -26,7 +26,10 @@ namespace BXFW
             {
                 _GroupColor = value;
 
-                if (!UseGlobalGroupColor) return;
+                if (!UseGlobalGroupColor)
+                {
+                    return;
+                }
 
                 foreach (var obj in ParallaxBGObjs)
                 {

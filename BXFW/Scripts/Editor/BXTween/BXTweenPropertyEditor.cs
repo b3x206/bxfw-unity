@@ -9,15 +9,7 @@ namespace BXFW.ScriptEditor
     public class BXTweenPropertyEditor : PropertyDrawer
     {
         private bool shouldUpdateProperty = false; // Call 'UpdateProperty' after drawing gui.
-        private int currentPropRect = -1;          // Property rect index.
-        private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
-        {
-            // Always add +1 to property rect as in this class we call this after 'EditorGUI.BeginProperty()'.
-            currentPropRect++;
-
-            var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
-            return new Rect(parentRect.xMin, parentRect.yMin + (EditorGUIUtility.singleLineHeight * (currentPropRect + 1)) + 8, parentRect.size.x, propHeight);
-        }
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
 
         private SerializedProperty propDuration;
         private SerializedProperty propDelay;
@@ -57,16 +49,51 @@ namespace BXFW.ScriptEditor
             propOnEndAction = property.FindPropertyRelative("OnEndAction");
         }
 
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+
+            if (!property.isExpanded)
+            {
+                return height;
+            }
+
+            if (propDuration == null)
+            {
+                SetupSerializedPropertyRelative(property);
+            }
+
+            BXTweenPropertyBase targetValue = property.GetTarget().Value as BXTweenPropertyBase;
+
+            // Add all of the property heights + their paddings
+            height += EditorGUI.GetPropertyHeight(propDuration) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propDelay) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propRepeatAmount) + mainCtx.Padding;
+            if (propRepeatAmount.intValue > 0)
+            {
+                height += EditorGUI.GetPropertyHeight(propRepeatType) + mainCtx.Padding;
+            }
+            height += EditorGUI.GetPropertyHeight(propTargetObject) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propAllowCustomCurveOvershoot) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(targetValue.UseTweenCurve ? propTweenCurve : propTweenEase) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propTweenEase) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propInvokeOnManualStop) + mainCtx.Padding;
+            height += EditorGUI.GetPropertyHeight(propOnEndAction) + mainCtx.Padding;
+
+            return height;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             SetupSerializedPropertyRelative(property);
 
             EditorGUI.BeginProperty(position, label, property); // This also sets property.isExpanded and other stuff.
-            Rect rectFoldout = new Rect(position.min.x, position.min.y, position.size.x, EditorGUIUtility.singleLineHeight);
+            mainCtx.Reset();
+            Rect rectFoldout = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
             property.isExpanded = EditorGUI.Foldout(rectFoldout, property.isExpanded, label);
 
             // Current property index drawing 
-            var targetValue = (BXTweenPropertyBase)property.GetTarget().Value;
+            BXTweenPropertyBase targetValue = property.GetTarget().Value as BXTweenPropertyBase;
             
             bool useTwCurve = false;
             if (targetValue != null)
@@ -83,34 +110,39 @@ namespace BXFW.ScriptEditor
                 targetValue.UpdateProperty();
             }
 
-            // Reset 'GetPropertyRect' positioning.
-            currentPropRect = -1;
             shouldUpdateProperty = false;
             if (property.isExpanded)
             {
                 EditorGUI.BeginChangeCheck();
 
                 EditorGUI.indentLevel++;
-                EditorGUI.PropertyField(GetPropertyRect(position), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
-                EditorGUI.PropertyField(GetPropertyRect(position), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
-                EditorGUI.PropertyField(GetPropertyRect(position), propRepeatAmount, new GUIContent("Repeat Amount", "Repeat amount of the tween. 0 and lower is no repeat."));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propDuration), propDuration, new GUIContent("Duration", "The duration of the tween. Should be higher than 0."));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propDelay), propDelay, new GUIContent("Delay", "The delay of the tween. Values lower than 0 is ignored."));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propRepeatAmount), propRepeatAmount, new GUIContent("Repeat Amount", "Repeat amount of the tween. 0 and lower is no repeat."));
                 // Show repeat type if we are using repeats
                 if (propRepeatAmount.intValue > 0)
-                    EditorGUI.PropertyField(GetPropertyRect(position), propRepeatType, new GUIContent("Repeat Type", "Repeat type of the tween. PingPong: Switch values for 1 repeat, Reset:"));
-                EditorGUI.PropertyField(GetPropertyRect(position), propTargetObject, new GUIContent("Target Object", "Tween target object. Set this to a value to keep the tween stop when the object is invalid/null."));
-                EditorGUI.PropertyField(GetPropertyRect(position), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
+                {
+                    EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propRepeatType), propRepeatType, new GUIContent("Repeat Type", "Repeat type of the tween. PingPong: Switch values for 1 repeat. Reset: Don't switch and keep the start and end values same."));
+                }
+
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propTargetObject), propTargetObject, new GUIContent("Target Object", "Tween target object. Set this to a value to keep the tween stop when the object is invalid/null."));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propAllowCustomCurveOvershoot), propAllowCustomCurveOvershoot, new GUIContent("Allow Curve/Ease Overshoot", "Tween curve/ease can exceed time values over 0-1."));
 
                 // This is an 'EditorGUI.Toggle' for proper checking of the inspector.
-                targetValue.UseTweenCurve = EditorGUI.Toggle(GetPropertyRect(position), new GUIContent("Use Custom Curve", "Use a custom easing curve."), targetValue.UseTweenCurve);
+                targetValue.UseTweenCurve = EditorGUI.Toggle(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), new GUIContent("Use Custom Curve", "Use a custom easing curve."), targetValue.UseTweenCurve);
 
                 if (useTwCurve)
-                    EditorGUI.PropertyField(GetPropertyRect(position), propTweenCurve, new GUIContent("Curve", "Custom easing curve."));
-                else 
-                    EditorGUI.PropertyField(GetPropertyRect(position), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
-                
-                EditorGUI.PropertyField(GetPropertyRect(position), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
+                {
+                    EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propTweenCurve), propTweenCurve, new GUIContent("Curve", "Custom easing curve."));
+                }
+                else
+                {
+                    EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propTweenEase), propTweenEase, new GUIContent("Ease", "Pre-defined easing curve."));
+                }
+
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, propInvokeOnManualStop), propInvokeOnManualStop, new GUIContent("Invoke Ending On Manual Stops", 
                     "When 'StartTween' is called, if the tween is already running 'StopTween' will invoke 'OnEnd' function (this may produce unwanted results on certain occassions). This prevents that. [Property-specific issue.]"));
-                EditorGUI.PropertyField(GetPropertyRect(position, EditorGUI.GetPropertyHeight(propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
+                EditorGUI.PropertyField(EditorGUI.IndentedRect(mainCtx.GetPropertyRect(position, propOnEndAction)), propOnEndAction, new GUIContent("OnTweenEnd", "Ending action for the tween. Assign object listeners here."));
                 EditorGUI.indentLevel--;
 
                 shouldUpdateProperty = EditorGUI.EndChangeCheck();
@@ -121,23 +153,6 @@ namespace BXFW.ScriptEditor
             }
 
             EditorGUI.EndProperty();
-        }
-
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            // FIXME : Calculate height properly (this very much works for now so idc)
-            // (yes, the proper way of doing this [unfortunately] is iterating all properties and getting their heights)
-            // This will work fine for single drawn properties, but for stuff like arrays, this is a problem if there's more than 2 expanded properties.
-
-            var totalLinesDrawn = 1; // Always include one for the 'BeginProperty' call
-
-            if (property.isExpanded)
-            {
-                // Was 15, this automatically receives the height from 'GetPropertyRect' calls.
-                totalLinesDrawn = currentPropRect + 7;
-            }
-
-            return (EditorGUIUtility.singleLineHeight * totalLinesDrawn) + 4;
         }
     }
 }

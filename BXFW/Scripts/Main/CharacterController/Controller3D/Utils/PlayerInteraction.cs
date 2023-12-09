@@ -23,7 +23,10 @@ namespace BXFW
 
         private void Update()
         {
-            if (!canInteract) return;
+            if (!canInteract)
+            {
+                return;
+            }
 
             if (interactionInput)
             {

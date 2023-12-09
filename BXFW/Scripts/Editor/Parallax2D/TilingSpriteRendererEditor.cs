@@ -31,7 +31,9 @@ namespace BXFW.ScriptEditor
             // TODO : Merge undos into one using the Undo group creation outside the foreach
             //var Targets = targets.Cast<TilingSpriteRenderer>();
             if (target == null)
+            {
                 target = (TilingSpriteRenderer)base.target;
+            }
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(undoMsg);
@@ -45,7 +47,9 @@ namespace BXFW.ScriptEditor
             foreach (SpriteRenderer sr in target.AllRendererObjects)
             {
                 if (sr == null)
+                {
                     continue;
+                }
 
                 undoRecord.Add(sr.gameObject);
             }
@@ -60,7 +64,9 @@ namespace BXFW.ScriptEditor
             foreach (var undoRegister in target.AllRendererObjects.Where(sr => !undoRecord.Contains(sr.gameObject)))
             {
                 if (undoRegister == null)
+                {
                     continue;
+                }
 
                 Undo.RegisterCreatedObjectUndo(undoRegister.gameObject, string.Empty);
             }
@@ -255,7 +261,10 @@ namespace BXFW.ScriptEditor
             // -- Init
             undoRecord.Clear();
             if (undoRecord.Capacity <= 0)
+            {
                 undoRecord.Capacity = Target.AllRendererObjects.Count + 1;
+            }
+
             var gEnabled = GUI.enabled;
 
             var DefaultLabelStyle = new GUIStyle(GUI.skin.label)

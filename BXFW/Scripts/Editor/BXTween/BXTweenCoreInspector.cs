@@ -117,7 +117,9 @@ namespace BXFW.ScriptEditor
 
             // Pause editor if the tween amount exceeded
             if (currentFilter.BreakAtTweenCount > 0 && BXTween.CurrentRunningTweens.Count >= currentFilter.BreakAtTweenCount)
+            {
                 EditorApplication.isPaused = true;
+            }
 
             runningTwScroll = GUILayout.BeginScrollView(runningTwScroll, GUILayout.Height(scrollAreaHeight));
             // Draw the list of current running tweens (with name)
@@ -131,11 +133,15 @@ namespace BXFW.ScriptEditor
                 // We just want to reverse the 'CurrentRunningTweens'
                 // Otherwise it's very easy to get ArgumentOutOfRangeException
                 if (guiInd > expandedTweens.Count - 1)
+                {
                     expandedTweens.Add(false);
+                }
 
                 // Filtering
                 if (currentFilter.ShouldFilter(tw))
+                {
                     continue;
+                }
 
                 // Get target type using reflection instead, no need to pollute the interface,
                 // as the interface works will be done using 'GetType' or 'is' keyword pattern matching.
@@ -161,7 +167,9 @@ namespace BXFW.ScriptEditor
                     {
                         // Don't draw properties twice
                         if (v.Name.Contains("k__BackingField"))
+                        {
                             continue;
+                        }
 
                         GUILayout.Label(string.Format("    [Field] {0}:::{1} = {2}", v.Name, v.FieldType, v.GetValue(tw)));
                     }

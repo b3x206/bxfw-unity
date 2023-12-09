@@ -37,7 +37,9 @@ namespace BXFW.ScriptEditor
         {
             float addHeight = 0f;
             if (target.Key == null)
+            {
                 target = property.GetTarget();
+            }
 
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))
@@ -56,7 +58,9 @@ namespace BXFW.ScriptEditor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (target.Key == null)
+            {
                 target = property.GetTarget();
+            }
 
             // Draw an object field for sprite property
             if (target.Key.FieldType != typeof(Sprite))
@@ -157,12 +161,16 @@ namespace BXFW.ScriptEditor
 
             // A no fail condition
             if (Attribute.ConditionInverted)
+            {
                 drawField = !drawField;
-            
+            }
+
             drawWarning = false;
 
             if (!drawField)
+            {
                 return 0f;
+            }
 
             targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
             return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
@@ -181,7 +189,9 @@ namespace BXFW.ScriptEditor
 
             // No draw
             if (!drawField)
+            {
                 return;
+            }
 
             // Draw (with CustomDrawer)
             if (UseCustomDrawer)
@@ -469,7 +479,7 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.BeginChangeCheck();
                 // Can't just cast float to double because reasons
-                if (property.type == typeof(float).Name)
+                if (property.GetPropertyType() == typeof(float))
                 {
                     float v = Mathf.Clamp(EditorGUI.FloatField(position, label, property.floatValue), (float)CAttribute.min, (float)CAttribute.max);
                     if (EditorGUI.EndChangeCheck())
@@ -641,7 +651,9 @@ namespace BXFW.ScriptEditor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property.propertyType != SerializedPropertyType.String)
+            {
                 return WARN_BOX_HEIGHT;
+            }
 
             return EditorGUI.GetPropertyHeight(property, label, true);
         }

@@ -42,18 +42,26 @@ namespace BXFW
         private void Update()
         {
             if (updateMode != CameraUpdateMode.FixedUpdate)
+            {
                 CameraLookUpdate(Time.deltaTime);
+            }
 
             if (moveMode != CameraUpdateMode.FixedUpdate)
+            {
                 CameraMoveUpdate(Time.deltaTime);
+            }
         }
         private void FixedUpdate()
         {
             if (updateMode == CameraUpdateMode.FixedUpdate)
+            {
                 CameraLookUpdate(Time.fixedDeltaTime);
+            }
 
             if (moveMode == CameraUpdateMode.FixedUpdate)
+            {
                 CameraMoveUpdate(Time.fixedDeltaTime);
+            }
         }
 
         /// <summary>
@@ -71,9 +79,14 @@ namespace BXFW
             yAxis *= sensitivityMouse * deltaTime;
 
             if ((invertAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            {
                 xAxis *= -1;
+            }
+
             if ((invertAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            {
                 yAxis *= -1;
+            }
 
             // Clamping
             if (lookVerticalAngleClamp != Vector2.zero)
@@ -89,9 +102,14 @@ namespace BXFW
 
             // Rotating
             if ((currentAxes & InputAxis.MouseX) == InputAxis.MouseX)
+            {
                 transform.Rotate(Vector3.up, -xAxis, Space.World);
+            }
+
             if ((currentAxes & InputAxis.MouseY) == InputAxis.MouseY)
+            {
                 transform.Rotate(Vector3.right, yAxis);
+            }
 
             transform.Translate(0f, 0f, -distanceFromTarget, Space.Self);
         }

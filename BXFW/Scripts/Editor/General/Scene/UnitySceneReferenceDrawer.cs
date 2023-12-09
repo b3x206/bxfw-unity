@@ -28,7 +28,9 @@ namespace BXFW.ScriptEditor
             // Pack the references with a serialized list of scene references
             // This class is stored in 'UnitySceneReference'?
             if (UnitySceneReferenceList.Instance == null)
+            {
                 UnitySceneReferenceList.CreateEditorInstance(RELATIVE_DIR_NAME, FILE_NAME);
+            }
 
             // Gather entries from 'EditorBuildSettings.scenes' and convert them.
             SceneEntry[] entries = new SceneEntry[EditorBuildSettings.scenes.Length];
@@ -110,7 +112,9 @@ namespace BXFW.ScriptEditor
         public Rect GetFieldRect(Rect pos, float height = -1f, float padding = 2f)
         {
             if (height <= 0f)
+            {
                 height = EditorGUIUtility.singleLineHeight;
+            }
 
             Rect r = new Rect
             {

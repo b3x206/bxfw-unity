@@ -147,9 +147,14 @@ namespace BXFW
         {
             //// Variable Control  ////
             if (groundCheckTransform == null)
+            {
                 Debug.LogError("[PlayerMovement] Player ground check is null. Please assign one.");
+            }
+
             if (targetCamera == null && currentCameraView == PlayerViewType.TPS)
+            {
                 Debug.LogWarning(string.Format("[PlayerMovement] Player cam is null. (Move style [{0}] is relative to camera!)", currentCameraView));
+            }
         }
 
         /////  Persistent Function Variables /////
@@ -174,17 +179,21 @@ namespace BXFW
         {
             // Don't move.
             if (!canMove)
+            {
                 return;
+            }
 
             //// Is Player Grounded? 
             IsGrounded = useGravity && Physics.CheckSphere(groundCheckTransform.position, groundCheckDistance, groundMask);
 
             //// Main Movement    ///
             if (useInternalInputMove)
+            {
                 moveInput = new Vector2(
                     Convert.ToInt32(moveRightInput) - Convert.ToInt32(moveLeftInput),      // h
                     Convert.ToInt32(moveForwardInput) - Convert.ToInt32(moveBackwardInput) // v
                 );
+            }
 
             Vector3 inputVelocity = PlayerMove(moveInput) * Time.fixedDeltaTime;
 
@@ -211,7 +220,9 @@ namespace BXFW
         public Vector3 PlayerMove(Vector2 input)
         {
             if (!canMove || input == Vector2.zero)
+            {
                 return Vector3.zero;
+            }
 
             Vector3 move_actualDir; // Dir on return;
             float move_currentSpeed = speed;
@@ -311,7 +322,10 @@ namespace BXFW
         private void PlayerJump()
         {
             // Don't jump if not in ground.
-            if (!IsGrounded) return;
+            if (!IsGrounded)
+            {
+                return;
+            }
 
             /// The '2f' added to this is required as <see cref="PlayerGravity()"/> function sets player gravity to -2f always.
             //m_gravityVelocity.y += Mathf.Sqrt(Player_JumpSpeed * -2f * Player_Gravity.y) + 2f;
@@ -320,14 +334,18 @@ namespace BXFW
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             if (rbPushPower <= 0f)
+            {
                 return;
+            }
 
             // Push rigidbodies 
             var rb = hit.rigidbody;
             Vector3 force;
 
             if (rb == null || rb.isKinematic)
+            {
                 return;
+            }
 
             if (hit.moveDirection.y < -0.3f)
             {
@@ -346,7 +364,10 @@ namespace BXFW
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (groundCheckTransform == null) return;
+            if (groundCheckTransform == null)
+            {
+                return;
+            }
 
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(groundCheckTransform.position, groundCheckDistance);

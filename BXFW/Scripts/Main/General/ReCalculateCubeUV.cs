@@ -23,9 +23,14 @@ namespace BXFW
         {
             // Check whether re-calculation is necessary.
             if (currentCalcScale == transform.localScale)
+            {
                 return;
+            }
+
             if (CheckForDefaultSize())
+            {
                 return;
+            }
 
             // Get the mesh filter.
             var filter = GetComponent<MeshFilter>();
@@ -148,7 +153,9 @@ namespace BXFW
         private bool CheckForDefaultSize()
         {
             if (currentCalcScale != Vector3.one)
+            {
                 return false;
+            }
 
             // ... This probably could be replaced with Resources.GetBuiltinResource<Mesh>("Cube.fbx") and setting the sharedMesh null then setting it this value ...
             // ... but whatever it works ...

@@ -52,7 +52,9 @@ namespace BXFW.ScriptEditor
 
                     // Eh, this is fine. It doesn't hinder the ability of 'ReorderableList' setting it's values, it's just not clamped the cool way.
                     if (!listBase.IsSorted())
+                    {
                         listBase.Sort();
+                    }
                 }
 
                 currentY += propHeight;

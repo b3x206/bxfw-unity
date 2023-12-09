@@ -91,7 +91,9 @@ namespace BXFW
                 // Rotate using 'direction'.
                 Vector3 setVector = new Vector3(c, s, 0f);
                 if (direction != Vector3.zero)
+                {
                     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+                }
 
                 v[i] = setVector;
             }

@@ -373,7 +373,9 @@ Method parameters | StartValue: {1} TargetValue: {2} Duration: {3} TargetObject:
         public static string GetErr_BXTwCTXCtorExcept(Exception e)
         {
             if (e == null)
+            {
                 e = new Exception("ERROR : The passed exception was null.");
+            }
 
             return string.Format
                 (   // Main String

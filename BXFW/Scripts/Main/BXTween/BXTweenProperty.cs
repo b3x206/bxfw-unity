@@ -12,9 +12,9 @@ namespace BXFW.Tweening
     [Serializable]
     public abstract class BXTweenPropertyBase
     {
-        [SerializeField] protected float _Duration = 1f;
-        [SerializeField] protected float _Delay = 0f;
-        [SerializeField] protected int _RepeatAmount = 0;
+        [SerializeField, Clamp(-1f, float.MaxValue)] protected float _Duration = 1f;
+        [SerializeField, Clamp(-1f, float.MaxValue)] protected float _Delay = 0f;
+        [SerializeField, Clamp(0, int.MaxValue)] protected int _RepeatAmount = 0;
         [SerializeField] protected RepeatType _TweenRepeatType = RepeatType.PingPong;
         [SerializeField] protected UnityEngine.Object _TargetObject;
 
@@ -118,10 +118,14 @@ namespace BXFW.Tweening
             {
                 // Tween curve is null
                 if (_TweenCurve == null)
+                {
                     _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                }
                 // Tween curve is invalid (no keys)
                 if (_TweenCurve.keys.Length <= 0)
+                {
                     _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                }
 
                 return _TweenCurve;
             }
@@ -217,7 +221,9 @@ namespace BXFW.Tweening
             get
             {
                 if (_TwContext == null)
+                {
                     Debug.LogError(BXTweenStrings.Err_BXTwPropNoTwCTX);
+                }
 
                 return _TwContext;
             }
@@ -280,7 +286,9 @@ namespace BXFW.Tweening
             else
             {
                 if (CurrentSettings.diagnosticMode)
+                {
                     Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
+                }
 
                 // Set the setter too.
                 // Since this is called when 'StartTween' is also called, 
@@ -425,7 +433,10 @@ namespace BXFW.Tweening
             var invokeEventOnStop = TwContext.InvokeEventOnStop;
             TwContext.SetInvokeEventsOnStop(InvokeEventOnManualStop);
             if (TwContext.IsRunning)
+            {
                 StopTween();
+            }
+
             TwContext.SetInvokeEventsOnStop(invokeEventOnStop);
 
             TwContext.StartTween();

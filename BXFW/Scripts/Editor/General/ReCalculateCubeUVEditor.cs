@@ -64,7 +64,9 @@ namespace BXFW.ScriptEditor
         {
             // Get Directory
             if (!Directory.Exists(DirSave))
+            {
                 Directory.CreateDirectory(DirSave);
+            }
 
             if (string.IsNullOrEmpty(Target.CubeMeshName))
             {
@@ -117,7 +119,9 @@ namespace BXFW.ScriptEditor
                 var TargetMeshFilter = target.GetComponent<MeshFilter>();
 
                 if (TargetRenderer == null || TargetMeshFilter == null)
+                {
                     continue;
+                }
 
                 // Only show this HelpBox if the target mesh wasn't applied to this object also.
                 if (File.Exists(GetFileSaveDir(target)) && 

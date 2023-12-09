@@ -95,7 +95,9 @@ namespace BXFW
             get
             {
                 if (_CamComponent == null)
+                {
                     _CamComponent = GetComponent<Camera>();
+                }
 
                 return _CamComponent;
             }
@@ -142,7 +144,9 @@ namespace BXFW
         protected virtual void Update()
         {
             if (!CanFollow || UpdateMode != CameraUpdateMode.Update)
+            {
                 return;
+            }
 
             MoveCamera(Time.deltaTime);
         }
@@ -154,7 +158,9 @@ namespace BXFW
         protected virtual void FixedUpdate()
         {
             if (!CanFollow || UpdateMode != CameraUpdateMode.FixedUpdate)
+            {
                 return;
+            }
 
             MoveCamera(Time.fixedDeltaTime);
         }
@@ -166,7 +172,9 @@ namespace BXFW
         protected virtual void LateUpdate()
         {
             if (!CanFollow || UpdateMode != CameraUpdateMode.LateUpdate)
+            {
                 return;
+            }
 
             MoveCamera(Time.deltaTime);
         }

@@ -61,7 +61,9 @@ namespace BXFW.ScriptEditor
             var targets = base.targets.Cast<TabSystem>().ToArray();
 
             if (undoRecord.Count > 0)
+            {
                 undoRecord.Clear();
+            }
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(undoMsg);
@@ -75,7 +77,9 @@ namespace BXFW.ScriptEditor
                 foreach (TabButton btn in system.TabButtons)
                 {
                     if (btn == null)
+                    {
                         continue;
+                    }
 
                     undoRecord.Add(btn.gameObject);
                 }
@@ -113,7 +117,9 @@ namespace BXFW.ScriptEditor
                 foreach (TabButton createdUndoRegister in target.TabButtons.Where(tb => !undoRecord.Contains(tb.gameObject)))
                 {
                     if (createdUndoRegister == null)
+                    {
                         continue;
+                    }
 
                     Undo.RegisterCreatedObjectUndo(createdUndoRegister.gameObject, string.Empty);
                 }
@@ -290,7 +296,9 @@ namespace BXFW.ScriptEditor
             // Apparently CanEditMultipleObjects ReorderableList has issues while drawing properties (keeps spamming you should stop calling next)
             // Most likely it uses serializedProperty.arraySize instead of iterating properly so we have to ditch the view if there's more than 2 views
             if (targets.Length <= 1)
+            {
                 EditorGUILayout.PropertyField(tabSO.FindProperty("tabButtons"));
+            }
 
             GUI.enabled = true;
 

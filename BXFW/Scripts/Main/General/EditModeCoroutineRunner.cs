@@ -43,7 +43,9 @@ namespace BXFW.Tools.Editor
         private static void Update()
         {
             if (CoroutineInProgress.Count <= 0)
-                return; 
+            {
+                return;
+            }
 
             for (int i = 0; i < CoroutineInProgress.Count; i++)
             {
@@ -96,7 +98,9 @@ namespace BXFW.Tools.Editor
             bool indFound = index > -1;
 
             if (indFound)
+            {
                 CoroutineInProgress.RemoveAt(index);
+            }
 
             return indFound;
         }

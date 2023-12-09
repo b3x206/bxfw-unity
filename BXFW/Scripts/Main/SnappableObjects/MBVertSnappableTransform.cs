@@ -91,7 +91,9 @@ namespace BXFW
             mesh = CurrentMeshFilter.mesh;
 #endif
             if (mesh == null)
+            {
                 return;
+            }
 
             m_VertPoints ??= new List<Vector3>(mesh.vertexCount / 3);  // There are always 2 excess verts.
             // Check existance of the vertex list or the updated mesh reference.
@@ -110,7 +112,9 @@ namespace BXFW
                     bool isDuplicate = m_VertPoints.Contains(vert);
                     
                     if (isDuplicate)
+                    {
                         continue;
+                    }
 
                     m_VertPoints.Add(vert);
                 }
@@ -151,7 +155,9 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (snappableTarget == null)
+            {
                 return false;
+            }
 
             // there is no better way to check whether the scale is valid for snapping.
             if (snappableTarget.transform.localScale.GetSmallestAxis() <= 0f ||
@@ -201,7 +207,9 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
 
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
@@ -254,7 +262,10 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
+
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));

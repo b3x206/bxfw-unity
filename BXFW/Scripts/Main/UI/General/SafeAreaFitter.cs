@@ -25,12 +25,16 @@ namespace BXFW.UI
         private void Update()
         {
             if (!AllowResize)
+            {
                 return; // Size can be modified after initial calculation. 
+            }
 
             // I have no idea why i added this
             // FIXME :  The 'SafeAreaFitter' should not constantly size itself (?)
             if (transform.hasChanged)
+            {
                 Resize();
+            }
         }
         
         /// <summary>
@@ -43,9 +47,14 @@ namespace BXFW.UI
             var safeArea = Screen.safeArea;
 
             if (heightOffsetTop >= 0f)
+            {
                 mOffsetTop = heightOffsetTop;
+            }
+
             if (heightOffsetBottom >= 0f)
+            {
                 mOffsetBottom = heightOffsetBottom;
+            }
 
             // Is portrait || Square
             if (Screen.height >= Screen.width)

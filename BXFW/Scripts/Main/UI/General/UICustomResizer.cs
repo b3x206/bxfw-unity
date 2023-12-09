@@ -43,7 +43,9 @@ namespace BXFW.UI
             get
             {
                 if (ObjectTarget == null)
+                {
                     return Vector2.zero;
+                }
 
                 return GetTargetSize() + new Vector2(paddingX, paddingY);
             }
@@ -57,7 +59,9 @@ namespace BXFW.UI
             get
             {
                 if (_rectTransform == null)
+                {
                     _rectTransform = GetComponent<RectTransform>();
+                }
 
                 return _rectTransform;
             }
@@ -116,17 +120,23 @@ namespace BXFW.UI
         {
             // Check target
             if (ObjectTarget == null)
+            {
                 return false;
+            }
 
             // Check if target is enabled (note : this object is disabled in update if the target is disabled)
             // Disabling the object here, unity doesn't allow it.
             // (this was the case in the previous event based update, it may have been changed)
             if (!ObjectTarget.gameObject.activeInHierarchy)
+            {
                 return false;
+            }
 
             // Check preferenced values
             if (CurrentTargetValues == prevTargetValues)
+            {
                 return false;
+            }
 
             return true;
         }
@@ -171,7 +181,9 @@ namespace BXFW.UI
         public void UpdateRectTransform(bool xAxisUpdate = true, bool yAxisUpdate = true)
         {
             if (!ShouldUpdate())
+            {
                 return;
+            }
 
             // No need to update canvases if we are calling this from a waiting coroutine
             // (events only invoke once globally for this behaviour, like an static method)

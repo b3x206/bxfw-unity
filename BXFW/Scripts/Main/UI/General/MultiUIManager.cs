@@ -212,9 +212,13 @@ namespace BXFW.UI
 #if UNITY_EDITOR
                 // Playing check
                 if (Application.isPlaying)
+                {
                     Destroy(destroyObject);
+                }
                 else
+                {
                     DestroyImmediate(destroyObject);
+                }
 #else
                 // No need for that on built games
                 Destroy(destroyObject);

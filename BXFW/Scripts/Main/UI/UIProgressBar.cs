@@ -25,7 +25,9 @@ namespace BXFW.UI
                 m_ProgressBarImg = value;
 
                 if (m_ProgressBarImg == null)
+                {
                     return;
+                }
 
                 SetProgress(m_ProgressValue);
             }
@@ -42,7 +44,9 @@ namespace BXFW.UI
                 m_ProgressValue = Mathf.Clamp01(value);
 
                 if (m_ProgressBarImg == null)
+                {
                     return;
+                }
 
                 SetProgress(m_ProgressValue);
             }
@@ -56,7 +60,9 @@ namespace BXFW.UI
             get
             {
                 if (m_rectTransform == null)
+                {
                     m_rectTransform = GetComponent<RectTransform>();
+                }
 
                 return m_rectTransform;
             } 
@@ -71,7 +77,9 @@ namespace BXFW.UI
             get
             {
                 if (m_background == null)
+                {
                     TryGetComponent(out m_background);
+                }
 
                 return m_background;
             }
@@ -130,7 +138,9 @@ namespace BXFW.UI
         public void SetProgress(float ProgressSet, bool UseTween = false)
         {
             if (m_ProgressBarImg == null)
+            {
                 return; // Image is null, don't put any error, as it fills the console because of the 'OnValidate' call.
+            }
 
             ProgressSet = Mathf.Clamp01(ProgressSet);
             if (UseTween)

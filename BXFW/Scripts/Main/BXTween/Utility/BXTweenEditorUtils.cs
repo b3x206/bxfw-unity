@@ -55,7 +55,9 @@ namespace BXFW.Tweening.Editor
             get
             {
                 if (currentSettings == null)
+                {
                     currentSettings = BXTweenSettings.Instance;
+                }
 
                 if (currentSettings == null)
                 {
@@ -77,7 +79,7 @@ namespace BXFW.Tweening.Editor
             var gEnabled = GUI.enabled;
 
             GUIAdditionals.DrawUILineLayout(Color.gray);
-            EditorGUILayout.LabelField(new GUIContent(":: BXTween 1.0b ::"), new GUIStyle(EditorStyles.boldLabel)
+            EditorGUILayout.LabelField(new GUIContent(":: BXTween 1.0 ::"), new GUIStyle(EditorStyles.boldLabel)
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = EditorStyles.boldFont.fontSize + 2
@@ -104,7 +106,7 @@ namespace BXFW.Tweening.Editor
             GUILayout.BeginHorizontal();
             var dEaseType = (EaseType)EditorGUILayout.EnumPopup("Default Ease Type", CurrentSettings.DefaultEaseType);
             GUIAdditionals.PlotLineLayout(
-                (v) => BXTweenEase.Methods[dEaseType](v), 
+                (v) => BXTweenEase.EasedValue(v, dEaseType), 
                 0f, 1f, 2.5f, 20, GUILayout.Width(80f), GUILayout.Height(50f)
             );
             GUILayout.EndHorizontal();

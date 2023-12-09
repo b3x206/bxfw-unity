@@ -98,7 +98,10 @@ namespace BXFW
 
         private void OnDrawGizmosSelected()
         {
-            if (PivotObj == null) return;
+            if (PivotObj == null)
+            {
+                return;
+            }
 
             var gColor = Gizmos.color;
             Gizmos.DrawWireSphere(PivotObj.position, DistanceBetweenObj);

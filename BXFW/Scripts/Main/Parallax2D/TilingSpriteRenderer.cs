@@ -23,14 +23,18 @@ namespace BXFW
                 _SortOrder = value;
 
                 if (tiledSpriteObjs.Values.Count <= 0)
+                {
                     return;
+                }
 
                 foreach (var list in tiledSpriteObjs.Values)
                 {
                     foreach (var rend in list)
                     {
                         if (rend == null)
+                        {
                             Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Null renderer registered in object '{this.GetPath()}'.");
+                        }
 
                         rend.sortingOrder = value;
                     }
@@ -57,14 +61,18 @@ namespace BXFW
                     foreach (Transform rendAdd in transform)
                     {
                         if (rendAdd.TryGetComponent(out SpriteRenderer set))
+                        {
                             allRendererObjects.Add(set);
+                        }
                     }
                 }
 
                 foreach (var rend in allRendererObjects)
                 {
                     if (rend == null)
+                    {
                         Debug.LogWarning($"[TilingSpriteRenderer::(set)SortOrder] Null renderer registered in object '{this.GetPath()}'.");
+                    }
 
                     rend.color = value;
                 }
@@ -83,7 +91,9 @@ namespace BXFW
             get
             {
                 if (allRendererObjects.Count <= 0)
+                {
                     return TiledSprite != null ? TiledSprite.bounds : default;
+                }
 
                 return allRendererObjects[0].bounds;
             }
@@ -214,7 +224,9 @@ namespace BXFW
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)
+            {
                 return;
+            }
 #endif
             Initilaze();
 
@@ -226,7 +238,9 @@ namespace BXFW
         private void Update()
         {
             if (transform.hasChanged)
+            {
                 GenerateCorrectScaleParent();
+            }
         }
 
         /// <summary>
@@ -236,7 +250,9 @@ namespace BXFW
         {
             // Set main camera
             if (ResizeTargetCamera == null)
+            {
                 ResizeTargetCamera = Camera.main;
+            }
 
             // Create correct scaled parent.
             GenerateCorrectScaleParent();
@@ -259,7 +275,9 @@ namespace BXFW
             if (TiledSprite == null)
             {
                 if (Application.isPlaying)
+                {
                     Debug.LogError($"[TilingSpriteRenderer::GenerateGrid] The tiledSprite variable is null on object \"{name}\".");
+                }
 
                 return false;
             }
@@ -278,7 +296,9 @@ namespace BXFW
 
             // Generate Object
             if ((gridX <= 0 || gridY <= 0) && !AutoTile)
+            {
                 return false; // No grid
+            }
 
             bool tileRightOrUp(int currTile)
             {
@@ -337,13 +357,19 @@ namespace BXFW
                     var t = CorrectScaledParent.GetChild(0);
 
                     if (t == null)
+                    {
                         continue;
+                    }
 
                     if (t == CorrectScaledParent)
+                    {
                         continue;
+                    }
 #if UNITY_EDITOR
                     if (Application.isEditor && !Application.isPlaying)
+                    {
                         UnityEditor.Undo.DestroyObjectImmediate(t.gameObject);
+                    }
                     else
 #endif
                     {

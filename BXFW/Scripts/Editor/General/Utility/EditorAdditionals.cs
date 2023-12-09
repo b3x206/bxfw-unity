@@ -89,7 +89,9 @@ namespace BXFW.Tools.Editor
         {
             // Create at the selected directory
             if (string.IsNullOrEmpty(path))
+            {
                 path = Selection.activeObject == null ? "Assets" : AssetDatabase.GetAssetPath(Selection.activeObject);
+            }
 
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), path)))
             {
@@ -168,9 +170,14 @@ namespace BXFW.Tools.Editor
         public static void GetTargetsNoAlloc(this SerializedProperty prop, List<KeyValuePair<FieldInfo, object>> targetPairs)
         {
             if (prop == null)
+            {
                 throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTargets] Parameter 'prop' is null.");
+            }
+
             if (targetPairs == null)
+            {
                 throw new ArgumentNullException(nameof(targetPairs), "[EditorAdditionals::GetTargets] Array Parameter 'targetPairs' is null.");
+            }
 
             targetPairs.Clear();
             targetPairs.Capacity = prop.serializedObject.targetObjects.Length;
@@ -179,7 +186,9 @@ namespace BXFW.Tools.Editor
             {
                 UnityEngine.Object targetedObject = prop.serializedObject.targetObjects[i];
                 if (targetedObject == null)
+                {
                     continue;
+                }
 
                 targetPairs.Add(GetTarget(targetedObject, prop.propertyPath));
             }
@@ -201,7 +210,9 @@ namespace BXFW.Tools.Editor
         public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
         {
             if (prop == null)
+            {
                 throw new ArgumentNullException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
+            }
 
             return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
         }
@@ -220,7 +231,9 @@ namespace BXFW.Tools.Editor
         {
             int lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.');
             for (int i = 1; i < parentDepth; i++)
+            {
                 lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.', lastIndexOfPeriod - 1);
+            }
 
             if (lastIndexOfPeriod == -1)
             {
@@ -276,8 +289,10 @@ namespace BXFW.Tools.Editor
                         var arrayIndex = int.Parse(m.Groups[1].Value);
 
                         if (!(target is IEnumerable targetAsArray))
+                        {
                             throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
+                        }
 
                         // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors).
                         var cntIndex = 0;
@@ -310,7 +325,9 @@ namespace BXFW.Tools.Editor
                         }
 
                         if (!isSuccess)
+                        {
                             throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", propertyPath, targetAsArray));
+                        }
                     }
                     else // Array parse failure, should only happen on the ends of the array (i.e size field)
                     {
@@ -357,7 +374,9 @@ namespace BXFW.Tools.Editor
             const string AD_STR = "Array.data[";
             int arrayDefLastIndex = property.propertyPath.LastIndexOf(AD_STR);
             if (arrayDefLastIndex < 0)
+            {
                 return -1;
+            }
 
             string indStr = property.propertyPath.Substring(arrayDefLastIndex + AD_STR.Length).TrimEnd(']');
             return int.Parse(indStr);
@@ -369,7 +388,9 @@ namespace BXFW.Tools.Editor
         private static FieldInfo GetField(object target, string name, Type targetType = null)
         {
             if (string.IsNullOrEmpty(name))
+            {
                 throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
+            }
 
             if (targetType == null)
             {
@@ -404,12 +425,16 @@ namespace BXFW.Tools.Editor
         public static PropertyDrawer GetTargetPropertyDrawer(PropertyDrawer requester)
         {
             if (requester == null)
+            {
                 throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
+            }
 
             // Get the attribute type for target PropertyDrawer's CustomPropertyDrawer target type
             Type attributeTargetType = (Type)typeof(CustomPropertyDrawer).GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
             if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
+            {
                 throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
+            }
 
             Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(SceneView)).             // Internal class is contained in the same assembly (UnityEditor.CoreModule)
                 GetType("UnityEditor.ScriptAttributeUtility", true).                             // Internal class that has dictionary for all custom PropertyDrawer's
@@ -418,7 +443,9 @@ namespace BXFW.Tools.Editor
 
             // Ignore this, this means that there's no 'PropertyDrawer' implemented.
             if (propertyDrawerType == null)
+            {
                 return null;
+            }
 
             PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
@@ -441,7 +468,9 @@ namespace BXFW.Tools.Editor
             foreach (var i in ActiveEditorTracker.sharedTracker.activeEditors)
             {
                 if (i.serializedObject != obj)
+                {
                     continue;
+                }
 
                 i.Repaint();
             }
@@ -464,7 +493,9 @@ namespace BXFW.Tools.Editor
         {
             var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
             if (!shouldAcceptDrag)
+            {
                 return;
+            }
 
             MakeDroppableAreaGUI(onDragAcceptAction, customRect);
         }
@@ -484,7 +515,9 @@ namespace BXFW.Tools.Editor
                         GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
                     if (!dropArea.Contains(evt.mousePosition))
+                    {
                         return;
+                    }
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 
@@ -563,18 +596,24 @@ namespace BXFW.Tools.Editor
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
+                                {
                                     Pair.Value();
+                                }
                             }
 
                             if ((Pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            {
                                 EditorGUILayout.PropertyField(property, true);
+                            }
 
                             if ((Pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
                             {
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
+                                {
                                     Pair.Value();
+                                }
                             }
 
                             expanded = false;
@@ -667,7 +706,9 @@ namespace BXFW.Tools.Editor
                 {
                     // Check if the 'currentProperty' is now equal to a 'non-children' property
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
+                    {
                         break;
+                    }
 
                     // Use '.Copy' for making 'Enumerable.ToArray' work
                     // This is due to yield return'd value will be always be the same 'currentProperty' if we don't copy it
@@ -757,7 +798,9 @@ namespace BXFW.Tools.Editor
 
                 // If our property is null, ignore.
                 if (prop == null)
+                {
                     throw new NullReferenceException(string.Format("[EditorAdditionals::UnityArrayGUI] The drawn property at index {0} does not exist. This should not happen.", i));
+                }
 
                 EditorGUILayout.PropertyField(prop);
 

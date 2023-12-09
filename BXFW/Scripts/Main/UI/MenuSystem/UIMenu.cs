@@ -37,7 +37,9 @@ namespace BXFW.UI
             get
             {
                 if (menuRectTransform == null)
+                {
                     menuRectTransform = GetComponent<RectTransform>();
+                }
 
                 return menuRectTransform;
             }
@@ -53,7 +55,9 @@ namespace BXFW.UI
             get
             {
                 if (menuCanvasGroup == null)
+                {
                     TryGetComponent(out menuCanvasGroup);
+                }
 
                 return menuCanvasGroup;
             }

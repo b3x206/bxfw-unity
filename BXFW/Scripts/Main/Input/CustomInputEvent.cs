@@ -61,7 +61,9 @@ namespace BXFW
         public void Poll()
         {
             if (!isPolled)
+            {
                 return;
+            }
 
             foreach (KeyCode key in KeyCodeReq)
             {
@@ -107,7 +109,10 @@ namespace BXFW
             {
                 case EventType.None:
                     if (!isPolled)
+                    {
                         Debug.LogWarning("[CustomKeyEvent::Use] Called use even though this event isn't polled. Set 'isPolled' to true to fix this.");
+                    }
+
                     break;
 
                 default:
@@ -233,7 +238,9 @@ namespace BXFW
         public static bool operator ==(CustomInputEvent lhs, CustomInputEvent rhs)
         {
             if (Equals(lhs, null))
+            {
                 return Equals(rhs, null);
+            }
 
             return lhs.Equals(rhs);
         }

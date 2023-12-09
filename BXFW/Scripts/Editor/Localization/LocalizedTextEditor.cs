@@ -36,15 +36,11 @@ namespace BXFW.ScriptEditor
                         }
 
                         // Just draw an info box if file is not utf8 with bom
-                        if (target.localeData != null)
-                            if (target.localeData.bytes.Length > 3)
-                                if (target.localeData.bytes[0] != 0xEF || target.localeData.bytes[1] != 0xBB || target.localeData.bytes[2] != 0xBF)
+                        if (target.localeData != null) { if (target.localeData.bytes.Length > 3) { if (target.localeData.bytes[0] != 0xEF || target.localeData.bytes[1] != 0xBB || target.localeData.bytes[2] != 0xBF)
                                 {
                                     // File doesn't contain utf8 bom
                                     EditorGUILayout.HelpBox("This file doesn't contain utf8 bom.\nMake sure your file is utf8.\nIf your file is utf8, you can ignore this message.", MessageType.Info);
-                                }
-
-                        GUILayout.Space(EditorGUIUtility.singleLineHeight);
+                                } } } GUILayout.Space(EditorGUIUtility.singleLineHeight);
                     }
                 )},
                 { nameof(LocalizedText.textID), new KeyValuePair<MatchGUIActionOrder, System.Action>(

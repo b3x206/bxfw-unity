@@ -77,9 +77,13 @@ namespace BXFW.Tools.Editor
 
             // Cleanup
             if (Application.isPlaying)
+            {
                 Destroy(tempRT);
+            }
             else
+            {
                 DestroyImmediate(tempRT);
+            }
 
             ScreenshotCamera.aspect = prevAspect;
         }

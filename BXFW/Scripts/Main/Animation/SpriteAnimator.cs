@@ -55,7 +55,9 @@ namespace BXFW
             {
                 // Don't throw exceptions
                 if (CurrentAnimIndex < 0)
+                {
                     return null;
+                }
 
                 return animations[CurrentAnimIndex];
             }
@@ -94,7 +96,9 @@ namespace BXFW
         {
             if (animateSprite == null && !TryGetComponent(out animateSprite) &&
                 animateImage == null && !TryGetComponent(out animateImage))
+            {
                 Debug.LogError($"[SpriteAnimator::Start] Cannot set initialSprite : animateSprite is null on object '{name}'.");
+            }
             else
             {
                 GatherInitialSprite();
@@ -117,31 +121,53 @@ namespace BXFW
         public void GatherInitialSprite()
         {
             if (animateImage != null)
+            {
                 initialSprite = animateImage.sprite;
+            }
 
             if (animateSprite != null)
+            {
                 initialSprite = animateSprite.sprite;
+            }
         }
         private void SetInitialObjectSprite(Sprite sInitial)
         {
             if (animateImage != null)
+            {
                 animateImage.sprite = sInitial;
+            }
 
             if (animateSprite != null)
+            {
                 animateSprite.sprite = sInitial;
+            }
         }
         private void Update()
         {
-            if (useFixedUpdate) return;
-            if (!IsPlaying) return;
+            if (useFixedUpdate)
+            {
+                return;
+            }
+
+            if (!IsPlaying)
+            {
+                return;
+            }
 
             timer += overrideTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
             UpdateAnimator();
         }
         private void FixedUpdate()
         {
-            if (!useFixedUpdate) return;
-            if (!IsPlaying) return;
+            if (!useFixedUpdate)
+            {
+                return;
+            }
+
+            if (!IsPlaying)
+            {
+                return;
+            }
 
             timer += overrideTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
             UpdateAnimator();
@@ -159,7 +185,10 @@ namespace BXFW
             var frameMS = CurrentAnimation.frameMS;
             var loop = CurrentAnimation.loop;
 
-            if (frameMS <= 0f) return;
+            if (frameMS <= 0f)
+            {
+                return;
+            }
 
             if (timer >= frameMS)
             {
@@ -168,12 +197,19 @@ namespace BXFW
                 // CurrentFrame starts from 0.
                 // We also want to show the first frame.
                 if (animateSprite != null)
+                {
                     animateSprite.sprite = CurrentAnimation[CurrentFrame];
+                }
+
                 if (animateImage != null)
+                {
                     animateImage.sprite = CurrentAnimation[CurrentFrame];
+                }
 
                 if (loop)
+                {
                     CurrentFrame = (CurrentFrame + 1) % CurrentAnimation.frameSpriteArray.Length;
+                }
                 else
                 {
                     var currentFrameSet = CurrentFrame + 1;
@@ -245,7 +281,9 @@ namespace BXFW
             }
 
             if (!foundID)
+            {
                 Debug.LogWarning($"[SpriteAnimator::Play(id)] Couldn't find ID : \"{id}\". Playing current animation.");
+            }
 
             CurrentFrame = 0;
             IsPlaying = true;

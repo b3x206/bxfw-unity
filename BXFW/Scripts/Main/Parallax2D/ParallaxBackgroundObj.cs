@@ -69,8 +69,14 @@ namespace BXFW
 
                 positionDelta.x += Dist;
 
-                if (Temp > StartPos.x + Length) StartPos.x += Length;
-                else if (Temp < StartPos.x - Length) StartPos.x -= Length;
+                if (Temp > StartPos.x + Length)
+                {
+                    StartPos.x += Length;
+                }
+                else if (Temp < StartPos.x - Length)
+                {
+                    StartPos.x -= Length;
+                }
             }
             if ((ParentGroup.ScrollAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis)
             {

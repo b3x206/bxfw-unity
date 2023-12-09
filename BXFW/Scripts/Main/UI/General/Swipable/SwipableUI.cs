@@ -180,7 +180,10 @@ namespace BXFW.UI
         private Vector2 _CurrentScroll;
         private void Update()
         {
-            if (_ScrollEventData == null) return;
+            if (_ScrollEventData == null)
+            {
+                return;
+            }
 
             if (_CurrentScrollDeltaWait >= ScrollWaitTime)
             {
@@ -194,7 +197,10 @@ namespace BXFW.UI
         public void OnScroll(PointerEventData data)
         {
             // Disable scroll if no sensitivity
-            if (ScrollSwipeSensitivity <= 0f) return;
+            if (ScrollSwipeSensitivity <= 0f)
+            {
+                return;
+            }
 
             if (_ScrollEventData == null)
             {
@@ -213,7 +219,9 @@ namespace BXFW.UI
         public void OnDrag(PointerEventData data)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             float swipeDelta = data.pressPosition.x - data.position.x; // The difference between the start point and end point.
             // (maybe) TODO : Add smooth slowdown until swipe limit.
@@ -247,7 +255,9 @@ namespace BXFW.UI
         public void OnEndDrag(PointerEventData data)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             float percentage = (data.pressPosition.x - data.position.x) / ItemContainer.rect.width;
 

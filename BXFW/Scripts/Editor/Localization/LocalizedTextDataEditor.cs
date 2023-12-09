@@ -27,7 +27,9 @@ namespace BXFW.ScriptEditor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (!property.isExpanded)
+            {
                 return EditorGUIUtility.singleLineHeight + PADDING;
+            }
 
             return currentPropY + PADDING;
         }

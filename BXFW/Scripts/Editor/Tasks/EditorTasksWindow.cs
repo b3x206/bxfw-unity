@@ -40,7 +40,9 @@ namespace BXFW.Tools.Editor
             {
                 // asset actually exists, we are going to lose reference anyways.
                 if (!string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(v)))
+                {
                     continue;
+                }
 
                 // since these could be temp, avoid memory leaks manually
                 DestroyImmediate(v);
@@ -106,7 +108,9 @@ namespace BXFW.Tools.Editor
                     EditorTask t = currentTasksGen[i];
 
                     if (t == null)
+                    {
                         continue;
+                    }
 
                     if (!t.GetWarning())
                     {
@@ -122,12 +126,16 @@ namespace BXFW.Tools.Editor
                     for (int i = 0; i < currentTasksGen.Count; i++)
                     {
                         if (EditorUtility.DisplayCancelableProgressBar("Doing tasks...", $"Currently doing task #{i + 1}.", i / (float)currentTasksGen.Count))
+                        {
                             break;
+                        }
 
                         EditorTask t = currentTasksGen[i];
                         // pretty sure the user can see that there's null tasks, we also put a helpbox there.
                         if (t == null)
+                        {
                             continue;
+                        }
 
                         t.Run();
                     }

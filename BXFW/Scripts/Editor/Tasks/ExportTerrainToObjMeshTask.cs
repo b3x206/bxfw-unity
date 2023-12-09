@@ -227,7 +227,9 @@ namespace BXFW.Tools.Editor
         private void UpdateProgress()
         {
             if (counter++ != PROGRESS_UPDATE_INTERVAL)
+            {
                 return;
+            }
 
             counter = 0;
             EditorUtility.DisplayProgressBar("[Terrain2Obj] Saving...", "", Mathf.InverseLerp(0, totalCount, ++tCount));

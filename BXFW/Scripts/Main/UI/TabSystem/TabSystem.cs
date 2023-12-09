@@ -50,7 +50,9 @@ namespace BXFW.UI
                 _TabButtonAmount = Mathf.Clamp(value, 0, ushort.MaxValue);
 
                 if (prevValue != value) // Generate if value is changed
+                {
                     GenerateTabs(prevValue);
+                }
             }
         }
         [SerializeField] private int _TabButtonAmount = 1;
@@ -69,7 +71,9 @@ namespace BXFW.UI
             set
             {
                 if (_CurrentReferenceTabButton == value)
+                {
                     return;
+                }
 
                 _CurrentReferenceTabButton = Mathf.Clamp(value, 0, tabButtons.Count - 1);
             }
@@ -225,7 +229,9 @@ namespace BXFW.UI
                         if (Application.isPlaying)
                         {
                             if (tabButtons[i] != null)
+                            {
                                 DestroyImmediate(tabButtons[i].gameObject); // have to DestroyImmediate here as well.
+                            }
                             else
                             {
                                 // Tab button is null, call CleanTabButtonsList
@@ -237,7 +243,9 @@ namespace BXFW.UI
                         else
                         {
                             if (tabButtons[i] != null)
+                            {
                                 UnityEditor.Undo.DestroyObjectImmediate(tabButtons[i].gameObject);
+                            }
                             else
                             {
                                 // Tab button is null, call CleanTabButtonsList
@@ -304,7 +312,9 @@ namespace BXFW.UI
                 else
                 {
                     if (tabButtons[tabButtons.Count - 1] != null)
+                    {
                         UnityEditor.Undo.DestroyObjectImmediate(tabButtons[tabButtons.Count - 1].gameObject);
+                    }
                     else
                     {
                         // Tab button is null, call CleanTabButtonsList
@@ -367,7 +377,10 @@ namespace BXFW.UI
             // Destroy array.
             foreach (TabButton button in tabButtons)
             {
-                if (button.ButtonIndex == 0 && !clearAll) continue;
+                if (button.ButtonIndex == 0 && !clearAll)
+                {
+                    continue;
+                }
 
                 if (Application.isPlaying)
                 {
@@ -495,7 +508,9 @@ namespace BXFW.UI
             foreach (var button in tabButtons)
             {
                 if (button == null)
+                {
                     continue;
+                }
 
                 if (!Interactable)
                 {
@@ -533,7 +548,9 @@ namespace BXFW.UI
                 ButtonToSelScript.SetButtonAppearance(TabButton.ButtonState.Click);
 
                 if (!silentSelect)
+                {
                     OnTabButtonsClicked?.Invoke(IndexSelect);
+                }
 
                 UpdateButtonAppearances();
             }

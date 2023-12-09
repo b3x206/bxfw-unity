@@ -112,7 +112,9 @@ namespace BXFW
         public static string GetPath(this Transform target)
         {
             if (target.parent == null)
+            {
                 return string.Format("/{0}", target.name);
+            }
 
             return string.Format("{0}/{1}", target.parent.GetPath(), target.name);
         }
@@ -217,7 +219,10 @@ namespace BXFW
         {
             Vector3 forward = new Vector3(matrix.m02, matrix.m12, matrix.m22);
             if (forward == Vector3.zero)
+            {
                 return Quaternion.identity; // Get identity rotation without logging message to the console
+            }
+
             Vector3 upwards = new Vector3(matrix.m01, matrix.m11, matrix.m21);
 
             return Quaternion.LookRotation(forward, upwards);
@@ -249,7 +254,9 @@ namespace BXFW
                     transform.SetPositionAndRotation(position, rotation);
                     Vector3 parentLossyScale = Vector3.one;
                     if (transform.parent != null)
+                    {
                         parentLossyScale = transform.parent.lossyScale;
+                    }
 
                     transform.localScale = Vector3.Scale(parentLossyScale, Vector3.one);
                     break;
@@ -274,7 +281,9 @@ namespace BXFW
         public static void VerticesToMatrixSpaceNoAlloc(Mesh mesh, Matrix4x4 matrixSpace, List<Vector3> vertsArray)
         {
             if (mesh == null)
+            {
                 throw new ArgumentNullException(nameof(mesh), "[Additionals::VerticesToWorldSpaceNoAlloc] Passed 'mesh' argument is null.");
+            }
 
             // This method throws anyway if the 'vertsArray' is null, no need to check.
             mesh.GetVertices(vertsArray);
@@ -299,7 +308,9 @@ namespace BXFW
         public static void VerticesToWorldSpaceNoAlloc(this MeshFilter filter, List<Vector3> vertsArray)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[Additionals::VerticesToWorldSpaceNoAlloc] Passed 'filter' argument is null.");
+            }
 
             Mesh mesh;
 #if UNITY_EDITOR
@@ -316,7 +327,9 @@ namespace BXFW
         public static List<Vector3> VerticesToWorldSpace(this MeshFilter filter)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[Additionals::VerticesToWorldSpace] Passed 'filter' argument is null.");
+            }
 
             Mesh mesh;
 #if UNITY_EDITOR
@@ -362,15 +375,21 @@ namespace BXFW
         public static Vector3[] WorldVertsToLocalSpace(this MeshFilter filter, Vector3[] worldV)
         {
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter), "[Additionals::WorldVertsToLocalSpace] Passed 'filter' argument is null.");
+            }
 
             Mesh vertsMesh = Application.isPlaying ? filter.mesh : filter.sharedMesh;
 
             if (vertsMesh == null)
+            {
                 throw new ArgumentException("[Additionals::WorldVertsToLocalSpace] Passed 'filter's mesh value is null.", nameof(filter.mesh));
+            }
 
             if (vertsMesh.vertexCount != worldV.Length)
+            {
                 throw new ArgumentException("[Additionals::WorldVertsToLocalSpace] The vertex count of passed array is not equal with mesh's vertex count.", nameof(worldV));
+            }
 
             Matrix4x4 worldToLocal = filter.transform.worldToLocalMatrix;
             Vector3[] localV = new Vector3[worldV.Length];
@@ -397,7 +416,10 @@ namespace BXFW
             // Normal related stuff
             cPointNormal = Vector3.Cross(v1, v2);
             if (cPointNormal.sqrMagnitude < Mathf.Epsilon)
+            {
                 return Vector3.one * float.NaN;
+            }
+
             cPointNormal.Normalize();
 
             // Perpendicular of both chords
@@ -413,7 +435,9 @@ namespace BXFW
             float d = r.magnitude * Mathf.Sin(a * Mathf.Deg2Rad) / Mathf.Sin(c * Mathf.Deg2Rad);
 
             if (Vector3.Dot(v1, cPoint2 - cPoint1) > 0f)
+            {
                 return cPoint0 + (v2 * 0.5f) - (pd2 * d);
+            }
 
             return cPoint0 + (v2 * 0.5f) + (pd2 * d);
         }
@@ -423,11 +447,19 @@ namespace BXFW
         public static float GetBiggestAxis(this Vector3 target)
         {
             if (target.x > target.y && target.x > target.z)
+            {
                 return target.x;
+            }
+
             if (target.y > target.x && target.y > target.z)
+            {
                 return target.y;
+            }
+
             if (target.z > target.y && target.z > target.x)
+            {
                 return target.z;
+            }
 
             return target.x;
         }
@@ -437,9 +469,14 @@ namespace BXFW
         public static float GetBiggestAxis(this Vector2 target)
         {
             if (target.x > target.y)
+            {
                 return target.x;
+            }
+
             if (target.y > target.x)
+            {
                 return target.y;
+            }
 
             return target.x;
         }
@@ -449,11 +486,19 @@ namespace BXFW
         public static float GetSmallestAxis(this Vector3 target)
         {
             if (target.x < target.y && target.x < target.z)
+            {
                 return target.x;
+            }
+
             if (target.y < target.x && target.y < target.z)
+            {
                 return target.y;
+            }
+
             if (target.z < target.y && target.z < target.x)
+            {
                 return target.z;
+            }
 
             return target.x;
         }
@@ -463,9 +508,14 @@ namespace BXFW
         public static float GetSmallestAxis(this Vector2 target)
         {
             if (target.x < target.y)
+            {
                 return target.x;
+            }
+
             if (target.y < target.x)
+            {
                 return target.y;
+            }
 
             return target.x;
         }
@@ -800,7 +850,9 @@ namespace BXFW
         {
             // Match input
             if (src == null)
+            {
                 return null;
+            }
 
             // Get array dimensions
             int height = src.GetLength(0);
@@ -817,7 +869,9 @@ namespace BXFW
 
                 // Set source.
                 for (int j = 0; j < width; j++)
+                {
                     tgt[i][j] = src[i, j];
+                }
             }
 
             // Return it
@@ -834,9 +888,14 @@ namespace BXFW
         {
             // Match input
             if (src == null)
+            {
                 return null;
+            }
+
             if (converter is null)
+            {
                 throw new ArgumentNullException(nameof(converter));
+            }
 
             // Get array dimensions
             int iLen = src.GetLength(0);
@@ -852,7 +911,9 @@ namespace BXFW
                 {
                     tgt[i][j] = new TDest[kLen];
                     for (int k = 0; k < kLen; k++)
+                    {
                         tgt[i][j][k] = converter(src[i, j, k]);
+                    }
                 }
             }
 
@@ -957,9 +1018,13 @@ namespace BXFW
         public static float Map(float from, float to, float from2, float to2, float value)
         {
             if (value <= from2)
+            {
                 return from;
+            }
             else if (value >= to2)
+            {
                 return to;
+            }
 
             // a + ((b - a) * t) but goofy
             return from + ((to - from) * ((value - from2) / (to2 - from2)));
@@ -974,7 +1039,9 @@ namespace BXFW
         public static T GetRandomEnum<T>(T[] enumExceptionList = null)
         {
             if (!typeof(T).IsEnum)
+            {
                 throw new InvalidCastException(string.Format("[Additionals::GetRandomEnum] Error while getting random enum : Type '{0}' is not a valid enum type.", typeof(T).Name));
+            }
 
             List<T> enumList = new List<T>(Enum.GetValues(typeof(T)).Cast<T>());
             if (enumExceptionList.Length >= enumList.Count)
@@ -995,7 +1062,10 @@ namespace BXFW
         /// </summary>
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
-            if (type.BaseType == null) return type.GetInterfaces();
+            if (type.BaseType == null)
+            {
+                return type.GetInterfaces();
+            }
 
             return Enumerable.Repeat(type.BaseType, 1)
                              .Concat(type.GetInterfaces())
@@ -1056,7 +1126,9 @@ namespace BXFW
 
             // Still zero? do nothing as there's no size.
             if (moveNextSize <= 0)
+            {
                 return default;
+            }
 
             // Get rng value (according to size)
             int rngValue = UnityEngine.Random.Range(0, moveNextSize);
@@ -1066,7 +1138,9 @@ namespace BXFW
             while (enumerator.MoveNext())
             {
                 if (current == rngValue)
+                {
                     return enumerator.Current;
+                }
 
                 current++;
             }
@@ -1080,16 +1154,23 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
         {
             if (values == null)
+            {
                 throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+            }
+
             if (predicate == null)
+            {
                 throw new ArgumentNullException(nameof(predicate), "[Additionals::GetRandom] Failed to get random.");
+            }
 
             IEnumerable<T> GetValuesFiltered()
             {
                 foreach (T elem in values)
                 {
                     if (!predicate(elem))
+                    {
                         continue;
+                    }
 
                     yield return elem;
                 }
@@ -1103,15 +1184,22 @@ namespace BXFW
         public static T GetRandom<T>(this IEnumerable<T> values)
         {
             if (values == null)
+            {
                 throw new ArgumentNullException(nameof(values), "[Additionals::GetRandom] 'values' is null.");
+            }
 
             // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
             int valuesSize = -1;
 
             if (values is ICollection<T> collection)
+            {
                 valuesSize = collection.Count;
+            }
+
             if (values is ICollection collection1)
+            {
                 valuesSize = collection1.Count;
+            }
 
             // Get size + check
             using (IEnumerator<T> enumerator = values.GetEnumerator())
@@ -1244,10 +1332,14 @@ namespace BXFW
         public static IEnumerable<TResult> Cast<TResult, TParam>(this IEnumerable<TParam> enumerable, Func<TParam, TResult> converter)
         {
             if (converter == null)
+            {
                 throw new NullReferenceException("[Additionals::Cast] Given 'converter' parameter is null.");
+            }
 
             foreach (TParam t in enumerable)
+            {
                 yield return converter(t);
+            }
         }
 
         // -- Array Utils
@@ -1294,7 +1386,9 @@ namespace BXFW
         {
             // Optimize
             if (sz > list.Capacity)
+            {
                 list.Capacity = sz;
+            }
 
             Resize((IList<T>)list, sz, newT);
         }
@@ -1509,7 +1603,9 @@ namespace BXFW
         public static bool HasPlayerPrefsKey<T>(string SaveKey)
         {
             if (string.IsNullOrEmpty(SaveKey))
+            {
                 return false;
+            }
 
             // type system abuse
             Type tType = typeof(T);
