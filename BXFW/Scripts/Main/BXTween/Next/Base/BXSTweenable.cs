@@ -133,6 +133,7 @@ namespace BXFW.Tweening.Next
         private bool m_UseEaseCurve;
         /// <summary>
         /// Type of the easing for this tweenable.
+        /// <br>By default, this is set to <see cref="EaseType.QuadInOut"/>.</br>
         /// </summary>
         public EaseType Ease
         {
@@ -149,7 +150,7 @@ namespace BXFW.Tweening.Next
         /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
         [SerializeField, DrawIf(nameof(UseEaseCurve), ConditionInverted = true)]
-        private EaseType m_Ease = EaseType.QuadOut;
+        private EaseType m_Ease = EaseType.QuadInOut;
 
         /// <summary>
         /// The used ease curve.
@@ -816,31 +817,12 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public bool Equals(BXSTweenable other)
         {
-            return other is not null &&
-                   Duration == other.Duration &&
-                   m_Delay == other.m_Delay &&
-                   m_LoopCount == other.m_LoopCount &&
-                   m_LoopType == other.m_LoopType &&
-                   m_WaitDelayOnLoop == other.m_WaitDelayOnLoop &&
-                   m_UseEaseCurve == other.m_UseEaseCurve &&
-                   m_Ease == other.m_Ease &&
-                   EqualityComparer<AnimationCurve>.Default.Equals(m_EaseCurve, other.m_EaseCurve) &&
-                   m_Speed == other.m_Speed &&
-                   m_Clamp01EasingSetter == other.m_Clamp01EasingSetter &&
-                   m_TickType == other.m_TickType &&
-                   m_IgnoreTimeScale == other.m_IgnoreTimeScale &&
-                   m_ID == other.m_ID &&
-                   EqualityComparer<object>.Default.Equals(m_IDObject, other.m_IDObject) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnPlayAction, other.OnPlayAction) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnStartAction, other.OnStartAction) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnTickAction, other.OnTickAction) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnPauseAction, other.OnPauseAction) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnRepeatAction, other.OnRepeatAction) &&
-                   EqualityComparer<BXSAction>.Default.Equals(OnEndAction, other.OnEndAction) &&
-                   EqualityComparer<BXSTickConditionAction>.Default.Equals(TickConditionAction, other.TickConditionAction) &&
-                   IsValid == other.IsValid &&
-                   IsSequence == other.IsSequence &&
-                   EqualityComparer<BXSTweenable>.Default.Equals(ParentTweenable, other.ParentTweenable);
+            if (other is null)
+            {
+                return false;
+            }
+
+            return GetHashCode() == other.GetHashCode();
         }
 
         /// <summary>
@@ -878,7 +860,12 @@ namespace BXFW.Tweening.Next
 
         public static bool operator ==(BXSTweenable left, BXSTweenable right)
         {
-            return EqualityComparer<BXSTweenable>.Default.Equals(left, right);
+            if (left is null)
+            {
+                return right is null;
+            }
+
+            return left.Equals(right);
         }
 
         public static bool operator !=(BXSTweenable left, BXSTweenable right)
