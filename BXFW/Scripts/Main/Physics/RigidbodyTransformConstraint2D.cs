@@ -7,6 +7,8 @@ namespace BXFW
     /// <summary>
     /// Constraints any rigidbody entering it's space to that transform.
     /// <br>This allows the rigidbody to freely move, while still moving with that transform.</br>
+    /// <br/>
+    /// <br>This class is kinda pointless and does not work as advertised. TODO maybe fix it?</br>
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class RigidbodyTransformConstraint2D : MonoBehaviour

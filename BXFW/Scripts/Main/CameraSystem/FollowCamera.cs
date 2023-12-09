@@ -82,8 +82,10 @@ namespace BXFW
         /// <summary>
         /// The <see cref="UnityEngine.Events.UnityEvent{T0}"/> setter.
         /// </summary>
-        public void SetCurrentCameraOffsetIndex(int Offset)
-        { CurrentCameraOffsetIndex = Offset; }
+        public void SetCurrentCameraOffsetIndex(int offset)
+        {
+            CurrentCameraOffsetIndex = offset;
+        }
 
         // ** Variables (Hidden)
         private Camera _CamComponent;
