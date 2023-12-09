@@ -90,15 +90,15 @@ namespace BXFW.ScriptEditor
 
         public override void OnInspectorGUI()
         {
-            var target = base.target as LocalizedText;
+            LocalizedText target = base.target as LocalizedText;
 
-            serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>>
+            serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
                 // Apparently text files are dark magic ._.
                 // And you have to guess it's encoding by luck
                 // why save a localization file as ansi? visual studio moment
 
-                { nameof(LocalizedText.localeData), new KeyValuePair<MatchGUIActionOrder, System.Action>(
+                { nameof(LocalizedText.localeData), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.After, () =>
                     {
                         Rect btnRect = new Rect(EditorGUILayout.GetControlRect(GUILayout.Height(EditorGUIUtility.singleLineHeight + 2)));
@@ -124,7 +124,7 @@ namespace BXFW.ScriptEditor
                         GUILayout.Space(EditorGUIUtility.singleLineHeight);
                     }
                 )},
-                { nameof(LocalizedText.textID), new KeyValuePair<MatchGUIActionOrder, System.Action>(
+                { nameof(LocalizedText.textID), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
                         // Draw dropdown if we have a textID.
@@ -175,18 +175,10 @@ namespace BXFW.ScriptEditor
                         }
                     })
                 },
-                { nameof(LocalizedText.spoofLocale), new KeyValuePair<MatchGUIActionOrder, System.Action>(
+                { nameof(LocalizedText.spoofLocale), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
-                        // Teacher is now grading papers of coding yay.
-                        // DSA is just leetcode, the class.
-                        // But unlike leetcode it isn't very fun to solve.
-                        // --
-                        // tbh dsa would have been enjoyable if the teacher wasn't such an
-                        // egoistical maniac, acting like he's the interviever for FAANG (idk the new acronym) companies
-                        // --
-                        // i got 100 and 91, amazing really. rest of the classes is 10.
-                        // ah yes, enguinering.
+                        // Create a dropdowned spoof locale button
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));
                         if (GUILayout.Button(string.IsNullOrWhiteSpace(target.spoofLocale) ?

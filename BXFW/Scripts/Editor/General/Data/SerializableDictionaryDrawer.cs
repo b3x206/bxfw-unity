@@ -7,6 +7,10 @@ using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// This cursed class edits a <see cref="SerializableDictionary{TKey, TValue}"/> in a scuffed way.
+    /// </summary>
+    /// TODO : Add a <see cref="BasicDropdown"/> as the adding context menu and make adding key+value experience more solid.
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
@@ -79,7 +83,7 @@ namespace BXFW.ScriptEditor
         {
             // the pointer is set to zero (something calls dispose on list?) when the list starts drawing
             // i mean why?
-            // this hack of "backing up the 'SerializedProperty' with a new 'SerializedObject' works"
+            // this hack of "backing up the 'SerializedProperty' with a new 'SerializedObject'" works
             // this occurs when the inspector mode is switched from-to inspector to debug to inspector back
             // why? is this my crappy code or a unity bug? i don't even really know.
             if (m_baseProperty.serializedObject.IsDisposed())

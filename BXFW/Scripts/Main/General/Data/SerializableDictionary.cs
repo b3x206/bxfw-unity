@@ -43,11 +43,17 @@ namespace BXFW
     /// <br/>
     /// <br>NOTE : Array of array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable
     /// in this dictionary (by unity). Wrap them with array container class because double lists don't get serialized unless you trick the serializer.</br>
+    /// <br>NOTE 2 : If this dictionary's values were changed from the Debug inspector menu, this dictionary MAY contain duplicate keys.</br>
     /// </summary>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
     {
         // ?? : Unless this works fine, refactor this to use a 'Pair' data type.
+        // -- here's an idiot rambling : 
+        // This is what you do when you don't learn DSA, you do this rubbish. (it work doe, adding complexity best case (N!^N!)!1!)
+        // However, doing a 'HashSet' based key list will disallow the unity serialization so do it "normally".
+        // unity can't serialize any data type more complex than an generic array :)
+        // --
         [SerializeField, FormerlySerializedAs("keys")]
         private List<TKey> m_Keys = new List<TKey>();
         public ICollection<TKey> Keys => m_Keys;
