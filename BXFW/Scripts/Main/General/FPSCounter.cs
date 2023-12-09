@@ -76,8 +76,8 @@ namespace BXFW
         /// <summary>
         /// Timer value used for custom refresh rates.
         /// </summary>
-        private float FPSTimer;
-        private float PrevTimeElapsed = -1f;
+        private float fpsTimer;
+        private float prevTimeElapsed = -1f;
 
         /// <summary>
         /// Updates the FPS counter.
@@ -88,7 +88,7 @@ namespace BXFW
             float timeElapsed = Time.unscaledDeltaTime;
 
             // We already updated this frame, return.
-            if (PrevTimeElapsed == timeElapsed)
+            if (prevTimeElapsed == timeElapsed)
             {
                 return;
             }
@@ -96,22 +96,22 @@ namespace BXFW
             // Smooth delta time starts to fade into the current Time.deltaTime when it's getting more constant
             // So just use a Mathf.MoveToward thing (smoothDeltaTime's n value is (time - prevTime) * 0.5f)
             // Smooth out the elapsed time (if a previous reference point exists)
-            if (PrevTimeElapsed > 0f)
+            if (prevTimeElapsed > 0f)
             {
-                timeElapsed = Mathf.MoveTowards(PrevTimeElapsed, timeElapsed, Mathf.Abs(timeElapsed - PrevTimeElapsed) * 0.5f);
+                timeElapsed = Mathf.MoveTowards(prevTimeElapsed, timeElapsed, Mathf.Abs(timeElapsed - prevTimeElapsed) * 0.5f);
             }
 
-            if (FPSTimer <= 0)
+            if (fpsTimer <= 0)
             { 
-                FPSTimer = refreshTime;
+                fpsTimer = refreshTime;
             }
             else
             { 
-                FPSTimer -= timeElapsed;
+                fpsTimer -= timeElapsed;
             }
 
             // If statement is seperated for getting 'TimeElapsed' more accurately.
-            if (FPSTimer <= 0f)
+            if (fpsTimer <= 0f)
             {
                 if (timeElapsed <= 0f)
                 {
@@ -129,7 +129,7 @@ namespace BXFW
             }
 
             // Set previous 'TimeElapsed' for avoiding updating multiple times in a frame.
-            PrevTimeElapsed = timeElapsed;
+            prevTimeElapsed = timeElapsed;
         }
         /// <summary>
         /// Resets <see cref="MinFPS"/> and <see cref="MaxFPS"/>.

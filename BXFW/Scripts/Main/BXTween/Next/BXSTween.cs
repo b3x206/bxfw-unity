@@ -75,10 +75,23 @@ namespace BXFW.Tweening.Next
         public static bool NeedsInitializeParameters => m_GetMainRunnerAction == null || MainLogger == null;
 
         /// <summary>
+        /// The base logger.
+        /// </summary>
+        private static Logger m_MainLogger;
+        /// <summary>
         /// The <see cref="BXSTween"/> logger.
         /// <br>Only to be used by BXSTween classes and the <see cref="IBXSTweenRunner"/> initializing this class.</br>
         /// </summary>
-        internal static Logger MainLogger { get; private set; }
+        internal static Logger MainLogger
+        {
+            get
+            {
+                // Replace with a non-null value if accessed while null
+                m_MainLogger ??= new Logger(Console.WriteLine, null, null, null);
+
+                return m_MainLogger;
+            }
+        }
 
         /// <summary>
         /// A mutable state delay action.
@@ -213,7 +226,7 @@ namespace BXFW.Tweening.Next
                 throw new ArgumentNullException(nameof(logger), "[BXSTween::SetLogger] Given argument was null.");
             }
 
-            MainLogger = logger;
+            m_MainLogger = logger;
         }
         /// <summary>
         /// Initializes the <see cref="IBXSTweenRunner"/> <paramref name="runner"/> with logger <paramref name="logger"/>.
@@ -532,7 +545,7 @@ namespace BXFW.Tweening.Next
             {
                 StopAllTweens();
                 m_GetMainRunnerAction = null;
-                MainLogger = null;
+                m_MainLogger = null;
             }
 
             m_MainRunner = null;

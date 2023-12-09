@@ -12,10 +12,14 @@ namespace BXFW.Tweening
     /// <summary>
     /// Extension methods for shortcut calls to other objects.
     /// </summary>
+    [System.Obsolete(ObsoleteMessage)]
     public static class BXTweenExtensions
     {
+        public const string ObsoleteMessage = "You are using BXTween, which is to be phased out. Please update your script to BXSTween or use the source generator task if you really want extensions.";
+
         #region TextMeshPro
         /// <see cref="TextMeshProUGUI"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this TextMeshProUGUI target, float LastValue, float Duration)
         {
             if (target == null)
@@ -28,6 +32,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this TextMeshProUGUI target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -44,6 +49,7 @@ namespace BXFW.Tweening
 
         #region UnityEngine.UI
         /// <see cref="CanvasGroup"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this CanvasGroup target, float LastValue, float Duration)
         {
             if (target == null)
@@ -58,6 +64,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Image"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Image target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -70,6 +77,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this Image target, float LastValue, float Duration)
         {
             if (target == null)
@@ -83,6 +91,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFillAmount(this Image target, float LastValue, float Duration)
         {
             if (target == null)
@@ -97,6 +106,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="RectTransform"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwMoveAnchorPos(this RectTransform target, Vector2 LastValue, float Duration)
         {
             if (target == null)
@@ -110,6 +120,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveAnchorPosX(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
@@ -123,6 +134,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveAnchorPosY(this RectTransform target, float LastValue, float Duration)
         {
             if (target == null)
@@ -141,6 +153,7 @@ namespace BXFW.Tweening
         // Or use an special BXTweenCTX class, saying it changes multiple values?
         // (which only use float as parameter, with name like MultiBXTweenCTX?)
 
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwRect(this RectTransform target, Rect LastValue, float Duration)
         {
             if (target == null)
@@ -174,12 +187,14 @@ namespace BXFW.Tweening
         /// <br>You cannot change the parameters without creating new tween.</br>
         /// <br>The 'time' parameter always goes between 0 to 1. (curves can be unclamped)</br>
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwRect(this RectTransform target, RectTransform other, float Duration)
         {
             return BXTwRect(target, other.rect, Duration);
         }
 
         /// <see cref="Graphic"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this Graphic target, float LastValue, float Duration)
         {
             if (target == null)
@@ -192,6 +207,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Graphic target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -208,6 +224,7 @@ namespace BXFW.Tweening
 
         #region Standard (UnityEngine)
         /// <see cref="Transform">
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwMove(this Transform target, Vector3 LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
@@ -232,10 +249,12 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwMoveLocal(this Transform target, Vector3 LastValue, float Duration)
         {
             return BXTwMove(target, LastValue, Duration, Space.Self);
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveX(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
@@ -260,6 +279,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveY(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
@@ -284,6 +304,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveZ(this Transform target, float LastValue, float Duration, Space space = Space.World)
         {
             if (target == null)
@@ -308,18 +329,22 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveLocalX(this Transform target, float LastValue, float Duration)
         {
             return BXTwMoveX(target, LastValue, Duration, Space.Self);
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveLocalY(this Transform target, float LastValue, float Duration)
         {
             return BXTwMoveY(target, LastValue, Duration, Space.Self);
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwMoveLocalZ(this Transform target, float LastValue, float Duration)
         {
             return BXTwMoveZ(target, LastValue, Duration, Space.Self);
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Quaternion> BXTwRotate(this Transform target, Quaternion LastValue, float Duration)
         {
             if (target == null)
@@ -333,6 +358,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwRotateEuler(this Transform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
@@ -346,6 +372,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwRotateAngleAxis(this Transform target, float LastValue, Vector3 Axis, float Duration)
         {
             if (target == null)
@@ -374,6 +401,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwScale(this Transform target, Vector3 LastValue, float Duration)
         {
             if (target == null)
@@ -391,10 +419,12 @@ namespace BXFW.Tweening
         /// Same as <see cref="BXTwScale(Transform, Vector3, float)"/>, but a <see langword="new"/> <see cref="Vector3"/>() 
         /// is created with all the parameters equaling to <paramref name="LastValue"/>.
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwScale(this Transform target, float LastValue, float Duration)
         {
             return BXTwScale(target, new Vector3(LastValue, LastValue, LastValue), Duration);
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwScaleX(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
@@ -408,6 +438,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwScaleY(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
@@ -421,6 +452,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwScaleZ(this Transform target, float LastValue, float Duration)
         {
             if (target == null)
@@ -436,6 +468,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Material">
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwShaderFloatProperty(this Material target, float LastValue, float Duration, string PropertyName)
         {
             if (target == null)
@@ -449,6 +482,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Material target, Color LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
@@ -462,6 +496,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this Material target, float LastValue, float Duration, string PropertyName = "_Color")
         {
             if (target == null)
@@ -481,6 +516,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="SpriteRenderer"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this SpriteRenderer target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -494,6 +530,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this SpriteRenderer target, float LastValue, float Duration)
         {
             if (target == null)
@@ -517,6 +554,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Tweens the <see cref="Camera.fieldOfView"/> property.
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFOV(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
@@ -533,6 +571,7 @@ namespace BXFW.Tweening
         /// Tweens the <see cref="Camera.projectionMatrix"/> field.
         /// <br>Useful for changing perspective from ortho to perspective, and so on.</br>
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Matrix4x4> BXTwProjectionMatrix(this Camera target, Matrix4x4 LastValue, float Duration)
         {
             if (target == null)
@@ -548,6 +587,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Tweens the <see cref="Camera.orthographicSize"/> field.
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwOrthoSize(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
@@ -564,6 +604,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Tweens the <see cref="Camera.backgroundColor"/> property.
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwBGColor(this Camera target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -577,6 +618,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwNearClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
@@ -590,6 +632,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFarClipPlane(this Camera target, float LastValue, float Duration)
         {
             if (target == null)
@@ -605,6 +648,7 @@ namespace BXFW.Tweening
         }
         
         /// <see cref="AudioSource"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeVolume(this AudioSource target, float LastValue, float Duration)
         {
             if (target == null)
@@ -618,6 +662,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwPitch(this AudioSource target, float LastValue, float Duration)
         {
             if (target == null)
@@ -635,6 +680,7 @@ namespace BXFW.Tweening
         /// Tweens the <see cref="AudioSource.spatialBlend"/> property.
         /// <br>Target value is clamped between 0-1.</br>
         /// </summary>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwSpatialBlend(this AudioSource target, float LastValue, float Duration)
         {
             if (target == null)
@@ -650,6 +696,7 @@ namespace BXFW.Tweening
         }
 
         /// <see cref="Light"/>
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Light target, Color LastValue, float Duration)
         {
             if (target == null)
@@ -663,6 +710,7 @@ namespace BXFW.Tweening
 
             return Context;
         }
+        [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeLight(this Light target, float LastValue, float Duration)
         {
             if (target == null)

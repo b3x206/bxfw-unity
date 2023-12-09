@@ -30,6 +30,7 @@ namespace BXFW.Tweening.Next
         /// This is the current interpolation value for the corresponding
         /// <see cref="BXSTweenable.CurrentElapsed"/> time between <see cref="StartValue"/> and <see cref="EndValue"/>.
         /// </br>
+        /// <br>This value updates accordingly if <see cref="SetStartValue(TValue)"/> or <see cref="SetEndValue(TValue)"/> is called in any way.</br>
         /// </summary>
         public TValue CurrentValue { get; protected set; }
         /// <summary>
@@ -164,6 +165,12 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetStartValue(TValue value)
         {
             StartValue = value;
+            // Set the currently elapsed value to the lerp result.
+            if (!IsPlaying)
+            {
+                CurrentValue = LerpMethod(StartValue, EndValue, EvaluateEasing(CurrentElapsed));
+            }
+
             return this;
         }
         /// <summary>
@@ -174,6 +181,10 @@ namespace BXFW.Tweening.Next
         public BXSTweenContext<TValue> SetEndValue(TValue value)
         {
             EndValue = value;
+            if (!IsPlaying)
+            {
+                CurrentValue = LerpMethod(StartValue, EndValue, EvaluateEasing(CurrentElapsed));
+            }
 
             return this;
         }

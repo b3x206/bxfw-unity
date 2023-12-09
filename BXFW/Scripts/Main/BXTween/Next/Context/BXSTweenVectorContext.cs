@@ -51,6 +51,16 @@ namespace BXFW.Tweening.Next
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount).SetEase(easing, true).SetSpeed(speed);
         }
+
+        /// <summary>
+        /// Sets the end value to a Vector2 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenContext<Vector2> SetEndValue(float value)
+        {
+            SetEndValue(new Vector2(value, value));
+
+            return this;
+        }
     }
 
     /// <summary>
@@ -101,6 +111,16 @@ namespace BXFW.Tweening.Next
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount).SetEase(easing, true).SetSpeed(speed);
         }
+
+        /// <summary>
+        /// Sets the end value to a Vector3 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenContext<Vector3> SetEndValue(float value)
+        {
+            SetEndValue(new Vector3(value, value, value));
+
+            return this;
+        }
     }
 
     /// <summary>
@@ -150,6 +170,16 @@ namespace BXFW.Tweening.Next
         public BXSTweenVector4Context(float duration, float delay, int loopCount, EaseType easing, float speed)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount).SetEase(easing, true).SetSpeed(speed);
+        }
+
+        /// <summary>
+        /// Sets the end value to a Vector4 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenContext<Vector4> SetEndValue(float value)
+        {
+            SetEndValue(new Vector4(value, value, value));
+
+            return this;
         }
     }
 }

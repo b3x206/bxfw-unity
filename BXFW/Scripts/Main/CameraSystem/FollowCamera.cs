@@ -61,9 +61,9 @@ namespace BXFW
         /// <summary>
         /// The <see cref="UnityEngine.Events.UnityEvent{T0}"/> setter.
         /// </summary>
-        public void SetCurrentCameraOffsetIndex(int Offset)
+        public void SetCurrentCameraOffsetIndex(int offset)
         {
-            CurrentCameraOffsetIndex = Offset;
+            CurrentCameraOffsetIndex = offset;
         }
 
         // ** Variables (Hidden)
@@ -93,8 +93,8 @@ namespace BXFW
         protected virtual void MoveCamera(float deltaTime)
         {
             // Get Position
-            var followPos = (followTransform == null || useFollowPositionInstead) ? followPosition : followTransform.position;
-            var lerpPos = CurrentCameraOffset.usePositionClamp ? new Vector3(
+            Vector3 followPos = (followTransform == null || useFollowPositionInstead) ? followPosition : followTransform.position;
+            Vector3 lerpPos = CurrentCameraOffset.usePositionClamp ? new Vector3(
                 CurrentCameraOffset.posXClamp.ClampBetween(followPos.x + CurrentCameraOffset.position.x),
                 CurrentCameraOffset.posYClamp.ClampBetween(followPos.y + CurrentCameraOffset.position.y),
                 CurrentCameraOffset.posZClamp.ClampBetween(followPos.z + CurrentCameraOffset.position.z)
@@ -104,7 +104,7 @@ namespace BXFW
                 followPos.z + CurrentCameraOffset.position.z
             );
             // Get Rotation
-            var rotatePos = Quaternion.Euler(
+            Quaternion rotatePos = Quaternion.Euler(
                 CurrentCameraOffset.eulerRotation.x,
                 CurrentCameraOffset.eulerRotation.y,
                 CurrentCameraOffset.eulerRotation.z

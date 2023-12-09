@@ -263,7 +263,7 @@ namespace BXFW.Tweening.Next
         {
             if (tween == null)
             {
-                throw new ArgumentNullException(nameof(tween), "[BXSTweenSequence::Join] Given context parameter is null.");
+                throw new ArgumentNullException(nameof(tween), "[BXSTweenSequence::Join] Given tweenable parameter is null.");
             }
 
             if (tween.IsPlaying)
