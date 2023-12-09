@@ -25,6 +25,14 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public TValue EndValue { get; protected set; }
         /// <summary>
+        /// The current last value used in <see cref="EvaluateTween(float)"/> of this context.
+        /// <br>
+        /// This is the current interpolation value for the corresponding
+        /// <see cref="BXSTweenable.CurrentElapsed"/> time between <see cref="StartValue"/> and <see cref="EndValue"/>.
+        /// </br>
+        /// </summary>
+        public TValue CurrentValue { get; protected set; }
+        /// <summary>
         /// When called, switches the <see cref="StartValue"/> and <see cref="EndValue"/>.
         /// </summary>
         protected override void OnSwitchTargetValues()
@@ -69,10 +77,11 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public override void EvaluateTween(float t)
         {
-            // Check easing clamping
+            // Easing checks and stuff is done on 'EvaluateEasing'.
             float easedTime = EvaluateEasing(t);
+            CurrentValue = LerpMethod(StartValue, EndValue, easedTime);
 
-            SetterAction(LerpMethod(StartValue, EndValue, easedTime));
+            SetterAction(CurrentValue);
         }
 
         // -- Methods

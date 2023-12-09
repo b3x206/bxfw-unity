@@ -14,6 +14,9 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(LocalizedText))]
     public class LocalizedTextEditor : Editor
     {
+        /// <summary>
+        /// Selects a <see cref="LocalizedText.textID"/> from the list of available id's on the <see cref="LocalizedText"/>.
+        /// </summary>
         public class TextIDSelector : SearchDropdown
         {
             protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;

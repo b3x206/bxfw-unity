@@ -142,7 +142,10 @@ namespace BXFW.UI
         /// This way, there's no need to register to your own events from the editor or from <c>Awake()</c>, overriding this method should give you the <see cref="UIMenu"/>
         /// parameter as <see langword="this"/> and <see cref="bool"/> parameter as the <paramref name="show"/> one.
         /// </br>
-        /// <br>This method does nothing by default. It is an optional override.</br>
+        /// <br>
+        /// This method does nothing by default (<b>Only applies if class is only inheriting from <see cref="UIMenu"/>, other classes may apply their overrides</b>).
+        /// It is an optional override.
+        /// </br>
         /// </summary>
         /// <param name="show">
         /// <br>if <see langword="true"/>, <see cref="OpenMenu(Action)"/> is called.</br>

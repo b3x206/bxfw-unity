@@ -13,24 +13,25 @@ namespace BXFW.UI
         public bool allowTwoMenuAtOnce = false;
 
         // Status
-        public bool InsideMenu { get { return m_CurrentUIMenu != null; } }
+        /// <summary>
+        /// Whether if there's a menu open currently.
+        /// <br>This bool is just a result of comparing the <see cref="CurrentUIMenu"/> to <see langword="null"/>.</br>
+        /// </summary>
+        public bool InsideMenu => m_CurrentUIMenu != null;
 
         [SerializeField] protected UIMenu m_CurrentUIMenu;
         /// <summary>
         /// Currently open <see cref="UIMenu"/>.
         /// </summary>
-        public UIMenu CurrentUIMenu { get { return m_CurrentUIMenu; } }
+        public UIMenu CurrentUIMenu => m_CurrentUIMenu;
         protected List<UISubMenu> m_CurrentUISubMenus = new List<UISubMenu>();
         /// <summary>
         /// Currently open sub-menus.
         /// <br>This shouldn't be directly added/removed from, use the
         /// <see cref="OpenMenu(UIMenu)"/>or <see cref="CloseMenu(UIMenu)"/> functions.</br>
         /// </summary>
-        public IReadOnlyList<UISubMenu> CurrentUISubMenus
-        {
-            get { return m_CurrentUISubMenus; }
-        }
-        
+        public IReadOnlyList<UISubMenu> CurrentUISubMenus => m_CurrentUISubMenus;
+
         #region -- Menu Management Functions
         // -- Used for opening different menus
         /// <summary>

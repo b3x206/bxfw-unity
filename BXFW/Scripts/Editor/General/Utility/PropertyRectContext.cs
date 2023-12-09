@@ -16,7 +16,7 @@ namespace BXFW.Tools.Editor
     {
         /// <summary>
         /// The current Y elapsed for this rect context.
-        /// <br>Can be reset to zero using <see cref="Reset"/>.</br>
+        /// <br>Can be reset to zero using <see cref="Reset"/> or be used for tallying the height (not recommended).</br>
         /// </summary>
         public float CurrentY => m_CurrentY;
         /// <inheritdoc cref="CurrentY"/>
@@ -72,7 +72,7 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Converts the '<see cref="PropertyRectContext"/>' into information string.
-        /// <br>May throw exceptions if <see cref="Padding"/> was overriden and is a throwing property.</br>
+        /// <br>May throw exceptions if <see cref="Padding"/> was overriden and could throw an exception on it's getter.</br>
         /// </summary>
         public override string ToString()
         {

@@ -152,37 +152,33 @@ namespace BXFW.ScriptEditor
     public class LocalizedTextDataEditor : PropertyDrawer
     {
         /// <summary>
-        /// Height padding applied in the editor view.
-        /// </summary>
-        private const float Padding = 2f;
-        /// <summary>
         /// Height of the text area.
         /// </summary>
-        private const float Height = 72f;
+        private const float TextAreaHeight = 72f;
         /// <summary>
         /// Indent applied (to child elements) when the property field is uncollapsed.
         /// </summary>
-        private const float Indent = 15f;
+        private const float InnerElementIndent = 15f;
+
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            // Foldout
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             if (!property.isExpanded)
             {
-                return EditorGUIUtility.singleLineHeight + Padding;
+                return height;
             }
 
-            return currentPropY + Padding;
-        }
+            // TextID
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            // Selected Locale
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            // TextArea
+            height += TextAreaHeight + mainCtx.Padding;
 
-        private float currentPropY = -1f;
-        private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
-        {
-            var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
-            Rect r = new Rect(parentRect.x, parentRect.y + currentPropY, parentRect.width, propHeight);
-            // Add height later
-            currentPropY += propHeight;
-
-            return r;
+            return height;
         }
 
         private static readonly string KeyEditLocale = $"{nameof(LocalizedTextDataEditor)}::EditedLocale";
@@ -194,17 +190,16 @@ namespace BXFW.ScriptEditor
                 placeholderStyle = new GUIStyle(GUI.skin.label);
                 placeholderStyle.normal.textColor = Color.gray;
             }
-
-            position.height -= Padding;
-            position.y += Padding / 2f;
-            currentPropY = 0f;
+            mainCtx.Reset();
 
             // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
             // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
             PropertyTargetInfo targetPair = property.GetTarget();
             LocalizedTextData target = targetPair.value as LocalizedTextData;
 
-            Rect initialFoldoutRect = GetPropertyRect(position);
+            position = EditorGUI.IndentedRect(position);
+
+            Rect initialFoldoutRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
             label = EditorGUI.BeginProperty(initialFoldoutRect, label, property);
             property.isExpanded = EditorGUI.Foldout(initialFoldoutRect, property.isExpanded, label);
 
@@ -215,8 +210,12 @@ namespace BXFW.ScriptEditor
             }
 
             // Indent
-            position.x += Indent;
-            position.width -= Indent;
+            position.x += InnerElementIndent;
+            position.width -= InnerElementIndent;
+            // For some reason this gets used the other EditorGUI properties (and acts as if it was a bug)
+            // But it doesn't get used with EditorGUI.DropdownButton
+            int previousIndentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
 
             // Gather currently edited locale value
             string editedLocaleValue = property.GetString(KeyEditLocale, LocalizedTextData.DefaultLocale); // default
@@ -228,24 +227,21 @@ namespace BXFW.ScriptEditor
             }
 
             // LocalizedTextData.TextID (could be useful for classifying in an array with linq commands)
-            Rect txtIDAreaRect = GetPropertyRect(position);
-            string tIDValue = EditorGUI.TextField(txtIDAreaRect, "Text ID", target.TextID);
+            Rect textIDAreaRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            string textIDValue = EditorGUI.TextField(textIDAreaRect, "Text ID", target.TextID);
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "set TextID value");
-                target.TextID = tIDValue;
+                target.TextID = textIDValue;
             }
 
-            // Get a empty property rect for nice spacing (yes this is a solution, i am expert at solving)
-            GetPropertyRect(position, Padding * 2f);
-
             // Show the locale selector
-            Rect baseDropdownRect = GetPropertyRect(position);
-            Rect dropdownRect = new Rect(baseDropdownRect) { width = baseDropdownRect.width - 35 };
+            Rect baseDropdownRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            Rect dropdownRect = new Rect(baseDropdownRect) { width = baseDropdownRect.width - 35f };
             if (EditorGUI.DropdownButton(dropdownRect, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
             {
                 LocalizationKeySelectorDropdown localeSelectorDropdown = new LocalizationKeySelectorDropdown(target, editedLocaleValue);
-                localeSelectorDropdown.OnElementSelectedEvent += (item) =>
+                localeSelectorDropdown.OnElementSelectedEvent += (SearchDropdownElement item) =>
                 {
                     if (!(item is LocalizationKeySelectorDropdown.Item key))
                     {
@@ -285,7 +281,7 @@ namespace BXFW.ScriptEditor
 
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
-            Rect txtEditAreaRect = GetPropertyRect(position, Height);
+            Rect txtEditAreaRect = mainCtx.GetPropertyRect(position, TextAreaHeight);
             string lValue = EditorGUI.TextArea(txtEditAreaRect, target.LocaleDatas[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
@@ -302,7 +298,8 @@ namespace BXFW.ScriptEditor
                 target.LocaleDatas[editedLocaleValue] = lValue;
             }
 
-            // End prop
+            // End prop + reset stuff
+            EditorGUI.indentLevel = previousIndentLevel;
             EditorGUI.EndProperty();
         }
     }
