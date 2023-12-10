@@ -36,6 +36,11 @@ namespace BXFW
             {
                 valueFrames = new TValue[0];
             }
+
+            public override void Reverse()
+            {
+                Array.Reverse(valueFrames);
+            }
         }
 
         // -- Settings

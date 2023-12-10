@@ -42,6 +42,11 @@ namespace BXFW
             /// Clears all sprites in sequence.
             /// </summary>
             public abstract void Clear();
+
+            /// <summary>
+            /// Reverses all the sprites in sequence.
+            /// </summary>
+            public abstract void Reverse();
         }
 
         /// <summary>

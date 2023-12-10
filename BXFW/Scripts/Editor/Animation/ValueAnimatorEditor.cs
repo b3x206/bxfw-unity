@@ -10,6 +10,8 @@ namespace BXFW.ScriptEditor
     public class ValueAnimatorSequenceEditor : PropertyDrawer
     {
         private readonly PropertyRectContext mainCtx = new PropertyRectContext();
+        private const float ClearFramesButtonHeight = 20f;
+        private const float ReverseFramesButtonHeight = 20f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -24,13 +26,17 @@ namespace BXFW.ScriptEditor
             height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
             // GUI.Button = ValueAnimatorBase.Sequence.Clear();
-            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            height += ClearFramesButtonHeight + mainCtx.Padding;
+            // GUI.Button = ValueAnimatorBase.Sequence.Reverse();
+            height += ReverseFramesButtonHeight + mainCtx.Padding;
+            // Line
+            height += 6f;
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
                 height += EditorGUI.GetPropertyHeight(visibleProp) + mainCtx.Padding;
             }
-            
+
             return height;
         }
 
@@ -41,7 +47,7 @@ namespace BXFW.ScriptEditor
 
             property.isExpanded = EditorGUI.Foldout(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.isExpanded, label);
 
-            var targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().value;
+            ValueAnimatorBase.Sequence targetValue = (ValueAnimatorBase.Sequence)property.GetTarget().value;
 
             if (!property.isExpanded)
             {
@@ -64,14 +70,21 @@ namespace BXFW.ScriptEditor
                 );
             }
 
-            if (GUI.Button(mainCtx.GetPropertyRect(indentedPosition, EditorGUIUtility.singleLineHeight), "Clear Frames"))
+            if (GUI.Button(mainCtx.GetPropertyRect(indentedPosition, ClearFramesButtonHeight), "Clear Frames"))
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "Clear Frames");
 
                 targetValue.Clear();
             }
+            if (GUI.Button(mainCtx.GetPropertyRect(indentedPosition, ReverseFramesButtonHeight), "Reverse Frames"))
+            {
+                Undo.RecordObject(property.serializedObject.targetObject, "Reverse Frames");
 
-            foreach (var visibleProp in property.GetVisibleChildren())
+                targetValue.Reverse();
+            }
+            GUIAdditionals.DrawUILine(mainCtx.GetPropertyRect(position, 6), EditorGUIUtility.isProSkin ? Color.gray : new Color(0.4f, 0.4f, 0.4f));
+
+            foreach (SerializedProperty visibleProp in property.GetVisibleChildren())
             {
                 EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentedPosition, visibleProp), visibleProp, true);
             }
