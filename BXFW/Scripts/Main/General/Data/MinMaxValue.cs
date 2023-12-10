@@ -41,7 +41,9 @@ namespace BXFW
             // Check if the rules apply for those values
             if (min > max)
             {
-                max = min;
+                float prevMin = min;
+                min = max;
+                max = prevMin;
             }
 
             m_Min = min;
@@ -209,7 +211,9 @@ namespace BXFW
         {
             if (min > max)
             {
-                max = min;
+                int prevMin = min;
+                min = max;
+                max = prevMin;
             }
 
             m_Min = min;

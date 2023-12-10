@@ -11,6 +11,11 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(SwipableUIProgressDisplay)), CanEditMultipleObjects]
     internal class SwipableUIProgressDisplayEditor : Editor
     {
+        private static bool TargetFadeTypeIsColorFade(SwipableUIProgressDisplay p)
+        {
+            return p.ChildImageFadeType == FadeType.None || p.ChildImageFadeType == FadeType.ColorFade || p.ChildImageFadeType == FadeType.CustomUnityEvent;
+        }
+
         public override void OnInspectorGUI()
         {
             var targets = base.targets.Cast<SwipableUIProgressDisplay>().ToArray();
@@ -57,10 +62,6 @@ namespace BXFW.ScriptEditor
                 }
             };
 
-            bool TargetFadeTypeIsColorFade(SwipableUIProgressDisplay p)
-            {
-                return p.ChildImageFadeType == FadeType.None || p.ChildImageFadeType == FadeType.ColorFade || p.ChildImageFadeType == FadeType.CustomUnityEvent;
-            }
             if (targets.All(t => t.ChildImageFadeType == FadeType.SpriteSwap))
             {
                 dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));

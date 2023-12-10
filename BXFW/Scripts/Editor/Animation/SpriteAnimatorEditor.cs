@@ -16,48 +16,48 @@ namespace BXFW.ScriptEditor
         {
             var target = base.target as SpriteAnimator;
             var currentAnimName = target.CurrentAnimation?.name;
-            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>>
-        {
-            // this is a private field
-            { "_currentAnimIndex", new KeyValuePair<MatchGUIActionOrder, System.Action>(MatchGUIActionOrder.OmitAndInvoke,
-                () =>
-                {
-                    EditorGUI.BeginChangeCheck();
-
-                    EditorGUILayout.BeginHorizontal();
-                    var cAnimIndexSet = EditorGUILayout.IntField(new GUIContent("Current Animation Index", "Sets the index from 'animation' array."),
-                        target.CurrentAnimIndex);
-                    EditorGUILayout.LabelField(new GUIContent($"AnimName={currentAnimName}"));
-
-                    EditorGUILayout.EndHorizontal();
-
-                    if (EditorGUI.EndChangeCheck())
+            var dict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, System.Action>>()
+            {
+                // this is a private field
+                { "_currentAnimIndex", new KeyValuePair<MatchGUIActionOrder, System.Action>(MatchGUIActionOrder.OmitAndInvoke,
+                    () =>
                     {
-                        Undo.RecordObject(target, "Set Current Animation Index");
+                        EditorGUI.BeginChangeCheck();
 
-                        target.CurrentAnimIndex = cAnimIndexSet;
-                    }
-                })
-            },
-            { nameof(SpriteAnimator.animations), new KeyValuePair<MatchGUIActionOrder, System.Action>(MatchGUIActionOrder.Before,
-                () =>
-                {
-                    // Check & warn duplicate ID values
-                    // This method also returns what keys are duplicate
-                    var duplicates = target.animations
-                        .GroupBy(i => i.name)
-                        .Where(g => g.Count() > 1)
-                        .Select(g => g.Key);
+                        EditorGUILayout.BeginHorizontal();
+                        var cAnimIndexSet = EditorGUILayout.IntField(new GUIContent("Current Animation Index", "Sets the index from 'animation' array."),
+                            target.CurrentAnimIndex);
+                        EditorGUILayout.LabelField(new GUIContent($"AnimName={currentAnimName}"));
 
-                    if (duplicates.Count() > 0)
+                        EditorGUILayout.EndHorizontal();
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Undo.RecordObject(target, "Set Current Animation Index");
+
+                            target.CurrentAnimIndex = cAnimIndexSet;
+                        }
+                    })
+                },
+                { nameof(SpriteAnimator.animations), new KeyValuePair<MatchGUIActionOrder, System.Action>(MatchGUIActionOrder.Before,
+                    () =>
                     {
-                        // Have duplicates, show a warning
-                        EditorGUILayout.HelpBox("Warning : Array 'animations' has duplicate values. Please remove.", MessageType.Warning);
-                        // For now don't do anything fancy (as it's not necessary)
-                    }
-                })
-            }
-        };
+                        // Check & warn duplicate ID values
+                        // This method also returns what keys are duplicate
+                        var duplicates = target.animations
+                            .GroupBy(i => i.name)
+                            .Where(g => g.Count() > 1)
+                            .Select(g => g.Key);
+
+                        if (duplicates.Count() > 0)
+                        {
+                            // Have duplicates, show a warning
+                            EditorGUILayout.HelpBox("Warning : Array 'animations' has duplicate values. Please remove.", MessageType.Warning);
+                            // For now don't do anything fancy (as it's not necessary)
+                        }
+                    })
+                }
+            };
 
             // this is a bad way of checking whether if the nulls are valid
             // both fields will be drawn if the target is ambigious

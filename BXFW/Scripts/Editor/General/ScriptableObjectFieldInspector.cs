@@ -43,12 +43,6 @@ namespace BXFW
     public class ScriptableObjectFieldInspector<T> : PropertyDrawer
         where T : ScriptableObject
     {
-        // TODO (bit higher but still low priority) :
-        // 1. Fix Inspector being unable to draw custom fields, because we can't create a GUILayout area inside a GUILayout area.
-        // TODO (low priority) :
-        // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
-        // 2. AdvancedDropdown implementation for null field selector on UnityEditor.IMGUI.Controls
-
         /// <summary>
         /// Menu that contains the create names and delegates.
         /// </summary>
@@ -682,7 +676,7 @@ namespace BXFW
                 {
                     if (typeMenus != null)
                     {
-                        typeMenus.ShowAsContext();
+                        typeMenus.DropDown(position);
                     }
                     else
                     {
