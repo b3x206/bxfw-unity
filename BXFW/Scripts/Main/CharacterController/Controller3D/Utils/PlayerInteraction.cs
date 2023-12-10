@@ -28,11 +28,11 @@ namespace BXFW
                 return;
             }
 
-            if (interactionInput)
+            if (interactionInput.IsKeyDown())
             {
                 Collider[] playerEnvInteractables =
                     Physics.OverlapBox(
-                        center: transform.InverseTransformPoint(InteractionPoint),
+                        center: InteractionPoint,
                         halfExtents: interactionBoxSize,
                         orientation: transform.rotation,
                         interactionLayer,

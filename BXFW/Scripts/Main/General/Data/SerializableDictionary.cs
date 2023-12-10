@@ -9,7 +9,7 @@ namespace BXFW
     /// <summary>
     /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
     /// Uses the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on code, 
-    /// but on editor a <see cref="UnityEditor.PropertyDrawer"/> is needed (TODO)
+    /// but on editor a <see cref="UnityEditor.PropertyDrawer"/> is needed (newer bxfw has this)
     /// <br/>
     /// <br>NOTE : Array types such as <c><typeparamref name="TKey"/>[]</c> or <c><typeparamref name="TValue"/>[]</c> are NOT serializable 
     /// in <typeparamref name="TKey"/> or <typeparamref name="TValue"/> (by unity). Wrap them with array container class.</br>

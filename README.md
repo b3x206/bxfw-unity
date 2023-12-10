@@ -9,8 +9,7 @@ This `bxfw-legacy` branch will only exist for bug fixes and will stay API compat
 ## What is it? :
 [![CodeFactor](https://www.codefactor.io/repository/github/b3x206/bxfw-unity/badge)](https://www.codefactor.io/repository/github/b3x206/bxfw-unity)
 
-Prototyping and game development tools to make it more convenient, but bxfw is now my bane of existance for 3 years. Yeah. This thing existed for 3 years. Can you believe it.
-
+Prototyping and game development tools to make it more convenient, the old version before i broke compatibility with older games.
 The code is &lt;summary/&gt; ified, basically what the code does is in the code file (which is not docs).
 
 ## How to use : 

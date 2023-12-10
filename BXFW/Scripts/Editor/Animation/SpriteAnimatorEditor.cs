@@ -10,7 +10,69 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(SpriteAnimator))]
     public class SpriteAnimatorEditor : Editor
     {
-        // TODO : Create field editor for SpriteAnimSequence (show how long will the animation take etc.)
+        [CustomPropertyDrawer(typeof(SpriteAnimator.SpriteAnimSequence), true)]
+        public class SpriteSequenceEditor : PropertyDrawer
+        {
+            private readonly PropertyRectContext mainCtx = new PropertyRectContext();
+            private const float ClearFramesButtonHeight = 20f;
+
+            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+            {
+                // Foldout Height
+                float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+                if (!property.isExpanded)
+                {
+                    return height;
+                }
+
+                foreach (SerializedProperty childProperty in property.GetVisibleChildren())
+                {
+                    height += EditorGUI.GetPropertyHeight(childProperty) + mainCtx.Padding;
+                }
+
+                // Duration display height
+                height += 6; // Line + padding
+                height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+                // Clear Sprites
+                height += ClearFramesButtonHeight + mainCtx.Padding;
+
+                return height;
+            }
+            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+            {
+                mainCtx.Reset();
+
+                Rect foldoutPosition = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+                label = EditorGUI.BeginProperty(position, label, property);
+                property.isExpanded = EditorGUI.Foldout(foldoutPosition, property.isExpanded, label);
+                if (!property.isExpanded)
+                {
+                    EditorGUI.EndProperty();
+                    return;
+                }
+
+                foreach (SerializedProperty childProperty in property.GetVisibleChildren())
+                {
+                    EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, childProperty), childProperty);
+                }
+
+                // Draw duration + Clear Sprites button
+                GUIAdditionals.DrawUILine(mainCtx.GetPropertyRect(position, 6), EditorGUIUtility.isProSkin ? Color.gray : new Color(0.3f, 0.3f, 0.3f));
+                using SerializedProperty frameSpriteArrayProperty = property.FindPropertyRelative(nameof(SpriteAnimator.SpriteAnimSequence.frameSpriteArray));
+                using SerializedProperty frameMSProperty = property.FindPropertyRelative(nameof(SpriteAnimator.SpriteAnimSequence.frameMS));
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUI.FloatField(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), "Total Duration", frameMSProperty.floatValue * frameSpriteArrayProperty.arraySize);
+                }
+
+                if (GUI.Button(mainCtx.GetPropertyRect(position, ClearFramesButtonHeight), "Clear Frames"))
+                {
+                    frameSpriteArrayProperty.ClearArray();
+                }
+
+                EditorGUI.EndProperty();
+            }
+        }
 
         public override void OnInspectorGUI()
         {

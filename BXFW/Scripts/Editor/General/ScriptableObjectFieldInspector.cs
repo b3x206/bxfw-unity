@@ -91,6 +91,10 @@ namespace BXFW
         /// </summary>
         protected virtual float ReservedHeightCustomEditor => 300;
         /// <summary>
+        /// Reserved height used for the foldout options on the top.
+        /// </summary>
+        protected virtual float PropertyFoldoutOptionsHeight => 20;
+        /// <summary>
         /// Allows to change the scriptable object <see cref="UnityEngine.Object.name"/> directly using a input field.
         /// </summary>
         protected virtual bool DisplayObjectNameEditor => false;
@@ -319,82 +323,97 @@ namespace BXFW
             property.Dispose(); // Dispose after being called from delegate, as the passed property is a clone.
         }
 
+        /// <summary>
+        /// Reinitalize the <see cref="typeMenus"/> variable.
+        /// </summary>
+        protected void GetTypeMenus(SerializedProperty property, T target)
+        {
+            // Use a 'GenericMenu' as it's much more convenient than using EditorGUI.Popup
+            typeMenus = new GenericMenu();
+
+            // Get all assemblies
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            foreach (Assembly assembly in assemblies)
+            {
+                foreach (Type type in assembly.GetTypes())
+                {
+                    if (type.IsClass)
+                    {
+                        if (type.IsSubclassOf(typeof(T)) && type != typeof(T) && !type.IsAbstract)
+                        {
+                            T elem = ScriptableObject.CreateInstance(type) as T;
+
+                            // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
+                            // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
+                            var copySO = new SerializedObject(property.serializedObject.targetObject);
+                            SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
+
+                            typeMenus.AddItem(
+                                new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
+                                false,
+                                () =>
+                                {
+                                    // Apply value
+                                    SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
+                                    // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
+                                    // or it's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
+                                    copySO.Dispose();
+                                    copyProp.Dispose();
+                                }
+                           );
+                        }
+                    }
+                }
+            }
+
+            // No items
+            if (typeMenus.GetItemCount() <= 0)
+            {
+                typeMenus.AddDisabledItem(new GUIContent(string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name)), true);
+            }
+
+            // Since the following scope is called only once, we can leech off that
+            // Get custom inspector
+            if (currentCustomInspector == null && target != null)
+            {
+                // Just assign, the 'UseCustomInspector' also ignores the default ones.
+                currentCustomInspector = Editor.CreateEditor(target);
+
+                if (DebugMode && currentCustomInspector == null)
+                {
+                    Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::GetPropertyHeight(Search Custom Editor)] No suitable editor found for obj '{0}'.", target));
+                }
+            }
+        }
+
+        /// <summary>
+        /// The main drawing context.
+        /// </summary>
+        protected readonly PropertyRectContext mainCtx = new PropertyRectContext();
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            mainCtx.Padding = HEIGHT_PADDING;
+
             var propTarget = property.objectReferenceValue;
             var target = propTarget as T;
 
             // Get types inheriting from player powerup on all assemblies
             if (typeMenus == null)
             {
-                // Use a 'GenericMenu' as it's much more convenient than using EditorGUI.Popup
-                typeMenus = new GenericMenu();
-
-                // Get all assemblies
-                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-                foreach (Assembly assembly in assemblies)
-                {
-                    foreach (Type type in assembly.GetTypes())
-                    {
-                        if (type.IsClass)
-                        {
-                            if (type.IsSubclassOf(typeof(T)) && type != typeof(T) && !type.IsAbstract)
-                            {
-                                T elem = ScriptableObject.CreateInstance(type) as T;
-
-                                // Do this as after 'GetPropertyHeight' is called, the given 'property' is disposed
-                                // Just doing property.Copy does not copy the parent 'SerializedObject', which we need
-                                var copySO = new SerializedObject(property.serializedObject.targetObject);
-                                SerializedProperty copyProp = copySO.FindProperty(property.propertyPath);
-
-                                typeMenus.AddItem(
-                                    new GUIContent(string.Format("New {0}{1}", !string.IsNullOrWhiteSpace(type.Namespace) ? type.Namespace + "." : string.Empty, type.Name)),
-                                    false,
-                                    () =>
-                                    {
-                                        // Apply value
-                                        SetValueOfTargetDelegate(copyProp, (T)ScriptableObject.CreateInstance(type));
-                                        // Dispose tempoary vars (this works because the 'typeMenus' list gets cleared when an item gets assigned,
-                                        // or ît's going to throw a sneaky 'InvalidPropertyException', hope it's the latter as this class is a mess)
-                                        copySO.Dispose();
-                                        copyProp.Dispose();
-                                    }
-                               );
-                            }
-                        }
-                    }
-                }
-
-                // No items
-                if (typeMenus.GetItemCount() <= 0)
-                {
-                    typeMenus.AddDisabledItem(new GUIContent(string.Format("Disabled (Make classes inheriting from '{0}')", typeof(T).Name)), true);
-                }
-
-                // Since the following scope is called only once, we can leech off that
-                // Get custom inspector
-                if (currentCustomInspector == null && target != null)
-                {
-                    // Just assign, the 'UseCustomInspector' also ignores the default ones.
-                    currentCustomInspector = Editor.CreateEditor(target);
-
-                    if (DebugMode && currentCustomInspector == null)
-                    {
-                        Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::GetPropertyHeight(Search Custom Editor)] No suitable editor found for obj '{0}'.", target));
-                    }
-                }
+                GetTypeMenus(property, target);
             }
+
+            float h = PropertyFoldoutOptionsHeight + mainCtx.Padding;
 
             // Check if object is null (generically)
             // If null, don't 
             if (target == null || !property.isExpanded)
             {
-                return SingleLineHeight;
+                return h;
             }
 
             SObject ??= new SerializedObject(target);
-            float h = 0f; // instead of using currentY, use a different inline variable
 
             // This is only checked if there's a valid target, meaning there's a custom editor created.
             if (!UseCustomInspector)
@@ -415,17 +434,17 @@ namespace BXFW
                     {
                         if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before || (cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
                         {
-                            h += (cmd.Value.GetGUIHeight?.Invoke(target) ?? 0) + HEIGHT_PADDING; // Height is agnostic of order
+                            h += (cmd.Value.GetGUIHeight?.Invoke(target) ?? 0) + mainCtx.Padding; // Height is agnostic of order
                         }
 
                         if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                         {
-                            h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                            h += EditorGUI.GetPropertyHeight(prop, true) + mainCtx.Padding; // Add padding
                         }
                     }
                     else
                     {
-                        h += EditorGUI.GetPropertyHeight(prop, true) + HEIGHT_PADDING; // Add padding
+                        h += EditorGUI.GetPropertyHeight(prop, true) + mainCtx.Padding; // Add padding
                     }
 
                     expanded = false; // used for the expand arrow of unity
@@ -435,45 +454,17 @@ namespace BXFW
             {
                 // We don't know the adaptable height yet
                 // Could use GUILayoutUtility.GetRect but wont't work because we need height before draw.
-                // As a workaround, jk there's no workaround
-                h = ReservedHeightCustomEditor;
+                // As a workaround, there was a workaround but it took a lot of reflection stuff and 'CalcHeight' stuff
+                // To be updated to the new workaround just use the not legacy bxfw
+                h = ReservedHeightCustomEditor + mainCtx.Padding;
             }
-
-            // Add label height
-            h += SingleLineHeight;
 
             return h;
         }
 
         // hack : position given is incorrect on EventType.Layout
         // drawing GUILayout editors require an GUILayout area, so we need the correct 'position'.
-        private Rect correctPosition;
-        private float currentY;
-        private Rect GetPropertyRect(Rect position, SerializedProperty prop)
-        {
-            return GetPropertyRect(position, EditorGUI.GetPropertyHeight(prop, true));
-        }
-        private Rect GetPropertyRect(Rect position, float height = -1f)
-        {
-            // Height == 0f => do nothing
-            if (Mathf.Approximately(height, 0f))
-            {
-                return position;
-            }
-
-            // Reuse the copied struct
-            position.y = currentY;
-            position.height = height + HEIGHT_PADDING;
-
-            // assuming that the height is added after first rect.
-            if (height < 0f)
-            {
-                height = SingleLineHeight;
-            }
-
-            currentY += height + HEIGHT_PADDING;
-            return position;
-        }
+        private Rect lastRepaintPosition;
 
         /// <summary>
         /// Handles drawn <see cref="ScriptableObject"/>s, doing as the default behaviour for drawn non-<see cref="UnityEngine.Object"/> objects.
@@ -591,12 +582,12 @@ namespace BXFW
             // correct position if we aren't layouting
             if (Event.current.type != EventType.Layout)
             {
-                correctPosition = position;
+                lastRepaintPosition = position;
             }
 
             // The 'property' is for the object field that is only for assigning.
             EditorGUI.BeginProperty(position, label, property);
-            currentY = position.y;
+            mainCtx.Reset();
 
             // Gather target info
             // This works, because we are working with ScriptableObject's
@@ -662,38 +653,43 @@ namespace BXFW
             // Null target gui.
             if (target == null)
             {
-                position.width = previousWidth * .4f;
-                GUI.Label(position, label);
-                position.x += previousWidth * .4f;
+                // Since this has single element, we can change the 
+                position = mainCtx.GetPropertyRect(EditorGUI.IndentedRect(lastRepaintPosition), PropertyFoldoutOptionsHeight);
 
-                GUI.enabled = !targetParentIsPrefab;
+                // EditorGUIUtility.labelWidth doesn't account for indentation
+                Rect labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth - (15f * EditorGUI.indentLevel), position.height);
+                GUI.Label(labelRect, label);
 
-                position.width = previousWidth * .45f;
-                if (GUI.Button(position, new GUIContent(
+                using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targetParentIsPrefab);
+                Rect buttonsRect = new Rect(position.x + labelRect.width, position.y, Mathf.Max(position.width - labelRect.width, EditorGUIUtility.fieldWidth), position.height);
+
+                Rect createObjectButtonRect = new Rect(buttonsRect)
+                {
+                    width = buttonsRect.width * 0.75f
+                };
+                if (GUI.Button(createObjectButtonRect, new GUIContent(
                     targetParentIsPrefab || targetParentHasAssetPath ? string.Format("Drag / Create {0} (child classes)", typeof(T).Name) : string.Format("Assign {0} (child classes)", typeof(T).Name),
                     targetParentIsPrefab || targetParentHasAssetPath ? @"Prefab scenes / Project Assets can't serialize local scriptable objects in themselves.
-(This is due to how the unity serializer works, and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
+(This is due to how the unity serializer works and i can't modify the behaviour)" : "You can also drag scriptable objects."), EditorStyles.popup))
                 {
-                    if (typeMenus != null)
+                    if (typeMenus == null)
                     {
-                        typeMenus.DropDown(position);
+                        GetTypeMenus(property, target);
                     }
-                    else
-                    {
-                        var m = new GenericMenu();
-                        m.AddDisabledItem(new GUIContent("Click refresh to refresh the list."), true);
-                        m.ShowAsContext();
-                    }
-                }
-                position.x += previousWidth * .46f;
 
-                position.width = previousWidth * .14f; // 1 - (.46f + .4f)
-                if (GUI.Button(position, "Refresh"))
-                {
-                    typeMenus = null;
+                    typeMenus.DropDown(createObjectButtonRect);
                 }
 
-                GUI.enabled = gEnabled;
+                Rect refreshListButtonRect = new Rect(buttonsRect)
+                {
+                    x = buttonsRect.x + createObjectButtonRect.width,
+                    width = buttonsRect.width * 0.25f
+                };
+                if (GUI.Button(refreshListButtonRect, "Refresh"))
+                {
+                    GetTypeMenus(property, target);
+                }
+
                 EditorGUI.EndProperty();
                 return;
             }
@@ -703,7 +699,7 @@ namespace BXFW
             // buut, it works (and it has suprisingly ok performance) so why touch it?
 
             // -- Property label
-            Rect rInspectorInfo = GetPropertyRect(position, SingleLineHeight); // width is equal to 'previousWidth'
+            Rect rInspectorInfo = mainCtx.GetPropertyRect(position, PropertyFoldoutOptionsHeight); // width is equal to 'previousWidth'
             const float BTN_SHOWPRJ_WIDTH = .25f;
             const float BTN_DELETE_WIDTH = .15f;
             const float BTN_FOLDOUT_MIN_WIDTH = .033f;
@@ -821,22 +817,22 @@ namespace BXFW
                         {
                             if ((cmd.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before)
                             {
-                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.Before, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.Before, mainCtx.GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
                             }
 
                             if ((cmd.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                             {
-                                EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, prop), prop, true);
                             }
 
                             if ((cmd.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After)
                             {
-                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.After, GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
+                                cmd.Value.DrawGUI(target, MatchGUIActionOrder.After, mainCtx.GetPropertyRect(position, cmd.Value.GetGUIHeight(target)));
                             }
                         }
                         else
                         {
-                            EditorGUI.PropertyField(GetPropertyRect(position, prop), prop, true);
+                            EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, prop), prop, true);
                         }
 
                         expanded = false;
@@ -847,27 +843,14 @@ namespace BXFW
                 }
                 else
                 {
-                    // apparently the only problem was that we weren't getting the correct PropertyDrawer position in Event.current.type == EventType.Layout
-                    // that was (not only) the issue.
-                    // Reserve gui area on the bottom and create a scrollable custom inspector rect
-
-                    // eh whatever this will do if it works, we can't out-inspector the unity inspector (because c# internal keyword and reflection trash).
-                    // in inspector we are doing nested GUILayout areas (which is big no-no)
-                    // If we are in an reorderable array however, the CustomPropertyDrawer allows us for some reason
-
-                    // all of the effort, just to be able to be only drawn inside other nested CustomPropertyDrawers
-                    // unity W, me L
-                    // If you want to tackle this too (i have schizophrenia, there's no you) just know that unity will most likely win
-                    // because it likes to delete your GUILayout area, you also can't just call OnInspectorGUI inside other inspectors (nested GUILayout area moment)
-
-                    // As workaround, just open the entire ScriptableObject in the inspector
-                    // yes, waste of space. but unity won
+                    // This is fixed in the newer versions of bxfw
+                    // Only use the older version if you really need it.
                     try
                     {
                         // Save the current GUILayout setting (?)
 
                         // Begin, draw, exit new area
-                        GUILayout.BeginArea(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor));
+                        GUILayout.BeginArea(new Rect(lastRepaintPosition.x, lastRepaintPosition.y + SingleLineHeight, lastRepaintPosition.width, ReservedHeightCustomEditor));
                         customInspectorScrollPosition = GUILayout.BeginScrollView(customInspectorScrollPosition);
 
                         currentCustomInspector.OnInspectorGUI();
@@ -889,7 +872,7 @@ namespace BXFW
 
                         // ok unity, you win. i give up
                         // the button will just select scriptable object if we can't draw the OnInspectorGUI
-                        if (GUI.Button(new Rect(correctPosition.x, correctPosition.y + SingleLineHeight, correctPosition.width, ReservedHeightCustomEditor),
+                        if (GUI.Button(new Rect(lastRepaintPosition.x, lastRepaintPosition.y + SingleLineHeight, lastRepaintPosition.width, ReservedHeightCustomEditor),
                             "View on Current Inspector\n(object has custom editor, thus cannot be\n viewed in a nested GUILayout area.)"))
                         {
                             AssetDatabase.OpenAsset(target);
