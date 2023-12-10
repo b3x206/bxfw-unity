@@ -30,6 +30,11 @@ namespace BXFW.Tweening.Next
             SetDuration(duration).SetDelay(delay);
         }
         /// <inheritdoc cref="BXSTweenQuaternionContext(float, float, int, EaseType, float)"/>
+        public BXSTweenQuaternionContext(float duration, EaseType easing)
+        {
+            SetDuration(duration).SetEase(easing);
+        }
+        /// <inheritdoc cref="BXSTweenQuaternionContext(float, float, int, EaseType, float)"/>
         public BXSTweenQuaternionContext(float duration, float delay, int loopCount)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount);

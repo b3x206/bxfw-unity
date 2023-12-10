@@ -460,7 +460,7 @@ namespace BXFW.Tweening
     }
 
     #region BXTween Property Classes
-    [Serializable]
+    [Serializable, Obsolete("Use BXSTweenFloatContext, which is a replacement of this.")]
     public sealed class BXTweenPropertyFloat : BXTweenProperty<float>
     {
         public BXTweenPropertyFloat(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
@@ -474,7 +474,7 @@ namespace BXFW.Tweening
             }
         }
     }
-    [Serializable]
+    [Serializable, Obsolete("Use BXSTweenVector2Context, which is a replacement of this.")]
     public sealed class BXTweenPropertyVector2 : BXTweenProperty<Vector2>
     {
         public BXTweenPropertyVector2(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
@@ -488,7 +488,7 @@ namespace BXFW.Tweening
             }
         }
     }
-    [Serializable]
+    [Serializable, Obsolete("Use BXSTweenVector3Context, which is a replacement of this.")]
     public sealed class BXTweenPropertyVector3 : BXTweenProperty<Vector3>
     {
         public BXTweenPropertyVector3(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
@@ -502,7 +502,7 @@ namespace BXFW.Tweening
             }
         }
     }
-    [Serializable]
+    [Serializable, Obsolete("Use BXSTweenColorContext, which is a replacement of this.")]
     public sealed class BXTweenPropertyColor : BXTweenProperty<Color>
     {
         public BXTweenPropertyColor(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)

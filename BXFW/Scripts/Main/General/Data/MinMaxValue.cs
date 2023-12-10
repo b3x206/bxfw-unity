@@ -36,14 +36,14 @@ namespace BXFW
         // - Ctors
         /// <summary>
         /// Constructs the MinMaxValue.
-        /// <br>Checks the given parameters for appopriateness.</br>
+        /// <br>Checks the given parameters for appopriateness. If the values are misplaced, they are swapped.</br>
         /// </summary>
         public MinMaxValue(float min, float max)
         {
             // Check if the rules apply for those values
             if (min > max)
             {
-                max = min;
+                (min, max) = (max, min);
             }
 
             m_Min = min;
@@ -225,13 +225,13 @@ namespace BXFW
         // - Ctors
         /// <summary>
         /// Constructs the MinMaxValueInt.
-        /// <br>Checks the values for appopriateness.</br>
+        /// <br>Checks the values for appopriateness. If the values are misplaced, they are swapped.</br>
         /// </summary>
         public MinMaxValueInt(int min, int max)
         {
             if (min > max)
             {
-                max = min;
+                (min, max) = (max, min);
             }
 
             m_Min = min;

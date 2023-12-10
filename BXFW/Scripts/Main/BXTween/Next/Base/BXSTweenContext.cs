@@ -147,6 +147,12 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Sets the <see cref="GetterAction"/> value and sets the <see cref="StartValue"/> from it.
         /// </summary>
+        /// <param name="getter">
+        /// The getter to use. This value cannot be <see langword="null"/>.
+        /// If you don't want to use a getter use the <see cref="SetStartValue(TValue)"/> without delegate and direct variable.
+        /// <br>However, with a getter, you can use the parameterless <see cref="SetStartValue()"/> 
+        /// to get a new value on demand (by hooking it up to events, etc.).</br>
+        /// </param>
         /// <exception cref="ArgumentNullException"/>
         public BXSTweenContext<TValue> SetStartValue(BXSGetterAction<TValue> getter)
         {

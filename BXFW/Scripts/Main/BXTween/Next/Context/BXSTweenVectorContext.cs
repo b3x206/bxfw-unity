@@ -30,6 +30,11 @@ namespace BXFW.Tweening.Next
             SetDuration(duration).SetDelay(delay);
         }
         /// <inheritdoc cref="BXSTweenVector2Context(float, float, int, EaseType, float)"/>
+        public BXSTweenVector2Context(float duration, EaseType easing)
+        {
+            SetDuration(duration).SetEase(easing);
+        }
+        /// <inheritdoc cref="BXSTweenVector2Context(float, float, int, EaseType, float)"/>
         public BXSTweenVector2Context(float duration, float delay, int loopCount)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount);
@@ -53,9 +58,18 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
+        /// Sets the start value to a Vector2 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenVector2Context SetStartValue(float value)
+        {
+            SetStartValue(new Vector2(value, value));
+
+            return this;
+        }
+        /// <summary>
         /// Sets the end value to a Vector2 with all axis on the same <paramref name="value"/>.
         /// </summary>
-        public BXSTweenContext<Vector2> SetEndValue(float value)
+        public BXSTweenVector2Context SetEndValue(float value)
         {
             SetEndValue(new Vector2(value, value));
 
@@ -90,6 +104,11 @@ namespace BXFW.Tweening.Next
             SetDuration(duration).SetDelay(delay);
         }
         /// <inheritdoc cref="BXSTweenVector3Context(float, float, int, EaseType, float)"/>
+        public BXSTweenVector3Context(float duration, EaseType easing)
+        {
+            SetDuration(duration).SetEase(easing);
+        }
+        /// <inheritdoc cref="BXSTweenVector3Context(float, float, int, EaseType, float)"/>
         public BXSTweenVector3Context(float duration, float delay, int loopCount)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount);
@@ -113,9 +132,18 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
+        /// Sets the start value to a Vector3 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenVector3Context SetStartValue(float value)
+        {
+            SetStartValue(new Vector3(value, value, value));
+
+            return this;
+        }
+        /// <summary>
         /// Sets the end value to a Vector3 with all axis on the same <paramref name="value"/>.
         /// </summary>
-        public BXSTweenContext<Vector3> SetEndValue(float value)
+        public BXSTweenVector3Context SetEndValue(float value)
         {
             SetEndValue(new Vector3(value, value, value));
 
@@ -150,6 +178,11 @@ namespace BXFW.Tweening.Next
             SetDuration(duration).SetDelay(delay);
         }
         /// <inheritdoc cref="BXSTweenVector4Context(float, float, int, EaseType, float)"/>
+        public BXSTweenVector4Context(float duration, EaseType easing)
+        {
+            SetDuration(duration).SetEase(easing);
+        }
+        /// <inheritdoc cref="BXSTweenVector4Context(float, float, int, EaseType, float)"/>
         public BXSTweenVector4Context(float duration, float delay, int loopCount)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount);
@@ -173,11 +206,20 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
+        /// Sets the start value to a Vector4 with all axis on the same <paramref name="value"/>.
+        /// </summary>
+        public BXSTweenVector4Context SetStartValue(float value)
+        {
+            SetStartValue(new Vector4(value, value, value, value));
+
+            return this;
+        }
+        /// <summary>
         /// Sets the end value to a Vector4 with all axis on the same <paramref name="value"/>.
         /// </summary>
-        public BXSTweenContext<Vector4> SetEndValue(float value)
+        public BXSTweenVector4Context SetEndValue(float value)
         {
-            SetEndValue(new Vector4(value, value, value));
+            SetEndValue(new Vector4(value, value, value, value));
 
             return this;
         }

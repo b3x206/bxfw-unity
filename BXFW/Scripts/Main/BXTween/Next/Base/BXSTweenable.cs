@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using UnityEngine;
 using BXFW.Tweening.Next.Events;
-using System.Collections.Generic;
 
 namespace BXFW.Tweening.Next
 {
@@ -43,7 +42,7 @@ namespace BXFW.Tweening.Next
     /// <br>Any class inheriting from this moves/receives a value from <c>a-&gt;b</c>.</br>
     /// </summary>
     [Serializable]
-    public abstract class BXSTweenable : IEquatable<BXSTweenable>
+    public abstract class BXSTweenable
     {
         // -- Settings
         /// <summary>
@@ -807,15 +806,15 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public override bool Equals(object obj)
         {
-            return Equals(obj as BXSTweenable);
+            return ReferenceEquals(this, obj);
         }
 
         /// <summary>
-        /// Returns whether if the tweenable is equal to the <paramref name="other"/>.
+        /// Returns whether if the tweenable is identically equal (not in state) to the <paramref name="other"/>.
         /// <br>This comparison returns whether if the tween parameters are the same, but ignores state variables and whether if it's the same reference.</br>
         /// <br>To check if both objects are the same reference/object pointer use <see cref="object.ReferenceEquals(object, object)"/>.</br>
         /// </summary>
-        public bool Equals(BXSTweenable other)
+        public bool SettingsEqual(BXSTweenable other)
         {
             if (other is null)
             {

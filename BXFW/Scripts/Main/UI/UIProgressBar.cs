@@ -1,5 +1,4 @@
-using BXFW.Tweening;
-
+using BXFW.Tweening.Next;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -94,7 +93,7 @@ namespace BXFW.UI
         /// Progress bar tweened move interpolation.
         /// <br>Only works when <see cref="SetProgress(float, bool)"/> is called with UseTween = true.</br>
         /// </summary>
-        public BXTweenPropertyFloat ProgressInterp = new BXTweenPropertyFloat(.1f);
+        public BXSTweenFloatContext setProgressTween = new BXSTweenFloatContext(0.1f);
 
         // -- Methods -- //
         // Initilaze
@@ -135,31 +134,36 @@ namespace BXFW.UI
         {
             SetProgress(m_ProgressValue);
         }
-        public void SetProgress(float ProgressSet, bool UseTween = false)
+        /// <summary>
+        /// Sets a progress.
+        /// </summary>
+        /// <param name="setProgress">Progress to set between 0f~1f.</param>
+        /// <param name="useTween">Whether to use tween during the progress bar's interpolation.</param>
+        public void SetProgress(float setProgress, bool useTween = false)
         {
             if (m_ProgressBarImg == null)
             {
                 return; // Image is null, don't put any error, as it fills the console because of the 'OnValidate' call.
             }
 
-            ProgressSet = Mathf.Clamp01(ProgressSet);
-            if (UseTween)
+            setProgress = Mathf.Clamp01(setProgress);
+            if (useTween)
             {
-                if (!ProgressInterp.IsSetup)
+                if (!setProgressTween.IsValid)
                 {
                     // Setup tween
-                    ProgressInterp.SetupProperty((float f) => { m_ProgressBarImg.fillAmount = f; });
+                    setProgressTween.SetSetter((float f) => m_ProgressBarImg.fillAmount = f);
                 }
 
-                ProgressInterp.StartTween(m_ProgressBarImg.fillAmount, ProgressSet);
+                setProgressTween.SetStartValue(m_ProgressBarImg.fillAmount).SetEndValue(setProgress).Play();
             }
             else
             {
-                m_ProgressBarImg.fillAmount = ProgressSet;
+                m_ProgressBarImg.fillAmount = setProgress;
                 m_ProgressBarImg.color = m_ProgressBarImg.color;
             }
 
-            m_ProgressValue = ProgressSet;
+            m_ProgressValue = setProgress;
         }
 
         // Editor

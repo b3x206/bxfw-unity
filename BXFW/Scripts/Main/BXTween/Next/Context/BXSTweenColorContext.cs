@@ -30,6 +30,11 @@ namespace BXFW.Tweening.Next
             SetDuration(duration).SetDelay(delay);
         }
         /// <inheritdoc cref="BXSTweenColorContext(float, float, int, EaseType, float)"/>
+        public BXSTweenColorContext(float duration, EaseType easing)
+        {
+            SetDuration(duration).SetEase(easing);
+        }
+        /// <inheritdoc cref="BXSTweenColorContext(float, float, int, EaseType, float)"/>
         public BXSTweenColorContext(float duration, float delay, int loopCount)
         {
             SetDuration(duration).SetDelay(delay).SetLoopCount(loopCount);
