@@ -102,9 +102,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    float prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -129,9 +127,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    float prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -298,9 +294,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    int prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -325,9 +319,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    int prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
