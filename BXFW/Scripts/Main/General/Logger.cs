@@ -4,7 +4,7 @@ using System.Reflection;
 namespace BXFW
 {
     /// <summary>
-    /// Defines a simple generic logger, where the purpose is just to print stuff.
+    /// Defines a basic generic logger, where the purpose is just to print stuff.
     /// <br>This is not a substitute for a normal logger, you have to attach a proper logger here.</br>
     /// </summary>
     public sealed class Logger

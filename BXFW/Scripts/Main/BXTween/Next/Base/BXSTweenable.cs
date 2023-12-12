@@ -25,17 +25,6 @@ namespace BXFW.Tweening.Next
     {
         None, Tick, Pause, Stop
     }
-    /// <summary>
-    /// The targeted ticking type enumeration for <see cref="BXSTweenable"/>.
-    /// <br><see cref="Variable"/> : The tweening will be called on a method like 'Update', where it is called every frame.</br>
-    /// <br><see cref="Fixed"/> : The tweening will be called on a method like 'FixedUpdate', where it is called every n times per second.</br>
-    /// <br/>
-    /// <br>Unlike <see cref="BehaviourUpdateMode"/>, this aims to be a generic tick type.</br>
-    /// </summary>
-    public enum TickType
-    {
-        Variable, Fixed
-    }
 
     /// <summary>
     /// A class that defines what a tweenable is.
@@ -693,7 +682,7 @@ namespace BXFW.Tweening.Next
         /// </summary>
         public void DelayedPlay()
         {
-            BXSTween.DelayFramesCall(Play, 1, this);
+            TaskTimer.ScheduleFrames(Play, 1, this);
         }
         /// <summary>
         /// Waits 1 frame before calling <see cref="PlayFrom(float, int)"/> function.
@@ -705,7 +694,7 @@ namespace BXFW.Tweening.Next
         /// <inheritdoc cref="PlayFrom(float, int)"/>
         public void DelayedPlayFrom(float currentElapsed, int loopsElapsed)
         {
-            BXSTween.DelayFramesCall(() => PlayFrom(currentElapsed, loopsElapsed), 1, this);
+            TaskTimer.ScheduleFrames(() => PlayFrom(currentElapsed, loopsElapsed), 1, this);
         }
         /// <summary>
         /// Waits 1 frame before calling <see cref="PlayFrom(float)"/> function.
@@ -717,28 +706,28 @@ namespace BXFW.Tweening.Next
         /// <inheritdoc cref="PlayFrom(float)"/>
         public void DelayedPlayFrom(float totalElapsed)
         {
-            BXSTween.DelayFramesCall(() => PlayFrom(totalElapsed), 1, this);
+            TaskTimer.ScheduleFrames(() => PlayFrom(totalElapsed), 1, this);
         }
         /// <summary>
         /// Waits 1 frame before calling <see cref="Pause"/> function.
         /// </summary>
         public void DelayedPause()
         {
-            BXSTween.DelayFramesCall(Pause, 1, this);
+            TaskTimer.ScheduleFrames(Pause, 1, this);
         }
         /// <summary>
         /// Waits 1 frame before calling <see cref="Stop"/> function.
         /// </summary>
         public void DelayedStop()
         {
-            BXSTween.DelayFramesCall(Stop, 1, this);
+            TaskTimer.ScheduleFrames(Stop, 1, this);
         }
         /// <summary>
         /// Stops all of the <c>DelayedX</c> calls.
         /// </summary>
         protected void CancelDelayedActions()
         {
-            BXSTween.StopAllDelayCall(this);
+            TaskTimer.StopAllScheduledTasks(this);
         }
 
         /// <summary>

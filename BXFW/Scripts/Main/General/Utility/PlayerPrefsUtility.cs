@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using UnityEngine;
 
 namespace BXFW
@@ -12,6 +13,7 @@ namespace BXFW
     /// </summary>
     public static class PlayerPrefsUtility
     {
+        // TODO : Convert all string.Format's to StringBuilder based stuff
         /// <summary>
         /// Sets a <see cref="PlayerPrefs.SetInt(string, int)"/> interpreted as bool.
         /// <br><see langword="false"/> values are set as 0, <see langword="true"/> values are set as 1.</br>
@@ -61,14 +63,21 @@ namespace BXFW
         {
             if (string.IsNullOrEmpty(key))
             {
+                // This should only happen in a case of erroreneous parameters
+                // (Unity allows this so that's why i am not throwing an exception)
                 Debug.LogError(string.Format("[PlayerPrefsUtility::Set{0}] Couldn't set the savekey because it is null. Key={1}", savePrefix, key));
                 return;
             }
 
             uint lower32 = (uint)(value & uint.MaxValue); // The lower bytes (0 to 2**32)
             uint upper32 = (uint)(value >> 32);           // This does not depend on endianness, i guess? (put upper bytes where the lower bytes would be)
-            PlayerPrefs.SetInt(string.Format("{0}_l32{1}", key, savePrefix), (int)lower32);
-            PlayerPrefs.SetInt(string.Format("{0}_u32{1}", key, savePrefix), (int)upper32);
+            // String.Format is unoptimized and causes 5kb garbage on achievement trackers on some certain game that i am working.
+            StringBuilder keySb = new StringBuilder(key.Length + 4 + savePrefix.Length);
+
+            keySb.Append(key).Append("_l32").Append(savePrefix);
+            PlayerPrefs.SetInt(keySb.ToString(), (int)lower32);
+            keySb.Replace("_l32", "_u32", key.Length, 4);
+            PlayerPrefs.SetInt(keySb.ToString(), (int)upper32);
         }
         /// <summary>
         /// This method returns the generic long as two <see cref="PlayerPrefs.GetInt(string)"/> serialized integers bitshifted to it's proper values.
@@ -81,7 +90,13 @@ namespace BXFW
                 return 0;
             }
 
-            uint lower32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_l32{1}", key, savePrefix)), upper32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_u32{1}", key, savePrefix));
+            StringBuilder keySb = new StringBuilder(key.Length + 4 + savePrefix.Length);
+
+            keySb.Append(key).Append("_l32").Append(savePrefix);
+            uint lower32 = (uint)PlayerPrefs.GetInt(keySb.ToString());
+            keySb.Replace("_l32", "_u32", key.Length, 4);
+            uint upper32 = (uint)PlayerPrefs.GetInt(keySb.ToString());
+
             long result = lower32 | ((long)upper32 << 32);
             return result;
         }
@@ -150,8 +165,12 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetFloat(string.Format("{0}_X", key), value.x);
-            PlayerPrefs.SetFloat(string.Format("{0}_Y", key), value.y);
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            PlayerPrefs.SetFloat(keySb.ToString(), value.x);
+            keySb[keySb.Length - 1] = 'Y';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.y);
         }
         /// <summary>
         /// Returns the values set by <see cref="SetVector2(string, Vector2)"/>
@@ -170,10 +189,14 @@ namespace BXFW
                 return default;
             }
 
-            return new Vector2(
-                PlayerPrefs.GetFloat(string.Format("{0}_X", key), defaultValue.x),
-                PlayerPrefs.GetFloat(string.Format("{0}_Y", key), defaultValue.y)
-            );
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            float xValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.x);
+            keySb[keySb.Length - 1] = 'Y';
+            float yValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.y);
+
+            return new Vector2(xValue, yValue);
         }
 
         /// <summary>
@@ -187,9 +210,14 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetFloat(string.Format("{0}_X", key), value.x);
-            PlayerPrefs.SetFloat(string.Format("{0}_Y", key), value.y);
-            PlayerPrefs.SetFloat(string.Format("{0}_Z", key), value.z);
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            PlayerPrefs.SetFloat(keySb.ToString(), value.x);
+            keySb[keySb.Length - 1] = 'Y';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.y);
+            keySb[keySb.Length - 1] = 'Z';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.z);
         }
         /// <inheritdoc cref="GetVector3(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
@@ -201,11 +229,16 @@ namespace BXFW
                 return default;
             }
 
-            return new Vector3(
-                PlayerPrefs.GetFloat(string.Format("{0}_X", key), defaultValue.x),
-                PlayerPrefs.GetFloat(string.Format("{0}_Y", key), defaultValue.y),
-                PlayerPrefs.GetFloat(string.Format("{0}_Z", key), defaultValue.z)
-            );
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            float xValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.x);
+            keySb[keySb.Length - 1] = 'Y';
+            float yValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.y);
+            keySb[keySb.Length - 1] = 'Z';
+            float zValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.z);
+
+            return new Vector3(xValue, yValue, zValue);
         }
         /// <summary>
         /// Returns the values set by <see cref="SetVector3(string, Vector3)"/>
@@ -226,10 +259,16 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetFloat(string.Format("{0}_X", key), value.x);
-            PlayerPrefs.SetFloat(string.Format("{0}_Y", key), value.y);
-            PlayerPrefs.SetFloat(string.Format("{0}_Z", key), value.z);
-            PlayerPrefs.SetFloat(string.Format("{0}_W", key), value.w);
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            PlayerPrefs.SetFloat(keySb.ToString(), value.x);
+            keySb[keySb.Length - 1] = 'Y';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.y);
+            keySb[keySb.Length - 1] = 'Z';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.z);
+            keySb[keySb.Length - 1] = 'W';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.w);
         }
         /// <inheritdoc cref="GetVector3(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
@@ -241,12 +280,18 @@ namespace BXFW
                 return default;
             }
 
-            return new Vector4(
-                PlayerPrefs.GetFloat(string.Format("{0}_X", key), defaultValue.x),
-                PlayerPrefs.GetFloat(string.Format("{0}_Y", key), defaultValue.y),
-                PlayerPrefs.GetFloat(string.Format("{0}_Z", key), defaultValue.z),
-                PlayerPrefs.GetFloat(string.Format("{0}_W", key), defaultValue.w)
-            );
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_X");
+            float xValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.x);
+            keySb[keySb.Length - 1] = 'Y';
+            float yValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.y);
+            keySb[keySb.Length - 1] = 'Z';
+            float zValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.z);
+            keySb[keySb.Length - 1] = 'W';
+            float wValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.w);
+
+            return new Vector4(xValue, yValue, zValue, wValue);
         }
         /// <summary>
         /// Returns the values set by <see cref="SetVector4(string, Vector4)"/>
@@ -267,10 +312,16 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetFloat(string.Format("{0}_R", key), value.r);
-            PlayerPrefs.SetFloat(string.Format("{0}_G", key), value.g);
-            PlayerPrefs.SetFloat(string.Format("{0}_B", key), value.b);
-            PlayerPrefs.SetFloat(string.Format("{0}_A", key), value.a);
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_R");
+            PlayerPrefs.SetFloat(keySb.ToString(), value.r);
+            keySb[keySb.Length - 1] = 'G';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.g);
+            keySb[keySb.Length - 1] = 'B';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.b);
+            keySb[keySb.Length - 1] = 'A';
+            PlayerPrefs.SetFloat(keySb.ToString(), value.a);
         }
         /// <inheritdoc cref="GetColor(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
@@ -282,12 +333,18 @@ namespace BXFW
                 return default;
             }
 
-            return new Color(
-                PlayerPrefs.GetFloat(string.Format("{0}_R", key), defaultValue.r),
-                PlayerPrefs.GetFloat(string.Format("{0}_G", key), defaultValue.g),
-                PlayerPrefs.GetFloat(string.Format("{0}_B", key), defaultValue.b),
-                PlayerPrefs.GetFloat(string.Format("{0}_A", key), defaultValue.a)
-            );
+            StringBuilder keySb = new StringBuilder(key + 2);
+
+            keySb.Append(key).Append("_R");
+            float rValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.r);
+            keySb[keySb.Length - 1] = 'G';
+            float gValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.g);
+            keySb[keySb.Length - 1] = 'B';
+            float bValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.b);
+            keySb[keySb.Length - 1] = 'A';
+            float aValue = PlayerPrefs.GetFloat(keySb.ToString(), defaultValue.a);
+
+            return new Color(rValue, gValue, bValue, aValue);
         }
         /// <summary>
         /// Returns the values set by <see cref="SetColor(string, Color)"/>
@@ -309,7 +366,11 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetInt(string.Format("{0}_ENUM:{1}", key, typeof(T).Name), Convert.ToInt32(value));
+            string enumTypeName = typeof(T).Name;
+            StringBuilder keySb = new StringBuilder(key.Length + 6 + enumTypeName.Length);
+
+            // Allow for setting Long enums as well, always set enum as long
+            SetLong(keySb.Append(key).Append("_ENUM:").Append(typeof(T).Name).ToString(), Convert.ToInt64(value));
         }
         /// <inheritdoc cref="GetEnum{T}(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
@@ -320,14 +381,16 @@ namespace BXFW
                 Debug.LogError(string.Format("[PlayerPrefsUtility::SetEnum] Couldn't get the savekey because it is null. Key={0}", key));
                 return default;
             }
-            string prefixKey = string.Format("{0}_ENUM:{1}", key, typeof(T).Name);
 
-            if (!PlayerPrefs.HasKey(prefixKey))
-            {
-                return defaultValue;
-            }
+            string enumTypeName = typeof(T).Name;
+            StringBuilder keySb = new StringBuilder(key.Length + 6 + enumTypeName.Length);
+            keySb.Append(key).Append("_ENUM:").Append(typeof(T).Name);
 
-            return (T)(object)PlayerPrefs.GetInt(prefixKey);
+            // If the given enum is a shorter value, accept the data loss. The classes of integers implement 'IConvertable'
+            // So use the convertable method that takes the 'T's underlying int type as converter
+            // As enums can only be exactly converted to that given type, and nothing else. But their underlying integer value is IConvertable
+            object intValue = Convert.ChangeType(GetLong(keySb.ToString(), Convert.ToInt64(defaultValue)), typeof(T).GetEnumUnderlyingType());
+            return (T)intValue;
         }
         /// <summary>
         /// Returns a value set by <see cref="SetEnum{T}(string, T)"/>.
@@ -347,32 +410,122 @@ namespace BXFW
                 return false;
             }
 
+            // Just when i said that the 'PlayerPrefsUtility' couldn't suck more
+            StringBuilder keySb = new StringBuilder(key.Length + 16);
+            keySb.Clear();
+
             // type system abuse
             Type tType = typeof(T);
             if (tType == typeof(Vector2))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key));
+                keySb.Append(key).Append("_X");
+
+                bool hasX = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasX)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'Y';
+                bool hasY = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasY)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType == typeof(Vector3))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_Z", key));
+                keySb.Append(key).Append("_X");
+
+                bool hasX = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasX)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'Y';
+                bool hasY = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasY)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'Z';
+                bool hasZ = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasZ)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType == typeof(Vector4))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_X", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_Y", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_Z", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_W", key));
+                keySb.Append(key).Append("_X");
+
+                bool hasX = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasX)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'Y';
+                bool hasY = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasY)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'Z';
+                bool hasZ = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasZ)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'W';
+                bool hasW = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasW)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType == typeof(Color))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_R", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_G", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_B", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_A", key));
+                keySb.Append(key).Append("_R");
+
+                bool hasR = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasR)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'G';
+                bool hasG = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasG)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'B';
+                bool hasB = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasB)
+                {
+                    return false;
+                }
+
+                keySb[keySb.Length - 1] = 'A';
+                bool hasA = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasA)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType == typeof(bool))
             {
@@ -380,17 +533,43 @@ namespace BXFW
             }
             if (tType == typeof(long))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_l32Long", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_u32Long", key));
+                keySb.Append(key).Append("_l32Long");
+                bool hasL32 = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasL32)
+                {
+                    return false;
+                }
+
+                keySb.Replace("_l32", "_u32", key.Length, 4);
+                bool hasU32 = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasU32)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType == typeof(double))
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_l32Double", key))
-                    && PlayerPrefs.HasKey(string.Format("{0}_u32Double", key));
+                keySb.Append(key).Append("_l32Double");
+                bool hasL32 = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasL32)
+                {
+                    return false;
+                }
+
+                keySb.Replace("_l32", "_u32", key.Length, 4);
+                bool hasU32 = PlayerPrefs.HasKey(keySb.ToString());
+                if (!hasU32)
+                {
+                    return false;
+                }
+
+                return true;
             }
             if (tType.IsEnum)
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_ENUM:{1}", key, typeof(T).Name));
+                return PlayerPrefs.HasKey(keySb.Append(key).Append("_ENUM:").Append(typeof(T).Name).ToString());
             }
 
             return PlayerPrefs.HasKey(key);

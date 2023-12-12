@@ -10,6 +10,7 @@ namespace BXFW
     /// <![CDATA[
     /// using BXFW;
     /// using UnityEngine;
+    /// using System.Text;
     /// 
     /// /// <summary>
     /// /// Draws a FPS counter to the top-left of the screen.
@@ -27,6 +28,83 @@ namespace BXFW
     ///     {
     ///         // FPSCounter.ToString already appends ' FPS' to the end.
     ///         GUI.Box(new Rect(10, 10, 150, 18), counter.ToString());
+    ///         
+    ///         // This is a more complex IMGUI based one
+    ///         // Note that IMGUI allocates more garbage than UGUI, use something like TMPro 
+    ///         DrawWithMinMax();
+    ///     }
+    /// 
+    ///     /// <summary>
+    ///     /// If this is true, the FPS counter GUI will also show the Min+Max 
+    ///     /// data that the <see cref="CurrentCounter"/> has calculated.
+    ///     /// </summary>
+    ///     private bool fpsCounterIsExpanded = false;
+    ///     private GUIStyle fpsCounterMinMaxBoxStyle;
+    ///     private GUIStyle boldFontBoxStyle;
+    ///     private readonly StringBuilder fpsDisplayBuilder = new StringBuilder(64);
+    ///     private void DrawWithMinMax()
+    ///     {
+    ///         float screenWidthScale = Screen.safeArea.width / 1080f;
+    ///         float screenHeightScale = Screen.safeArea.height / 1920f;
+    ///         
+    ///         fpsCounterMinMaxBoxStyle ??= new GUIStyle(GUI.skin.box)
+    ///         {
+    ///             alignment = TextAnchor.UpperLeft,
+    ///             padding = new RectOffset(10, 10, 10, 10),
+    ///             richText = true,
+    ///             fontSize = (int)(30 * screenWidthScale),
+    ///         };
+    ///         boldFontBoxStyle ??= new GUIStyle(GUI.skin.box)
+    ///         {
+    ///             alignment = TextAnchor.MiddleCenter,
+    ///             fontStyle = FontStyle.Bold,
+    ///             fontSize = (int)(30 * screenWidthScale)
+    ///         };
+    ///     
+    ///         // Draw a box with the FPS counter (on top-left corner)
+    ///         float counterButtonWidth = 200f * screenWidthScale, counterButtonHeight = 40f * screenHeightScale;
+    ///         float counterElementsVerticalSpacing = 20f * screenHeightScale;
+    ///         Rect fpsCounterDisplayBtnRect = new Rect(
+    ///             Screen.safeArea.xMax - (counterButtonWidth + 10f),
+    ///             Screen.safeArea.yMin + (counterButtonHeight / 2f),
+    ///             counterButtonWidth,
+    ///             counterButtonHeight
+    ///         );
+    ///         if (GUI.Button(fpsCounterDisplayBtnRect, $"{CurrentCounter.CurrentFPS:0.#} FPS", boldFontBoxStyle))
+    ///         {
+    ///             fpsCounterIsExpanded = !fpsCounterIsExpanded;
+    ///         }
+    ///     
+    ///         if (fpsCounterIsExpanded)
+    ///         {
+    ///             // Draw the min/max + reset min/max
+    ///             Rect fpsCounterMinMaxRect = new Rect(
+    ///                 fpsCounterDisplayBtnRect.x,
+    ///                 fpsCounterDisplayBtnRect.y + fpsCounterDisplayBtnRect.height + counterElementsVerticalSpacing,
+    ///                 counterButtonWidth,
+    ///                 200f * screenHeightScale
+    ///             );
+    ///     
+    ///             fpsDisplayBuilder.Clear();
+    ///             // $"<size=12>Min</size>\n{CurrentCounter.MinFPS:0.#} fps\n<size=12>Max</size>\n{CurrentCounter.MaxFPS:0.#} fps"
+    ///             fpsDisplayBuilder.Append("<size=").Append(20 * screenWidthScale).Append(">Min</size>\n");
+    ///             fpsDisplayBuilder.Append(CurrentCounter.MinFPS.ToString("0.#")).Append(" FPS\n<size=");
+    ///             fpsDisplayBuilder.Append(20 * screenWidthScale).Append(">Max</size>\n").Append(CurrentCounter.MaxFPS.ToString("0.#")).Append(" FPS");
+    ///     
+    ///             GUI.Box(fpsCounterMinMaxRect, fpsDisplayBuilder.ToString(), fpsCounterMinMaxBoxStyle);
+    ///     
+    ///             Rect fpsCounterResetMinMaxRect = new Rect(
+    ///                 fpsCounterMinMaxRect.x,
+    ///                 fpsCounterMinMaxRect.y + fpsCounterMinMaxRect.height + counterElementsVerticalSpacing,
+    ///                 counterButtonWidth,
+    ///                 counterButtonHeight
+    ///             );
+    ///     
+    ///             if (GUI.Button(fpsCounterResetMinMaxRect, "Reset", boldFontBoxStyle))
+    ///             {
+    ///                 CurrentCounter.ResetMinMaxFPS();
+    ///             }
+    ///         }
     ///     }
     /// }
     /// ]]>
