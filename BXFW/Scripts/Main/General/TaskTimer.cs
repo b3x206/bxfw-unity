@@ -12,10 +12,8 @@ namespace BXFW
     {
         // The more i look into 'Schedule', the word, the more meaningless it sounds
         // But whatever, this will do.
-        // TODO : Add more parameter options
-        // TODO 2 : Ensure that the unity's stupid fake null Objects are handled
-        // Maybe create a UnitySafeEqualityComparer thing that type checks the object to UnityEngine.Object?
-        // Because of this, the weakref will always be alive if a UnityEngine.Object but GetHashCode will throw.
+        // ----
+        // Times and manages tasks. Kinda like the 'Invoke' keyword, but it supports delegates as 'Invoke' should.
 
         /// <summary>
         /// A mutable state delay action.
@@ -29,7 +27,7 @@ namespace BXFW
             /// <summary>
             /// Ticking type to check the ScheduledAction on.
             /// </summary>
-            public readonly TickType actionTickType;
+            public TickType targetTickType = TickType.Variable;
             /// <summary>
             /// Timer to wait for.
             /// </summary>
@@ -42,42 +40,62 @@ namespace BXFW
             /// Whether to wait for this ScheduledAction using tick counts instead of waiting a set time.
             /// </summary>
             public bool UseWaitFrames { get; private set; }
+            /// <summary>
+            /// Whether to ignore the time scale while ticking.
+            /// </summary>
+            public bool ignoreTimeScale = false;
 
             /// <summary>
             /// WeakReference to the caller object.
             /// <br>If this reference is dead, the ScheduledAction may stop.</br>
             /// </summary>
             public readonly WeakReference caller;
+
+            // Test whether if the 'caller' is actually a UnityEngine.Object
+            // Because in that case, the weakref will stay alive BUT
+            // the underlying Unity Object inner pointer (on a c# managed object that actually exists,
+            // but the c++ object poitner is nullptr) will throw many exceptions
+
             /// <summary>
             /// Gets the hashcode of the caller.
             /// </summary>
-            public int CallerHash => (caller?.IsAlive ?? false) ? caller.Target.GetHashCode() : 0;
+            public int CallerHash => CallerExists ? caller.Target.GetHashCode() : 0;
+            /// <summary>
+            /// Returns whether if this ScheduledAction requires the caller to be alive.
+            /// <br>This returns whether if the <see cref="caller"/> <see cref="WeakReference"/> exists.
+            /// (If this <see cref="ScheduledAction"/> was constructed without a caller</br>
+            /// </summary>
+            public bool RequiresCallerAlive => caller != null;
+            /// <summary>
+            /// Returns whether if the caller actually exists and is alive.
+            /// </summary>
+            public bool CallerExists => (caller?.IsAlive ?? false) && !UnitySafeEqualityComparer.Default.Equals(caller.Target, null);
 
-            // TODO
-            public bool ignoreTimeScale = false;
-            public TickType targetTick = TickType.Variable;
-
-            public ScheduledAction(Action target, float timer, object caller)
+            public ScheduledAction(Action target, float timer, object caller, TickType tickType, bool ignoreTimeScale)
             {
                 targetAction = target;
                 this.timer = timer;
-                if (caller != null)
+                if (!UnitySafeEqualityComparer.Default.Equals(caller, null))
                 {
                     this.caller = new WeakReference(caller);
                 }
 
                 UseWaitFrames = false;
+                targetTickType = tickType;
+                this.ignoreTimeScale = ignoreTimeScale;
             }
-            public ScheduledAction(Action target, object caller, int waitFrames)
+            public ScheduledAction(Action target, object caller, int waitFrames, TickType tickType, bool ignoreTimeScale)
             {
                 targetAction = target;
                 this.waitFrames = waitFrames;
-                if (caller != null)
+                if (!UnitySafeEqualityComparer.Default.Equals(caller, null))
                 {
                     this.caller = new WeakReference(caller);
                 }
 
                 UseWaitFrames = true;
+                targetTickType = tickType;
+                this.ignoreTimeScale = ignoreTimeScale;
             }
 
             public bool Equals(ScheduledAction action)
@@ -129,11 +147,12 @@ namespace BXFW
             m_MainRunner = runner;
             m_MainRunner.OnTick += OnTick;
             m_MainRunner.OnFixedTick += OnFixedTick;
+            m_MainRunner.OnExit += OnExit;
         }
 
         static TaskTimer()
         {
-            // Iniitalize on demand (this will also initialize the 'MainTickRunner')
+            // Initialize on demand (this will also initialize the 'MainTickRunner')
             Initialize(MainTickRunner.Instance);
         }
 
@@ -141,25 +160,58 @@ namespace BXFW
         /// List of the currently scheduled actions.
         /// </summary>
         private static readonly List<ScheduledAction> scheduledActions = new List<ScheduledAction>();
+
         /// <summary>
         /// Schedules an action to be called.
         /// </summary>
         /// <param name="action">Event to call when the timer runs out.</param>
         /// <param name="delay">Delay to wait out.</param>
+        /// <param name="caller">The caller that calls this scheduling task to wait out <paramref name="delay"/>.</param>
+        /// <param name="tickType">Tick type to wait this scheduled task as.
+        /// <see cref="TickType.Fixed"/> may synchronize with the physics updating (or constant tick updating rate) of your engine but may be less accurate.
+        /// </param>
+        /// <param name="ignoreTimeScale">Whether to ignore a timescale provided by the <see cref="MainRunner"/>.</param>
+        public static void Schedule(Action action, float delay, object caller, TickType tickType, bool ignoreTimeScale)
+        {
+            scheduledActions.Add(new ScheduledAction(action, delay, caller, tickType, ignoreTimeScale));
+        }
+        /// <summary>
+        /// Queues an action to be called.
+        /// </summary>
+        /// <param name="action">Event to call when the timer runs out.</param>
+        /// <param name="waitFrames">
+        /// Amount of <paramref name="tickType"/> frames to wait out.
+        /// If you are not defining a <see cref="TickType"/> this is <see cref="TickType.Variable"/> ticks.
+        /// </param>
+        /// <param name="caller">The caller that calls this scheduling task to wait out <paramref name="waitFrames"/>.</param>
+        /// <param name="tickType">Tick type to wait out.</param>
+        /// <param name="ignoreTimeScale">
+        /// Whether to ignore a timescale provided by the <see cref="MainRunner"/>.
+        /// <br>NOTE : For scheduling waiting frame counts, this DOES NOT get affected by the timescale until the timescale reaches zero.</br>
+        /// </param>
+        public static void ScheduleFrames(Action action, int waitFrames, object caller, TickType tickType, bool ignoreTimeScale)
+        {
+            scheduledActions.Add(new ScheduledAction(action, caller, waitFrames, tickType, ignoreTimeScale));
+        }
+        /// <summary>
+        /// Queues an action to be called.
+        /// <br>Checks the timer in <see cref="TickType.Variable"/> ticking and does not ignore timescale.</br>
+        /// </summary>
+        /// <inheritdoc cref="Schedule(Action, float, object, TickType, bool)"/>
         public static void Schedule(Action action, float delay, object caller)
         {
-            scheduledActions.Add(new ScheduledAction(action, delay, caller));
+            Schedule(action, delay, caller, TickType.Variable, false);
         }
         /// <summary>
         /// Queues an action to be called.
         /// <br>Waits out given amount of frames in <see cref="TickType.Variable"/> tick.</br>
         /// </summary>
-        /// <param name="action">Event to call when the timer runs out.</param>
-        /// <param name="waitFrames">Amount of <see cref="TickType.Variable"/> frames to wait out.</param>
+        /// <inheritdoc cref="ScheduleFrames(Action, int, object, TickType, bool)"/>
         public static void ScheduleFrames(Action action, int waitFrames, object caller)
         {
-            scheduledActions.Add(new ScheduledAction(action, caller, waitFrames));
+            ScheduleFrames(action, waitFrames, caller, TickType.Variable, false);
         }
+
         /// <summary>
         /// Returns whether if the given parameters have a queued task in some way to be called.
         /// <br>Newly created delegates (with different captures) may not return accurate values.</br>
@@ -258,6 +310,13 @@ namespace BXFW
                 }
             }
         }
+        private static void OnExit(bool isApplicationQuit)
+        {
+            if (isApplicationQuit)
+            {
+                StopAllScheduledTasks();
+            }
+        }
         /// <summary>
         /// Ticks a given action by it's parameters.
         /// </summary>
@@ -266,9 +325,18 @@ namespace BXFW
         /// <returns>Whether if this action should be removed.</returns>
         private static bool TickScheduledAction(in ScheduledAction action, ITickRunner runner, TickType type)
         {
-            if (action.targetTick != type)
+            if (action.targetTickType != type)
             {
                 return false;
+            }
+
+            if (action.RequiresCallerAlive)
+            {
+                // Should be removed, has a caller but it's dead.
+                if (!action.CallerExists)
+                {
+                    return true;
+                }
             }
 
             if (action.UseWaitFrames)
@@ -292,8 +360,8 @@ namespace BXFW
                     return true;
                 }
 
-                float deltaTime = type switch 
-                { 
+                float deltaTime = type switch
+                {
                     TickType.Fixed => runner.FixedUnscaledDeltaTime,
                     _ => runner.UnscaledDeltaTime
                 };

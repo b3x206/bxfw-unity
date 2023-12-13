@@ -75,7 +75,7 @@ namespace BXFW
 #endif
             if (!m_IsKillingWithKillIntent)
             {
-                throw new InvalidOperationException("[MainTickRunner::Kill] Cannot destroy 'MainTickRunner' on runtime. Use the 'Kill' method instead.");
+                throw new InvalidOperationException("[MainTickRunner::Kill] Cannot destroy 'MainTickRunner' on runtime. Use the 'Kill()' method instead.");
             }
         }
 
@@ -89,6 +89,7 @@ namespace BXFW
 #endif
             Debug.LogWarning("[MainTickRunner::Kill] Called kill on this object. This may or may not be intended.");
             m_IsKillingWithKillIntent = true;
+            OnExit?.Invoke(false);
             Destroy(gameObject);
         }
     }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Pool;
 
 namespace BXFW
 {
@@ -10,6 +9,8 @@ namespace BXFW
     /// </summary>
     public class ObjectPooler : MonoBehaviour
     {
+        // TODO : Editor for the pool reorderable array for adding unique tags only.
+
         /// <summary>
         /// Defines a pooling prefab, to create a pooled object collection.
         /// </summary>
@@ -159,7 +160,7 @@ namespace BXFW
             for (int i = 0; i < m_instance.m_pools.Count; i++)
             {
                 Pool pool = m_instance.m_pools[i];
-                
+
                 if (pool.tag == tag)
                 {
                     return pool;
@@ -381,10 +382,11 @@ namespace BXFW
 
             // Get + Dequeue
             GameObject objToSpawn = targetPool.m_poolQueue[0];
+            // Security checks
             if (clearPoolQueueIfNullExist && objToSpawn == null)
             {
-                Debug.LogWarning($"[ObjectPooler::SpawnFromPool] Pool with tag ({tag}) has null enqueued objects. Clearing every null object and generating new objects.", this);
-                targetPool.m_poolQueue.RemoveAll(obj => obj == null);
+                int removedNullCount = targetPool.m_poolQueue.RemoveAll(obj => obj == null);
+                Debug.LogWarning($"[ObjectPooler::SpawnFromPool] Pool with tag ({tag}) has null enqueued objects. Cleared every null object (count:{removedNullCount}) and generating new objects.", this);
 
                 // Regenerate objects
                 m_instance.GeneratePoolObjects(targetPool);
@@ -535,6 +537,7 @@ namespace BXFW
         /// <br>Note : This method finds where the GameObject belongs to and despawns the object.</br>
         /// </summary>
         /// <param name="obj">The object that exists in the pool, somewhere.</param>
+        /// <param name="timer">Timer to wait out (in seconds) to despawn the pool object.</param>
         /// <returns>Whether if the destruction timer was queued in.</returns>
         public static bool DespawnPoolObject(GameObject obj, float timer)
         {
@@ -542,7 +545,7 @@ namespace BXFW
             {
                 return m_instance.InternalDespawnPoolObject(obj);
             }
-            
+
             Pool targetPool = PoolWithObject(obj, out string tag);
             if (targetPool == null)
             {
