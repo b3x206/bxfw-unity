@@ -1,21 +1,28 @@
-using System.Collections;
-
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 namespace BXFW.UI
 {
     /// <summary>
-    /// Resizes itself according to rect transform constraint. (Acts like an <see cref="UnityEngine.UI.ContentSizeFitter"/>)
-    /// <br>The inheriting class can use the '<see cref="ObjectTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
+    /// Resizes itself according to rect transform constraint. (Acts like an <see cref="ContentSizeFitter"/>)
+    /// <br>The inheriting class can use the '<see cref="ResizeTarget"/>' field to anything else ui (or into RectTransform : <see cref="RectTransformUIResizer"/>)</br>
     /// </summary>
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public abstract class UICustomResizer : UIBehaviour
     {
         [Header(":: Settings")]
+        public bool applyX = true;
+        public bool applyY = true;
+        [InspectorConditionalDraw(nameof(applyX))]
         public float paddingX = 0f;
+        [InspectorConditionalDraw(nameof(applyX)), Clamp(0f, float.MaxValue)]
+        public MinMaxValue sizeLimitX = MinMaxValue.Zero;
+        [InspectorConditionalDraw(nameof(applyY))]
         public float paddingY = 0f;
-        public bool applyX = true, applyY = true;
+        [InspectorConditionalDraw(nameof(applyY)), Clamp(0f, float.MaxValue)]
+        public MinMaxValue sizeLimitY = MinMaxValue.Zero;
         [Tooltip("Disables this gameObject if the target is disabled too.")]
         public bool disableIfTargetIs = false;
         public TextAnchor alignPivot = TextAnchor.MiddleCenter;
@@ -23,7 +30,7 @@ namespace BXFW.UI
         /// <summary>
         /// The target object to be resized.
         /// </summary>
-        protected abstract RectTransform ObjectTarget { get; }
+        protected abstract RectTransform ResizeTarget { get; }
         /// <summary>
         /// Return the preferred size here.
         /// <br>The padding is done on the base class, and added into <see cref="CurrentTargetValues"/>.</br>
@@ -36,21 +43,33 @@ namespace BXFW.UI
         /// </summary>
         private Vector2 prevTargetValues;
         /// <summary>
-        /// Given target values with padding.
+        /// Given target values with padding and clamping.
         /// </summary>
         public Vector2 CurrentTargetValues
         {
             get
             {
-                if (ObjectTarget == null)
+                if (ResizeTarget == null)
                 {
                     return Vector2.zero;
                 }
 
-                return GetTargetSize() + new Vector2(paddingX, paddingY);
+                Vector2 result = GetTargetSize() + new Vector2(paddingX, paddingY);
+
+                if (sizeLimitX.Max > float.Epsilon)
+                {
+                    result.x = sizeLimitX.ClampBetween(result.x);
+                }
+
+                if (sizeLimitY.Max > float.Epsilon)
+                {
+                    result.y = sizeLimitY.ClampBetween(result.y);
+                }
+
+                return result;
             }
         }
-        private RectTransform _rectTransform;
+        private RectTransform m_RectTransform;
         /// <summary>
         /// Rect transform attached to this <see cref="Component.gameObject"/>.
         /// </summary>
@@ -58,55 +77,36 @@ namespace BXFW.UI
         {
             get
             {
-                if (_rectTransform == null)
+                if (m_RectTransform == null)
                 {
-                    _rectTransform = GetComponent<RectTransform>();
+                    m_RectTransform = GetComponent<RectTransform>();
                 }
 
-                return _rectTransform;
+                return m_RectTransform;
             }
         }
 
-        private Coroutine currentRoutine;
         // Manage
-        protected override void Awake()
-        {
-            base.Awake();
-
-            currentRoutine = StartCoroutine(UpdateCoroutine());
-        }
         protected override void OnEnable()
         {
             base.OnEnable();
 
-            // Restart routine as the object/behaviour is re-enabled.
-            if (currentRoutine == null)
-            {
-                currentRoutine = StartCoroutine(UpdateCoroutine());
-            }
-
             UpdateRectTransform();
         }
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-
-            currentRoutine = null;
-            // Coroutine is stopped when the entire gameobject is disabled anyways
-            // But just the behaviour disabling will keep the routine running
-            // We don't want that.
-            // (note : this may not set the entire coroutine stopping as this is probably called when the behaviour disables so we just stop the coroutines here)
-            StopAllCoroutines();
-        }
         /// <summary>
-        /// An update method that is called with the coroutine.
-        /// <br>This is run on the end of this frame (<see cref="WaitForEndOfFrame"/>).</br>
+        /// An update method that is called on the LateUpdate.
         /// <br>It does not run if the current object is destroyed or disabled, it will be re-run when it gets enabled or created again.</br>
         /// </summary>
-        protected virtual void OnCoroutineUpdate() { }
+        protected virtual void OnLateUpdate()
+        { }
 
         // Update
         // -- Editor Update
+        /// <summary>
+        /// The update method.
+        /// <br>The base only contains an editor method, it is <b>optional only in 
+        /// standalone player</b> so the base call can be '#if'def'd to UNITY_EDITOR:</br>
+        /// </summary>
         protected virtual void Update()
         {
 #if UNITY_EDITOR
@@ -116,10 +116,35 @@ namespace BXFW.UI
             }
 #endif
         }
+        private void LateUpdate()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+#endif
+            if (ResizeTarget != null)
+            {
+                // Disable object if the target is disabled too.
+                if (!ResizeTarget.gameObject.activeInHierarchy && disableIfTargetIs)
+                {
+                    gameObject.SetActive(false);
+                }
+                else
+                {
+                    gameObject.SetActive(true);
+                }
+            }
+
+            UpdateRectTransform();
+            OnLateUpdate();
+        }
+
         protected bool ShouldUpdate()
         {
             // Check target
-            if (ObjectTarget == null)
+            if (ResizeTarget == null)
             {
                 return false;
             }
@@ -127,7 +152,7 @@ namespace BXFW.UI
             // Check if target is enabled (note : this object is disabled in update if the target is disabled)
             // Disabling the object here, unity doesn't allow it.
             // (this was the case in the previous event based update, it may have been changed)
-            if (!ObjectTarget.gameObject.activeInHierarchy)
+            if (!ResizeTarget.gameObject.activeInHierarchy)
             {
                 return false;
             }
@@ -140,37 +165,37 @@ namespace BXFW.UI
 
             return true;
         }
-        private IEnumerator UpdateCoroutine()
-        {
-            for (;;)
-            {
-                // Coroutine will be broken / disabled when the
-                // A : GameObject is destroy/kil
-                // B : GameObject is disable
-                // no.
-                // It won't stop when the behaviour is disabled but we intercept 'OnDisable' to disable the routine
-                // This coroutine waits until end of frame for 'RectTransform' calculations to be done
-                // TODO : Maybe use 'LateUpdate'?
-                yield return new WaitForEndOfFrame();
 
-                if (ObjectTarget != null)
+        /// <summary>
+        /// The layout group cache, is static and used with <see cref="SendUpdateToLayoutGroups"/>.
+        /// </summary>
+        protected static readonly List<LayoutGroup> m_layoutGroupCache = new List<LayoutGroup>(32);
+        /// <summary>
+        /// Calls <see cref="LayoutGroup"/>'s calculation and layouting functions.
+        /// </summary>
+        protected void SendUpdateToLayoutGroups()
+        {
+            Transform t = transform;
+            // Iterate all parents
+            while (t != null)
+            {
+                t.GetComponents(m_layoutGroupCache);
+                for (int i = 0; i < m_layoutGroupCache.Count; i++)
                 {
-                    // Disabling the 'gameObject' does kill the coroutine, so use a coroutine dispatcher.
-                    // Disable object if the target is disabled too.
-                    
-                    if (!ObjectTarget.gameObject.activeInHierarchy && 
-                        disableIfTargetIs)
+                    if (m_layoutGroupCache[i] == null)
                     {
-                        gameObject.SetActive(false);
+                        continue;
                     }
-                    else
-                    {
-                        gameObject.SetActive(true);
-                    }
+
+                    m_layoutGroupCache[i].CalculateLayoutInputHorizontal();
+                    m_layoutGroupCache[i].CalculateLayoutInputVertical();
+                    m_layoutGroupCache[i].SetLayoutHorizontal();
+                    m_layoutGroupCache[i].SetLayoutVertical();
+                    // TODO : Determine if calling only one layout group's functions is enough.
+                    // For now just call all for good measure
                 }
 
-                UpdateRectTransform();
-                OnCoroutineUpdate();
+                t = t.parent;
             }
         }
         /// <summary>
@@ -268,6 +293,9 @@ namespace BXFW.UI
 
                 prevTargetValues.y = CurrentTargetValues.y;
             }
+
+            // Update all parent LayoutGroups to recalculate
+            SendUpdateToLayoutGroups();
         }
     }
 }

@@ -14,7 +14,6 @@ namespace BXFW
     {
         [SerializeField] private float m_Min;
         [SerializeField] private float m_Max;
-
         public float Min
         {
             get { return m_Min; }
@@ -49,6 +48,11 @@ namespace BXFW
             m_Min = min;
             m_Max = max;
         }
+        
+        /// <summary>
+        /// A zero value.
+        /// </summary>
+        public static readonly MinMaxValue Zero = new MinMaxValue(0f, 0f);
 
         /// <summary>
         /// Returns a random value between <see cref="Min"/> and <see cref="Max"/>.
@@ -219,6 +223,11 @@ namespace BXFW
             m_Min = min;
             m_Max = max;
         }
+
+        /// <summary>
+        /// A zero value.
+        /// </summary>
+        public static readonly MinMaxValue Zero = new MinMaxValue(0f, 0f);
 
         /// <summary>
         /// Returns a random value between min and max.
