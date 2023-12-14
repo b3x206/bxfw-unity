@@ -51,6 +51,7 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Whether if the property is an <see cref="IEnumerable"/>.
+        /// </summary>
         public bool TargetIsEnumerable => typeof(IEnumerable).IsAssignableFrom(fieldInfo.FieldType);
 
         private PropertyTargetInfo() { }
@@ -219,7 +220,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Returns the c# object targets.
         /// <br>
-        /// It is heavily suggested that you use <see cref="GetTargetsNoAlloc(SerializedProperty, List{KeyValuePair{FieldInfo, object}})"/> 
+        /// It is heavily suggested that you use <see cref="GetTargetsNoAlloc(SerializedProperty, List{PropertyTargetInfo})"/> 
         /// instead for much better performance and most likely less memory leaks.<br/>(this method calls that method internally with a newly allocated array anyways)
         /// </br>
         /// </summary>

@@ -315,7 +315,7 @@ namespace BXFW
             IsPlaying = false;
         }
         /// <summary>
-        /// Stops the animation & resets everything.
+        /// Stops the animation &amp; resets everything.
         /// </summary>
         public override void Stop()
         {

@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 namespace BXFW
 {
     /// <summary>
-    /// Base used for the <see cref="SerializableDictionary2{TKey, TValue}"/>.
+    /// Base used for the <see cref="SerializableDictionary{TKey, TValue}"/>.
     /// <br>Used to match the editor for the dictionary with a custom reorderable list.</br>
     /// </summary>
     [Serializable]

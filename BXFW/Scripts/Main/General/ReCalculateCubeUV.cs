@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace BXFW
 {
-    /// Most of the work for this script is done on the editor script <see cref="ReCalcCubeTexEditor"/> anyway.
+    /// Most of the work for this script is done on the editor script 'ReCalcCubeTexEditor' anyway.
     /// Note that it can be recalculated in runtime too.
     /// <summary>
     /// Calculates the cube texture uv so it's tiled properly.

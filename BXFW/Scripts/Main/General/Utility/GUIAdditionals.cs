@@ -562,7 +562,7 @@ namespace BXFW
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
         /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
-        /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
+        /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, float)"/> will be called. This should be a value larger than 1</param>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
             // Only do this plotting if we are actually drawing and not layouting

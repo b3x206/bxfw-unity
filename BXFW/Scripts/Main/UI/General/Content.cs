@@ -34,7 +34,7 @@ namespace BXFW.UI
         }
 
         /// <summary>
-        /// Creates a tab button content with a text & image.
+        /// Creates a tab button content with a text &amp; image.
         /// </summary>
         public Content(string text, Sprite image)
         {

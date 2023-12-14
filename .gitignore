@@ -2,6 +2,12 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
+
+# Ignore these docfx directories for now, i will make it github page
+/api/
+/docs/
+/_site/
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/

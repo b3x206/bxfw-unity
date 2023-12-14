@@ -18,7 +18,6 @@ namespace BXFW.Tweening
         public const string ObsoleteMessage = "You are using BXTween, which is to be phased out. Please update your script to BXSTween or use the source generator task if you really want extensions.";
 
         #region TextMeshPro
-        /// <see cref="TextMeshProUGUI"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this TextMeshProUGUI target, float LastValue, float Duration)
         {
@@ -48,7 +47,6 @@ namespace BXFW.Tweening
         #endregion
 
         #region UnityEngine.UI
-        /// <see cref="CanvasGroup"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this CanvasGroup target, float LastValue, float Duration)
         {
@@ -63,7 +61,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-        /// <see cref="Image"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Image target, Color LastValue, float Duration)
         {
@@ -105,7 +102,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-        /// <see cref="RectTransform"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwMoveAnchorPos(this RectTransform target, Vector2 LastValue, float Duration)
         {
@@ -193,7 +189,6 @@ namespace BXFW.Tweening
             return BXTwRect(target, other.rect, Duration);
         }
 
-        /// <see cref="Graphic"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeAlpha(this Graphic target, float LastValue, float Duration)
         {
@@ -223,7 +218,6 @@ namespace BXFW.Tweening
         #endregion
 
         #region Standard (UnityEngine)
-        /// <see cref="Transform">
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Vector3> BXTwMove(this Transform target, Vector3 LastValue, float Duration, Space space = Space.World)
         {
@@ -467,7 +461,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-        /// <see cref="Material">
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwShaderFloatProperty(this Material target, float LastValue, float Duration, string PropertyName)
         {
@@ -515,7 +508,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-        /// <see cref="SpriteRenderer"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this SpriteRenderer target, Color LastValue, float Duration)
         {
@@ -548,8 +540,6 @@ namespace BXFW.Tweening
 
             return Context;
         }
-
-        /// <see cref="Camera"/>
         
         /// <summary>
         /// Tweens the <see cref="Camera.fieldOfView"/> property.
@@ -647,7 +637,6 @@ namespace BXFW.Tweening
             return Context;
         }
         
-        /// <see cref="AudioSource"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<float> BXTwFadeVolume(this AudioSource target, float LastValue, float Duration)
         {
@@ -695,7 +684,6 @@ namespace BXFW.Tweening
             return Context;
         }
 
-        /// <see cref="Light"/>
         [System.Obsolete(ObsoleteMessage)]
         public static BXTweenCTX<Color> BXTwColor(this Light target, Color LastValue, float Duration)
         {
