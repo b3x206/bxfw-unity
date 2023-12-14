@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static BXFW.ObjectPooler;
 
 namespace BXFW
 {
@@ -86,7 +87,7 @@ namespace BXFW
         /// </br>
         /// </summary>
         [Header("Debug")]
-        public bool debugAttachDestroyInterceptor = false;
+        public bool attachDestroyInterceptor = false;
 
         /// <summary>
         /// If this is true, each GameObject registered to the pool will be checked for nulls.
@@ -142,7 +143,7 @@ namespace BXFW
                 instObj.SetActive(false);
                 instObj.name = instObj.name.Replace("(Clone)", "_Pooled");
 #if UNITY_EDITOR
-                if (debugAttachDestroyInterceptor)
+                if (attachDestroyInterceptor)
                 {
                     // Add destroy interceptor if the option to debug those were enabled
                     instObj.AddComponent<PoolObjectDestroyInterceptor>();
@@ -157,7 +158,7 @@ namespace BXFW
                 GameObject removeObj = pool.m_poolQueue[0];
                 pool.m_poolQueue.RemoveAt(0);
 #if UNITY_EDITOR
-                if (debugAttachDestroyInterceptor)
+                if (attachDestroyInterceptor)
                 {
                     // Set removal intent flag to true if the object has component
                     if (removeObj.TryGetComponent(out PoolObjectDestroyInterceptor interceptor))
@@ -327,6 +328,53 @@ namespace BXFW
             m_instance.m_pools.Add(pool);
             m_instance.GeneratePoolObjects(pool);
         }
+        /// <summary>
+        /// Removes a pool.
+        /// <br>Use with caution. This will destroy every object on the <paramref name="pool"/>.</br>
+        /// </summary>
+        public static void RemovePool(Pool pool)
+        {
+            if (pool == null)
+            {
+                throw new ArgumentNullException(nameof(pool), "[ObjectPooler::RemovePool] Given parameter was null.");
+            }
+
+            // There's no unpooling callback, that is called the 'OnDestroy'
+            pool.Count = 0;
+            foreach (GameObject removeObj in pool.m_poolQueue)
+            {
+#if UNITY_EDITOR
+                if (m_instance.attachDestroyInterceptor)
+                {
+                    // Set removal intent flag to true if the object has component
+                    if (removeObj.TryGetComponent(out PoolObjectDestroyInterceptor interceptor))
+                    {
+                        interceptor.isDestroyedWithCleanupIntent = true;
+                    }
+                }
+#endif
+                Destroy(removeObj);
+            }
+            pool.m_poolQueue.Clear();
+        }
+        /// <summary>
+        /// Removes a pool with given tag <paramref name="poolTag"/>.
+        /// <br>Use with caution. This will destroy every object on the pool with tag <paramref name="poolTag"/>.</br>
+        /// </summary>
+        public static void RemovePool(string poolTag)
+        {
+            if (string.IsNullOrWhiteSpace(poolTag))
+            {
+                throw new ArgumentNullException(nameof(poolTag), "[ObjectPooler::RemovePool] Given tag is invalid or null.");
+            }
+            Pool targetPool = PoolWithTag(poolTag);
+            if (targetPool == null)
+            {
+                throw new ArgumentException($"[ObjectPooler::RemovePool] Given tag '{poolTag}' has no corresponding pool.", nameof(poolTag));
+            }
+
+            RemovePool(targetPool);
+        }
 
         /// <summary>
         /// Tries setting the pool with the given <paramref name="poolTag"/>'s size.
@@ -444,7 +492,7 @@ namespace BXFW
                     continue;
                 }
 
-                behaviour.OnSpawn();
+                behaviour.OnPoolSpawn();
             }
 
             // Re-enqueue the object to the last spawn place
@@ -499,7 +547,7 @@ namespace BXFW
                     continue;
                 }
 
-                behaviour.OnDespawn();
+                behaviour.OnPoolDespawn();
             }
 
             targetPool.m_poolQueue.Add(obj);
@@ -564,7 +612,7 @@ namespace BXFW
         /// <br>Note : This method finds where the GameObject belongs to and despawns the object.</br>
         /// </summary>
         /// <param name="obj">The object that exists in the pool, somewhere.</param>
-        /// <returns>Whether if the operation was successful.</returns>
+        /// <returns>Whether if the operation was successful. This may fail if the given <paramref name="obj"/> does not exist.</returns>
         public static bool DespawnPoolObject(GameObject obj)
         {
             return m_instance.InternalDespawnPoolObject(obj);

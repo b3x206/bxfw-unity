@@ -26,6 +26,15 @@ namespace BXFW.ScriptEditor
 
         private static BasicDropdown Instance;
         private Action<BasicDropdown> onGUICall;
+        /// <summary>
+        /// Displays a BasicDropdown.
+        /// </summary>
+        /// <param name="parentRect">
+        /// The display screen rect. Convert your GUI space rects to 
+        /// Screen space rects by using <see cref="GUIUtility.GUIToScreenRect(Rect)"/>.
+        /// </param>
+        /// <param name="size">Size of the dropdown to display.</param>
+        /// <param name="onGUICall">Callback done on the OnGUI.</param>
         public static void ShowDropdown(Rect parentRect, Vector2 size, Action<BasicDropdown> onGUICall)
         {
             if (Instance == null)

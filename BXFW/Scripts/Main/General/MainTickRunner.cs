@@ -61,6 +61,7 @@ namespace BXFW
 
         private void OnApplicationQuit()
         {
+            m_IsKillingWithKillIntent = true;
             OnExit?.Invoke(true);
         }
 

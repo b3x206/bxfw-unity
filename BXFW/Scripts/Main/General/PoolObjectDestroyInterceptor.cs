@@ -10,7 +10,7 @@ namespace BXFW
     /// It will prevent destruction of it unless the <see cref="isDestroyedWithCleanupIntent"/> flag is set.
     /// </br>
     /// </summary>
-    [AddComponentMenu("")]
+    [AddComponentMenu(""), DisallowMultipleComponent]
     public class PoolObjectDestroyInterceptor : MonoBehaviour
     {
         /// <summary>
@@ -31,7 +31,7 @@ namespace BXFW
                 return;
             }
 
-            throw new InvalidOperationException("[PoolObjectDestroyInterceptor::OnDestroy] Cannot destroy pooled object, as it is never meant to be disposed except for explicit removal of pools (or OnApplicationQuit).");
+            throw new InvalidOperationException($"[PoolObjectDestroyInterceptor::OnDestroy] Cannot destroy pooled object (on path {gameObject.GetPath()}), as it is never meant to be disposed except for explicit removal of pools (or OnApplicationQuit).");
         }
 #endif
     }
