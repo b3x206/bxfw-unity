@@ -23,7 +23,7 @@ namespace BXFW
             /// Milliseconds to wait to update the frame.
             /// <br>This also changes the speed.</br>
             /// </summary>
-            public float frameMS = .040f; // Default value is 25 fps
+            public float frameMS = 0.040f; // Default value is 25 fps
             /// <summary>
             /// Whether if the animation should loop.
             /// </summary>
@@ -71,7 +71,7 @@ namespace BXFW
         /// </summary>
         public abstract void Pause();
         /// <summary>
-        /// Stops the 
+        /// Stops the currently playing animation.
         /// </summary>
         public abstract void Stop();
     }

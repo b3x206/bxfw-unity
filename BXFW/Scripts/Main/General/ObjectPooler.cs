@@ -9,8 +9,6 @@ namespace BXFW
     /// </summary>
     public class ObjectPooler : MonoBehaviour
     {
-        // TODO : Editor for the pool reorderable array for adding unique tags only.
-
         /// <summary>
         /// Defines a pooling prefab, to create a pooled object collection.
         /// </summary>
@@ -30,7 +28,7 @@ namespace BXFW
             /// </summary>
             public GameObject Prefab => m_Prefab;
 
-            [SerializeField, Range(0, int.MaxValue)]
+            [SerializeField, Clamp(0, int.MaxValue)]
             private int m_Count;
             /// <summary>
             /// Count of pooled objects.
@@ -82,13 +80,19 @@ namespace BXFW
 
         /// <summary>
         /// If this is true, the generated pooled objects will have a 'OnDestroy' debug-logger.
-        /// <br>This option only works on development builds and editor.</br>
+        /// <br>
+        /// This option only works on development builds and editor,
+        /// as it attaches many MonoBehaviour Cpmponents which may cause performance problems.
+        /// </br>
         /// </summary>
+        [Header("Debug")]
         public bool debugAttachDestroyInterceptor = false;
+
         /// <summary>
         /// If this is true, each GameObject registered to the pool will be checked for nulls.
         /// <br>If a null exists in this case, the Pool will generate a new element with warnings printed.</br>
         /// </summary>
+        [Header("Settings")]
         public bool clearPoolQueueIfNullExist = true;
         [InspectorLine(LineColor.Gray), SerializeField]
         private List<Pool> m_pools = new List<Pool>();
@@ -137,7 +141,13 @@ namespace BXFW
                 GameObject instObj = Instantiate(pool.Prefab, transform);
                 instObj.SetActive(false);
                 instObj.name = instObj.name.Replace("(Clone)", "_Pooled");
-
+#if UNITY_EDITOR
+                if (debugAttachDestroyInterceptor)
+                {
+                    // Add destroy interceptor if the option to debug those were enabled
+                    instObj.AddComponent<PoolObjectDestroyInterceptor>();
+                }
+#endif
                 pool.m_poolQueue.Add(instObj);
             }
             // Removal loop
@@ -146,7 +156,16 @@ namespace BXFW
                 // There's no unpooling callback, that is called the 'OnDestroy'
                 GameObject removeObj = pool.m_poolQueue[0];
                 pool.m_poolQueue.RemoveAt(0);
-
+#if UNITY_EDITOR
+                if (debugAttachDestroyInterceptor)
+                {
+                    // Set removal intent flag to true if the object has component
+                    if (removeObj.TryGetComponent(out PoolObjectDestroyInterceptor interceptor))
+                    {
+                        interceptor.isDestroyedWithCleanupIntent = true;
+                    }
+                }
+#endif
                 Destroy(removeObj);
             }
         }
@@ -258,11 +277,29 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Does the same thing as <see cref="HasPoolWithTag(string)"/>, but on this instance of the object.
+        /// </summary>
+        internal bool TagExists(string tag)
+        {
+            for (int i = 0; i < m_pools.Count; i++)
+            {
+                Pool pool = m_pools[i];
+
+                if (pool.tag == tag)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns whether if this object pooler has an object pool with given <paramref name="tag"/>.
         /// </summary>
         public static bool HasPoolWithTag(string tag)
         {
-            return PoolWithTag(tag) != null;
+            return m_instance.TagExists(tag);
         }
 
         /// <summary>
@@ -447,7 +484,7 @@ namespace BXFW
             if (!removalResult)
             {
                 // GameObject does not exist as a pooled object
-                Debug.LogError(string.Format("[ObjectPooler::DespawnPoolObject] Pool(tag={0}) doesn't contain object named '{1}'.", targetPool, obj.name));
+                Debug.LogError($"[ObjectPooler::DespawnPoolObject] Pool(tag={targetPool}) doesn't contain object named '{obj.name}'.", this);
                 return false;
             }
 
@@ -556,6 +593,7 @@ namespace BXFW
             {
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pooler does not contain a pool with tag ({tag}).", nameof(tag));
             }
+            // This will cause the poolQueue to be checked twice.
             if (!targetPool.m_poolQueue.Contains(obj))
             {
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pool ({targetPool}) does not contain object named ({obj.name}).", nameof(tag));

@@ -208,6 +208,8 @@ namespace BXFW
         /// Returns whether if the given type is assignable from generic type <paramref name="openGenericType"/>.
         /// <br>Can be used/tested against <b>open generic</b> types and <paramref name="target"/>'s base types are checked recursively.</br>
         /// </summary>
+        /// <param name="target">The target type to test to whether if it's assignable from <paramref name="openGenericType"/>. This cannot be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"/>
         public static bool IsAssignableFromOpenGeneric(this Type target, Type openGenericType)
         {
             if (target == null)
@@ -228,6 +230,7 @@ namespace BXFW
                 return true;
             }
 
+            // Can be assigned using BaseType inheritance (class inheritance)
             Type iterTarget = target;
             do
             {
@@ -250,8 +253,8 @@ namespace BXFW
         /// <br>If there is a smaller amount of types available for you to test for
         /// use the <see cref="Type.MakeGenericType(Type[])"/> method in a <c>try {} catch</c> block instead of using this method.</br>
         /// </summary>
-        /// <param name="genericArg">The generic argument to check against. This mustn't be null and must be <see cref="Type.IsGenericType"/>.</param>
-        /// <param name="checkType">The type to check against. This mustn't be null.</param>
+        /// <param name="genericArg">The generic argument to check against. This cannot be null and must be a <see cref="Type.IsGenericType"/>.</param>
+        /// <param name="checkType">The type to check against. This cannot be null.</param>
         /// <returns>The result of whether if the <paramref name="checkType"/> is assignable to the <paramref name="genericArg"/>'s constraints.</returns>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
@@ -263,7 +266,7 @@ namespace BXFW
             }
             if (!genericArg.IsGenericParameter)
             {
-                throw new ArgumentException("[Additionals::GenericArgumentAllowsType] Given 'genericArg' is not an open generic type.", nameof(genericArg));
+                throw new ArgumentException($"[Additionals::GenericArgumentAllowsType] Given 'genericArg ({genericArg})' is not an open generic type.", nameof(genericArg));
             }
             if (checkType == null)
             {
@@ -369,8 +372,10 @@ namespace BXFW
         }
         /// <summary>
         /// Gets types that inherit from 'T'.
+        /// <br>Only uses the assembly of <typeparamref name="T"/>.</br>
+        /// <br>Use the <c>TypeListProvider</c> (editor only) if you need all assemblies.</br>
         /// </summary>
-        public static IEnumerable<Type> GetEnumerableOfType<T>() where T : class
+        public static IEnumerable<Type> GetInheritingTypes<T>() where T : class
         {
             return Assembly.GetAssembly(typeof(T))
                 .GetTypes()

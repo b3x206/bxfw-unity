@@ -281,9 +281,9 @@ namespace BXFW
             return (group.CursorPosition + nextCount) <= group.Count;
         }
 
-        private const string JBMONO_FONT_NAME = "Jetbrains Mono";
-        private const string CONSOLAS_FONT_NAME = "Consolas";
-        private const string COURIER_FONT_NAME = "Courier";
+        private const string JBMonoFontName = "Jetbrains Mono";
+        private const string ConsolasFontName = "Consolas";
+        private const string CourierFontName = "Courier";
         /// <summary>
         /// Name of the selected monospace font.
         /// </summary>
@@ -293,17 +293,17 @@ namespace BXFW
             {
                 string[] fonts = Font.GetOSInstalledFontNames();
                 string selected;
-                if (fonts.Any(name => name == JBMONO_FONT_NAME))
+                if (fonts.Any(name => name == JBMonoFontName))
                 {
-                    selected = JBMONO_FONT_NAME;
+                    selected = JBMonoFontName;
                 }
-                else if (fonts.Any(name => name == CONSOLAS_FONT_NAME))
+                else if (fonts.Any(name => name == ConsolasFontName))
                 {
-                    selected = CONSOLAS_FONT_NAME;
+                    selected = ConsolasFontName;
                 }
                 else
                 {
-                    selected = COURIER_FONT_NAME;
+                    selected = CourierFontName;
                 }
 
                 return selected;
@@ -320,7 +320,7 @@ namespace BXFW
             {
                 if (m_MonospaceFont == null)
                 {
-                    m_MonospaceFont = Font.CreateDynamicFontFromOSFont(MonospaceFontName, 12);
+                    m_MonospaceFont = Font.CreateDynamicFontFromOSFont(MonospaceFontName, MonospaceFontSize);
                 }
 
                 return m_MonospaceFont;
