@@ -5,7 +5,7 @@
 
 # Ignore these docfx directories for now, i will make it github page
 /api/
-/docs/
+# /docs/
 /_site/
 
 /[Ll]ibrary/
