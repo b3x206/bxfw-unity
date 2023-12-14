@@ -99,6 +99,10 @@ namespace BXFW
         private List<Pool> m_pools = new List<Pool>();
 
         private static ObjectPooler m_instance;
+        /// <summary>
+        /// Returns whether if this object pooler can be used.
+        /// </summary>
+        public static bool CanUsePooler => m_instance != null;
 
         private void Awake()
         {

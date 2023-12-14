@@ -26,12 +26,12 @@ namespace BXFW
         }
         private void OnDestroy()
         {
-            if (!Application.isPlaying || isDestroyedWithCleanupIntent)
+            if (!Application.isPlaying || !ObjectPooler.CanUsePooler || isDestroyedWithCleanupIntent)
             {
                 return;
             }
 
-            throw new InvalidOperationException($"[PoolObjectDestroyInterceptor::OnDestroy] Cannot destroy pooled object (on path {gameObject.GetPath()}), as it is never meant to be disposed except for explicit removal of pools (or OnApplicationQuit).");
+            throw new InvalidOperationException($"[PoolObjectDestroyInterceptor::OnDestroy] Must not destroy pooled object (on path {gameObject.GetPath()}), as it is never meant to be disposed except for explicit removal of pools (or OnApplicationQuit).");
         }
 #endif
     }
