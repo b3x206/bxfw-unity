@@ -10,10 +10,6 @@ namespace BXFW.Tweening.Next
     /// <br>This tweening code aims to make things simpler, but the code is more explicit.</br>
     /// <br/>
     /// <br>For shortcut methods, use the Window&gt;BXFW&gt;Editor Tasks and then add a <see cref="BXFW.Tweening.Next.Editor.BXSTweenExtensionGeneratorTask"/> there.</br>
-    /// <br/>
-    /// <br><b>Warning : </b></br>
-    /// <br><see cref="BXSTween"/> is in an experimental state, the api may be subject to sudden changes.</br>
-    /// <br>Use this at your own risk. The actual <see cref="BXTween"/> could be stabler (but dumber, has less features and is GC.Allocing [like me]).</br>
     /// </summary>
     public static class BXSTween
     {
@@ -177,7 +173,7 @@ namespace BXFW.Tweening.Next
         /// <br>Runs a tweenable.</br>
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
         /// </summary>
-        public static void RunTweenable(IBXSTweenRunner runner, BXSTweenable tween)
+        public static void RunTweenable(ITickRunner runner, BXSTweenable tween)
         {
             // Checks
             if (!tween.IsValid)
@@ -351,18 +347,18 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Hooks the tween runner.
         /// </summary>
-        private static void HookTweenRunner(IBXSTweenRunner runner)
+        private static void HookTweenRunner(ITickRunner runner)
         {
-            runner.OnRunnerExit += OnTweenRunnerExit;
-            runner.OnRunnerTick += OnTweenRunnerTick;
+            runner.OnExit += OnTweenRunnerExit;
+            runner.OnTick += OnTweenRunnerTick;
 
             if (runner.SupportsFixedTick)
             {
-                runner.OnRunnerFixedTick += OnTweenRunnerFixedTick;
+                runner.OnFixedTick += OnTweenRunnerFixedTick;
             }
         }
 
-        private static void OnTweenRunnerTick(IBXSTweenRunner runner)
+        private static void OnTweenRunnerTick(ITickRunner runner)
         {
             // Iterate all tweens
             for (int i = 0; i < RunningTweens.Count; i++)
@@ -376,7 +372,7 @@ namespace BXFW.Tweening.Next
                 }
             }
         }
-        private static void OnTweenRunnerFixedTick(IBXSTweenRunner runner)
+        private static void OnTweenRunnerFixedTick(ITickRunner runner)
         {
             // Iterate all tweens
             for (int i = 0; i < RunningTweens.Count; i++)

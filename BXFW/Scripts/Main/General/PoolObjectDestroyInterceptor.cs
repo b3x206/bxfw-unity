@@ -21,6 +21,8 @@ namespace BXFW
 
 #if UNITY_EDITOR || DEBUG
         // Need this type of workaround to fix the gazillion billion errors
+        // The unity function execution order flowchart is a LIE,
+        // it was inconsistent solely with 'OnApplicationQuit'
 #if UNITY_EDITOR
         private void PlayStateChanged(UnityEditor.PlayModeStateChange stateChange)
         {

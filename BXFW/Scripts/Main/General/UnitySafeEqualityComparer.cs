@@ -29,7 +29,7 @@ namespace BXFW
         /// <returns>Whether if two objects are equal.</returns>
         public new bool Equals(object x, object y)
         {
-#if UNITY_5_3_OR_NEWER
+#if UNITY_5_5_OR_NEWER
             // Yes, we have to type test it 4 times. Feel free to fix this.
             // This will work with y as not UnityEngine.Object or y as null because the comparsion operator handles these.
             UnityEngine.Object lhsUnityObject = x as UnityEngine.Object;
@@ -50,7 +50,7 @@ namespace BXFW
 
         public int GetHashCode(object obj)
         {
-#if UNITY_5_3_OR_NEWER
+#if UNITY_5_5_OR_NEWER
             if (obj is UnityEngine.Object unityObject)
             {
                 if (unityObject == null)

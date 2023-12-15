@@ -26,10 +26,10 @@ namespace BXFW.Tweening.Next
         private float m_PreviousUnscaledFixedDeltaTime = 0f;
         public float FixedUnscaledDeltaTime => m_PreviousUnscaledFixedDeltaTime;
 
-        public event BXSAction OnRunnerStart;
-        public event BXSSetterAction<IBXSTweenRunner> OnRunnerTick;
-        public event BXSSetterAction<IBXSTweenRunner> OnRunnerFixedTick;
-        public event BXSExitAction OnRunnerExit;
+        public event Action OnStart;
+        public event Action<ITickRunner> OnTick;
+        public event Action<ITickRunner> OnFixedTick;
+        public event ITickRunner.ExitAction OnExit;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnApplicationLoad()
@@ -41,7 +41,7 @@ namespace BXFW.Tweening.Next
                 {
                     // Spawn object
                     BXSTweenUnityRunner runner = new GameObject("BXSTween").AddComponent<BXSTweenUnityRunner>();
-                    runner.OnRunnerStart?.Invoke();
+                    runner.OnStart?.Invoke();
 
                     // Add it to 'DontDestroyOnLoad'
                     DontDestroyOnLoad(runner.gameObject);
@@ -121,24 +121,24 @@ namespace BXFW.Tweening.Next
 
         public void Kill()
         {
-            OnRunnerExit?.Invoke(false);
+            OnExit?.Invoke(false);
             Destroy(gameObject);
         }
 
         private void Update()
         {
             m_PreviousUnscaledDeltaTime = Time.unscaledDeltaTime;
-            OnRunnerTick?.Invoke(this);
+            OnTick?.Invoke(this);
         }
         private void FixedUpdate()
         {
             m_PreviousUnscaledFixedDeltaTime = Time.fixedUnscaledDeltaTime;
-            OnRunnerFixedTick?.Invoke(this);
+            OnFixedTick?.Invoke(this);
         }
 
         private void OnApplicationQuit()
         {
-            OnRunnerExit?.Invoke(true);
+            OnExit?.Invoke(true);
         }
     }
 }
