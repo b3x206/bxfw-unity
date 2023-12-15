@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static BXFW.ObjectPooler;
 
 namespace BXFW
 {
@@ -10,6 +9,10 @@ namespace BXFW
     /// </summary>
     public class ObjectPooler : MonoBehaviour
     {
+        // TODO : Use a HashMap of prefabs (in runtime) for O(1) searching of Prefabs on Despawn methods
+        // However, i want both a List (random removal), Queue (self-explanatory) and a HashSet (also same) in one.
+        // Hmmmm. Not fun.
+
         /// <summary>
         /// Defines a pooling prefab, to create a pooled object collection.
         /// </summary>
@@ -27,7 +30,11 @@ namespace BXFW
             /// (Read Only) Prefab item contained in this pool.
             /// <br>To change the prefab of a pool, use the 'CreateNewPool' method.</br>
             /// </summary>
-            public GameObject Prefab => m_Prefab;
+            public GameObject Prefab
+            {
+                get => m_Prefab;
+                internal set => m_Prefab = value;
+            }
 
             [SerializeField, Clamp(0, int.MaxValue)]
             private int m_Count;
@@ -150,7 +157,7 @@ namespace BXFW
                 if (attachDestroyInterceptor)
                 {
                     // Add destroy interceptor if the option to debug those were enabled
-                    instObj.AddComponent<PoolObjectDestroyInterceptor>();
+                    instObj.AddComponent<PoolObjectDestroyInterceptor>().Initialize();
                 }
 #endif
                 pool.m_poolQueue.Add(instObj);
@@ -173,6 +180,31 @@ namespace BXFW
 #endif
                 Destroy(removeObj);
             }
+        }
+
+        /// <summary>
+        /// Removes all objects from the <paramref name="pool"/>.
+        /// <br>This only clears the internal queue of <paramref name="pool"/>, count is not reset.</br>
+        /// </summary>
+        private void ClearPoolObjects(Pool pool)
+        {
+            // There's no unpooling callback, that is called the 'OnDestroy'
+            foreach (GameObject removeObj in pool.m_poolQueue)
+            {
+#if UNITY_EDITOR
+                if (attachDestroyInterceptor)
+                {
+                    // Set removal intent flag to true if the object has component
+                    if (removeObj.TryGetComponent(out PoolObjectDestroyInterceptor interceptor))
+                    {
+                        interceptor.isDestroyedWithCleanupIntent = true;
+                    }
+                }
+#endif
+                Destroy(removeObj);
+            }
+
+            pool.m_poolQueue.Clear();
         }
 
         /// <summary>
@@ -343,23 +375,9 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(pool), "[ObjectPooler::RemovePool] Given parameter was null.");
             }
 
-            // There's no unpooling callback, that is called the 'OnDestroy'
             pool.Count = 0;
-            foreach (GameObject removeObj in pool.m_poolQueue)
-            {
-#if UNITY_EDITOR
-                if (m_instance.attachDestroyInterceptor)
-                {
-                    // Set removal intent flag to true if the object has component
-                    if (removeObj.TryGetComponent(out PoolObjectDestroyInterceptor interceptor))
-                    {
-                        interceptor.isDestroyedWithCleanupIntent = true;
-                    }
-                }
-#endif
-                Destroy(removeObj);
-            }
-            pool.m_poolQueue.Clear();
+            m_instance.ClearPoolObjects(pool);
+            m_instance.m_pools.Remove(pool);
         }
         /// <summary>
         /// Removes a pool with given tag <paramref name="poolTag"/>.
@@ -378,6 +396,38 @@ namespace BXFW
             }
 
             RemovePool(targetPool);
+        }
+        /// <summary>
+        /// Sets a pool's prefab to given <paramref name="targetPrefab"/>.
+        /// <br>
+        /// No object/prefab seperation is done during runtime,
+        /// but it is preffered that the <paramref name="targetPrefab"/> never gets destroyed.
+        /// </br>
+        /// <br>This will cause the pool objects to be re-instantiated, so register pool prefabs from the start if possible.</br>
+        /// </summary>
+        /// <param name="poolTag">The pool tag to search for.</param>
+        /// <param name="targetPrefab">Prefab to set the <paramref name="poolTag"/>'s corresponding pool's prefab into.</param>
+        /// <param name="cloneTargetPrefab">Whether to clone the <paramref name="targetPrefab"/> as a security measure.</param>
+        public static void SetPoolPrefab(string poolTag, GameObject targetPrefab, bool cloneTargetPrefab = false)
+        {
+            if (string.IsNullOrWhiteSpace(poolTag))
+            {
+                throw new ArgumentNullException(nameof(poolTag), "[ObjectPooler::SetPoolPrefab] Given 'poolTag' argument is invalid.");
+            }
+            if (targetPrefab == null)
+            {
+                throw new ArgumentNullException(nameof(targetPrefab), "[ObjectPooler::SetPoolPrefab] Given 'targetPrefab' argument is null.");
+            }
+
+            Pool targetPool = PoolWithTag(poolTag);
+            if (targetPool == null)
+            {
+                throw new ArgumentException($"[ObjectPooler::SetPoolPrefab] Cannot find pool with tag '{poolTag}'.", nameof(poolTag));
+            }
+
+            m_instance.ClearPoolObjects(targetPool);
+            targetPool.Prefab = cloneTargetPrefab ? Instantiate(targetPrefab) : targetPrefab;
+            m_instance.GeneratePoolObjects(targetPool);
         }
 
         /// <summary>
@@ -531,6 +581,11 @@ namespace BXFW
         /// <inheritdoc cref="DespawnPoolObject(string, GameObject)"/>
         private bool InternalDespawnPoolObject(Pool targetPool, GameObject obj)
         {
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj), "[ObjectPooler::DespawnPoolObject] Given object was null.");
+            }
+
             bool removalResult = targetPool.m_poolQueue.Remove(obj);
 
             if (!removalResult)
@@ -559,6 +614,11 @@ namespace BXFW
         }
         private bool InternalDespawnPoolObject(GameObject obj)
         {
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj), "[ObjectPooler::DespawnPoolObject] Given object was null.");
+            }
+
             Pool targetPool = PoolWithObject(obj, out string _);
             if (targetPool == null)
             {
@@ -628,6 +688,7 @@ namespace BXFW
         /// <param name="obj">The object that exists in the pool, somewhere.</param>
         /// <param name="timer">Timer to wait out (in seconds) to despawn the pool object.</param>
         /// <returns>Whether if the destruction timer was queued in.</returns>
+        /// <exception cref="ArgumentNullException"/>
         public static bool DespawnPoolObject(GameObject obj, float timer)
         {
             if (timer <= 0f)

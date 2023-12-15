@@ -20,8 +20,24 @@ namespace BXFW
         internal bool isDestroyedWithCleanupIntent = false;
 
 #if UNITY_EDITOR || DEBUG
+        // Need this type of workaround to fix the gazillion billion errors
+#if UNITY_EDITOR
+        private void PlayStateChanged(UnityEditor.PlayModeStateChange stateChange)
+        {
+            isDestroyedWithCleanupIntent = stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode || stateChange == UnityEditor.PlayModeStateChange.EnteredEditMode;
+        }
+#endif
+        public void Initialize()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.playModeStateChanged += PlayStateChanged;
+#endif
+        }
         private void OnApplicationQuit()
         {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.playModeStateChanged -= PlayStateChanged;
+#endif
             isDestroyedWithCleanupIntent = true;
         }
         private void OnDestroy()

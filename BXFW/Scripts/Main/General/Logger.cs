@@ -18,7 +18,7 @@ namespace BXFW
         private readonly LogExceptionAction logExceptionAction;
 
         /// <summary>
-        /// Creates a logger. The <paramref name="logAction"/> cannot be left blank.
+        /// Creates a logger. The <paramref name="logAction"/> cannot be left null.
         /// </summary>
         public Logger(LogAction logAction, LogAction warnAction, LogAction errorAction, LogExceptionAction logException)
         {
