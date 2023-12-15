@@ -111,6 +111,8 @@ namespace BXFW
         /// </summary>
         public static bool CanUsePooler => m_instance != null;
 
+        private bool m_IsQuitting = false;
+
         private void Awake()
         {
             if (m_instance == null)
@@ -120,12 +122,23 @@ namespace BXFW
             else
             {
                 Debug.LogError($"[ObjectPooler::Awake] Duplicate object pooler. Not setting instance.", this);
+                return;
             }
+
+            Application.quitting += SetQuittingFlag;
 
             foreach (Pool pool in m_pools)
             {
                 GeneratePoolObjects(pool);
             }
+        }
+        private void OnDestroy()
+        {
+            Application.quitting -= SetQuittingFlag;
+        }
+        private void SetQuittingFlag()
+        {
+            m_IsQuitting = true;
         }
 
         private void GeneratePoolObjects(Pool pool)
@@ -504,11 +517,10 @@ namespace BXFW
             }
         }
 
-        /// <summary>
-        /// List of the pooled behaviours gathered from the <see cref="GameObject.GetComponents{T}(List{T})"/>.
-        /// <br>This is used to call every <see cref="IPooledBehaviour"/> on the given pooled root object.</br>
-        /// </summary>
-        private static readonly List<IPooledBehaviour> m_PooledBehavioursCache = new(16);
+        // Spawning a PooledObject from another IPooledObject's callback causes an issue due to the shared state Instance
+        // This causes more than 1 times access to the m_PooledBehavioursCache in the same loop.
+        // Or you know, finally acknowledge that Singletons are a bad idea because of situations like this.
+
         /// <inheritdoc cref="SpawnFromPool(string, Vector3, Quaternion, Transform)"/>
         private GameObject SpawnFromPoolInternal(string tag, Vector3 position, Quaternion rotation, Transform parent)
         {
@@ -537,9 +549,26 @@ namespace BXFW
             objToSpawn.SetActive(true);
             objToSpawn.transform.SetParent(parent);
             objToSpawn.transform.SetPositionAndRotation(position, rotation);
-            objToSpawn.GetComponents(m_PooledBehavioursCache);
 
-            foreach (IPooledBehaviour behaviour in m_PooledBehavioursCache)
+            // In this foreach loop, use the 'objToSpawn' as the cache provider
+            // This is what i call memory fragmentation!!11!
+            // This is the dirty and quick hack to solve this
+            // ----
+            // We can lock 'm_PooledBehaviourCache',
+            // but this will cause the obvious issue of the same crap happening with a different exception
+            // ----
+            // You know what, the best thing to do here is to allocate a tempoary array.
+            // Sure, this will allocate GC garbage. But it is still the most viable thing to do now.
+            // This is because i don't know about ProblemFactory'ies or SingleTonOfOhNos
+            // ----
+            // FIXME
+            
+            // - Reserve 16 IPooledBehaviour's because no one in their right mind
+            // would put more than 16 IPooledBehaviour components to the same object.
+            List<IPooledBehaviour> pooledBehaviours = new List<IPooledBehaviour>(16);
+            objToSpawn.GetComponents(pooledBehaviours);
+
+            foreach (IPooledBehaviour behaviour in pooledBehaviours)
             {
                 if (behaviour == null)
                 {
@@ -596,10 +625,15 @@ namespace BXFW
             }
 
             obj.SetActive(false);
-            obj.transform.SetParent(transform);
-            obj.GetComponents(m_PooledBehavioursCache);
+            if (!m_IsQuitting)
+            {
+                obj.transform.SetParent(transform);
+            }
 
-            foreach (IPooledBehaviour behaviour in m_PooledBehavioursCache)
+            List<IPooledBehaviour> pooledBehaviours = new List<IPooledBehaviour>(16);
+            obj.GetComponents(pooledBehaviours);
+
+            foreach (IPooledBehaviour behaviour in pooledBehaviours)
             {
                 if (behaviour == null)
                 {

@@ -177,6 +177,21 @@ namespace BXFW
         public IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
 
         /// <summary>
+        /// A sum of the <paramref name="iterableValues"/> without foreach GC.
+        /// </summary>
+        private static float Sum<TSum>(in IList<TSum> iterableValues, Func<TSum, float> selector)
+        {
+            float total = 0f;
+
+            for (int i = 0; i < iterableValues.Count; i++)
+            {
+                total += selector(iterableValues[i]);
+            }
+
+            return total;
+        }
+
+        /// <summary>
         /// Returns a randomly selected random value, using the data.
         /// </summary>
         public T Get()
@@ -198,7 +213,17 @@ namespace BXFW
         {
             filterList.Clear();
             filterList.Capacity = m_list.Count;
-            filterList.AddRange(m_list.Where(cd => filter(cd.Value)));
+            for (int i = 0; i < m_list.Count; i++)
+            {
+                ChanceValue<T> chanceValue = m_list[i];
+
+                if (!filter(chanceValue.Value))
+                {
+                    continue;
+                }
+
+                filterList.Add(chanceValue);
+            }
 
             if (filterList.Count <= 0)
             {
@@ -207,7 +232,7 @@ namespace BXFW
 
             // don't adjust the chances of the 'ChanceData's (because the classes are refs),
             // instead get a random value between zero and the existing sum of this array.
-            float randUpperLimit = filterList.Sum((ChanceValue<T> c) => c.Chance);
+            float randUpperLimit = Sum(filterList, (ChanceValue<T> c) => c.Chance);
 
             // Do the same thing as 'GetRand'
             return GetRandomInternal(filterList, randUpperLimit);
@@ -282,6 +307,7 @@ namespace BXFW
         /// </summary>
         public ChanceValuesList(IEnumerable<T> collection)
         {
+            // For 'Enumerable.Count()' linq is okay
             int collectionSize = collection.Count();
             float chancePerElement = ChanceUpperLimit / collectionSize;
             filterList.Capacity = collectionSize;
@@ -338,7 +364,7 @@ namespace BXFW
         }
         public override void FillMissingChanceSum()
         {
-            float sum = m_list.Sum((data) => data.Chance);
+            float sum = Sum(m_list, (data) => data.Chance);
 
             // Sum is already at the upper limit
             if (sum + float.Epsilon >= ChanceUpperLimit)
@@ -359,7 +385,7 @@ namespace BXFW
             // This should throw 'IndexOutOfRangeException' anyway
             m_list[index].Chance = chance;
 
-            float sum = m_list.Sum((data) => data.Chance);
+            float sum = Sum(m_list, (data) => data.Chance);
             float chanceDelta = ChanceUpperLimit - sum;
 
             for (int i = 0; i < m_list.Count; i++)

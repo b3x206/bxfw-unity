@@ -24,21 +24,22 @@ namespace BXFW
         // The unity function execution order flowchart is a LIE,
         // it was inconsistent solely with 'OnApplicationQuit'
 #if UNITY_EDITOR
-        private void PlayStateChanged(UnityEditor.PlayModeStateChange stateChange)
+        private void QuitStateChanged()
         {
-            isDestroyedWithCleanupIntent = stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode || stateChange == UnityEditor.PlayModeStateChange.EnteredEditMode;
+            isDestroyedWithCleanupIntent = true;
         }
 #endif
         public void Initialize()
         {
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.playModeStateChanged += PlayStateChanged;
+            Application.quitting += QuitStateChanged;
 #endif
         }
+        // Sometimes the 'OnDestroy' gets called before 'OnApplicationQuit'
         private void OnApplicationQuit()
         {
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.playModeStateChanged -= PlayStateChanged;
+            Application.quitting -= QuitStateChanged;
 #endif
             isDestroyedWithCleanupIntent = true;
         }
