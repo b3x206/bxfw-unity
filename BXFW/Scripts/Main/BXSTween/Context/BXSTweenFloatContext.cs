@@ -1,6 +1,6 @@
 using System;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// Contains a context that uses floats.

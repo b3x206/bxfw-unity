@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using BXFW.Tools.Editor;
 
-namespace BXFW.Tweening.Next.Editor
+namespace BXFW.Tweening.Editor
 {
     [CustomPropertyDrawer(typeof(BXSTweenExtensionGeneratorTask.ExtensionClassTemplate))]
     public class BXSTweenExtensionTemplateEditor : PropertyDrawer

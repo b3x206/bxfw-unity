@@ -1,4 +1,4 @@
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// Contains a tweening runner.

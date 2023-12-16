@@ -1,9 +1,9 @@
 using System;
 using System.Text;
 using UnityEngine;
-using BXFW.Tweening.Next.Events;
+using BXFW.Tweening.Events;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// Type of a loop in <see cref="BXSTweenable"/>'s repeats.

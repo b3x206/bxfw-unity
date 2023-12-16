@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// Waits a tween until it's finished.

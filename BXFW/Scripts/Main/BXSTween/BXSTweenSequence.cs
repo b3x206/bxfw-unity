@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using BXFW.Tweening.Next.Events;
+using BXFW.Tweening.Events;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// A sequencer of <see cref="BXSTweenable"/>'s.

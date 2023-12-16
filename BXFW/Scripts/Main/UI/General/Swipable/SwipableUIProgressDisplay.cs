@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using BXFW.Tweening.Next;
+using BXFW.Tweening;
 
 namespace BXFW.UI
 {

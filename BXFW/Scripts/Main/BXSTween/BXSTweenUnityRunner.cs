@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// The primary runner for the unity game engine.

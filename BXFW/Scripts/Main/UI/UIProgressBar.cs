@@ -1,4 +1,4 @@
-using BXFW.Tweening.Next;
+using BXFW.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 

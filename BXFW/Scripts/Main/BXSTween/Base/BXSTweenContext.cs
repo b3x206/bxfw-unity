@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
-using BXFW.Tweening.Next.Events;
+using BXFW.Tweening.Events;
 
-namespace BXFW.Tweening.Next
+namespace BXFW.Tweening
 {
     /// <summary>
     /// Contains a typed context.

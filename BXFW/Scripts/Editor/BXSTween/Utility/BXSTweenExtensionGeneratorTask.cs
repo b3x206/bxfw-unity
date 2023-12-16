@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace BXFW.Tweening.Next.Editor
+namespace BXFW.Tweening.Editor
 {
     /// <summary>
     /// Use this to generate type instance extension(s) for BXSTween.
@@ -100,7 +100,7 @@ namespace BXFW.Tweening.Next.Editor
         /// </summary>
         private const string ReMatchNamespaceName = "[^_.a-zA-Z0-9_]|^[\\d.]+";
         [DisallowChars(ReMatchNamespaceName, isRegex = true)]
-        public string fileNamespace = "BXFW.Tweening.Next";
+        public string fileNamespace = "BXFW.Tweening";
         /// <summary>
         /// Same as <see cref="ReMatchNamespaceName"/> without the dots allowed.
         /// </summary>
@@ -222,9 +222,9 @@ namespace BXFW.Tweening.Next.Editor
             {
                 currentNamespaceUsings.Add("BXFW.Tweening");
             }
-            if (!isBaseTweeningNamespace || !fileNamespace.StartsWith("BXFW.Tweening.Next"))
+            if (!isBaseTweeningNamespace || !fileNamespace.StartsWith("BXFW.Tweening"))
             {
-                currentNamespaceUsings.Add("BXFW.Tweening.Next");
+                currentNamespaceUsings.Add("BXFW.Tweening");
             }
             // function definitions
             foreach (ExtensionClassTemplate template in extensionPairs)

@@ -1,4 +1,4 @@
-namespace BXFW.Tweening.Next.Events
+namespace BXFW.Tweening.Events
 {
     /// <summary>
     /// A way of setting the event value if plausible.
