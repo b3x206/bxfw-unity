@@ -11,13 +11,6 @@ namespace BXFW.Tweening.Next
         /// Returns a tweening id from the given object.
         /// <br>Implement this according to your id system, or always return <see cref="BXSTween.NoID"/> if no id.</br>
         /// </summary>
-        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject)
-            where TDispatchObject : class;
-            
-        /// <summary>
-        /// Returns a tweening object from the given id.
-        /// </summary>
-        public TDispatchObject GetObjectFromID<TDispatchObject>(int id)
-            where TDispatchObject : class;
+        public int GetIDFromObject<TDispatchObject>(TDispatchObject idObject) where TDispatchObject : class;
     }
 }

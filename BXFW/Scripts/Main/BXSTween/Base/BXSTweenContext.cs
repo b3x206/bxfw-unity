@@ -487,6 +487,12 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnEndAction"/> event.
+        /// <br>The difference between the <see cref="SetStopAction(BXSAction, EventSetMode)"/> 
+        /// and this is that this only gets invoked when the tween ends after the tweens duration.</br>
+        /// <br/>
+        /// <br><b>Note : </b> If you are want to play the same tween from this tweens ending action use <see cref="SetStopAction(BXSAction, EventSetMode)"/> instead,
+        /// this is due to the <see cref="BXSTweenable.Stop"/> sets <see cref="BXSTweenable.IsPlaying"/> to false immediately after this event.</br>
+        /// <br>Or use <see cref="BXSTweenSequence"/> in conjuction with <see cref="BXSTweenable.AsCopy{T}"/>.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetEndAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -502,6 +508,29 @@ namespace BXFW.Tweening.Next
                 default:
                 case EventSetMode.Equals:
                     OnEndAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnStopAction"/> event.
+        /// <br>The difference between the <see cref="SetEndAction(BXSAction, EventSetMode)"/>
+        /// and this is that this gets called both when the tween ends or when <see cref="BXSTweenable.Stop"/> gets called.</br>
+        /// </summary>
+        public BXSTweenContext<TValue> SetStopAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnStopAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnStopAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnStopAction = action;
                     break;
             }
             return this;

@@ -147,7 +147,7 @@ namespace BXFW.Tweening.Next
 
             // Always set
             m_LoopType = LoopType.Reset;
-            
+
             // Play
             base.Play();
             // The 'BXSTweenable.Play' doesn't reset
@@ -159,7 +159,7 @@ namespace BXFW.Tweening.Next
         public override void Stop()
         {
             base.Stop();
-            
+
             // Stop everything
             for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
@@ -190,7 +190,7 @@ namespace BXFW.Tweening.Next
             {
                 CurrentRunPriority = 0;
                 RunTweensInPriority(CurrentRunPriority);
-                
+
                 return;
             }
 
@@ -730,7 +730,9 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Sets the <see cref="BXSTweenable.OnEndAction"/> event.
-        /// <br>This does not set any of the added element's actions.</br>
+        /// <br>The difference between the <see cref="SetStopAction(BXSAction, EventSetMode)"/> 
+        /// and this is that this only gets invoked when the tween ends after the tweens duration.</br>
+        /// <br>This does not set any of the added Tweenables actions.</br>
         /// </summary>
         public BXSTweenSequence SetEndAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
         {
@@ -746,6 +748,30 @@ namespace BXFW.Tweening.Next
                 default:
                 case EventSetMode.Equals:
                     OnEndAction = action;
+                    break;
+            }
+            return this;
+        }
+        /// <summary>
+        /// Sets the <see cref="BXSTweenable.OnStopAction"/> event.
+        /// <br>The difference between the <see cref="SetEndAction(BXSAction, EventSetMode)"/>
+        /// and this is that this gets called both when the tween ends or when <see cref="BXSTweenable.Stop"/> gets called.</br>
+        /// <br>This does not set any of the added Tweenables actions.</br>
+        /// </summary>
+        public BXSTweenSequence SetStopAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)
+        {
+            switch (setMode)
+            {
+                case EventSetMode.Subtract:
+                    OnStopAction -= action;
+                    break;
+                case EventSetMode.Add:
+                    OnStopAction += action;
+                    break;
+
+                default:
+                case EventSetMode.Equals:
+                    OnStopAction = action;
                     break;
             }
             return this;

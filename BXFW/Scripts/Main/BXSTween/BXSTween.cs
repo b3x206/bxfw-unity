@@ -139,6 +139,52 @@ namespace BXFW.Tweening.Next
         }
 
         /// <summary>
+        /// Finds a tweenable with the target as given <paramref name="idObject"/>.
+        /// </summary>
+        /// <returns>
+        /// The found tween. This method returns null if no tweens were found.
+        /// If multiple tweens target the same object this just returns the first tween it finds in <see cref="RunningTweens"/>.
+        /// <br>If you want to get all tweens that target the <paramref name="idObject"/> use <see cref="FindTweenablesWithTargetObject{TDispatchObject}(TDispatchObject)"/></br>
+        /// </returns>
+        public static BXSTweenable FindTweenWithTargetObject<TDispatchObject>(TDispatchObject idObject)
+            where TDispatchObject : class
+        {
+            int objectId = MainRunner.GetIDFromObject(idObject);
+
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                if (RunningTweens[i].ID == objectId)
+                {
+                    return RunningTweens[i];
+                }
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Finds a tweenable with the target as given <paramref name="idObject"/>.
+        /// </summary>
+        /// <returns>
+        /// The found tweens list. This method returns an empty list if no tweens were found.
+        /// </returns>
+        public static List<BXSTweenable> FindTweenablesWithTargetObject<TDispatchObject>(TDispatchObject idObject)
+            where TDispatchObject : class
+        {
+            int objectId = MainRunner.GetIDFromObject(idObject);
+            List<BXSTweenable> foundList = new List<BXSTweenable>();
+
+            for (int i = 0; i < RunningTweens.Count; i++)
+            {
+                if (RunningTweens[i].ID == objectId)
+                {
+                    foundList.Add(RunningTweens[i]);
+                }
+            }
+
+            return foundList;
+        }
+
+        /// <summary>
         /// Stops all tweens of <see cref="RunningTweens"/>.
         /// </summary>
         public static void StopAllTweens()
@@ -156,7 +202,6 @@ namespace BXFW.Tweening.Next
 
             RunningTweens.Clear();
         }
-
         /// <summary>
         /// Clears the <see cref="BXSTween"/>, this includes only the <see cref="MainRunner"/>.
         /// </summary>
@@ -340,6 +385,15 @@ namespace BXFW.Tweening.Next
             }
 
             // Stop + Call endings
+            try
+            {
+                tween.OnEndAction?.Invoke();
+            }
+            catch (Exception e)
+            {
+                MainLogger.LogException($"[BXSTween::RunTweenable] OnEndAction in tween '{tween}'\n", e);
+            }
+
             tween.Stop();
         }
 

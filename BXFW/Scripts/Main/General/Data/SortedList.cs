@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Codice.CM.Common.Tree;
 
 namespace BXFW
 {
@@ -72,7 +73,7 @@ namespace BXFW
         /// Finds the index of value mostly lower but the closest to <paramref name="value"/>.
         /// <br>If it's an exact match, the index will be the same.</br>
         /// </summary>
-        private int FindClosestIndexBinarySearch(T value, int lower = -1, int upper = -1)
+        private int FindClosestBinarySearch(T value, int lower = -1, int upper = -1)
         {
             // Check list (dumb oversight, the Add function throws if no elements lol)
             if (m_list.Count <= 0)
@@ -85,13 +86,14 @@ namespace BXFW
             {
                 lower = 0;
             }
-
             if (upper <= -1)
             {
                 upper = m_list.Count;
             }
 
-            int center = (upper + lower) / 2;                     // Center of array values
+            // I think i am restarted
+            // Though suprisingly this method works as intended even with or without the faulty center calculation lol.
+            int center = lower + ((upper - lower) / 2);           // Center of array values
             T elem = m_list[center];                              // Element
             int comparisonDiff = m_comparer.Compare(value, elem); // Comparison sign
 
@@ -105,18 +107,61 @@ namespace BXFW
             // Value is on lower
             if (comparisonDiff < 0)
             {
-                return FindClosestIndexBinarySearch(value, lower, center);
+                return FindClosestBinarySearch(value, lower, center);
             }
             // Value is in the upper
             else if (comparisonDiff > 0)
             {
-                return FindClosestIndexBinarySearch(value, center, upper);
+                return FindClosestBinarySearch(value, center, upper);
             }
             // Value equal
             else
             {
                 return center;
             }
+        }
+        /// <summary>
+        /// Finds the exact index of <paramref name="value"/>.
+        /// </summary>
+        private int FindExactBinarySearch(T value, int lower = -1, int upper = -1)
+        {
+            // Check list
+            if (m_list.Count <= 0)
+            {
+                return -1;
+            }
+
+            // Get optional parameters
+            if (lower <= -1)
+            {
+                lower = 0;
+            }
+            if (upper <= -1)
+            {
+                upper = m_list.Count - 1;
+            }
+
+            if (upper >= lower)
+            {
+                int center = lower + ((upper - lower) / 2);                 // Center of array values
+                T centerElem = m_list[center];                              // Element
+                int comparisonDiff = m_comparer.Compare(value, centerElem); // Comparison sign
+
+                // Value is on lower
+                if (comparisonDiff < 0)
+                {
+                    return FindExactBinarySearch(value, lower, center - 1);
+                }
+                // Value is in the upper
+                else if (comparisonDiff > 0)
+                {
+                    return FindExactBinarySearch(value, center + 1, upper);
+                }
+                // Value same
+                return center;
+            }
+
+            return -1;
         }
 
         #region Ctor + Interface
@@ -191,7 +236,7 @@ namespace BXFW
         /// </summary>
         public T this[int index]
         {
-            get 
+            get
             {
                 return m_list[index];
             }
@@ -256,7 +301,7 @@ namespace BXFW
         public void Add(T item)
         {
             // Insert to array
-            int closestIndex = FindClosestIndexBinarySearch(item);
+            int closestIndex = FindClosestBinarySearch(item);
             m_list.Insert(closestIndex, item);
         }
         public void AddRange(IEnumerable<T> elements)
@@ -283,23 +328,40 @@ namespace BXFW
         }
         public bool Contains(T item)
         {
-            return m_list.Contains(item);
+            return FindExactBinarySearch(item) >= 0;
         }
         public void CopyTo(T[] array, int arrayIndex)
         {
             m_list.CopyTo(array, arrayIndex);
         }
+        /// <summary>
+        /// Gets the index of <paramref name="item"/>.
+        /// <br>This does a binary search. If multiple same <paramref name="item"/> orders were found this does nothing.</br>
+        /// </summary>
         public int IndexOf(T item)
         {
-            return m_list.IndexOf(item);
+            // We can binary search this item
+            return FindExactBinarySearch(item);
         }
+        /// <summary>
+        /// Gets the last index of <paramref name="item"/>.
+        /// <br>Note : This is an 'O(N)' operation due to BinarySearch being fiddly.</br>
+        /// </summary>
         public int LastIndexOf(T item)
         {
             return m_list.LastIndexOf(item);
         }
         public bool Remove(T item)
         {
-            return m_list.Remove(item);
+            int itemIndex = FindExactBinarySearch(item);
+
+            if (itemIndex < 0)
+            {
+                return false;
+            }
+
+            RemoveAt(itemIndex);
+            return true;
         }
         public void RemoveAt(int index)
         {

@@ -228,10 +228,22 @@ namespace BXFW.Tweening.Next
 
         /// <summary>
         /// ID of the given tweening object.
-        /// <br>If this is <see cref="BXSTween.NoID"/>, no object conditions were attached 
-        /// + this tween has no id and can't be accessed except for code references.</br>
+        /// <br>If this is <see cref="BXSTween.NoID"/>, no related objects were attached to this tween.</br>
         /// </summary>
-        public int ID => m_ID;
+        public int ID
+        {
+            get
+            {
+                // Validate ID
+                if (m_ID != BXSTween.NoID && m_ID != BXSTween.MainRunner.GetIDFromObject(m_IDObject))
+                {
+                    // TODO : Maybe make the validation a boolean? or cause tween to stop if validation of IDObject failed?
+                    m_ID = BXSTween.NoID;
+                }
+
+                return m_ID;
+            }
+        }
         /// <summary>
         /// <inheritdoc cref="ID"/> <br/><c>[Tweenable Internal, Runtime]</c>
         /// </summary>
@@ -266,13 +278,20 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Called when the tween repeats. (with the same priority as <see cref="OnEndAction"/>)
         /// <br>The tween is not reset when this is called, but it has to be reset.</br>
-        /// <br>This DOES NOT get called when the tween completely ends, use <see cref="OnEndAction"/> for that.</br>
+        /// <br>This DOES NOT get called when the tween ends, use <see cref="OnEndAction"/> or <see cref="OnStopAction"/> for that.</br>
         /// </summary>
         public BXSAction OnRepeatAction;
         /// <summary>
         /// Called when the tween completely ends.
+        /// <br>This does not get called on explicit/direct <see cref="Stop"/> calls, for something 
+        /// that accomodates for both stopping and ending use the <see cref="OnStopAction"/>.</br>
         /// </summary>
         public BXSAction OnEndAction;
+        /// <summary>
+        /// Called when <see cref="Stop"/> is called.
+        /// <br>Also called after <see cref="OnEndAction"/> when the tween has ended (to set the stop's <see cref="Reset"/> state).</br>
+        /// </summary>
+        public BXSAction OnStopAction;
 
         // -- Control Events
         /// <summary>
@@ -313,6 +332,13 @@ namespace BXFW.Tweening.Next
             OnEndAction = null;
         }
         /// <summary>
+        /// Clears the <see cref="OnStopAction"/>.
+        /// </summary>
+        public void ClearStopAction()
+        {
+            OnStopAction = null;
+        }
+        /// <summary>
         /// Clears the <see cref="TickConditionAction"/>.
         /// </summary>
         public void ClearTickConditionAction()
@@ -329,6 +355,7 @@ namespace BXFW.Tweening.Next
             ClearUpdateAction();
             ClearPauseAction();
             ClearEndAction();
+            ClearStopAction();
             ClearTickConditionAction();
         }
 
@@ -487,6 +514,7 @@ namespace BXFW.Tweening.Next
             OnRepeatAction = tweenable.OnRepeatAction;
             OnPauseAction = tweenable.OnPauseAction;
             OnEndAction = tweenable.OnEndAction;
+            OnStopAction = tweenable.OnStopAction;
             TickConditionAction = tweenable.TickConditionAction;
 
             // Other values will be copied by the override casting the values to itself...
@@ -638,11 +666,11 @@ namespace BXFW.Tweening.Next
 
             try
             {
-                OnEndAction?.Invoke();
+                OnStopAction?.Invoke();
             }
             catch (Exception e)
             {
-                BXSTween.MainLogger.LogException($"[BXSTweenable::Stop] OnStopAction in tween '{ToString()}'\n", e);
+                BXSTween.MainLogger.LogException($"[BXSTweenable::Stop] 'OnStopAction' in tween '{ToString()}'\n", e);
             }
 
             Reset();
@@ -740,58 +768,53 @@ namespace BXFW.Tweening.Next
         }
         /// <summary>
         /// Converts a <see cref="BXSTweenable"/> to string.
+        /// <br>This is more of a debugging string representation and less of a something to call often.</br>
         /// </summary>
         /// <param name="simpleString">Whether to return a shorter, simpler string. Use this option as <see langword="true"/> if you are gonna call this method often.</param>
-        /// <param name="pSep">The property seperator character for values.</param>
-        public virtual string ToString(bool simpleString, char pSep = ',')
+        /// <param name="propertySep">The property seperator character for values.</param>
+        public virtual string ToString(bool simpleString, char propertySep = ',')
         {
             // To make this method noexcept, get m_IDObject string reprensation as this
-            string idObjToString;
             // This is the best way i could think of, because the stupid unity objects are fake null
             // (but other c# objects are fine, so can use null coalesence for this)
             // Maybe add a IBXSTweenRunner.IsNullObject method instead of this
-            try
-            {
-                idObjToString = m_IDObject?.ToString() ?? "<null>";
-            }
-            catch
-            {
-                idObjToString = "<null>";
-            }
+            string idObjToString = UnitySafeEqualityComparer.Default.Equals(m_IDObject, null) ? "<null>" : m_IDObject.ToString();
 
             if (simpleString)
             {
-                return $"[BXSTweenable(play={IsPlaying})] Duration={m_Duration}{pSep} Delay={m_Delay}{pSep} Loops={m_LoopCount}{pSep} Speed={m_Speed}{pSep} ID={m_ID}{pSep} IDObj={idObjToString}";
+                return $"[BXSTweenable(play={IsPlaying})] Duration={m_Duration}{propertySep} Delay={m_Delay}{propertySep} Loops={m_LoopCount}{propertySep} Speed={m_Speed}{propertySep} ID={m_ID}{propertySep} IDObj={idObjToString}";
             }
 
-            StringBuilder sb = new StringBuilder(512);
+            StringBuilder sb = new StringBuilder(768);
             sb.Append("[BXSTweenable(play=").Append(IsPlaying).Append(")]")
-                .Append(pSep).Append(" Duration=").Append(Duration)
-                .Append(pSep).Append(" Delay=").Append(m_Delay)
-                .Append(pSep).Append(" LoopCount=").Append(m_LoopCount)
-                .Append(pSep).Append(" Ease=").Append(m_Ease)
-                .Append(pSep).Append(" EaseCurve=").Append(m_EaseCurve)
-                .Append(pSep).Append(" Speed=").Append(m_Speed)
-                .Append(pSep).Append(" IgnoreTimeScale=").Append(m_IgnoreTimeScale)
-                .Append(pSep).Append(" Clamp01Easing=").Append(m_Clamp01EasingSetter)
-                .Append(pSep).Append(" TickType=").Append(m_TickType)
-                .Append(pSep).Append(" ID=").Append(m_ID)
-                .Append(pSep).Append(" IDObject=").Append(idObjToString)
-                .Append(pSep).Append(" PlayAction=").Append(OnPlayAction)
-                .Append(pSep).Append(" StartAction=").Append(OnStartAction)
-                .Append(pSep).Append(" UpdateAction=").Append(OnTickAction)
-                .Append(pSep).Append(" PauseAction=").Append(OnPauseAction)
-                .Append(pSep).Append(" RepeatAction=").Append(OnRepeatAction)
-                .Append(pSep).Append(" EndAction=").Append(OnEndAction)
-                .Append(pSep).Append(" TickConditionAction=").Append(TickConditionAction);
+                .Append(propertySep).Append(" Duration=").Append(Duration)
+                .Append(propertySep).Append(" Delay=").Append(m_Delay)
+                .Append(propertySep).Append(" LoopCount=").Append(m_LoopCount)
+                .Append(propertySep).Append(" Ease=").Append(m_Ease)
+                .Append(propertySep).Append(" EaseCurve=").Append(m_EaseCurve)
+                .Append(propertySep).Append(" Speed=").Append(m_Speed)
+                .Append(propertySep).Append(" IgnoreTimeScale=").Append(m_IgnoreTimeScale)
+                .Append(propertySep).Append(" Clamp01Easing=").Append(m_Clamp01EasingSetter)
+                .Append(propertySep).Append(" TickType=").Append(m_TickType)
+                .Append(propertySep).Append(" ID=").Append(m_ID)
+                .Append(propertySep).Append(" IDObject=").Append(idObjToString)
+                .Append(propertySep).Append(" PlayAction=").Append(OnPlayAction)
+                .Append(propertySep).Append(" StartAction=").Append(OnStartAction)
+                .Append(propertySep).Append(" UpdateAction=").Append(OnTickAction)
+                .Append(propertySep).Append(" PauseAction=").Append(OnPauseAction)
+                .Append(propertySep).Append(" RepeatAction=").Append(OnRepeatAction)
+                .Append(propertySep).Append(" EndAction=").Append(OnEndAction)
+                .Append(propertySep).Append(" StopAction=").Append(OnStopAction)
+                .Append(propertySep).Append(" TickConditionAction=").Append(TickConditionAction);
 
             return sb.ToString();
         }
 
         /// <summary>
-        /// <inheritdoc cref="Equals(BXSTweenable)"/>
-        /// <br/>
-        /// <br>This also type tests the given <paramref name="obj"/> to be a <see cref="BXSTweenable"/>.</br>
+        /// Returns whether if the <paramref name="obj"/> is exactly equal to this tweenables reference.
+        /// <br>If <see cref="IEquatable{T}"/> is used for checking whether if both tweens are similar,
+        /// some list equity problems occur, causing failure to remove stopped tweens on some cases.</br>
+        /// <br>If you want to check if both tweens are similar use <see cref="SettingsEqual(BXSTweenable)"/> instead.</br>
         /// </summary>
         public override bool Equals(object obj)
         {
@@ -801,7 +824,6 @@ namespace BXFW.Tweening.Next
         /// <summary>
         /// Returns whether if the tweenable is identically equal (not in state) to the <paramref name="other"/>.
         /// <br>This comparison returns whether if the tween parameters are the same, but ignores state variables and whether if it's the same reference.</br>
-        /// <br>To check if both objects are the same reference/object pointer use <see cref="object.ReferenceEquals(object, object)"/>.</br>
         /// </summary>
         public bool SettingsEqual(BXSTweenable other)
         {
@@ -839,6 +861,7 @@ namespace BXFW.Tweening.Next
             hash.Add(OnPauseAction);
             hash.Add(OnRepeatAction);
             hash.Add(OnEndAction);
+            hash.Add(OnStopAction);
             hash.Add(TickConditionAction);
             hash.Add(IsValid);
             hash.Add(IsSequence);

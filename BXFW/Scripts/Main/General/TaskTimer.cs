@@ -54,7 +54,7 @@ namespace BXFW
             // Test whether if the 'caller' is actually a UnityEngine.Object
             // Because in that case, the weakref will stay alive BUT
             // the underlying Unity Object inner pointer (on a c# managed object that actually exists,
-            // but the c++ object poitner is nullptr) will throw many exceptions
+            // but the c++ object pointer is nullptr) will throw many exceptions
 
             /// <summary>
             /// Gets the hashcode of the caller.

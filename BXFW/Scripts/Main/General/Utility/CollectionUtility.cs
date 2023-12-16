@@ -442,7 +442,7 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Allows enumerable to be iterable with an index.
+        /// Allows <see cref="IEnumerable{T}"/> anything to be iterable with an index.
         /// </summary>
         public static IEnumerable<KeyValuePair<int, T>> Indexed<T>(this IEnumerable<T> enumerable)
         {
@@ -525,7 +525,9 @@ namespace BXFW
         }
         /// <summary>
         /// Converts a <see cref="Array"/> to a typed array.
+        /// <br>This creates a new array.</br>
         /// </summary>
+        /// <exception cref="InvalidCastException"/>
         public static T[] ToTypeArray<T>(this Array target)
         {
             T[] arrayReturn = new T[target.Length];
