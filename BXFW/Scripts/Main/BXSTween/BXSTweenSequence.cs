@@ -122,10 +122,9 @@ namespace BXFW.Tweening
         public BXSTweenSequence(IEnumerable<BXSTweenable> tweens)
         {
             int i = 0;
-            foreach (var ctx in tweens)
+            foreach (BXSTweenable ctx in tweens)
             {
                 m_RunnableTweens.Add(new RunnableTween(i, ctx));
-
                 i++;
             }
         }
@@ -160,8 +159,9 @@ namespace BXFW.Tweening
         {
             base.Stop();
 
-            // Stop everything
-            for (int i = 0; i < m_RunnableTweens.Count; i++)
+            // Stop everything (note : Only not do this if the elapsed is 1f, which means all tweens are finished)
+            // This is because the 'OnEndAction' does not get called for the BXSTweenable
+            for (int i = 0; i < m_RunnableTweens.Count && (TotalElapsed >= 1f - float.Epsilon); i++)
             {
                 m_RunnableTweens[i].tween.Stop();
             }
@@ -345,7 +345,7 @@ namespace BXFW.Tweening
                 ctx.Stop();
             }
 
-            foreach (var runnable in m_RunnableTweens)
+            foreach (RunnableTween runnable in m_RunnableTweens)
             {
                 runnable.priority += 1;
             }
@@ -413,14 +413,14 @@ namespace BXFW.Tweening
 
             for (int i = m_RunnableTweens.Count - 1; i >= 0; i--)
             {
-                var runnable = m_RunnableTweens[i];
+                RunnableTween runnable = m_RunnableTweens[i];
                 if (runnable.tween == item)
                 {
                     // Check if this is the last element of it's priority
                     if (runnable.priority != LastPriority && PriorityCount(runnable.priority) - 1 <= 0)
                     {
                         // The priority no longer exists, do decrement everything beyond this runnable's priority
-                        foreach (var afterPriorityRunnable in GetAfterPriorityRunnables(runnable.priority))
+                        foreach (RunnableTween afterPriorityRunnable in GetAfterPriorityRunnables(runnable.priority))
                         {
                             afterPriorityRunnable.priority -= 1;
                         }
@@ -465,7 +465,7 @@ namespace BXFW.Tweening
             }
 
             // Shift runnables (no tweens exist in given priority now)
-            foreach (var afterPriorityRunnable in GetAfterPriorityRunnables(priority))
+            foreach (RunnableTween afterPriorityRunnable in GetAfterPriorityRunnables(priority))
             {
                 afterPriorityRunnable.priority -= 1;
             }
@@ -494,7 +494,7 @@ namespace BXFW.Tweening
             float longestDuration = -1f;
             for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
-                var runnable = m_RunnableTweens[i];
+                RunnableTween runnable = m_RunnableTweens[i];
                 if (runnable.priority != priority)
                 {
                     continue;
@@ -532,7 +532,7 @@ namespace BXFW.Tweening
         /// </summary>
         private IEnumerable<RunnableTween> GetAfterPriorityRunnables(int priority)
         {
-            foreach (var runnable in m_RunnableTweens)
+            foreach (RunnableTween runnable in m_RunnableTweens)
             {
                 if (runnable.priority > priority)
                 {
@@ -547,7 +547,7 @@ namespace BXFW.Tweening
         {
             for (int i = 0; i < m_RunnableTweens.Count; i++)
             {
-                var runnable = m_RunnableTweens[i];
+                RunnableTween runnable = m_RunnableTweens[i];
                 if (runnable.priority == priority)
                 {
                     runnable.tween.Play();

@@ -57,7 +57,7 @@ namespace BXFW
         /// <summary>
         /// Returns a random value between <see cref="Min"/> and <see cref="Max"/>.
         /// </summary>
-        public float GetRandomBetween()
+        public float RandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
         }
@@ -241,7 +241,7 @@ namespace BXFW
         /// <summary>
         /// Returns a random value between min and max.
         /// </summary>
-        public int GetRandomBetween()
+        public int RandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
         }

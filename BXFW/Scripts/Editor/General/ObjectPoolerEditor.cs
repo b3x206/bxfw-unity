@@ -34,7 +34,6 @@ namespace BXFW.ScriptEditor
                     continue;
                 }
 
-
                 height += EditorGUI.GetPropertyHeight(visibleChild) + mainCtx.Padding;
             }
 

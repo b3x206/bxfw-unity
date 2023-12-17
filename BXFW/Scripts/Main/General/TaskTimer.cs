@@ -251,7 +251,7 @@ namespace BXFW
         /// <param name="invokeAllActions">Whether to invoke all of the scheduled actions for <paramref name="caller"/>.</param>
         public static void StopAllScheduledTasks(object caller, bool invokeAllActions)
         {
-            for (int i = scheduledActions.Count; i >= 0; i--)
+            for (int i = scheduledActions.Count - 1; i >= 0; i--)
             {
                 ScheduledAction action = scheduledActions[i];
                 if (action.CallerHash == (caller?.GetHashCode() ?? 0))
