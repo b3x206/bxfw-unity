@@ -76,7 +76,7 @@ namespace BXFW
         /// Return true if the given character parameter 
         /// should be kept as is (from source string <paramref name="str"/>).
         /// </param>
-        public string RemoveDiacritics(string str, Func<char, bool> predMustKeep = null)
+        public string RemoveInvalidChars(string str, Func<char, bool> predMustKeep = null)
         {
             StringBuilder sb = new StringBuilder(str.Length);
             string normalizedStr = str.Normalize(NormalizationForm.FormD);
@@ -196,7 +196,7 @@ namespace BXFW
 #endif
                 if (replaceInvalidChars)
                 {
-                    setData = RemoveDiacritics(setData, (char c) => target.font.HasCharacter(c));
+                    setData = RemoveInvalidChars(setData, (char c) => target.font.HasCharacter(c));
                 }
 
                 if (fmt.Length > 0)

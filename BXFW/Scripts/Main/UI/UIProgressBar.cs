@@ -55,7 +55,7 @@ namespace BXFW.UI
         /// The <see cref="UnityEngine.RectTransform"/> of this Image.
         /// </summary>
         public RectTransform RectTransform
-        { 
+        {
             get
             {
                 if (m_rectTransform == null)
@@ -64,7 +64,7 @@ namespace BXFW.UI
                 }
 
                 return m_rectTransform;
-            } 
+            }
         }
         [SerializeField] private Image m_background;
         /// <summary>
@@ -128,7 +128,7 @@ namespace BXFW.UI
                 m_ProgressBarImg.fillMethod = Image.FillMethod.Horizontal; // Default fillMethod.
             }
         }
-        
+
         // Progress
         private void OnValidate()
         {
@@ -152,9 +152,12 @@ namespace BXFW.UI
                 if (!setProgressTween.IsValid)
                 {
                     // Setup tween
+                    // But this allocates more garbage than expected.
+                    // Eh whatever, it's only one time allocation anyways
                     setProgressTween.SetSetter((float f) => m_ProgressBarImg.fillAmount = f);
                 }
 
+                // This just allocates JIT garbage
                 setProgressTween.SetStartValue(m_ProgressBarImg.fillAmount).SetEndValue(setProgress).Play();
             }
             else

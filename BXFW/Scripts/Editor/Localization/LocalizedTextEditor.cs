@@ -98,9 +98,10 @@ namespace BXFW.ScriptEditor
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                { nameof(LocalizedText.LocaleData), new KeyValuePair<MatchGUIActionOrder, Action>(
-                    MatchGUIActionOrder.After, () =>
+                { nameof(LocalizedText.textID), new KeyValuePair<MatchGUIActionOrder, Action>(
+                    MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
+                        // Draw locale project show selector
                         bool allLocaleDataValid = targets.All(t => t.LocaleData != null && t.LocaleData == firstTarget.LocaleData);
                         if (!allLocaleDataValid)
                         {
@@ -116,16 +117,12 @@ namespace BXFW.ScriptEditor
                             {
                                 // Also uncollapse the selected text ID
                                 LocalizedTextListAssetEditor.UncollapsePropertyIndex = firstTarget.LocaleData.IndexOf((td) => td.TextID == firstTarget.textID);
-                            } 
+                            }
                         }
                         GUILayout.EndHorizontal();
 
                         GUILayout.Space(EditorGUIUtility.singleLineHeight);
-                    }
-                )},
-                { nameof(LocalizedText.textID), new KeyValuePair<MatchGUIActionOrder, Action>(
-                    MatchGUIActionOrder.OmitAndInvoke, () =>
-                    {
+
                         // Draw dropdown if we have a textID.
                         bool hasNullLocaleData = targets.Any(t => t.LocaleData == null);
                         if (!hasNullLocaleData)

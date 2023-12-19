@@ -48,10 +48,14 @@ namespace BXFW.ScriptEditor
         {
             if (DeleteSceneListAfterBuild)
             {
-                string assetDirRelative = Path.Combine("Assets/Resources/", RelativeDirectoryName);
+                //string assetDirRelative = Path.Combine("Assets/Resources/", RelativeDirectoryName);
+                //AssetDatabase.DeleteAsset($"{Path.Combine(assetDirRelative, FileName)}.asset");
 
-                AssetDatabase.DeleteAsset($"{Path.Combine(assetDirRelative, FileName)}.asset");
-                Directory.Delete(Path.Combine(Directory.GetCurrentDirectory(), assetDirRelative));
+                string assetName = $"{Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", FileName)}.asset";
+                File.Delete(assetName);
+                File.Delete($"{assetName}.meta");
+                Directory.Delete(Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", RelativeDirectoryName));
+
                 AssetDatabase.Refresh();
             }
         }

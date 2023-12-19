@@ -37,6 +37,9 @@ namespace BXFW.ScriptEditor
         {
             // OnGUI
             mainCtx.Reset();
+            rect.x += 10f;
+            rect.width -= 10f;
+
             LocalizedTextListAsset target = base.target as LocalizedTextListAsset;
             using SerializedProperty textListProperty = serializedObject.FindProperty("m_textList");
             using SerializedProperty textElementProperty = textListProperty.GetArrayElementAtIndex(index);

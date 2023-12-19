@@ -11,6 +11,7 @@ namespace BXFW.ScriptEditor
     /// This cursed class edits a <see cref="SerializableDictionary{TKey, TValue}"/> in a scuffed way.
     /// </summary>
     /// TODO : Add a <see cref="BasicDropdown"/> as the adding context menu and make adding key+value experience more solid.
+    /// TODO 2 : Fix this ReorderableList bullcrap
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
@@ -86,7 +87,7 @@ namespace BXFW.ScriptEditor
             // this hack of "backing up the 'SerializedProperty' with a new 'SerializedObject'" works
             // this occurs when the inspector mode is switched from-to inspector to debug to inspector back
             // why? is this my crappy code or a unity bug? i don't even really know.
-            if (m_baseProperty.serializedObject.IsDisposed())
+            if (m_baseProperty == null || m_baseProperty.IsDisposed() || m_baseProperty.serializedObject.IsDisposed())
             {
                 // this also makes the reorderable list non-reorderable
                 // which is amazing, but there's a simple solution for that.
@@ -99,7 +100,7 @@ namespace BXFW.ScriptEditor
         {
             float height = 0f;
             // Do this for one iteration as the OnGUI hack fixes this
-            if (m_baseProperty.serializedObject.IsDisposed())
+            if (m_baseProperty == null || m_baseProperty.IsDisposed() || m_baseProperty.serializedObject.IsDisposed())
             {
                 return EditorGUIUtility.singleLineHeight + reorderableListContext.Padding;
             }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace BXFW
 {
-    /// Most of the work for this script is done on the editor script 'ReCalcCubeTexEditor' anyway.
+    /// Most of the work for this script is done on the editor script 'ReCalculateCubeUVEditor' anyway.
     /// Note that it can be recalculated in runtime too.
     /// <summary>
     /// Calculates the cube texture uv so it's tiled properly.
@@ -39,8 +39,8 @@ namespace BXFW
             }
 
             // Get the mesh filter.
-            var filter = GetComponent<MeshFilter>();
-            var tex = GetComponent<Renderer>().sharedMaterial.mainTexture;
+            MeshFilter filter = GetComponent<MeshFilter>();
+            Texture tex = GetComponent<Renderer>().sharedMaterial.mainTexture;
 
             if (tex != null)
             {
@@ -65,13 +65,13 @@ namespace BXFW
             Mesh mesh;
 
 #if UNITY_EDITOR
-            var meshFilter = GetComponent<MeshFilter>();
+            MeshFilter meshFilter = GetComponent<MeshFilter>();
             if (meshFilter.sharedMesh == null)
             {
                 meshFilter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
                 Debug.LogWarning(string.Format("[ReCalculateCubeUV::GetMesh] The mesh was null on object \"{0}\". Assigned the default unity cube.", name));
             }
-            var meshCopy = Instantiate(meshFilter.sharedMesh);
+            Mesh meshCopy = Instantiate(meshFilter.sharedMesh);
             mesh = meshFilter.mesh = meshCopy;
 #else
             mesh = GetComponent<MeshFilter>().mesh;
@@ -89,7 +89,7 @@ namespace BXFW
         public Mesh GetCalculateMesh()
         {
             m_currentCalcScale = transform.lossyScale;
-            var mesh = GetMesh();
+            Mesh mesh = GetMesh();
             mesh.uv = SetupUvMap(mesh.uv);
             mesh.name = cubeMeshName;
 
@@ -102,9 +102,9 @@ namespace BXFW
         /// <returns>The appopriate mesh uv's for uniform texture scaling through the cube.</returns>
         private Vector2[] SetupUvMap(Vector2[] meshUVs)
         {
-            var width = m_currentCalcScale.x;
-            var depth = m_currentCalcScale.z;
-            var height = m_currentCalcScale.y;
+            float width = m_currentCalcScale.x;
+            float depth = m_currentCalcScale.z;
+            float height = m_currentCalcScale.y;
 
             if (meshUVs.Length != 24)
             {
