@@ -38,6 +38,9 @@ namespace BXFW.ScriptEditor
             position.height -= Padding;
             position.y += Padding / 2f;
 
+            bool previousShowMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+
             if (property.propertyType == SerializedPropertyType.Float)
             {
                 EditorGUI.BeginChangeCheck();
@@ -83,6 +86,8 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either int or float.", MessageType.Warning);
             }
+
+            EditorGUI.showMixedValue = previousShowMixedValue;
 
             EditorGUI.EndProperty();
         }

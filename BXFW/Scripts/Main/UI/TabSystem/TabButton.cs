@@ -57,7 +57,6 @@ namespace BXFW.UI
             set
             {
                 m_Content = value ?? new Content(); // Set new Content as 'GenerateButtonContent' doesn't like null content.
-
                 GenerateButtonContent();
             }
         }

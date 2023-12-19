@@ -9,6 +9,8 @@ namespace BXFW.UI
 {
     /// <summary>
     /// Defines an animation type for UI elements that are being animated.
+    /// <br>Introduced with <see cref="TabSystem"/>, this is not a nice way of solving this,
+    /// but it will do for things that have <see cref="TabButton"/> amount of animation.</br>
     /// <br>Unlike <see cref="Selectable.Transition"/>, this one does not have animation.
     /// Instead it uses <see cref="CustomUnityEvent"/>.</br>
     /// </summary>

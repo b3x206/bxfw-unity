@@ -101,6 +101,8 @@ namespace BXFW
         /// <br>If a null exists in this case, the Pool will generate a new element with warnings printed.</br>
         /// </summary>
         [Header("Settings")]
+        [Tooltip("Sets this object pooler as DontDestroyOnLoad, which makes it persistent between scenes.")]
+        public bool isDontDestroyOnLoad = false;
         public bool clearPoolQueueIfNullExist = true;
         [InspectorLine(LineColor.Gray), SerializeField]
         private List<Pool> m_pools = new List<Pool>();
@@ -118,6 +120,11 @@ namespace BXFW
             if (m_instance == null)
             {
                 m_instance = this;
+
+                if (isDontDestroyOnLoad)
+                {
+                    DontDestroyOnLoad(gameObject);
+                }
             }
             else
             {

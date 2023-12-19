@@ -33,6 +33,8 @@ namespace BXFW.ScriptEditor
             position.height -= Padding;
             position.y += Padding / 2f;
 
+            bool previousShowMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
             #region Vector2
             if (property.propertyType == SerializedPropertyType.Vector2)
             {
@@ -117,6 +119,7 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either Vector or VectorInt.", MessageType.Warning);
             }
+            EditorGUI.showMixedValue = previousShowMixedValue;
         }
     }
 }

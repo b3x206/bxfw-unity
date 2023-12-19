@@ -11,7 +11,7 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Localizes a text (with current locale).
+    /// Shows a statically localized text (with current locale).
     /// </summary>
     public class LocalizedText : MonoBehaviour, IEnumerable<LocalizedTextData>
     {
@@ -19,39 +19,15 @@ namespace BXFW
         public TMP_Text target;
 
         [Header(":: Settings")]
-        public TextAsset localeData;
+        public LocalizedTextListAsset localeData;
         public string textID;
         /// <summary>
         /// Locale to spoof.
         /// <br>Only works in editor.</br>
         /// </summary>
         [SerializeField] internal string spoofLocale;
-        [NonSerialized] private List<LocalizedTextData> localeTextData;
-        internal IList<LocalizedTextData> TextData
-        {
-            get
-            {   
-                if (localeTextData != null)
-                {
-                    if (localeTextData.Count <= 0)
-                    {
-                        localeTextData = LocalizedTextParser.Parse(localeData.text);
-                    }
-                }
-                else
-                {
-                    // no data : no list
-                    if (localeData == null)
-                    {
-                        return null;
-                    }
+        internal IList<LocalizedTextData> TextData => localeData;
 
-                    localeTextData = LocalizedTextParser.Parse(localeData.text);
-                }
-
-                return localeTextData;
-            }
-        }
         /// <summary>
         /// The currently selected data.
         /// <br>Depending on the <see cref="textID"/>, this selects something.</br>
@@ -141,11 +117,6 @@ namespace BXFW
             return sb.ToString();
         }
 
-        public void Refresh()
-        {
-            localeTextData = LocalizedTextParser.Parse(localeData.text);
-        }
-
         private void ApplyInternal(bool setText, bool logErrors, params object[] fmt)
         {
             if (target == null)
@@ -158,23 +129,7 @@ namespace BXFW
                 return;
             }
 
-            if (localeData != null)
-            {
-                if (localeData.text != null)
-                {
-                    localeTextData ??= LocalizedTextParser.Parse(localeData.text);
-                }
-                else
-                {
-                    if (logErrors)
-                    {
-                        Debug.LogWarning(string.Format("[LocalizedText::Apply] Text on {0} doesn't have a 'localeData' field with text on it assigned.", this.GetPath()));
-                    }
-
-                    return;
-                }
-            }
-            else
+            if (localeData == null)
             {
                 if (logErrors)
                 {
@@ -185,13 +140,13 @@ namespace BXFW
             }
 
             // Compare TextID as ordinally, we just need an exact string match.
-            LocalizedTextData data = localeTextData.SingleOrDefault(d => d.TextID.Equals(textID, StringComparison.Ordinal));
+            LocalizedTextData data = localeData.SingleOrDefault(d => d.TextID.Equals(textID, StringComparison.Ordinal));
             bool replaceInvalidChars = false;
             {
                 // unity doesn't compile 'out string v'
                 string v = string.Empty;
                 // will throw an exception if the pragma value is invalid.
-                if (data?.PragmaDefinitions.TryGetValue(ReplaceTMPCharsPragma, out v) ?? false)
+                if (localeData.pragmaDefinitons.TryGetValue(ReplaceTMPCharsPragma, out v))
                 {
                     replaceInvalidChars = bool.Parse(v);
                 }
@@ -247,7 +202,7 @@ namespace BXFW
 
         public IEnumerator<LocalizedTextData> GetEnumerator()
         {
-            return localeTextData.GetEnumerator();
+            return localeData.GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {

@@ -5,17 +5,17 @@ using BXFW.Tools.Editor;
 namespace BXFW.ScriptEditor
 {
     /// <summary>
-    /// Draws the '<see cref="Texture2D"/>' inspector for sprites with <see cref="BigSpriteFieldAttribute"/>.
+    /// Draws the '<see cref="Texture2D"/>' inspector for sprites with <see cref="SpriteAreaAttribute"/>.
     /// </summary>
-    [CustomPropertyDrawer(typeof(BigSpriteFieldAttribute))]
-    public class BigSpriteFieldDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(SpriteAreaAttribute))]
+    public class SpriteAreaDrawer : PropertyDrawer
     {
         private const float WarningHelpBoxHeight = 22f;
         private float TargetBoxHeight
         {
             get
             {
-                return (attribute as BigSpriteFieldAttribute).spriteBoxRectHeight;
+                return (attribute as SpriteAreaAttribute).spriteBoxRectHeight;
             }
         }
         private PropertyTargetInfo target;
@@ -33,7 +33,8 @@ namespace BXFW.ScriptEditor
             }
             else
             {
-                addHeight += TargetBoxHeight; // Hardcode the size as unity doesn't change it.
+                // Hardcode the size as unity doesn't change it.
+                addHeight += TargetBoxHeight;
             }
 
             return EditorGUI.GetPropertyHeight(property, label, true) + addHeight;

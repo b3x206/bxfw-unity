@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 
 using UnityEngine;
-using System.Collections;
 using UnityEngine.Serialization;
 
 namespace BXFW
@@ -71,6 +71,26 @@ namespace BXFW
         /// </summary>
         public IEqualityComparer<TKey> Comparer => m_Comparer;
 
+        /// <summary>
+        /// Returns the index of given <paramref name="key"/>.
+        /// <br>Returns -1 if <paramref name="key"/> does not exist in <see cref="m_Keys"/>.</br>
+        /// <br>Uses the current dictionary's <see cref="IEqualityComparer{TKey}"/></br>
+        /// <br>This is used to avoid Linq's IndexOf with <see cref="IEqualityComparer{T}"/> as it allocates garbage.</br>
+        /// </summary>
+        /// <param name="key">Key to search for.</param>
+        private int IndexOfKey(TKey key)
+        {
+            for (int i = 0; i < m_Keys.Count; i++)
+            {
+                if (Comparer.Equals(m_Keys[i], key))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public override bool KeysAreUnique()
         {
             // HashSet's don't serialize, but it's a fast and performant unique ensuring data type
@@ -82,7 +102,7 @@ namespace BXFW
         {
             get
             {
-                int index = m_Keys.IndexOf(key, m_Comparer);
+                int index = IndexOfKey(key);
                 if (index < 0)
                 {
                     throw new KeyNotFoundException("[SerializableDictionary::this[]::get] Given key value was not found.");
@@ -93,7 +113,7 @@ namespace BXFW
             }
             set
             {
-                int index = m_Keys.IndexOf(key, m_Comparer);
+                int index = IndexOfKey(key);
                 if (index < 0)
                 {
                     throw new KeyNotFoundException("[SerializableDictionary::this[]::set] Given key value was not found.");
@@ -113,7 +133,7 @@ namespace BXFW
         /// <param name="defaultValue">The value to default into if the given <paramref name="key"/> doesn't exist.</param>
         public TValue GetValueOrDefault(TKey key, TValue defaultValue)
         {
-            int index = m_Keys.IndexOf(key, m_Comparer);
+            int index = IndexOfKey(key);
             if (index < 0)
             {
                 return defaultValue;
@@ -151,7 +171,7 @@ namespace BXFW
             {
                 throw new ArgumentNullException("[SerializableDictionary::Add] Given key was null.", nameof(key));
             }
-            if (m_Keys.Contains(key, Comparer))
+            if (ContainsKey(key))
             {
                 throw new ArgumentException("[SerializableDictionary::Add] An element with the same key already exists in the dictionary.", nameof(key));
             }
@@ -170,13 +190,21 @@ namespace BXFW
 
         public bool ContainsKey(TKey key)
         {
-            return m_Keys.Contains(key, Comparer);
+            for (int i = 0; i < m_Keys.Count; i++)
+            {
+                if (Comparer.Equals(m_Keys[i], key))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool Remove(TKey key)
         {
             // Get index of key
-            int index = m_Keys.IndexOf(key);
+            int index = IndexOfKey(key);
 
             if (index < 0)
             {

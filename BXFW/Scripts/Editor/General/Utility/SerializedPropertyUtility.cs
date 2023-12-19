@@ -94,7 +94,8 @@ namespace BXFW.Tools.Editor
         }
         /// <summary>
         /// Internal method to get parent from these given parameters.
-        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and finds the target field info + object ref in <paramref name="propertyPath"/>.</br>
+        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and finds the target field info + 
+        /// object ref (or copy if target is a <see langword="struct"/>) in <paramref name="propertyPath"/>.</br>
         /// </summary>
         /// <param name="propertyRootParent">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
         /// <param name="propertyPath">Path of the property. Pass <see cref="SerializedProperty.propertyPath"/>.</param>

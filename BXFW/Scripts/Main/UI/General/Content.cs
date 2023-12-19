@@ -11,14 +11,19 @@ namespace BXFW.UI
     {
         [Tooltip("Text content that this button stores."), TextArea]
         public string text;
-        [Tooltip("Sprite content."), BigSpriteField]
+        [Tooltip("Sprite content."), SpriteArea]
         public Sprite sprite;
-        
+
+        public static readonly Content None = new Content();
+
+        /// <summary>
+        /// Creates an empty content.
+        /// </summary>
         public Content()
         { }
 
         /// <summary>
-        /// Creates a tab button content with an image.
+        /// Creates content with an image.
         /// </summary>
         public Content(Sprite image)
         {
@@ -26,7 +31,7 @@ namespace BXFW.UI
         }
 
         /// <summary>
-        /// Creates a tab button content with a text.
+        /// Creates content with a text.
         /// </summary>
         public Content(string text)
         {
@@ -34,7 +39,7 @@ namespace BXFW.UI
         }
 
         /// <summary>
-        /// Creates a tab button content with a text &amp; image.
+        /// Creates content with a text &amp; image.
         /// </summary>
         public Content(string text, Sprite image)
         {

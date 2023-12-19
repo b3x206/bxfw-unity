@@ -44,11 +44,6 @@ namespace BXFW.Data
         /// </summary>
         public string TextID;
         /// <summary>
-        /// Contains the definitions that start with #pragma.
-        /// <br>An optional extension way of defining variables.</br>
-        /// </summary>
-        public readonly SerializableDictionary<string, string> PragmaDefinitions = new SerializableDictionary<string, string>();
-        /// <summary>
         /// A dictionary that contains the localization two letter iso identifiers and it's respective values.
         /// </summary>
         [SerializeField, FormerlySerializedAs("LocalizedValues")]
@@ -74,10 +69,6 @@ namespace BXFW.Data
                 int sizeLocaleData = 0;
                 int sizePragma = 0;
                 
-                foreach (var pragma in PragmaDefinitions)
-                {
-                    sizePragma += pragma.Key.Length + pragma.Value.Length;
-                }
                 foreach (var localeDef in m_LocaleDatas)
                 {
                     sizeLocaleData += localeDef.Key.Length + localeDef.Value.Length;
@@ -184,15 +175,6 @@ namespace BXFW.Data
         public LocalizedTextData(string TextID, Dictionary<string, string> values) 
             : this(TextID, new SerializableDictionary<string, string>(values))
         { }
-        /// <summary>
-        /// Creates the 'LocalizedTextData' with the <see cref="Dictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
-        /// </summary>
-        /// <param name="TextID">ID of the text.</param>
-        /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
-        /// <param name="pragmaDefs">Pragma definitions for the data.</param>
-        public LocalizedTextData(string TextID, Dictionary<string, string> values, Dictionary<string, string> pragmaDefs) 
-            : this(TextID, new SerializableDictionary<string, string>(values), new SerializableDictionary<string, string>(pragmaDefs))
-        { }
 
         /// <summary>
         /// Creates an new <see cref="LocalizedTextData"/> object. (without an id, use for inline localization)
@@ -202,25 +184,15 @@ namespace BXFW.Data
             : this(string.Empty, values)
         { }
         /// <summary>
-        /// Creates an new <see cref="LocalizedTextData"/> object without pragma options. (pragma options are completely optional)
-        /// </summary>
-        /// <param name="TextID">ID of the localized text.</param>
-        /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
-        public LocalizedTextData(string TextID, SerializableDictionary<string, string> values) 
-            : this(TextID, values, null)
-        { }
-        /// <summary>
-        /// Creates the full fat <see cref="LocalizedTextData"/> with every variable settable as is.
+        /// Creates the full <see cref="LocalizedTextData"/> with every variable settable as is.
         /// <br>This is mostly used for <see cref="LocalizedText"/>s on the scene that import a 'LocalizedTextAsset', which require an ID appended into it.</br>
         /// </summary>
         /// <param name="textID">ID appended to this <see cref="LocalizedTextData"/>. This is not needed unless you are thinking of filtering out a list of LocalizedTextData.</param>
         /// <param name="values">The values added to the data. (Key=Two[or three] Letter ISO identifier for the language, Value=The value to use when matched)</param>
-        /// <param name="pragmaDefs">Pragmatic additional definitions for other classes to use. Basically a settings dictionary. Only used in <see cref="LocalizedText"/> for the time being.</param>
-        public LocalizedTextData(string textID, SerializableDictionary<string, string> values, SerializableDictionary<string, string> pragmaDefs)
+        public LocalizedTextData(string textID, SerializableDictionary<string, string> values)
         {
             TextID            = textID;
             m_LocaleDatas     = values;
-            PragmaDefinitions = pragmaDefs;
         }
 
         /// <summary>

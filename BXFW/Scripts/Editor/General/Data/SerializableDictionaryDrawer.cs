@@ -130,6 +130,11 @@ namespace BXFW.ScriptEditor
             SerializedProperty keysProperty = m_baseProperty.FindPropertyRelative("m_Keys");
             SerializedProperty valuesProperty = m_baseProperty.FindPropertyRelative("m_Values");
 
+            // yes, please, give me another hack babyyyy
+            if (keysProperty.arraySize <= index)
+            {
+                keysProperty.arraySize = index + 1;
+            }
             if (valuesProperty.arraySize != keysProperty.arraySize)
             {
                 valuesProperty.arraySize = keysProperty.arraySize;

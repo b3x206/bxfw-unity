@@ -12,7 +12,7 @@ namespace BXFW.UI
     /// Swipable UI that can swipe through fixed width menus.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public class SwipableUI : UIBehaviour, IDragHandler, IEndDragHandler, IScrollHandler
+    public class SwipableUI : InteractableUIBehaviour, IDragHandler, IEndDragHandler, IScrollHandler
     {
         /// <summary>
         /// A unity event that takes an int.
@@ -138,72 +138,6 @@ namespace BXFW.UI
             m_containerInitialPosition = ItemContainer.localPosition;
             // Call base awake (even though there's nothing in UIBehaviour)
             base.Awake();
-        }
-        #endregion
-
-        #region Interactability
-        [Tooltip("Can the SwipableUI be interacted with?")]
-        [SerializeField] private bool interactable = true;
-        public bool Interactable
-        {
-            get { return IsInteractable(); }
-            set { interactable = value; }
-        }
-        /// <summary>
-        /// Runtime variable for whether if the parent canvases allow interaction with this child element.
-        /// </summary>
-        private bool groupsAllowInteraction = true;
-        /// <summary>
-        /// Whether if the UI element is allowed to be interactable.
-        /// </summary>
-        protected virtual bool IsInteractable()
-        {
-            if (groupsAllowInteraction)
-            {
-                return interactable;
-            }
-
-            return false;
-        }
-        private readonly List<CanvasGroup> canvasGroupCache = new List<CanvasGroup>();
-        protected override void OnCanvasGroupChanged()
-        {
-            // This event is part of UIBehaviour.
-            // Search for 'CanvasGroup' behaviours & apply preferences to this object.
-            // 1: Search for transforms that contain 'CanvasGroup'
-            // 2: Keep them in cache
-            // 3: Update the interaction state accordingly
-            bool groupAllowInteraction = true;
-            Transform t = transform;
-
-            while (t != null)
-            {
-                t.GetComponents(canvasGroupCache);
-                bool shouldBreak = false;
-
-                for (int i = 0; i < canvasGroupCache.Count; i++)
-                {
-                    if (!canvasGroupCache[i].interactable)
-                    {
-                        groupAllowInteraction = false;
-                        shouldBreak = true;
-                    }
-                    if (canvasGroupCache[i].ignoreParentGroups)
-                    {
-                        shouldBreak = true;
-                    }
-                }
-                if (shouldBreak)
-                {
-                    break;
-                }
-
-                t = t.parent;
-            }
-            if (groupAllowInteraction != groupsAllowInteraction)
-            {
-                groupsAllowInteraction = groupAllowInteraction;
-            }
         }
         #endregion
 

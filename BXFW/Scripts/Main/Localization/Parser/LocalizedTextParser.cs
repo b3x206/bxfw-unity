@@ -8,11 +8,11 @@ using UnityEngine;
 namespace BXFW.Data
 {
     /// <summary>
-    /// Parses localized text asset.
-    /// <br>While i did release production games with this localization system, it is still not recommended for this to be used.</br>
+    /// <br><b>Please don't use this parser, use the <see cref="LocalizedTextListAsset"/>.</b></br>
+    /// <br>This is just left for the <c>ConvertLocalizedTextDataToAsset</c> converter.</br>
     /// </summary>
-    /// Here's how the data type looks like
     /// <example>
+    /// ; Here's how the data type looks like
     /// ; Lines starting with ';' are completely ignored. NOTE : This only applies if lines start with ';'. You can't put ';' to comment out parts of the locale file.
     /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this file is probs ansi.
     /// TEXT_ID => en="Text Content", tr="Yazi icerik"
@@ -336,7 +336,7 @@ namespace BXFW.Data
                         continue;
                     }
 
-                    currentAsset.Add(new LocalizedTextData(textID, CreateDictFromLists(listLocaleLang, listLocaleData), globalPragmaSettings));
+                    currentAsset.Add(new LocalizedTextData(textID, CreateDictFromLists(listLocaleLang, listLocaleData)));
                 }
             }
 
@@ -350,7 +350,7 @@ namespace BXFW.Data
         /// <returns>The resulting string to be written.</returns>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
-        public static string Save(List<LocalizedTextData> assets)
+        public static string Save(List<LocalizedTextData> assets, Dictionary<string, string> pragmaDefinitions = null)
         {
             if (assets == null)
             {
@@ -371,7 +371,7 @@ namespace BXFW.Data
             foreach (LocalizedTextData text in assets)
             {
                 // -- Pragma Def
-                foreach (KeyValuePair<string, string> pragma in text.PragmaDefinitions)
+                foreach (KeyValuePair<string, string> pragma in pragmaDefinitions)
                 {
                     if (string.IsNullOrWhiteSpace(pragma.Key) || string.IsNullOrWhiteSpace(pragma.Value))
                     {

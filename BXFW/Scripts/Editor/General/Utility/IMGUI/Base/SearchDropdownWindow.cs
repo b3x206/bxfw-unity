@@ -296,9 +296,12 @@ namespace BXFW.Tools.Editor
                     Debug.LogWarning("[SearchDropdownWindow::Create] Given 'MaximumHeight' constraint is less (or equal) to 1. This could have been done unintentionally.");
                 }
             }
-            if (minSize != Vector2.zero && minSize.MinAxis() > 0f)
+            if (minSize.x > 0f)
             {
                 dropdownSize.x = Mathf.Max(dropdownSize.x, minSize.x);
+            }
+            if (minSize.y > 0f)
+            {
                 dropdownSize.y = Mathf.Max(dropdownSize.y, minSize.y);
             }
 
@@ -483,7 +486,7 @@ namespace BXFW.Tools.Editor
 
             // Begin a new area to not have horizontal scroll bars
             // Since the scroll view is handled by rect calculations
-            float elementsViewWidth = position.width - GUI.skin.verticalScrollbar.fixedWidth;
+            float elementsViewWidth = position.width - (GUI.skin.verticalScrollbar.fixedWidth * 1.25f);
             GUILayout.BeginVertical(GUILayout.Width(elementsViewWidth));
 
             // FIXME : Unoptimized ver

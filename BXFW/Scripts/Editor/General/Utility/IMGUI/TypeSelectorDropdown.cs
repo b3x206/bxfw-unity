@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace BXFW.Tools.Editor
 {
@@ -38,6 +39,7 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public AssemblyFlags filterFlags = AssemblyFlags.All & ~AssemblyFlags.Dynamic;
 
+        protected internal override Vector2 MinimumSize { get => new Vector2(base.MinimumSize.x, 130f); set => base.MinimumSize = value; }
         protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
 
         protected override SearchDropdownElement BuildRoot()

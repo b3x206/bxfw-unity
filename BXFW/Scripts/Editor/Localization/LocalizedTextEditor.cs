@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace BXFW.ScriptEditor
 {
-    [CustomEditor(typeof(LocalizedText))]
+    [CustomEditor(typeof(LocalizedText)), CanEditMultipleObjects]
     public class LocalizedTextEditor : Editor
     {
         /// <summary>
@@ -93,37 +93,33 @@ namespace BXFW.ScriptEditor
 
         public override void OnInspectorGUI()
         {
-            LocalizedText target = base.target as LocalizedText;
+            LocalizedText[] targets = base.targets.Cast<LocalizedText>().ToArray();
+            LocalizedText firstTarget = targets.First();
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                // Apparently text files are dark magic ._.
-                // And you have to guess it's encoding by luck
-                // why save a localization file as ansi? visual studio moment
-
                 { nameof(LocalizedText.localeData), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.After, () =>
                     {
-                        Rect btnRect = new Rect(EditorGUILayout.GetControlRect(GUILayout.Height(EditorGUIUtility.singleLineHeight + 2)));
-                        btnRect.x += EditorGUIUtility.labelWidth;     // Offset
-                        btnRect.width -= EditorGUIUtility.labelWidth; // Resize (dynamic)
-                        if (GUI.Button(btnRect, "Refresh keys"))
+                        bool allLocaleDataValid = targets.All(t => t.localeData != null && t.localeData == firstTarget.localeData);
+                        if (!allLocaleDataValid)
                         {
-                            target.Refresh();
+                            return;
                         }
 
-                        // Just draw an info box if file is not utf8 with bom
-                        if (target.localeData != null)
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(EditorGUIUtility.labelWidth);
+                        if (GUILayout.Button("Show Locale Data on project"))
                         {
-                            if (target.localeData.bytes.Length > 3)
+                            ProjectWindowUtil.ShowCreatedAsset(firstTarget.localeData);
+                            if (targets.Length <= 1)
                             {
-                                if (target.localeData.bytes[0] != 0xEF || target.localeData.bytes[1] != 0xBB || target.localeData.bytes[2] != 0xBF)
-                                {
-                                    // File doesn't contain utf8 bom
-                                    EditorGUILayout.HelpBox("This file doesn't contain utf8 bom.\nMake sure your file is utf8.\nIf your file is utf8, you can ignore this message.", MessageType.Info);
-                                }
-                            }
+                                // Also uncollapse the selected text ID
+                                LocalizedTextListAssetEditor.UncollapsePropertyIndex = firstTarget.localeData.IndexOf((td) => td.TextID == firstTarget.textID);
+                            } 
                         }
+                        GUILayout.EndHorizontal();
+
                         GUILayout.Space(EditorGUIUtility.singleLineHeight);
                     }
                 )},
@@ -131,46 +127,64 @@ namespace BXFW.ScriptEditor
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
                         // Draw dropdown if we have a textID.
-                        if (target.localeData != null)
+                        bool hasNullLocaleData = targets.Any(t => t.localeData == null);
+                        if (!hasNullLocaleData)
                         {
-                            var dataList = target.TextData;
-                            
                             // Get text id's parsed
-                            if (dataList.Count <= 0)
+                            bool hasNoDataKeyList = targets.Any(t => t.localeData.Count <= 0);
+                            if (hasNoDataKeyList)
                             {
-                                EditorGUILayout.HelpBox($"There's no text data in file '{target.name}'.", MessageType.Warning);
+                                EditorGUILayout.HelpBox($"There's no text data in attached localized text list file.", MessageType.Warning);
                                 return;
                             }
 
-                            if (string.IsNullOrEmpty(target.textID))
+                            foreach (LocalizedText setTarget in targets)
                             {
-                                // Set to default id.
-                                target.textID = dataList[0].TextID;
-                            }
-
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Label("Text ID", GUILayout.Width(150));
-                            if (GUILayout.Button(target.textID, EditorStyles.popup))
-                            {
-                                TextIDSelector dropdown = new TextIDSelector(target);
-                                dropdown.OnElementSelectedEvent += (SearchDropdownElement element) =>
+                                if (string.IsNullOrWhiteSpace(setTarget.textID))
                                 {
-                                    if (!(element is TextIDSelector.Item item))
-                                    {
-                                        return;
-                                    }
-
-                                    Undo.RecordObject(target, "Change text id.");
-                                    target.textID = item.textID;
-                                };
-
-                                dropdown.Show(textIDSelectButtonRect);
+                                    setTarget.textID = setTarget.localeData[0].TextID;
+                                    EditorUtility.SetDirty(setTarget);
+                                }
                             }
-                            if (Event.current.type == EventType.Repaint)
+
+                            // Show this button ONLY if the localeData's are the same
+                            if (targets.All(t => t.localeData == firstTarget.localeData))
                             {
-                                textIDSelectButtonRect = GUILayoutUtility.GetLastRect();
+                                GUILayout.BeginHorizontal();
+                                GUILayout.Label("Text ID", GUILayout.Width(150));
+                                bool valuesAreMixed = targets.Any(t => t.textID != firstTarget.textID);
+                                if (GUILayout.Button(valuesAreMixed ? "-" : firstTarget.textID, EditorStyles.popup))
+                                {
+                                    TextIDSelector dropdown = new TextIDSelector(firstTarget);
+                                    dropdown.OnElementSelectedEvent += (SearchDropdownElement element) =>
+                                    {
+                                        if (!(element is TextIDSelector.Item item))
+                                        {
+                                            return;
+                                        }
+
+                                        Undo.IncrementCurrentGroup();
+                                        Undo.SetCurrentGroupName("Change text id");
+                                        int group = Undo.GetCurrentGroup();
+
+                                        foreach (LocalizedText setTarget in targets)
+                                        {
+                                            Undo.RecordObject(setTarget, string.Empty);
+                                            setTarget.textID = item.textID;
+                                        }
+
+                                        Undo.CollapseUndoOperations(group);
+                                    };
+
+                                    dropdown.Show(textIDSelectButtonRect);
+                                }
+                                if (Event.current.type == EventType.Repaint)
+                                {
+                                    textIDSelectButtonRect = GUILayoutUtility.GetLastRect();
+                                }
+
+                                GUILayout.EndHorizontal();
                             }
-                            GUILayout.EndHorizontal();
                         }
                         else
                         {
@@ -183,11 +197,14 @@ namespace BXFW.ScriptEditor
                     {
                         // Create a dropdowned spoof locale button
                         GUILayout.BeginHorizontal();
+
+                        string spoofLocale = string.IsNullOrWhiteSpace(firstTarget.spoofLocale) ? string.Format("None ({0})", LocalizedTextData.CurrentISOLocaleName) : firstTarget.spoofLocale;
+
+                        bool valuesAreMixed = targets.Any(t => t.spoofLocale != firstTarget.spoofLocale);
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));
-                        if (GUILayout.Button(string.IsNullOrWhiteSpace(target.spoofLocale) ?
-                            string.Format("None ({0})", LocalizedTextData.CurrentISOLocaleName) : target.spoofLocale, EditorStyles.popup))
+                        if (GUILayout.Button(valuesAreMixed ? "-" : spoofLocale, EditorStyles.popup))
                         {
-                            LocalizationKeySelectorDropdown dropdown = new LocalizationKeySelectorDropdown(target.CurrentSelectedData, target.spoofLocale) { addNoneElement = true };
+                            LocalizationKeySelectorDropdown dropdown = new LocalizationKeySelectorDropdown(firstTarget.CurrentSelectedData, firstTarget.spoofLocale) { addNoneElement = true };
                             dropdown.OnElementSelectedEvent += (SearchDropdownElement element) =>
                             {
                                 if (!(element is LocalizationKeySelectorDropdown.Item item))
@@ -195,8 +212,17 @@ namespace BXFW.ScriptEditor
                                     return;
                                 }
 
-                                Undo.RecordObject(target, "Change spoof locale.");
-                                target.spoofLocale = item.localeKey;
+                                Undo.IncrementCurrentGroup();
+                                Undo.SetCurrentGroupName("Change spoof locale");
+                                int group = Undo.GetCurrentGroup();
+
+                                foreach (LocalizedText setTarget in targets)
+                                {
+                                    Undo.RecordObject(setTarget, string.Empty);
+                                    setTarget.spoofLocale = item.localeKey;
+                                }
+
+                                Undo.CollapseUndoOperations(group);
                             };
 
                             dropdown.Show(spoofLocaleButtonRect);
