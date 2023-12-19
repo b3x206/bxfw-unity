@@ -20,8 +20,8 @@ namespace BXFW.ScriptEditor
         public int callbackOrder => 0;
         public static bool DeleteSceneListAfterBuild = true;
 
-        private const string RELATIVE_DIR_NAME = "SceneList";
-        private const string FILE_NAME = "ListReference";
+        private const string RelativeDirectoryName = "SceneList";
+        private const string FileName = "ListReference";
 
         public void OnPreprocessBuild(BuildReport report)
         {
@@ -29,7 +29,7 @@ namespace BXFW.ScriptEditor
             // This class is stored in 'UnitySceneReference'?
             if (UnitySceneReferenceList.Instance == null)
             {
-                UnitySceneReferenceList.CreateEditorInstance(RELATIVE_DIR_NAME, FILE_NAME);
+                UnitySceneReferenceList.CreateEditorInstance(RelativeDirectoryName, FileName);
             }
 
             // Gather entries from 'EditorBuildSettings.scenes' and convert them.
@@ -48,11 +48,11 @@ namespace BXFW.ScriptEditor
         {
             if (DeleteSceneListAfterBuild)
             {
-                string assetDirRelative = string.Format("Assets/Resources/{0}", RELATIVE_DIR_NAME);
+                string assetDirRelative = Path.Combine("Assets/Resources/", RelativeDirectoryName);
 
-                AssetDatabase.DeleteAsset(string.Format("{0}.asset", Path.Combine(assetDirRelative, FILE_NAME)));
+                AssetDatabase.DeleteAsset($"{Path.Combine(assetDirRelative, FileName)}.asset");
+                Directory.Delete(Path.Combine(Directory.GetCurrentDirectory(), assetDirRelative));
                 AssetDatabase.Refresh();
-                FileUtil.DeleteFileOrDirectory(assetDirRelative);
             }
         }
     }

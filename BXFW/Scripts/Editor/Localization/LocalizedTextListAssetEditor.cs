@@ -50,7 +50,13 @@ namespace BXFW.ScriptEditor
                 UncollapsePropertyIndex = -1;
             }
 
+            EditorGUI.BeginChangeCheck();
             EditorGUI.PropertyField(mainCtx.GetPropertyRect(rect, textElementProperty), textElementProperty);
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(target);
+            }
 
             // Check if text id is unique
             if (string.IsNullOrWhiteSpace(textElementIDProperty.stringValue) || target.Indexed().Any(td => td.Key != index && td.Value.TextID == textElementIDProperty.stringValue))
@@ -86,6 +92,7 @@ namespace BXFW.ScriptEditor
                 if (EditorGUI.EndChangeCheck())
                 {
                     serializedObject.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(target);
                 }
 
                 GUILayout.BeginHorizontal();

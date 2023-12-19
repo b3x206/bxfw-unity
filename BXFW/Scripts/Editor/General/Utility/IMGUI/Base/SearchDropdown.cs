@@ -141,7 +141,6 @@ namespace BXFW.Tools.Editor
                 m_MinimumSize = value;
             }
         }
-        // TODO : Make these fields public virtual?
         private float m_MaximumHeight = 300f;
         /// <summary>
         /// The maximum height possible for this dropdown.
