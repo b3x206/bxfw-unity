@@ -98,10 +98,10 @@ namespace BXFW.ScriptEditor
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                { nameof(LocalizedText.localeData), new KeyValuePair<MatchGUIActionOrder, Action>(
+                { nameof(LocalizedText.LocaleData), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.After, () =>
                     {
-                        bool allLocaleDataValid = targets.All(t => t.localeData != null && t.localeData == firstTarget.localeData);
+                        bool allLocaleDataValid = targets.All(t => t.LocaleData != null && t.LocaleData == firstTarget.LocaleData);
                         if (!allLocaleDataValid)
                         {
                             return;
@@ -111,11 +111,11 @@ namespace BXFW.ScriptEditor
                         GUILayout.Space(EditorGUIUtility.labelWidth);
                         if (GUILayout.Button("Show Locale Data on project"))
                         {
-                            ProjectWindowUtil.ShowCreatedAsset(firstTarget.localeData);
+                            ProjectWindowUtil.ShowCreatedAsset(firstTarget.LocaleData);
                             if (targets.Length <= 1)
                             {
                                 // Also uncollapse the selected text ID
-                                LocalizedTextListAssetEditor.UncollapsePropertyIndex = firstTarget.localeData.IndexOf((td) => td.TextID == firstTarget.textID);
+                                LocalizedTextListAssetEditor.UncollapsePropertyIndex = firstTarget.LocaleData.IndexOf((td) => td.TextID == firstTarget.textID);
                             } 
                         }
                         GUILayout.EndHorizontal();
@@ -127,11 +127,11 @@ namespace BXFW.ScriptEditor
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
                         // Draw dropdown if we have a textID.
-                        bool hasNullLocaleData = targets.Any(t => t.localeData == null);
+                        bool hasNullLocaleData = targets.Any(t => t.LocaleData == null);
                         if (!hasNullLocaleData)
                         {
                             // Get text id's parsed
-                            bool hasNoDataKeyList = targets.Any(t => t.localeData.Count <= 0);
+                            bool hasNoDataKeyList = targets.Any(t => t.LocaleData.Count <= 0);
                             if (hasNoDataKeyList)
                             {
                                 EditorGUILayout.HelpBox($"There's no text data in attached localized text list file.", MessageType.Warning);
@@ -142,13 +142,13 @@ namespace BXFW.ScriptEditor
                             {
                                 if (string.IsNullOrWhiteSpace(setTarget.textID))
                                 {
-                                    setTarget.textID = setTarget.localeData[0].TextID;
+                                    setTarget.textID = setTarget.LocaleData[0].TextID;
                                     EditorUtility.SetDirty(setTarget);
                                 }
                             }
 
                             // Show this button ONLY if the localeData's are the same
-                            if (targets.All(t => t.localeData == firstTarget.localeData))
+                            if (targets.All(t => t.LocaleData == firstTarget.LocaleData))
                             {
                                 GUILayout.BeginHorizontal();
                                 GUILayout.Label("Text ID", GUILayout.Width(150));
@@ -188,7 +188,7 @@ namespace BXFW.ScriptEditor
                         }
                         else
                         {
-                            EditorGUILayout.HelpBox("Add text data to get started.", MessageType.Info);
+                            EditorGUILayout.HelpBox(firstTarget.useSingletonLocaleData ? "Add a LocalizedTextListAsset to any resources folder to get started." : "Add text data to get started.", MessageType.Info);
                         }
                     })
                 },

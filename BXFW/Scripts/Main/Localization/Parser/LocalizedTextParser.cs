@@ -10,6 +10,7 @@ namespace BXFW.Data
     /// <summary>
     /// <br><b>Please don't use this parser, use the <see cref="LocalizedTextListAsset"/>.</b></br>
     /// <br>This is just left for the <c>ConvertLocalizedTextDataToAsset</c> converter.</br>
+    /// <br>And this class will be hidden as internal.</br>
     /// </summary>
     /// <example>
     /// ; Here's how the data type looks like
@@ -350,6 +351,7 @@ namespace BXFW.Data
         /// <returns>The resulting string to be written.</returns>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
+        [Obsolete("Please don't use the 'LocalizedTextParser'. Save the LocalizedTextListAssetEditor as JSON instead.")]
         public static string Save(List<LocalizedTextData> assets, Dictionary<string, string> pragmaDefinitions = null)
         {
             if (assets == null)

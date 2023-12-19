@@ -19,20 +19,37 @@ namespace BXFW
         public TMP_Text target;
 
         [Header(":: Settings")]
-        public LocalizedTextListAsset localeData;
+        public bool useSingletonLocaleData = false;
+        /// <summary>
+        /// The locale data collection that this localized text contains.
+        /// </summary>
+        public LocalizedTextListAsset LocaleData
+        {
+            get
+            {
+                if (useSingletonLocaleData && m_LocaleData == null)
+                {
+                    m_LocaleData = LocalizedTextListAsset.Instance;
+                }
+
+                return m_LocaleData;
+            }
+        }
+        [SerializeField, DrawIf(nameof(useSingletonLocaleData), ConditionInverted = true)]
+        private LocalizedTextListAsset m_LocaleData;
         public string textID;
         /// <summary>
         /// Locale to spoof.
         /// <br>Only works in editor.</br>
         /// </summary>
-        [SerializeField] internal string spoofLocale;
-        internal IList<LocalizedTextData> TextData => localeData;
+        [SerializeField]
+        internal string spoofLocale;
 
         /// <summary>
         /// The currently selected data.
         /// <br>Depending on the <see cref="textID"/>, this selects something.</br>
         /// </summary>
-        public LocalizedTextData CurrentSelectedData => TextData.FirstOrDefault(data => data.TextID == textID);
+        public LocalizedTextData CurrentSelectedData => LocaleData.FirstOrDefault(data => data.TextID == textID);
 
         /// <summary>
         /// Locale file pragma definition to replace tmp chars that doesn't exist.
@@ -67,7 +84,7 @@ namespace BXFW
             for (int i = 0, j = 0; i < normalizedStr.Length; i++, j++)
             {
                 char cNorm = normalizedStr[i];
-                
+
                 // nonspacing mark : the diacritic itself, just as a seperate char
                 if (CharUnicodeInfo.GetUnicodeCategory(cNorm) != UnicodeCategory.NonSpacingMark)
                 {
@@ -91,7 +108,7 @@ namespace BXFW
                             default:
                                 // This warning is redundant for diacriticified chars that fail the predicate test.
                                 // so just control the cNorm as that is successfully seperated from it's diacritics.
-                                
+
                                 // i also decided to not print the warning.
                                 // Debug.LogWarning(string.Format("[LocalizedText::RemoveDiacritics] Failed to convert fail match char '{0}' into ascii. Appending normalized as is.", cDefault));
                                 break;
@@ -129,7 +146,7 @@ namespace BXFW
                 return;
             }
 
-            if (localeData == null)
+            if (LocaleData == null)
             {
                 if (logErrors)
                 {
@@ -140,13 +157,13 @@ namespace BXFW
             }
 
             // Compare TextID as ordinally, we just need an exact string match.
-            LocalizedTextData data = localeData.SingleOrDefault(d => d.TextID.Equals(textID, StringComparison.Ordinal));
+            LocalizedTextData data = LocaleData.SingleOrDefault(d => d.TextID.Equals(textID, StringComparison.Ordinal));
             bool replaceInvalidChars = false;
             {
                 // unity doesn't compile 'out string v'
                 string v = string.Empty;
                 // will throw an exception if the pragma value is invalid.
-                if (localeData.pragmaDefinitons.TryGetValue(ReplaceTMPCharsPragma, out v))
+                if (LocaleData.pragmaDefinitons.TryGetValue(ReplaceTMPCharsPragma, out v))
                 {
                     replaceInvalidChars = bool.Parse(v);
                 }
@@ -183,7 +200,7 @@ namespace BXFW
                 }
 
                 if (fmt.Length > 0)
-                { 
+                {
                     setData = string.Format(setData, fmt);
                 }
 
@@ -202,7 +219,7 @@ namespace BXFW
 
         public IEnumerator<LocalizedTextData> GetEnumerator()
         {
-            return localeData.GetEnumerator();
+            return LocaleData.GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {

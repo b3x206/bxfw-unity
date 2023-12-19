@@ -9,12 +9,13 @@ namespace BXFW.Data
     /// A <see cref="LocalizedTextData"/> list asset.
     /// <br>The inline editor allows text ID uniqueness and adding/removing those.</br>
     /// </summary>
-    [CreateAssetMenu(fileName = "TextListAsset", menuName = "BXFW/Localization/Text List Asset")]
+    [Serializable, CreateAssetMenu(fileName = "TextListAsset", menuName = "BXFW/Localization/Text List Asset")]
     public class LocalizedTextListAsset : ScriptableObjectSingleton<LocalizedTextListAsset>, IList<LocalizedTextData>
     {
         /// <summary>
         /// Pragmatic behaviour definitions for the LocalizedTextListAsset.
         /// </summary>
+        /// <br>TODO : Proper key selector for this?</br>
         public SerializableDictionary<string, string> pragmaDefinitons = new SerializableDictionary<string, string>();
         /// <summary>
         /// Data contained inside this text list asset.
