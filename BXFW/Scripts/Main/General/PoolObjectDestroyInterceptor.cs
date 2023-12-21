@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// <c>Debug Only</c> : Intercepts the 'OnDestroy' event for pooled object and tries to prevent it.
+    /// <c>Debug Only</c> : Intercepts the 'OnDestroy' event for pooled object and listens for destruction events.
     /// <br>
     /// This is not meant to be added to usual objects.
     /// It will prevent destruction of it unless the <see cref="isDestroyedWithCleanupIntent"/> flag is set.

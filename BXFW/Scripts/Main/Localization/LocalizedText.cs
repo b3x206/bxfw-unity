@@ -21,18 +21,30 @@ namespace BXFW
         [Header(":: Settings")]
         public bool useSingletonLocaleData = false;
         /// <summary>
+        /// The cached singleton value (as accessing the <see cref="ScriptableObjectSingleton{T}.Instance"/> causes a <see cref="Resources.LoadAll{T}(string)"/> call)
+        /// </summary>
+        private LocalizedTextListAsset m_previousSingletonLocaleData;
+        /// <summary>
         /// The locale data collection that this localized text contains.
         /// </summary>
         public LocalizedTextListAsset LocaleData
         {
             get
             {
-                if (useSingletonLocaleData && m_LocaleData == null)
+                if (m_previousSingletonLocaleData == null)
                 {
-                    m_LocaleData = LocalizedTextListAsset.Instance;
+                    m_previousSingletonLocaleData = LocalizedTextListAsset.Instance;
+                }
+                if (useSingletonLocaleData && m_LocaleData != m_previousSingletonLocaleData)
+                {
+                    m_LocaleData = m_previousSingletonLocaleData;
                 }
 
                 return m_LocaleData;
+            }
+            set
+            {
+                m_LocaleData = value;
             }
         }
         [SerializeField, DrawIf(nameof(useSingletonLocaleData), ConditionInverted = true)]

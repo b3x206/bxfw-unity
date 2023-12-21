@@ -159,7 +159,7 @@ namespace BXFW
         /// <summary>
         /// List of the currently scheduled actions.
         /// </summary>
-        private static readonly List<ScheduledAction> scheduledActions = new List<ScheduledAction>();
+        private static readonly List<ScheduledAction> scheduledActions = new List<ScheduledAction>(16);
 
         /// <summary>
         /// Schedules an action to be called.

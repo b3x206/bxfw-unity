@@ -10,7 +10,7 @@ namespace BXFW
     public class ObjectPooler : MonoBehaviour
     {
         // TODO : Use a HashMap of prefabs (in runtime) for O(1) searching of Prefabs on Despawn methods
-        // However, i want both a List (random removal), Queue (self-explanatory) and a HashSet (also same) in one.
+        // However, i want both a List (random removal/dequeueing of arbitary elements), Queue (self-explanatory) and a HashSet (also same) in one.
         // Hmmmm. Not fun.
 
         /// <summary>
@@ -569,7 +569,7 @@ namespace BXFW
             // This is because i don't know about ProblemFactory'ies or SingleTonOfOhNos
             // ----
             // FIXME
-            
+
             // - Reserve 16 IPooledBehaviour's because no one in their right mind
             // would put more than 16 IPooledBehaviour components to the same object.
             List<IPooledBehaviour> pooledBehaviours = new List<IPooledBehaviour>(16);
