@@ -10,14 +10,12 @@ namespace BXFW
 {
     /// <summary>
     /// Contains virtual methods to override to create a observed list.
-    /// <br>Note : This doesn't handle the events. Instead it calls a method, for other reasons.</br>
+    /// <br>Note : This doesn't handle the events. Instead it calls a method.</br>
     /// </summary>
     [Serializable]
     public abstract class ObservedListBase<T> : IList<T>
     {
         [SerializeField] protected List<T> m_list = new List<T>();
-
-        protected ObservedListBase() { }
 
         public IEnumerator<T> GetEnumerator()
         {
@@ -150,42 +148,46 @@ namespace BXFW
 
     /// <summary>
     /// List that has a delegate checking for changes.
+    /// <br/>
+    /// <br><b>Warning : </b> This class is a <b>footgun</b> when you do serialization related actions.
+    /// It is not efficient and it will call <see cref="OnUpdated"/> for all elements even though the list is being iterated.
+    /// </br>
     /// </summary>
     [Serializable]
     public class ObservedList<T> : ObservedListBase<T>
     {
-        public delegate void ChangedDelegate(int index, T oldValue, T newValue);
-        public delegate void AddRemoveDelegate(int index, T updatedElement);
-        public delegate void AddRemoveRangeDelegate(int index, IEnumerable<T> updatedElement);
+        public delegate void ChangedAction(int index, T oldValue, T newValue);
+        public delegate void AddRemoveAction(int index, T updatedElement);
+        public delegate void AddRemoveRangeAction(int index, IEnumerable<T> updatedElement);
 
         /// <summary>
         /// Called when the list content is changed.
         /// <br>This is (usually) invoked by <see cref="this[int]"/>'s setter.</br>
         /// </summary>
-        public event ChangedDelegate Changed;
+        public event ChangedAction OnChanged;
         /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Add(T)"/> is called.
         /// <br>For multiple adds, use <see cref="OnAddRange"/> instead.</br>
         /// </summary>
-        public event AddRemoveDelegate OnAdd;
+        public event AddRemoveAction OnAdd;
         /// <summary>
         /// Called when multiple objects are added to this array.
         /// </summary>
-        public event AddRemoveRangeDelegate OnAddRange;
+        public event AddRemoveRangeAction OnAddRange;
         /// <summary>
         /// Called when the singular <see cref="ObservedListBase{T}.Remove(T)"/> is called.
         /// <br>For multiple removals, use <see cref="OnRemoveRange"/> instead.</br>
         /// </summary>
-        public event AddRemoveDelegate OnRemove;
+        public event AddRemoveAction OnRemove;
         /// <summary>
         /// Called when multiple objects are removed from this array.
         /// </summary>
-        public event AddRemoveRangeDelegate OnRemoveRange;
+        public event AddRemoveRangeAction OnRemoveRange;
         /// <summary>
         /// Called when anything happens to a list.
-        /// <br>This includes adding and removing, unlike the <see cref="Changed"/> event.</br>
+        /// <br>This includes adding and removing, unlike the <see cref="OnChanged"/> event.</br>
         /// </summary>
-        public event Action Updated;
+        public event Action OnUpdated;
 
         public ObservedList() { }
         public ObservedList(List<T> list)
@@ -199,11 +201,11 @@ namespace BXFW
 
         protected override void OnArrayUpdated()
         {
-            Updated?.Invoke();
+            OnUpdated?.Invoke();
         }
         protected override void OnArrayChanged(int index, T oldValue, T newValue)
         {
-            Changed?.Invoke(index, oldValue, newValue);
+            OnChanged?.Invoke(index, oldValue, newValue);
         }
         protected override void OnArrayAdded(int index, T added)
         {

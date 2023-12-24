@@ -6,7 +6,7 @@ namespace BXFW
 {
     /// Changes Done :
     ///   * Fixed formatting and added discards for unused RenderTexture's.
-    ///   * Renamed class from RTUtils -> RenderTextureUtils
+    ///   * Renamed class from RTUtils -> RenderTextureUtility
     ///   * removed some pointless methods (such as DrawTextureGUI without rect input)
     ///   * (some) Methods can now take camera matrices
     /// 
@@ -18,6 +18,7 @@ namespace BXFW
     /// RenderTexture utilities for direct drawing meshes, texts and sprites and converting to Texture / Texture2D.
     /// Requires BlitQuad shader (or also known as a default sprite shader).
     /// 
+    /// Original License Text (if required/needed)
     /// ============================================================================
     ///
     /// MIT License
@@ -46,11 +47,20 @@ namespace BXFW
     public static class RenderTextureUtility
     {
         #region Quad creation
-        static Mesh quad;
+        private static Mesh quad;
+        /// <summary>
+        /// Returns a Quad mesh.
+        /// <br>
+        /// The created mesh is cached so subsequent calls to this method is slightly faster
+        /// (but mutating the Mesh will have permanent effects until domain reset)
+        /// </br>
+        /// </summary>
         public static Mesh GetQuad()
         {
-            if (quad)
+            if (quad != null)
+            {
                 return quad;
+            }
 
             Mesh mesh = new Mesh();
 
@@ -97,33 +107,45 @@ namespace BXFW
             return quad;
         }
 
-        static Shader blitShader;
+        private static Shader blitShader;
+        private const string BLIT_SHADER_NAME = "Sprites/Default";
+        /// <summary>
+        /// Returns the default sprites shader for blitting.
+        /// </summary>
         public static Shader GetBlitShader()
         {
-            if (blitShader)
+            if (blitShader != null)
+            {
                 return blitShader;
+            }
 
-            const string SHADER_NAME = "Sprites/Default";
-            Shader shader = Shader.Find(SHADER_NAME);
+            Shader shader = Shader.Find(BLIT_SHADER_NAME);
 
             if (!shader)
-                Debug.LogError(string.Format("Shader with name '{0}' is not found, did you forget to include it in the project settings?", SHADER_NAME));
+            {
+                Debug.LogError(string.Format("[GetBlitShader] Shader with name '{0}' is not found, did you forget to include it in the project settings?", BLIT_SHADER_NAME));
+            }
 
             blitShader = shader;
             return blitShader;
         }
 
-        static Material blitMaterial;
+        private static Material blitMaterial;
+        /// <summary>
+        /// Returns the material created from shader <see cref="GetBlitShader"/>.
+        /// </summary>
         public static Material GetBlitMaterial()
         {
-            if (!blitMaterial)
+            if (blitMaterial == null)
+            {
                 blitMaterial = new Material(GetBlitShader());
+            }
 
             return blitMaterial;
         }
         #endregion
 
-        static RenderTexture prevRT;
+        private static RenderTexture prevRT;
 
         public static void BeginOrthoRendering(this RenderTexture rt, float zBegin = -100, float zEnd = 100)
         {
@@ -158,7 +180,9 @@ namespace BXFW
             // This fixes flickering (by @guycalledfrank)
             // (because there's some switching back and forth between cameras, I don't fully understand)
             if (Camera.current != null)
+            {
                 projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+            }
 
             // Remember the current texture and make our own active
             prevRT = RenderTexture.active;
@@ -236,12 +260,16 @@ namespace BXFW
             // Create an orthographic matrix (for 2D rendering)
             // You can otherwise use Matrix4x4.Perspective()
             if (projectionMatrix == Matrix4x4.identity)
+            {
                 projectionMatrix = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
+            }
 
             // This fixes flickering (by @guycalledfrank)
             // (because there's some switching back and forth between cameras, I don't fully understand)
             if (Camera.current != null)
+            {
                 projectionMatrix *= Camera.current.worldToCameraMatrix.inverse;
+            }
 
             // Remember the current texture and set our own as "active".
             RenderTexture prevRT = RenderTexture.active;
@@ -259,13 +287,19 @@ namespace BXFW
 
             // Clear the texture
             if (clear)
+            {
                 GL.Clear(true, true, clearColor);
+            }
 
             // Draw the mesh!
             if (canRender)
+            {
                 Graphics.DrawMeshNow(mesh, objectMatrix);
+            }
             else
+            {
                 Debug.LogWarning(string.Format("[RenderTextureUtils::BlitMesh] Material with shader {0} couldn't be rendered!", material.shader.name));
+            }
 
             // Pop the projection matrix to set it back to the previous one
             GL.PopMatrix();
@@ -282,12 +316,16 @@ namespace BXFW
         public static void DrawMesh(this RenderTexture _, Mesh mesh, Material material, in Matrix4x4 matrix, int pass = 0)
         {
             if (mesh == null)
+            {
                 throw new NullReferenceException("[RenderTextureExtensions::DrawMesh] Argument 'mesh' cannot be null.");
+            }
 
             bool canRender = material.SetPass(pass);
 
             if (canRender)
+            {
                 Graphics.DrawMeshNow(mesh, matrix);
+            }
         }
 
         public static void DrawTMPText(this RenderTexture rt, TMP_Text text, in Vector2 position, float size)

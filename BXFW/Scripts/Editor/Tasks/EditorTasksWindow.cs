@@ -1,13 +1,15 @@
 using UnityEngine;
 using UnityEditor;
 
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
 namespace BXFW.Tools.Editor
 {
     /// <summary>
-    /// Generates an editor environment, using given scriptable abstract behaviours.
+    /// Runs editor related scripting tasks, using given abstract 
+    /// <see cref="EditorTask"/> inheriting ScriptableObject behaviours.
     /// </summary>
     public class EditorTasksWindow : EditorWindow
     {
@@ -36,14 +38,16 @@ namespace BXFW.Tools.Editor
         }
         private void OnDestroy()
         {
-            foreach (var v in currentTasksGen)
+            foreach (EditorTask task in currentTasksGen)
             {
                 // asset actually exists, we are going to lose reference anyways.
-                if (!string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(v)))
+                if (!string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(task)))
+                {
                     continue;
+                }
 
                 // since these could be temp, avoid memory leaks manually
-                DestroyImmediate(v);
+                DestroyImmediate(task);
             }
 
             currentTasksGen.Clear();
@@ -91,7 +95,7 @@ namespace BXFW.Tools.Editor
             GUILayout.EndScrollView();
 
             GUIAdditionals.DrawUILineLayout(Color.gray);
-            GUILayout.Space(10f);
+            GUILayout.Space(12f);
 
             // -----------------------------------------
             // DoTasks : Show progress bar until done.
@@ -106,7 +110,9 @@ namespace BXFW.Tools.Editor
                     EditorTask t = currentTasksGen[i];
 
                     if (t == null)
+                    {
                         continue;
+                    }
 
                     if (!t.GetWarning())
                     {
@@ -122,14 +128,28 @@ namespace BXFW.Tools.Editor
                     for (int i = 0; i < currentTasksGen.Count; i++)
                     {
                         if (EditorUtility.DisplayCancelableProgressBar("Doing tasks...", $"Currently doing task #{i + 1}.", i / (float)currentTasksGen.Count))
+                        {
                             break;
+                        }
 
                         EditorTask t = currentTasksGen[i];
-                        // pretty sure the user can see that there's null tasks, we also put a helpbox there.
+                        // pretty sure the user can see that there's null tasks, i also put a helpbox there.
                         if (t == null)
+                        {
                             continue;
+                        }
 
-                        t.Run();
+                        try
+                        {
+                            t.Run();
+                        }
+                        catch (Exception e)
+                        {
+                            // Do this caching as the ProgressBar is never cleared if the exception is unhandled
+                            Debug.LogWarning("[EditorTasksWindow::OnGUI(Begin Tasks)] An exception occured during running of a task. The next log will contain details. Other tasks will not be run.");
+                            Debug.LogException(e);
+                            break;
+                        }
                     }
 
                     EditorUtility.ClearProgressBar();
@@ -138,7 +158,7 @@ namespace BXFW.Tools.Editor
             }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            GUILayout.Space(20f); // Line adds 10 padding
+            GUILayout.Space(14f); // Line adds 10 padding + 2 height
 
             if (taskTakenTime > .1f)
             {

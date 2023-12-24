@@ -18,15 +18,97 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Omits the drawn value in the dictionary.
         /// </summary>
-        protected static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null); 
+        protected static readonly KeyValuePair<MatchGUIActionOrder, Action> OMIT_ACTION = EditorAdditionals.OmitAction;
+        /// <summary>
+        /// List of GameObjects existing on the MultiUIManager.
+        /// <br>Used to be able to register objects that were just created into the Undo stack.</br>
+        /// </summary>
+        protected readonly List<UnityEngine.Object> m_existingUndoRecord = new List<UnityEngine.Object>();
+
+        /// <summary>
+        /// Records a generative event for a MultiUIManager system targets array.
+        /// <br>Can be overriden in case of a custom recording style.</br>
+        /// </summary>
+        /// <param name="generativeEvent">The event delegate called when the generative event is setup for recording.</param>
+        /// <param name="undo">Undo message to send to the <see cref="Undo"/> stack.</param>
+        protected virtual void UndoRecordGenerativeEvent(Action<MultiUIManagerBase> generativeEvent, string undo)
+        {
+            var targets = base.targets.Cast<MultiUIManagerBase>().ToArray();
+
+            if (m_existingUndoRecord.Count > 0)
+            {
+                m_existingUndoRecord.Clear();
+            }
+
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName(undo);
+            int undoID = Undo.GetCurrentGroup();
+
+            // Register all buttons into the undo record.
+            foreach (var manager in targets)
+            {
+                foreach (Component element in manager.IterableElements())
+                {
+                    if (element == null)
+                    {
+                        continue;
+                    }
+
+                    m_existingUndoRecord.Add(element.gameObject);
+                }
+            }
+
+            foreach (var manager in targets)
+            {
+                // Undo.RecordObject does not work, because unity wants to be unity.
+                Undo.RegisterCompleteObjectUndo(manager, string.Empty);
+
+                if (!PrefabUtility.IsPartOfAnyPrefab(manager))
+                {
+                    EditorUtility.SetDirty(manager);
+                }
+
+                generativeEvent(manager);
+
+                if (PrefabUtility.IsPartOfAnyPrefab(manager))
+                {
+                    // RegisterCompleteObjectUndo does not immediately add the object into the Undo list
+                    // So do this to avoid bugs, as this needs to be done after the undo list was updated.
+                    EditorApplication.delayCall += () =>
+                    {
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(manager);
+                    };
+                }
+            }
+
+            // Apply created elements on the undo thing
+            foreach (var manager in targets)
+            {
+                foreach (
+                    Component checkUndoElementComponent in manager
+                        .IterableElements()
+                        .Where(comp => !m_existingUndoRecord.Contains(comp.gameObject))
+                )
+                {
+                    if (checkUndoElementComponent == null)
+                    {
+                        continue;
+                    }
+
+                    Undo.RegisterCreatedObjectUndo(checkUndoElementComponent.gameObject, string.Empty);
+                }
+            }
+
+            Undo.CollapseUndoOperations(undoID);
+        }
 
         /// <summary>
         /// Get the values for the dictionary.
-        /// <br>Don't forget to call this method as <see langword="base"/>.<see cref="GetCustomPropertyDrawerDictionary(in Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, MultiUIManagerBase[])"/></br>
+        /// <br>Don't forget to call this method as <see langword="base"/>.<see cref="GetCustomPropertyDrawerDictionary(Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, MultiUIManagerBase[])"/></br>
         /// </summary>
         /// <param name="dict">The given dictionary for the property names and the behaviour to run on those.</param>
         /// <param name="targets">Array of targets for the <see cref="CanEditMultipleObjects"/> attribute editor.</param>
-        protected virtual void GetCustomPropertyDrawerDictionary(in Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
+        protected virtual void GetCustomPropertyDrawerDictionary(Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
         {
             dict.Add("m_ElementCount", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
             {
@@ -53,15 +135,7 @@ namespace BXFW.ScriptEditor
                 GUILayout.EndHorizontal();
                 if (EditorGUI.EndChangeCheck())
                 {
-                    Undo.IncrementCurrentGroup();
-                    Undo.SetCurrentGroupName("set element count");
-                    int undoGroup = Undo.GetCurrentGroup();
-                    foreach (var target in targets)
-                    {
-                        Undo.RecordObject(target, string.Empty);
-                        target.ElementCount = elemCountFieldValue;
-                    }
-                    Undo.CollapseUndoOperations(undoGroup);
+                    UndoRecordGenerativeEvent((manager) => manager.ElementCount = elemCountFieldValue, "set element count");
                 }
 
                 EditorGUI.showMixedValue = showMixedPrev;
@@ -89,8 +163,6 @@ namespace BXFW.ScriptEditor
                     foreach (var target in targets)
                     {
                         Undo.RecordObject(target, string.Empty);
-                        Undo.RecordObject(target.gameObject, string.Empty);
-
                         target.ReferenceElementIndex = refElemIndexValue;
                     }
                     Undo.CollapseUndoOperations(undoGroup);
@@ -104,33 +176,15 @@ namespace BXFW.ScriptEditor
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Regenerate"))
                 {
-                    Undo.IncrementCurrentGroup();
-                    Undo.SetCurrentGroupName("regenerate multi ui manager");
-                    int undoGroup = Undo.GetCurrentGroup();
-                    foreach (var target in targets)
-                    {
-                        Undo.RecordObject(target, string.Empty);
-                        Undo.RecordObject(target.gameObject, string.Empty);
-
-                        target.GenerateElements();
-                    }
-
-                    Undo.CollapseUndoOperations(undoGroup);
+                    UndoRecordGenerativeEvent((manager) => manager.GenerateElements(), "regenerate MultiUIManager");
                 }
                 if (GUILayout.Button("Reset"))
                 {
-                    Undo.IncrementCurrentGroup();
-                    Undo.SetCurrentGroupName("reset multi ui manager");
-                    int undoGroup = Undo.GetCurrentGroup();
-                    foreach (var target in targets)
-                    {
-                        Undo.RecordObject(target, string.Empty);
-                        Undo.RecordObject(target.gameObject, string.Empty);
-
-                        target.ResetElements();
-                    }
-
-                    Undo.CollapseUndoOperations(undoGroup);
+                    UndoRecordGenerativeEvent((manager) => manager.ResetElements(false), "reset MultiUIManager");
+                }
+                if (GUILayout.Button("Clear + Reset"))
+                {
+                    UndoRecordGenerativeEvent((manager) => manager.ResetElements(true), "clear+reset MultiUIManager");
                 }
                 GUILayout.EndHorizontal();
             }));
@@ -141,7 +195,7 @@ namespace BXFW.ScriptEditor
 
             // MultiUIManager<TElement>
             // (for the time being don't draw this array)
-            dict.Add("uiElements", OMIT_ACTION);
+            dict.Add("m_Elements", OMIT_ACTION);
 
             // InteractableMultiUIManager<TElement>
             dict.Add("interactable", new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>

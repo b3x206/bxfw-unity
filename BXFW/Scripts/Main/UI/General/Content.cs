@@ -4,29 +4,34 @@ using UnityEngine;
 namespace BXFW.UI
 {
     /// <summary>
-    /// Defined UI content. Similar to <see cref="GUIContent"/>, but used by <see cref="TabSystem"/>.
+    /// Defined UI content. Similar to <see cref="GUIContent"/>.
     /// </summary>
     [Serializable]
     public class Content
     {
-        [Tooltip("Text content that this button stores.")][TextArea] public string text;
-        [BigSpriteField, Tooltip("Sprite content.")] public Sprite image;
-        [Tooltip("Whether if we should receive content from already existing components. This is an editor parameter.")]
-        [SerializeField] internal bool receiveContentFromComponents = false;
+        [Tooltip("Text content that this button stores."), TextArea]
+        public string text;
+        [Tooltip("Sprite content."), SpriteArea]
+        public Sprite sprite;
 
+        public static readonly Content None = new Content();
+
+        /// <summary>
+        /// Creates an empty content.
+        /// </summary>
         public Content()
         { }
 
         /// <summary>
-        /// Creates a tab button content with an image.
+        /// Creates content with an image.
         /// </summary>
         public Content(Sprite image)
         {
-            this.image = image;
+            sprite = image;
         }
 
         /// <summary>
-        /// Creates a tab button content with a text.
+        /// Creates content with a text.
         /// </summary>
         public Content(string text)
         {
@@ -34,12 +39,12 @@ namespace BXFW.UI
         }
 
         /// <summary>
-        /// Creates a tab button content with a text & image.
+        /// Creates content with a text &amp; image.
         /// </summary>
         public Content(string text, Sprite image)
         {
             this.text = text;
-            this.image = image;
+            sprite = image;
         }
     }
 }

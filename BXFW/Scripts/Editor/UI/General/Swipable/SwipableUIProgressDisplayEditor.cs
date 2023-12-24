@@ -1,81 +1,93 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
+using UnityEngine;
+
 using BXFW.UI;
 using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(SwipableUIProgressDisplay)), CanEditMultipleObjects]
-    internal class SwipableUIProgressDisplayEditor : Editor
+    public class SwipableUIProgressDisplayEditor : MultiUIManagerBaseEditor
     {
-        public override void OnInspectorGUI()
+        protected override void GetCustomPropertyDrawerDictionary(Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, MultiUIManagerBase[] targets)
         {
-            var targets = base.targets.Cast<SwipableUIProgressDisplay>().ToArray();
+            base.GetCustomPropertyDrawerDictionary(dict, targets);
 
-            foreach (var target in targets)
-                target.GenerateChildImage();
+            // Omit these built-in UI's (because this value is meant to be not changed manually)
+            dict["m_ElementCount"] = OMIT_ACTION;
 
-            var dictDraw = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
+            // Get targets to be casted IEnumerable
+            var castTargets = targets.Cast<SwipableUIProgressDisplay>();
+
+            foreach (var target in castTargets)
             {
-                { nameof(SwipableUIProgressDisplay.TargetSwipableUI), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
+                target.UpdateElementsAppearance();
+                if (target.targetSwipableUI != null)
+                {
+                    target.ElementCount = target.targetSwipableUI.MenuCount;
+                }
+            }
+
+            // Button + Warning for the 'TargetSwipableUI'
+            dict.Add(nameof(SwipableUIProgressDisplay.targetSwipableUI), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
+            {
+                if (castTargets.Any(supd => supd.targetSwipableUI != null))
+                {
+                    // Add a button to go to the target swipable ui
+                    if (GUILayout.Button(new GUIContent(targets.Length > 1 ? "Select target displays" : "Go to target display", "Makes the focus TargetSwipableUI.")))
                     {
-                        if (targets.Any(supd => supd.TargetSwipableUI != null))
+                        if (targets.Length > 1)
                         {
-                            // Add a button to go to the target swipable ui
-                            if (GUILayout.Button(new GUIContent(targets.Length > 1 ? "Show target displays" : "Go to target display", "Makes the focus TargetSwipableUI.")))
-                            {
-                                if (targets.Length > 1)
-                                {
-                                    SwipableUIProgressDisplay[] nonNullUI = targets.Where(t => t.TargetSwipableUI != null).ToArray();
-                                    Selection.objects = nonNullUI;
-                                }
-                                else
-                                {
-                                    Selection.activeTransform = targets[0].TargetSwipableUI.transform;
-                                    SceneView.FrameLastActiveSceneView(); // Frames the scene view to active transform
-                                }
-                            }
+                            SwipableUIProgressDisplay[] nonNullUI = castTargets.Where(t => t.targetSwipableUI != null).ToArray();
+                            Selection.objects = nonNullUI;
                         }
                         else
                         {
-                            EditorGUILayout.HelpBox("Please assign a valid TargetSwipableUI.", MessageType.Warning);
+                            Selection.activeTransform = castTargets.First().targetSwipableUI.transform;
+                            SceneView.FrameLastActiveSceneView(); // Frames the scene view to active transform
                         }
-                    })
-                },
-                { nameof(SwipableUIProgressDisplay.ChildImageFadeType), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
-                    {
-                        if (targets.Any(t => t.ChildImageFadeType == FadeType.None || t.ChildImageFadeType == FadeType.CustomUnityEvent))
-                        {
-                            EditorGUILayout.HelpBox("FadeType : None & CustomUnityEvent is not supported.", MessageType.Warning);
-                        }
-                    })
+                    }
                 }
-            };
-
-            bool TargetFadeTypeIsColorFade(SwipableUIProgressDisplay p)
-            {
-                return p.ChildImageFadeType == FadeType.None || p.ChildImageFadeType == FadeType.ColorFade || p.ChildImageFadeType == FadeType.CustomUnityEvent;
-            }
-            if (targets.All(t => t.ChildImageFadeType == FadeType.SpriteSwap))
-            {
-                dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledColor), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-            }
-            else if (targets.All(t => TargetFadeTypeIsColorFade(t)))
-            {
-                dictDraw.Add(nameof(SwipableUIProgressDisplay.ActiveSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                dictDraw.Add(nameof(SwipableUIProgressDisplay.DisabledSprite), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
-                if (targets.Any(t => !t.ChangeColorWithTween))
+                else
                 {
-                    dictDraw.Add(nameof(SwipableUIProgressDisplay.ChildImageColorFadeTween), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Omit, null));
+                    EditorGUILayout.HelpBox("Please assign a TargetSwipableUI.", MessageType.Warning);
+                }
+            }));
+            // Unsupported image fade type helpbox
+            dict.Add(nameof(SwipableUIProgressDisplay.childImageFadeType), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After, () =>
+            {
+                if (castTargets.Any(t => t.childImageFadeType == FadeType.None || t.childImageFadeType == FadeType.CustomUnityEvent))
+                {
+                    EditorGUILayout.HelpBox("FadeType : None & CustomUnityEvent is not supported. Will use ColorFade instead.", MessageType.Warning);
+                }
+            }));
+
+            // Hide/Show Fields
+            if (castTargets.All(t => t.childImageFadeType == FadeType.SpriteSwap))
+            {
+                dict.Add(nameof(SwipableUIProgressDisplay.colorFadeUseTween), OMIT_ACTION);
+                dict.Add(nameof(SwipableUIProgressDisplay.colorFadeTween), OMIT_ACTION);
+                dict.Add(nameof(SwipableUIProgressDisplay.activeColor), OMIT_ACTION);
+                dict.Add(nameof(SwipableUIProgressDisplay.disabledColor), OMIT_ACTION);
+            }
+            else // Remove sprite swap to display the color fields
+            {
+                if (castTargets.Any(t => !t.colorFadeUseTween))
+                {
+                    dict.Add(nameof(SwipableUIProgressDisplay.colorFadeUseTween), OMIT_ACTION);
+                }
+
+                dict.Add(nameof(SwipableUIProgressDisplay.activeSprite), OMIT_ACTION);
+                dict.Add(nameof(SwipableUIProgressDisplay.disabledSprite), OMIT_ACTION);
+                if (castTargets.Any(t => !t.colorFadeUseTween))
+                {
+                    dict.Add(nameof(SwipableUIProgressDisplay.colorFadeTween), OMIT_ACTION);
                 }
             }
-
-            serializedObject.DrawCustomDefaultInspector(dictDraw);
         }
     }
 }

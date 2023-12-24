@@ -5,12 +5,18 @@ using System.Collections.Generic;
 namespace BXFW
 {
     /// <summary>
-    /// A queue that only holds unique items.
+    /// A <see cref="Queue{T}"/> that only holds unique items.
     /// <br>Memory usage is higher because it uses a <see cref="HashSet{T}"/> to check whether the Enqueue'd element is unique or not.</br>
     /// </summary>
     public class UniqueQueue<T> : IEnumerable<T>, IEnumerable, IReadOnlyCollection<T>, ICollection
     {
+        /// <summary>
+        /// Internal queue used.
+        /// </summary>
         private readonly Queue<T> m_queue;
+        /// <summary>
+        /// Internal hashset used for uniqueness comparison.
+        /// </summary>
         private readonly HashSet<T> m_hashSet;
 
         /// <summary>
@@ -27,26 +33,57 @@ namespace BXFW
         /// </summary>
         object ICollection.SyncRoot => this;
 
+        /// <summary>
+        /// Creates an empty queue.
+        /// </summary>
         public UniqueQueue()
         {
-            m_queue = new Queue<T>();
             m_hashSet = new HashSet<T>();
+            m_queue = new Queue<T>();
         }
+        /// <summary>
+        /// <inheritdoc cref="UniqueQueue{T}.UniqueQueue(int, IEqualityComparer{T})"/>
+        /// </summary>
+        /// <param name="capacity">Capacity of the queue to create.</param>
         public UniqueQueue(int capacity)
         {
-            m_queue = new Queue<T>(capacity);
             m_hashSet = new HashSet<T>(capacity);
+            m_queue = new Queue<T>(capacity);
         }
+        /// <summary>
+        /// <inheritdoc cref="UniqueQueue{T}.UniqueQueue(IEnumerable{T}, IEqualityComparer{T})"/>
+        /// </summary>
+        /// <param name="collection">List of the values to add into the queue. Non-unique values are trimmed.</param>
         public UniqueQueue(IEnumerable<T> collection)
         {
-            m_hashSet = new HashSet<T>(collection); // Create the hashSet with unique values first
-            m_queue = new Queue<T>(m_hashSet);      // Use the hashSet to create the queue.
+            m_hashSet = new HashSet<T>(collection);
+            m_queue = new Queue<T>(m_hashSet);
+        }
+        /// <summary>
+        /// Creates an empty queue with capacity.
+        /// </summary>
+        /// <param name="capacity">Capacity of the queue to create.</param>
+        /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> for uniqueness check.</param>
+        public UniqueQueue(int capacity, IEqualityComparer<T> comparer)
+        {
+            m_hashSet = new HashSet<T>(capacity, comparer);
+            m_queue = new Queue<T>(capacity);
+        }
+        /// <summary>
+        /// Creates a queue with only unique values from <paramref name="collection"/> in it.
+        /// </summary>
+        /// <param name="collection">List of the values to add into the queue. Non-unique values are trimmed.</param>
+        /// <param name="comparer">The equality comparer to use.</param>
+        public UniqueQueue(IEnumerable<T> collection, IEqualityComparer<T> comparer)
+        {
+            m_hashSet = new HashSet<T>(collection, comparer); // Create the hashSet with unique values first
+            m_queue = new Queue<T>(m_hashSet);                // Use the hashSet to create the queue.
         }
 
         /// <summary>
         /// Dequeues the first element as an out parameter named <paramref name="result"/>.
         /// </summary>
-        /// <returns><see langword="true"/> if the thing you wanted was dequeued successfully.</returns>
+        /// <returns><see langword="true"/> if a value to dequeue exists and dequeueing was successful.</returns>
         public bool TryDequeue(out T result)
         {
             bool dqResult = m_queue.TryDequeue(out result);
@@ -59,7 +96,7 @@ namespace BXFW
         /// <summary>
         /// Dequeues the first value in the queue and removes it.
         /// </summary>
-        public T Dequeue() 
+        public T Dequeue()
         {
             T value = m_queue.Dequeue();
             m_hashSet.Remove(value);
@@ -83,7 +120,7 @@ namespace BXFW
         /// <summary>
         /// Enqueues an value. If it's a duplicate value it will throw <see cref="ArgumentException"/>.
         /// </summary>
-        public void Enqueue(T item) 
+        public void Enqueue(T item)
         {
             if (!TryEnqueue(item))
             {
@@ -100,13 +137,13 @@ namespace BXFW
         /// <summary>
         /// Returns the first element in the queue without removing it.
         /// </summary>
-        public T Peek() 
+        public T Peek()
         {
             return m_queue.Peek();
         }
 
         /// <summary>
-        /// Clears the array.
+        /// Clears the queue.
         /// </summary>
         public void Clear()
         {
@@ -123,14 +160,14 @@ namespace BXFW
         /// <summary>
         /// Converts the <see cref="UniqueQueue{T}"/> into a typed array.
         /// </summary>
-        public T[] ToArray() 
+        public T[] ToArray()
         {
             return m_queue.ToArray();
         }
         /// <summary>
         /// Sets the capacity to the actual number of elements in the <see cref="Queue{T}"/>, if that number is less than 90 percent of current capacity.
         /// </summary>
-        public void TrimExcess() 
+        public void TrimExcess()
         {
             m_queue.TrimExcess();
         }
@@ -149,16 +186,15 @@ namespace BXFW
             m_queue.CopyTo(array, index);
         }
         /// <summary>
-        /// Returns the <see langword="foreach"/> provider, to get elements sequentially.
+        /// Returns the <see langword="foreach"/> iteration provider, to get elements sequentially.
         /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
             return m_queue.GetEnumerator();
         }
         /// <summary>
-        /// Returns the same enumerator, but don't use this one.
-        /// (It's not typed so it's harmful for your foot, but it won't blow nor shoot it.
-        /// Instead (on a invalid type cast) it will bite it hardly)
+        /// Returns the same enumerator.
+        /// <br>What was i thinking while writing this one's summary?</br>
         /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
         {

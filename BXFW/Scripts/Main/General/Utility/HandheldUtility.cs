@@ -1,4 +1,4 @@
-#if UNITY_ANDROID || UNITY_ANDROID_API || UNITY_IOS
+#if UNITY_ANDROID || UNITY_IOS
 using UnityEngine;
 
 namespace BXFW
@@ -10,7 +10,6 @@ namespace BXFW
     public static class HandheldUtility
     {
         // -- Common utility
-
         // These 2 methods still target android but it also works with most handheld related stuff.
         /// <summary>
         /// Returns the keyboard height ratio to the screen display height.
@@ -36,7 +35,9 @@ namespace BXFW
                 AndroidJavaObject dialog = unityPlayer.Get<AndroidJavaObject>("mSoftInputDialog");
 
                 if (view == null || dialog == null)
+                {
                     return 0;
+                }
 
                 int decorHeight = 0;
                 // The input box that appears on top when the keyboard is visible

@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace BXFW.UI
 {
@@ -14,11 +15,23 @@ namespace BXFW.UI
     public class UISubMenu : MonoBehaviour
     {
         [Serializable]
-        public sealed class UISubMenuEvent_Bool : UnityEvent<bool> { }
-        public UISubMenuEvent_Bool UISubMenuEventSimple;
+        public sealed class BoolEvent : UnityEvent<bool> { }
         [Serializable]
-        public sealed class UISubMenuEvent_MenuData : UnityEvent<UISubMenu, bool> { }
-        public UISubMenuEvent_MenuData UISubMenuEvent;
+        public sealed class MenuBoolEvent : UnityEvent<UISubMenu, bool> { }
+
+        /// <summary>
+        /// The event called when the menu opens and closes.
+        /// <br><see langword="true"/> =&gt; Menu is opening.</br>
+        /// <br><see langword="false"/> =&gt; Menu is closing.</br>
+        /// </summary>
+        [FormerlySerializedAs("UISubMenuEventSimple")]
+        public BoolEvent openCloseBoolEvent;
+        /// <summary>
+        /// The event called when the menu opens and closes.
+        /// <br>This version also outputs a <see cref="UISubMenu"/> with it's invocation.</br>
+        /// </summary>
+        [FormerlySerializedAs("UISubMenuEvent")]
+        public MenuBoolEvent openCloseMenuEvent;
 
         [SerializeField, Tooltip("The menu rect transform. Leave blank if you don't want to set a custom rect transform.\n" +
             "It is recommended to set this as a child of the UISubMenu component object.")] 
@@ -36,10 +49,21 @@ namespace BXFW.UI
             }
         }
 
-        public bool AddSetActiveEvent = true;
-        [SerializeField] private bool _IsClosedOnAwake = true;
-        public bool IsClosedOnAwake { get { return _IsClosedOnAwake; } protected set { _IsClosedOnAwake = value; } }
-        public bool IsOpen { get { return gameObject.activeInHierarchy; } }
+        /// <summary>
+        /// If this is true, the <see cref="UIMenuManager.OpenSubMenu(UISubMenu)"/> or 
+        /// <see cref="UIMenuManager.CloseSubMenu(UISubMenu)"/> with this menu will set 
+        /// the <see cref="Component.gameObject"/>'s activeness attached to this Menu.
+        /// </summary>
+        [FormerlySerializedAs("AddSetActiveEvent")]
+        public bool addSetActiveEvent = true;
+        [FormerlySerializedAs("_IsClosedOnAwake")]
+        [SerializeField] private bool m_IsClosedOnAwake = true;
+        public bool IsClosedOnAwake 
+        { 
+            get => m_IsClosedOnAwake; 
+            protected set => m_IsClosedOnAwake = value;
+        }
+        public bool IsOpen => gameObject.activeInHierarchy;
 
         /// <summary>
         /// The awake method.
@@ -52,20 +76,26 @@ namespace BXFW.UI
             {
                 // Close the menu if the thing is active.
                 // NOTE : This only applies for the sub menu.
-                UISubMenuEventSimple?.Invoke(false);
-                UISubMenuEvent?.Invoke(this, false);
+                openCloseBoolEvent?.Invoke(false);
+                openCloseMenuEvent?.Invoke(this, false);
             }
         }
 
         /// <summary>
         /// <para>Opens menu.</para>
         /// <br>objAction is set to <c>() => { gameObject.SetActive(true); }</c>.</br>
-        /// <br>Can be disabled using <see cref="AddSetActiveEvent"/>.</br>
+        /// <br>Can be disabled using <see cref="addSetActiveEvent"/>.</br>
+        /// <br/>
+        /// <br>
+        /// Note : If you have a global <see cref="UIMenuManager"/>, 
+        /// you are most likely calling the incorrect method. Call the <see cref="UIMenuManager.OpenSubMenu(UISubMenu)"/> 
+        /// with the given menu as the parameter instead.
+        /// </br>
         /// </summary>
         /// <param name="objAction">Action to invoke when the menu is opened.</param>
         public void OpenMenu(Action objAction = null)
         {
-            if (AddSetActiveEvent)
+            if (addSetActiveEvent)
             {
                 objAction += () => { gameObject.SetActive(true); };
             }
@@ -73,19 +103,25 @@ namespace BXFW.UI
             objAction?.Invoke();
 
             OnUISubMenuEvent(true);
-            UISubMenuEventSimple?.Invoke(true);
-            UISubMenuEvent?.Invoke(this, true);
+            openCloseBoolEvent?.Invoke(true);
+            openCloseMenuEvent?.Invoke(this, true);
         }
 
         /// <summary>
         /// <para>Closes menu.</para>
         /// <br>objAction is set to <c>() => { gameObject.SetActive(false); }</c>.</br>
-        /// <br>Can be disabled using <see cref="AddSetActiveEvent"/>.</br>
+        /// <br>Can be disabled using <see cref="addSetActiveEvent"/>.</br>
+        /// <br/>
+        /// <br>
+        /// Note : If you have a global <see cref="UIMenuManager"/>, 
+        /// you are most likely calling the incorrect method. Call the <see cref="UIMenuManager.CloseSubMenu(UISubMenu)"/> 
+        /// with the given menu as the parameter instead.
+        /// </br>
         /// </summary>
         /// <param name="objAction">Action to invoke when the menu is opened.</param>
         public void CloseMenu(Action objAction = null)
         {
-            if (AddSetActiveEvent)
+            if (addSetActiveEvent)
             {
                 objAction += () => { gameObject.SetActive(false); };
             }
@@ -93,8 +129,8 @@ namespace BXFW.UI
             objAction?.Invoke();
 
             OnUISubMenuEvent(false);
-            UISubMenuEventSimple?.Invoke(false);
-            UISubMenuEvent?.Invoke(this, false);
+            openCloseBoolEvent?.Invoke(false);
+            openCloseMenuEvent?.Invoke(this, false);
         }
 
         /// <summary>

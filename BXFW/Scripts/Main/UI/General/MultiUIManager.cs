@@ -8,7 +8,9 @@ using UnityEngine.Events;
 namespace BXFW.UI
 {
     /// <summary>
-    /// Manages multiple objects in an interface nicely.
+    /// Manages multiple objects in UGUI nicely.
+    /// <br>This uses a GameObject based management system, so it is flexible 
+    /// but more fragile compared to just using Renderer or to other similar things.</br>
     /// </summary>
     /// <typeparam name="TElement">Element Component type.</typeparam>
     [RequireComponent(typeof(RectTransform))]
@@ -35,7 +37,7 @@ namespace BXFW.UI
         public class ElementEvent : UnityEvent<TElement> { }
 
         /// <summary>
-        /// Called when an element is created through <see cref="CreateUIElement"/>.
+        /// Called when an element is created through <see cref="InternalCreateUIElement"/>.
         /// </summary>
         public IndexedElementEvent onCreateElementEvent;
 
@@ -43,7 +45,7 @@ namespace BXFW.UI
         /// List of the contained elements.
         /// <br>When you override <see cref="GenerateElements"/>, don't forget to add to this array.</br>
         /// </summary>
-        [SerializeField] protected List<TElement> uiElements = new List<TElement>();
+        [SerializeField] protected List<TElement> m_Elements = new List<TElement>();
         /// <summary>
         /// List of the contained elements, in a read-only form.
         /// <br>Even though the '<see cref="ElementCount"/>' is set to zero, this will always contain 1 object.</br>
@@ -52,7 +54,7 @@ namespace BXFW.UI
         {
             get
             {
-                return uiElements;
+                return m_Elements;
             }
         }
         /// <summary>
@@ -64,12 +66,18 @@ namespace BXFW.UI
         {
             get
             {
-                return uiElements[index];
+                return m_Elements[index];
             }
         }
 
         protected MultiUIManager()
         { }
+
+        /// <summary>
+        /// The target transform to parent the elements of this MultiUIManager in.
+        /// <br>By default, this is constant, set to the <see cref="Component.transform"/>.</br>
+        /// </summary>
+        protected virtual Transform ParentTransform => transform;
 
         /// <summary>
         /// An override that should be done to create a element generically.
@@ -80,40 +88,128 @@ namespace BXFW.UI
         protected abstract TElement OnCreateElement(TElement referenceElement);
 
         /// <summary>
+        /// Called when the MultiUIManager needs to initialize the element. (after creation)
+        /// <br>The initialization (if required for an element) <b>should not</b> be done in <see cref="OnCreateElement(TElement)"/>!</br>
+        /// <br/>
+        /// <br>Static content or one-time setup that gets serialized is okay to do in <see cref="OnCreateElement(TElement)"/>.</br>
+        /// <br>This is used for constant setups.</br>
+        /// </summary>
+        /// <param name="initializeElement">Element to initialize. Don't spawn or do anything with this element.</param>
+        /// <exception cref="ArgumentNullException"/>
+        protected virtual void OnInitializeElement(TElement initializeElement)
+        {
+            if (initializeElement == null)
+            {
+                throw new ArgumentNullException(nameof(initializeElement), "[MultiUIManager::InitializeElement] Failed to initialize element.");
+            }
+
+            // Transform stuff (because the child will be scaled weirdly)
+            initializeElement.transform.SetParent(ParentTransform);
+            initializeElement.transform.localScale = Vector3.one;
+            // Check name and truncate the '(Clone)' from them
+            if (TruncateCloneNameOnCreate)
+            {
+                string elemName = initializeElement.gameObject.name;
+                int idxOfClone = elemName.IndexOf("(Clone)");
+                if (idxOfClone != -1)
+                {
+                    initializeElement.gameObject.name = elemName.Remove(idxOfClone);
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates an element.
         /// <br>This is the method that is normally called, but invokes the events to both to the unity event and the abstract base.</br>
         /// <br>
         /// This method sets the transform parent of the generated element to this
-        /// <see cref="Component.transform"/> and sets it's <see cref="Transform.localScale"/> to <see cref="Vector3.one"/>.
+        /// <see cref="ParentTransform"/> and sets it's <see cref="Transform.localScale"/> to <see cref="Vector3.one"/>.
         /// </br>
         /// </summary>
         /// <param name="useReferenceElement">
         /// Whether to use a reference element that already exists.
         /// <br>To change the element that is being referred, use the <see cref="MultiUIManagerBase.ReferenceElementIndex"/>.</br>
         /// </param>
-        public TElement CreateUIElement(bool useReferenceElement = true)
+        /// <remarks>
+        /// <b>NOTE : </b>This method DOES NOT increment <see cref="MultiUIManagerBase.m_ElementCount"/>
+        /// (m_ElementCount is treated as a target value!)
+        /// <br>It is meant to be used as an <b>helper</b> method to allow creation + management of values.</br>
+        /// <br>For an user creation method, use <see cref="CreateUIElement(bool)"/>.</br>
+        /// <br>To remove UI elements decrement <see cref="MultiUIManagerBase.ElementCount"/> by any amount you want (it is clamped anyways)</br>
+        /// <br>This method does only modify the <see cref="m_Elements"/> list.</br>
+        /// </remarks>
+        protected TElement InternalCreateUIElement(bool useReferenceElement = true)
         {
-            int createIndex = uiElements.Count;
-            TElement element = OnCreateElement(useReferenceElement ? uiElements[ReferenceElementIndex] : null);
-            
-            // Add to list + events
-            uiElements.Add(element);
-            onCreateElementEvent?.Invoke(createIndex, element);
-            // Transform stuff (because the child will be scaled weirdly)
-            element.transform.SetParent(transform);
-            element.transform.localScale = Vector3.one;
-            // Check name and truncate the '(Clone)' from them
-            if (TruncateCloneNameOnCreate)
+            int createIndex = m_Elements.Count;
+            if (useReferenceElement)
             {
-                string elemName = element.gameObject.name;
-                int idxOfClone = elemName.IndexOf("(Clone)");
-                if (idxOfClone != -1)
-                {
-                    element.gameObject.name = elemName.Remove(elemName.IndexOf("(Clone)"));
-                }
+                useReferenceElement = m_Elements.Count > 0; // Check eligibility of using an reference element
             }
 
+            TElement element = OnCreateElement(useReferenceElement ? m_Elements[ReferenceElementIndex] : null);
+
+            // Add to list + events
+            m_Elements.Add(element);
+            onCreateElementEvent?.Invoke(createIndex, element);
+            OnInitializeElement(element);
+
             return element;
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="InternalCreateUIElement(bool)"/>
+        /// <br/>
+        /// <br>Calling this directly will increment 'm_ElementCount' by 1.</br>
+        /// </summary>
+        /// <param name="useReferenceElement">
+        /// <inheritdoc cref="InternalCreateUIElement(bool)"/>
+        /// </param>
+        public TElement CreateUIElement(bool useReferenceElement = true)
+        {
+            // If the previous element count is zero, ensure that the first object is enabeld
+            if (m_ElementCount <= 0 && m_Elements.Count >= 1 && m_Elements[0] != null)
+            {
+                // Since this method adds only 1 element.
+                m_Elements[0].gameObject.SetActive(true);
+                onCreateElementEvent?.Invoke(0, m_Elements[0]);
+                OnInitializeElement(m_Elements[0]);
+            }
+            else
+            {
+                // No elements exist or elements already exist and enabled.
+                InternalCreateUIElement(useReferenceElement);
+            }
+
+            // Increment element count after just in case if an exception is thrown
+            m_ElementCount++;
+            return m_Elements[m_Elements.Count - 1];
+        }
+
+        /// <summary>
+        /// A destroy immediate wrapper that respects editor operations and other things.
+        /// <br>In standalone runtimes, this just does <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/>.</br>
+        /// <br>Unless the object needs to be immediately destroyed during 
+        /// <see cref="GenerateElements"/>, use <see cref="UnityEngine.Object.Destroy"/> instead.</br>
+        /// </summary>
+        /// <param name="target">Target to immediately destroy.</param>
+        protected void ManagerDestroyImmediate(UnityEngine.Object target)
+        {
+#if UNITY_EDITOR
+            // I'm a dumbass
+            // only destroy without undo while playing bro
+            if (Application.isPlaying)
+            {
+                // Destroy forever (no Undo stack saving)
+                DestroyImmediate(target);
+            }
+            else
+            {
+                // Editor destroy (Undo stack usable if the group was being recorded and was collapsed)
+                UnityEditor.Undo.DestroyObjectImmediate(target);
+            }
+#else
+            DestroyImmediate(target);
+#endif
         }
 
         /// <summary>
@@ -124,11 +220,11 @@ namespace BXFW.UI
         {
             // The generation should always retain the first element as an inactive one.
             // Removal loop
-            while (uiElements.Count > ElementCount)
+            while (m_Elements.Count > ElementCount)
             {
-                if (uiElements.Count <= 1)
+                if (m_Elements.Count <= 1)
                 {
-                    if (uiElements.Count < 0 || uiElements[0] == null)
+                    if (m_Elements.Count < 0 || m_Elements[0] == null)
                     {
                         // Null array and or null element
                         // Stop destruction after clearing the array
@@ -137,18 +233,21 @@ namespace BXFW.UI
                     }
 
                     // Disable the last object and stop the destruction
-                    uiElements[0].gameObject.SetActive(false);
+                    m_Elements[0].gameObject.SetActive(false);
                     break;
                 }
 
-                if (uiElements[uiElements.Count - 1] != null)
+                if (m_Elements[m_Elements.Count - 1] != null)
                 {
                     // We need to use DestroyImmediate here as there's no need for the reference
                     // Otherwise the script gets stuck at an infinite loop and dies.
-                    GameObject destroyObject = uiElements[uiElements.Count - 1].gameObject;
+                    GameObject destroyObject = m_Elements[m_Elements.Count - 1].gameObject;
 
-                    // We record the 'Undo' on the editor script anyways
-                    DestroyImmediate(destroyObject);
+                    // Uhh, so using 'DestroyImmediate' that is not on 'Undo' is a bad idea (in editor)
+                    // It crashed unity so, yeah -_-
+                    // When this gets called from unity editor we can choose which destruction we want to choose anyways
+                    // So yeah.
+                    ManagerDestroyImmediate(destroyObject);
                 }
                 else // Null elements exist on the list, cleanup
                 {
@@ -159,34 +258,36 @@ namespace BXFW.UI
                 CleanupElementsList();
             }
             // Add loop
-            while (uiElements.Count < ElementCount)
+            while (m_Elements.Count < ElementCount)
             {
                 // Set first element to be activated
-                if (uiElements.Count == 1)
+                if (m_Elements.Count == 1)
                 {
-                    if (uiElements[0] == null)
+                    if (m_Elements[0] == null)
                     {
                         CleanupElementsList();
                         continue;
                     }
 
-                    uiElements[0].gameObject.SetActive(true);
+                    m_Elements[0].gameObject.SetActive(true);
+                    onCreateElementEvent?.Invoke(0, m_Elements[0]);
+                    OnInitializeElement(m_Elements[0]);
                 }
 
-                CreateUIElement();
+                InternalCreateUIElement();
             }
             // Check if the element count is 1, enable the 'uiElements[0]' from here
             // This is because the 'Add loop' doesn't work when the previous 'ElementCount' is zero.
             // (first element is always in 'uiElements' unless you call ResetElements)
-            if (uiElements.Count == 1)
+            if (m_Elements.Count == 1)
             {
-                if (uiElements[0] == null)
+                if (m_Elements[0] == null)
                 {
                     CleanupElementsList();
-                    CreateUIElement();
+                    InternalCreateUIElement();
                 }
-                
-                uiElements[0].gameObject.SetActive(ElementCount > 0);
+
+                m_Elements[0].gameObject.SetActive(ElementCount > 0);
             }
         }
         /// <summary>
@@ -202,51 +303,82 @@ namespace BXFW.UI
         /// (and not reset the ref object) just set the <see cref="ElementCount"/> to zero.
         /// </br>
         /// </summary>
-        public override void ResetElements()
+        public override void ResetElements(bool clearChildTransform = false)
         {
             ElementCount = 0;
             // Destroy first object
-            if (uiElements.Count >= 1 && uiElements[0] != null)
+            if (m_Elements.Count >= 1 && m_Elements[0] != null)
             {
-                GameObject destroyObject = uiElements[0].gameObject;
+                GameObject destroyObject = m_Elements[0].gameObject;
 #if UNITY_EDITOR
                 // Playing check
                 if (Application.isPlaying)
+                {
                     Destroy(destroyObject);
+                }
                 else
-                    DestroyImmediate(destroyObject);
+                {
+                    ManagerDestroyImmediate(destroyObject);
+                }
 #else
                 // No need for that on built games
                 Destroy(destroyObject);
 #endif
             }
 
-            uiElements.Clear();
+            // Clear the child transform
+            if (clearChildTransform)
+            {
+                while (ParentTransform.childCount > 0)
+                {
+                    GameObject destroyObject = ParentTransform.GetChild(0).gameObject;
+#if UNITY_EDITOR
+                    if (Application.isPlaying)
+                    {
+                        Destroy(destroyObject);
+                    }
+                    else
+                    {
+                        ManagerDestroyImmediate(destroyObject);
+                    }
+#else
+                    Destroy(destroyObject);
+#endif
+                }
+            }
+
+            m_Elements.Clear();
             // Since the 'ElementCount' is 0, set the object to be disabled by default.
-            CreateUIElement(false).gameObject.SetActive(false);
+            InternalCreateUIElement(false).gameObject.SetActive(false);
         }
 
         /// <summary>
-        /// Removes nulls from the list <see cref="uiElements"/>.
+        /// Removes nulls from the list <see cref="m_Elements"/>.
         /// </summary>
         protected void CleanupElementsList()
         {
-            uiElements.RemoveAll(elem => elem == null);
+            m_Elements.RemoveAll(elem => elem == null);
         }
 
         public IEnumerator<TElement> GetEnumerator()
         {
-            return uiElements.GetEnumerator();
+            return m_Elements.GetEnumerator();
         }
-
+        public override IEnumerable<Component> IterableElements()
+        {
+            foreach (TElement elem in m_Elements)
+            {
+                yield return elem;
+            }
+        }
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return uiElements.GetEnumerator();
+            return m_Elements.GetEnumerator();
         }
 
         public bool Equals(IEnumerable<TElement> other)
         {
-            return Enumerable.SequenceEqual(uiElements, other);
+            return Enumerable.SequenceEqual(m_Elements, other);
         }
     }
 }

@@ -16,8 +16,8 @@ namespace BXFW
         /// </summary>
         public static void DrawBoxCollider(this Transform transform, Color gizmoColor, BoxCollider boxCollider, float alphaForInsides = 0.3f)
         {
-            // Save the color in a temporary variable to not overwrite changes in the inspector (if the sent-in color is a serialized variable).
-            var color = gizmoColor;
+            // Save the color in a temporary variable to not overwrite other Gizmos
+            Color prevColor = Gizmos.color;
 
             // Change the gizmo matrix to the relative space of the boxCollider.
             // This makes offsets with rotation work
@@ -26,12 +26,12 @@ namespace BXFW
 
             // Draws the edges of the BoxCollider
             // Center is Vector3.zero, since we've transformed the calculation space in the previous step.
-            Gizmos.color = color;
+            Gizmos.color = gizmoColor;
             Gizmos.DrawWireCube(Vector3.zero, boxCollider.size);
 
             // Draws the sides/insides of the BoxCollider, with a tint to the original color.
-            color.a *= alphaForInsides;
-            Gizmos.color = color;
+            prevColor.a *= alphaForInsides;
+            Gizmos.color = gizmoColor;
             Gizmos.DrawCube(Vector3.zero, boxCollider.size);
         }
 
@@ -80,19 +80,22 @@ namespace BXFW
                 // Rotate using 'direction'.
                 Vector3 setVector = new Vector3(c, s, 0f);
                 if (direction != Vector3.zero)
+                {
                     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+                }
 
                 v[i] = setVector;
             }
 
+            // Draw loop
             int len = v.Length;
             for (int i = 0; i < len; i++)
             {
-                // Calculate sphere points using radius
-                Vector3 sX = pos + (radius * v[(0 * len) + i]);
-                Vector3 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
-
-                Gizmos.DrawLine(sX, eX);
+                // Calculate sphere points with radius and relative positioning
+                Vector3 start = pos + (radius * v[i]);
+                Vector3 end = pos + (radius * v[(i + 1) % len]);
+                // Draw line
+                Gizmos.DrawLine(start, end);
             }
         }
         /// <summary>
@@ -105,6 +108,74 @@ namespace BXFW
             Gizmos.color = color;
             DrawWireCircle(pos, radius, direction);
             Gizmos.color = gColor;
+        }
+
+        /// <summary>
+        /// Draws an arc.
+        /// </summary>
+        /// <param name="origin">World point origin point of the arc.</param>
+        /// <param name="rotation">Rotation of this arc.</param>
+        /// <param name="distance">Distance relative to the origin.</param>
+        /// <param name="arcAngle">The size of the arc, in degrees. Converted to radians by <see cref="Mathf.Deg2Rad"/>.</param>
+        /// <param name="drawLinesFromOrigin">Draws 2 lines towards the starting and ending position from <paramref name="origin"/>.</param>
+        public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            // rotate direction by that so it actually looks towards
+            // The center of the arc is the (direction * origin) * distance), but it's not needed.
+            
+            // this number should be even, but an odd number of segments are drawn
+            // because i am still stuck in how to do for loops
+            int segments = 48;
+            int halfSegments = segments / 2;
+
+            // Draw origin line for initial
+            Vector3 prevPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(-arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(-arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            if (drawLinesFromOrigin)
+            {
+                Gizmos.DrawLine(origin, prevPosition);
+            }
+
+            for (int i = -halfSegments + 1; i < halfSegments; i++)
+            {
+                // initial line is already drawn
+                // since lerp only goes from -0.49.. -> 0.49, the center arc lines will be drawn.
+                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.49..
+                float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
+                float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
+                Vector3 arcNextPosition = origin + (rotation * new Vector3(c, s) * distance);
+
+                // Primary line
+                Gizmos.DrawLine(prevPosition, arcNextPosition);
+
+                prevPosition = arcNextPosition;
+            }
+
+            // Final line
+            Vector3 lastPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            // Draw normal + origin line for the last time
+            Gizmos.DrawLine(prevPosition, lastPosition);
+            if (drawLinesFromOrigin)
+            { 
+                Gizmos.DrawLine(origin, lastPosition);
+            }
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, bool)"/>
+        /// <param name="direction">
+        /// Direction relative to the origin point.
+        /// Converted to a look rotation with upwards of <see cref="Vector3.up"/> and rotated in <see cref="Vector3.up"/> axis by 90f degrees.
+        /// </param>
+        public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            Quaternion rotation = direction == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(direction, Vector3.up) * Quaternion.AngleAxis(90f, Vector3.up);
+            DrawArc(origin, rotation, distance, arcAngle, drawLinesFromOrigin);
         }
 
         /// <summary>
@@ -124,15 +195,16 @@ namespace BXFW
 
             var restoreColor = GUI.color;
             GUI.color = color;
-            if (textStyle == null)
-                textStyle = GUI.skin.label;
+            textStyle ??= GUI.skin.label;
 
             var view = SceneView.currentDrawingSceneView;
             Vector3 screenPos = view.camera.WorldToScreenPoint(worldPos);
 
             if (cullText)
             {
-                if (screenPos.y < 0 || screenPos.y > Screen.height || screenPos.x < 0 || screenPos.x > Screen.width || screenPos.z < 0 || 
+                if (screenPos.y < 0 || screenPos.y > Screen.height ||
+                    screenPos.x < 0 || screenPos.x > Screen.width ||
+                    screenPos.z < 0 || 
                     (textStyle != null && textStyle.fontSize <= 0))
                 {
                     GUI.color = restoreColor;
@@ -147,7 +219,7 @@ namespace BXFW
 
             Handles.EndGUI();
 #else
-            Debug.LogWarning("[GizmoUtility::DrawText] DrawText only works in unity editor.");
+            Debug.LogError("[GizmoUtility::DrawText] DrawText only works in unity editor.");
 #endif
         }
         // -- textSize
@@ -243,11 +315,11 @@ namespace BXFW
             DrawText(text, worldPos, Color.white, null, 0f, 0f, true);
         }
 
-        internal static Vector3 TransformByPixel(Vector3 position, float x, float y)
+        private static Vector3 TransformByPixel(Vector3 position, float x, float y)
         {
             return TransformByPixel(position, new Vector3(x, y));
         }
-        internal static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
+        private static Vector3 TransformByPixel(Vector3 position, Vector3 translateBy)
         {
 #if UNITY_EDITOR
             Camera cam = SceneView.currentDrawingSceneView.camera;

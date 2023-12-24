@@ -2,9 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 using UnityEditor;
 using UnityEngine;
@@ -13,8 +11,8 @@ using UnityEditor.ProjectWindowCallback;
 namespace BXFW.Tools.Editor
 {
     /// <summary>
-    /// Order of drawing GUI when a match is satisfied in method :
-    /// <see cref="EditorAdditionals.DrawCustomDefaultInspector(SerializedObject, Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}})"/>.
+    /// An enum used to denote the order of drawing.
+    /// <br>On certain methods, multiple GUI can be drawn on different orders if plausible.</br>
     /// </summary>
     [Flags]
     public enum MatchGUIActionOrder
@@ -27,17 +25,12 @@ namespace BXFW.Tools.Editor
         OmitAndInvoke = Omit | After
     }
 
+    /// <summary>
+    /// Contains variety of editor related utilities.
+    /// </summary>
     public static class EditorAdditionals
     {
-        #region Other
-        /// <summary>
-        /// Directory of the 'Resources' file (for bxfw assets generally).
-        /// <br>Returns the 'Editor' and other necessary folders for methods that take absolute paths.</br>
-        /// </summary>
-        public static readonly string ResourcesDirectory = string.Format("{0}/Assets/Resources", Directory.GetCurrentDirectory());
-        #endregion
-
-        #region Prefab Utility
+        // -- Prefab Utility
         /// <summary>
         /// NOTES ABOUT THIS CLASS:
         /// <para>
@@ -45,7 +38,7 @@ namespace BXFW.Tools.Editor
         ///     <br>2: It edits (because it's callback of <see cref="ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int, EndNameEditAction, string, Texture2D, string)"/>, what type of method is that?)</br>
         /// </para>
         /// </summary>
-        internal class CreateAssetEndNameEditAction : EndNameEditAction
+        private class CreateAssetEndNameEditAction : EndNameEditAction
         {
             /// <summary>
             /// Called when the creation ends.
@@ -77,19 +70,24 @@ namespace BXFW.Tools.Editor
             }
         }
 
+        // Use <see cref="EditorUtility"/> & <see cref="AssetDatabase"/>'s utility functions to make meaning out of this method.
+        // The 'how to use' was found from the U2D sprite spline stuff.
         /// <summary>
         /// Creates an instance of prefab <paramref name="prefabReferenceTarget"/> and renames it like an new object was created.
-        /// <br><b>NOTE</b> : Make sure '<paramref name="prefabReferenceTarget"/>' is an prefab!</br>
+        /// <br><b>NOTE</b> : Make sure '<paramref name="prefabReferenceTarget"/>' is a prefab!</br>
         /// </summary>
-        /// <param name="prefabReferenceTarget">The prefab target. Make sure this is an prefab.</param>
+        /// <param name="prefabReferenceTarget">The prefab target. Make sure this is a prefab.</param>
         /// <param name="path">Creation path. If left null the <see cref="Selection.activeObject"/> or the root "Assets" folder will be selected. (depending on which one is null)</param>
         /// <param name="onRenameEnd">Called when object is renamed. The <see cref="int"/> parameter is the InstanceID of the object.</param>
-        // Use <see cref="EditorUtility"/> & <see cref="AssetDatabase"/>'s utility functions to make meaning out of this method. The 'how to use' was found from the U2D stuff.
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="DirectoryNotFoundException"/>
         public static void CopyPrefabReferenceAndRename(GameObject prefabReferenceTarget, string path = null, Action<int> onRenameEnd = null)
         {
             // Create at the selected directory
             if (string.IsNullOrEmpty(path))
+            {
                 path = Selection.activeObject == null ? "Assets" : AssetDatabase.GetAssetPath(Selection.activeObject);
+            }
 
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), path)))
             {
@@ -97,7 +95,7 @@ namespace BXFW.Tools.Editor
             }
             if (PrefabUtility.GetCorrespondingObjectFromSource(prefabReferenceTarget) == null)
             {
-                throw new MissingReferenceException(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Prefab to copy is invalid (not a prefab). prefabTarget was = '{0}'", prefabReferenceTarget));
+                throw new ArgumentException(string.Format("[EditorAdditionals::CopyPrefabInstanceAndRename] Prefab to copy is invalid (not a prefab). prefabTarget was = '{0}'", prefabReferenceTarget));
             }
 
             // Get path & target prefab to copy
@@ -105,7 +103,7 @@ namespace BXFW.Tools.Editor
             path = AssetDatabase.GenerateUniqueAssetPath($"{Path.Combine(path, targetPrefabInst.name)}.prefab"); // we are copying prefabs anyway
 
             // Register 'OnFileNamingEnd' function.
-            var assetEndNameAction = ScriptableObject.CreateInstance<CreateAssetEndNameEditAction>();
+            CreateAssetEndNameEditAction assetEndNameAction = ScriptableObject.CreateInstance<CreateAssetEndNameEditAction>();
             assetEndNameAction.OnRenameEnd += (int instanceIDSaved) =>
             {
                 var createdObject = EditorUtility.InstanceIDToObject(instanceIDSaved);
@@ -128,320 +126,117 @@ namespace BXFW.Tools.Editor
             // Note : Pass invalid 'Instance ID' for editing an new object
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(int.MaxValue - 1, assetEndNameAction, path, icon, AssetDatabase.GetAssetPath(targetPrefabInst.GetInstanceID()));
         }
-        // TODO : Add method to also copy from already existing instance id (overwrite method?)
-        #endregion
 
-        #region Property Field / Custom Property Drawer Helpers
-        // This allows for getting the property field target
-
-        // we could use c# string method abuse or SerializedObject.GetArrayIndexSomething(index) method.
-        // No, not really that is for getting the array object? idk this works good so no touchy unless it breaks
-        private static readonly Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
-
-        // TODO : Create a custom struct (SerializedPropertyTarget) that contains the following
-        // > FieldInfo, Target itself (typeless), Parent of the Target
-        // TODO 2 : Create a 'GetParentsOfTargets' method.
-
+        // - Normal
         /// <summary>
-        /// Returns the c# object targets.
-        /// <br>
-        /// It is heavily suggested that you use <see cref="GetTargetsNoAlloc(SerializedProperty, List{KeyValuePair{FieldInfo, object}})"/> 
-        /// instead for much better performance and most likely less memory leaks.<br/>(this method calls that method internally with a newly allocated array anyways)
-        /// </br>
+        /// Return the target property drawer for <paramref name="targetType"/>.
+        /// <br>This method throws <see cref="ArgumentException"/> if no property drawers were found.</br>
         /// </summary>
-        public static List<KeyValuePair<FieldInfo, object>> GetTargets(this SerializedProperty prop)
+        public static PropertyDrawer GetPropertyDrawerFromType(Type targetType)
         {
-            var list = new List<KeyValuePair<FieldInfo, object>>();
-            GetTargetsNoAlloc(prop, list);
-            return list;
-        }
-        /// <summary>
-        /// Returns the c# object targets (without allocating new arrays).
-        /// <br>
-        /// Useful for cases when the "<see cref="SerializedProperty.serializedObject"/>.isEditingMultipleObjects" is true 
-        /// (or for adding multi edit support for a property drawer), this will return all the object targets.
-        /// </br>
-        /// </summary>
-        /// <param name="prop">Target property.</param>
-        /// <param name="targetPairs">Array to write the properties into. The array is cleared then written into.</param>
-        /// <exception cref="ArgumentNullException"/>
-        public static void GetTargetsNoAlloc(this SerializedProperty prop, List<KeyValuePair<FieldInfo, object>> targetPairs)
-        {
-            if (prop == null)
-                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTargets] Parameter 'prop' is null.");
-            if (targetPairs == null)
-                throw new ArgumentNullException(nameof(targetPairs), "[EditorAdditionals::GetTargets] Array Parameter 'targetPairs' is null.");
-
-            targetPairs.Clear();
-            targetPairs.Capacity = prop.serializedObject.targetObjects.Length;
-
-            for (int i = 0; i < prop.serializedObject.targetObjects.Length; i++)
-            {
-                UnityEngine.Object targetedObject = prop.serializedObject.targetObjects[i];
-                if (targetedObject == null)
-                    continue;
-
-                targetPairs.Add(GetTarget(targetedObject, prop.propertyPath));
-            }
-        }
-
-        /// <summary>
-        /// Returns the c# object's fieldInfo and the instance object it comes with.
-        /// <br>Important NOTE : The instance object that gets returned with this method may be null.</br>
-        /// <br>In these cases use the <see langword="return"/>'s field info.</br>
-        /// <br>
-        /// NOTE 2 : The field info returned may not be the exact field info, 
-        /// as such case usually happens when you try to call 'GetTarget' on an array element.
-        /// In this case, to change the value of the array, you may need to copy the entire array, and call <see cref="FieldInfo.SetValue"/> to it.
-        /// </br>
-        /// </summary>
-        /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="InvalidCastException"/> 
-        public static KeyValuePair<FieldInfo, object> GetTarget(this SerializedProperty prop)
-        {
-            if (prop == null)
-                throw new ArgumentNullException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
-
-            return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
-        }
-        /// <summary>
-        /// Returns the c# object's fieldInfo and the PARENT object it comes with. (this is useful with <see langword="struct"/>)
-        /// <br>Important NOTE : The instance object that gets returned with this method may be null (or not).
-        /// In these cases use the return (the FieldInfo)</br>
-        /// <br/>
-        /// <br>If you are using this for <see cref="CustomPropertyDrawer"/> (that is on an array otherwise this note is invalid), this class has an <see cref="FieldInfo"/> property named <c>fieldInfo</c>, 
-        /// you can use that instead of the bundled field info.</br>
-        /// </summary>
-        /// <param name="prop">Property to get the c# object from.</param>
-        /// <exception cref="NullReferenceException"/>
-        /// <exception cref="InvalidCastException"/>
-        public static KeyValuePair<FieldInfo, object> GetParentOfTargetField(this SerializedProperty prop, int parentDepth = 1)
-        {
-            int lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.');
-            for (int i = 1; i < parentDepth; i++)
-                lastIndexOfPeriod = prop.propertyPath.LastIndexOf('.', lastIndexOfPeriod - 1);
-
-            if (lastIndexOfPeriod == -1)
-            {
-                // No depth, instead return the field info from this scriptable object (use the parent scriptable object ofc)
-                var fInfo = GetField(prop.serializedObject.targetObject, prop.name);
-
-                // Return the 'serializedObject.targetObject' as target, because it isn't a field (is literally an pointer) 
-                return new KeyValuePair<FieldInfo, object>(fInfo, prop.serializedObject.targetObject);
-            }
-
-            // lastPropertyName is buggy, it usually most likely assumes the invalid depth?
-            string propertyNamesExceptLast = prop.propertyPath.Substring(0, lastIndexOfPeriod);
-            var pair = GetTarget(prop.serializedObject.targetObject, propertyNamesExceptLast);
-
-            //return new KeyValuePair<FieldInfo, object>(pair.Key.FieldType.GetField(lastPropertyName), pair.Value);
-            return pair;
-        }
-
-        /// <summary>
-        /// Internal method to get parent from these given parameters.
-        /// <br>Traverses <paramref name="propertyRootParent"/> using reflection and finds the target field info + object ref in <paramref name="propertyPath"/>.</br>
-        /// </summary>
-        /// <param name="propertyRootParent">Target (parent) object of <see cref="SerializedProperty"/>. Pass <see cref="SerializedProperty.serializedObject"/>.targetObject.</param>
-        /// <param name="propertyPath">Path of the property. Pass <see cref="SerializedProperty.propertyPath"/>.</param>
-        /// <exception cref="InvalidCastException"/>
-        private static KeyValuePair<FieldInfo, object> GetTarget(UnityEngine.Object propertyRootParent, string propertyPath)
-        {
-            object target = propertyRootParent; // This is kinda required
-            FieldInfo targetInfo = null;
-            string[] propertyNames = propertyPath.Split('.');
-
-            bool isNextPropertyArrayIndex = false;
-
-            for (int i = 0; i < propertyNames.Length && target != null; i++)
-            {
-                // Alias the string name. (but we need for for the 'i' variable)
-                string propName = propertyNames[i];
-
-                if (propName == "Array" && target is IEnumerable)
-                {
-                    // Arrays in property path's are seperated like -> Array.data[index]
-                    isNextPropertyArrayIndex = true;
-                }
-                else if (isNextPropertyArrayIndex)
-                {
-                    // Gather -> data[index] -> the value on the 'index'
-                    isNextPropertyArrayIndex = false;
-                    Match m = ArrayIndexCapturePattern.Match(propName);
-
-                    // Object is actually an array that unity serializes
-                    if (m.Success)
-                    {
-                        var arrayIndex = int.Parse(m.Groups[1].Value);
-
-                        if (!(target is IEnumerable targetAsArray))
-                            throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
--> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
-
-                        // FIXME : Should use 'MoveNext' but i don't care. (stupid 'IEnumerator' wasn't started errors).
-                        var cntIndex = 0;
-                        var isSuccess = false;
-                        foreach (object item in targetAsArray)
-                        {
-                            if (cntIndex == arrayIndex)
-                            {
-                                // Update FieldInfo that will be returned
-
-                                // oh wait, that's impossible, riiight.
-                                // basically FieldInfo can't point into a c# array element member, only the parent array container as it's just the object
-                                // Because it isn't an actual field.
-                                // could use some unsafe {} but that doesn't put a guarantee of whether if will solve it.
-                                // (which it most likely won't because our result data is in ''safe'' FieldInfo type)
-
-                                // If the array contains a member that actually has a field, it updates fine though.
-                                // So you could use a wrapper class that just contains an explicit field (but we can't act like that, because c# arrays are covariant)
-                                // whatever just look at this : https://stackoverflow.com/questions/13790527/c-sharp-fieldinfo-setvalue-with-an-array-parameter-and-arbitrary-element-type
-
-                                // ---------- No FieldInfo? -------------
-                                // (would like to put ascii megamind here, but git will most likely break it)
-                                target = item;
-                                isSuccess = true;
-
-                                break;
-                            }
-
-                            cntIndex++;
-                        }
-
-                        if (!isSuccess)
-                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty {0} in array {1}.", propertyPath, targetAsArray));
-                    }
-                    else // Array parse failure, should only happen on the ends of the array (i.e size field)
-                    {
-                        // Instead of throwing an exception, get the object
-                        // (as this may be called for the 'int size field' on the editor, for some reason)
-                        try
-                        {
-                            targetInfo = GetField(target, propName);
-                            target = targetInfo.GetValue(target);
-                        }
-                        catch
-                        {
-                            // It can also have an non-existent field for some reason
-                            // Because unity, so we give up (with the last information we have)
-                            // Maybe we should print a warning, but it's not too much of a thing (just a fallback)
-
-                            return new KeyValuePair<FieldInfo, object>(targetInfo, target);
-                        }
-                    }
-                }
-                else
-                {
-                    targetInfo = GetField(target, propName);
-                    target = targetInfo.GetValue(target);
-                }
-            }
-
-            return new KeyValuePair<FieldInfo, object>(targetInfo, target);
-        }
-        /// <summary>
-        /// Returns the type of the property's target.
-        /// </summary>
-        /// <param name="property">Property to get type from.</param>
-        public static Type GetPropertyType(this SerializedProperty property)
-        {
-            return property.GetTarget().Key.FieldType;
-        }
-        /// <summary>
-        /// Returns the (last array) index of this property in the array.
-        /// <br>Returns <c>-1</c> if not in an array.</br>
-        /// </summary>
-        public static int GetPropertyArrayIndex(this SerializedProperty property)
-        {
-            const string AD_STR = "Array.data[";
-            int arrayDefLastIndex = property.propertyPath.LastIndexOf(AD_STR);
-            if (arrayDefLastIndex < 0)
-                return -1;
-
-            string indStr = property.propertyPath.Substring(arrayDefLastIndex + AD_STR.Length).TrimEnd(']');
-            return int.Parse(indStr);
-        }
-        /// <summary>
-        /// Internal helper method for getting field from properties.
-        /// <br>Gets the target normally, if not found searches in <see cref="Type.BaseType"/>.</br>
-        /// </summary>
-        private static FieldInfo GetField(object target, string name, Type targetType = null)
-        {
-            if (string.IsNullOrEmpty(name))
-                throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
-
             if (targetType == null)
             {
-                targetType = target.GetType();
+                throw new ArgumentNullException(nameof(targetType), "[EditorAdditionals::GetTargetPropertyDrawer] Given Type argument is null.");
             }
 
-            // This won't work for struct childs because GetField does the normal c# behaviour
-            // (and it's because c# structs are stackalloc)
-            FieldInfo fi = targetType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(PropertyDrawer))         // Internal class is contained in the same assembly (UnityEditor.CoreModule)
+                .GetType("UnityEditor.ScriptAttributeUtility", true)                             // Internal class that has dictionary for all custom PropertyDrawer's
+                .GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static) // Utility method to get type from the internal class
+                .Invoke(null, new object[] { targetType });                                      // Call with the type parameter. It will return a type that needs instantiation using Activator.
 
-            // If the field info is present.
-            if (fi != null)
+            if (propertyDrawerType == null)
             {
-                return fi;
+                throw new ArgumentException($"[EditorAdditionals::GetTargetPropertyDrawer] Given type {targetType} has no property drawer. Ensure the type is valid and serializable by unity.", nameof(targetType));
             }
 
-            // If not found, search in parent
-            if (targetType.BaseType != null)
+            // PropertyDrawer's don't inherit UnityEngine.Object and thus can be created normally
+            return (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
+        }
+        /// <summary>
+        /// Return the target property drawer for <paramref name="targetType"/>.
+        /// This method catches the thrown exceptions of <see cref="GetPropertyDrawerFromType(Type)"/>.
+        /// </summary>
+        public static bool TryGetPropertyDrawerFromType(Type targetType, out PropertyDrawer drawer)
+        {
+            drawer = null;
+
+            try
             {
-                return GetField(target, name, targetType.BaseType);
+                drawer = GetPropertyDrawerFromType(targetType);
+            }
+            catch
+            {
+                return false;
             }
 
-            throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
+            return true;
+        }
+        // - Generic
+        /// <inheritdoc cref="GetPropertyDrawerFromType(Type)"/>
+        public static PropertyDrawer GetPropertyDrawerFromType<T>()
+        {
+            return GetPropertyDrawerFromType(typeof(T));
+        }
+        /// <inheritdoc cref="TryGetPropertyDrawerFromType(Type, out PropertyDrawer)"/>
+        public static bool TryGetPropertyDrawerFromType<T>(out PropertyDrawer drawer)
+        {
+            return TryGetPropertyDrawerFromType(typeof(T), out drawer);
         }
 
         /// <summary>
         /// Get the property drawer for the field type that you are inspecting.
-        /// <br>Very useful for <c>Attribute</c> targeting PropertyDrawers.</br>
+        /// <br>Very useful for <c><see cref="Attribute"/></c> targeting PropertyDrawers.</br>
         /// <br>Will throw <see cref="InvalidOperationException"/> if called from a property drawer that's target is an actual non-attribute class.</br>
         /// </summary>
         /// TODO : Maybe create a new 'PropertyDrawer' class named 'AttributePropertyDrawer' with better enforcement?
         public static PropertyDrawer GetTargetPropertyDrawer(PropertyDrawer requester)
         {
             if (requester == null)
+            {
                 throw new ArgumentNullException(nameof(requester), "[EditorAdditionals::GetPropertyDrawer] Passed parameter was null.");
+            }
 
+            // -- Assert the requester to be a property drawer for an attribute
+            // - This is done to not get the same property drawer as the requester which may cause an overflow
             // Get the attribute type for target PropertyDrawer's CustomPropertyDrawer target type
-            Type attributeTargetType = (Type)typeof(CustomPropertyDrawer).GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
+            Type attributeTargetType = (Type)typeof(CustomPropertyDrawer)
+                .GetField("m_Type", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(requester.GetType().GetCustomAttribute(typeof(CustomPropertyDrawer)));
+            // Check if the CustomPropertyDrawer is for an attribute
             if (!attributeTargetType.GetBaseTypes().Contains(typeof(Attribute)))
+            {
                 throw new InvalidOperationException(string.Format("[EditorAdditionals::GetPropertyDrawer] Tried to get a property drawer from drawer {0}, use this method only on ATTRIBUTE targeting property drawers. Returned 'PropertyDrawer' will be junk, and will cause 'StackOverflowException'.", requester.GetType()));
+            }
 
-            Type propertyDrawerType = (Type)Assembly.GetAssembly(typeof(SceneView)).             // Internal class is contained in the same assembly (UnityEditor.CoreModule)
-                GetType("UnityEditor.ScriptAttributeUtility", true).                             // Internal class that has dictionary for all custom PropertyDrawer's
-                GetMethod("GetDrawerTypeForType", BindingFlags.NonPublic | BindingFlags.Static). // Utility method to get type from the internal class
-                Invoke(null, new object[] { requester.fieldInfo.FieldType });                    // Call with the type parameter. It will return a type that needs instantiation using Activator.
-
-            // Ignore this, this means that there's no 'PropertyDrawer' implemented.
-            if (propertyDrawerType == null)
+            if (!TryGetPropertyDrawerFromType(requester.fieldInfo.FieldType, out PropertyDrawer resultDrawer))
+            {
+                // No default drawer
                 return null;
+            }
 
-            PropertyDrawer resultDrawer = (PropertyDrawer)Activator.CreateInstance(propertyDrawerType);
             if (resultDrawer != null)
             {
-                // Leave m_Attribute as is, there's no need to access that.
+                // Leave m_Attribute as is, there's no need to access that (as this is most likely not a custom attribute property drawer)
                 typeof(PropertyDrawer).GetField("m_FieldInfo", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(resultDrawer, requester.fieldInfo);
             }
 
             return resultDrawer;
         }
-        #endregion
 
-        #region Inspector-Editor Draw
+        // -- Inspector-Editor Draw
         /// <summary>
         /// Repaints inspector(s) with target <see cref="SerializedObject"/> <paramref name="obj"/>.
         /// <br>NOTE: Only works for custom editors stored inside the <c>Inspector</c> window, for all other windows use <see cref="RepaintAll"/>.</br>
         /// </summary>
         public static void RepaintInspector(SerializedObject obj)
         {
+            // Undocumented class = ActiveEditorTracker (Exists since 2017.1)
             foreach (var i in ActiveEditorTracker.sharedTracker.activeEditors)
             {
                 if (i.serializedObject != obj)
+                {
                     continue;
+                }
 
                 i.Repaint();
             }
@@ -457,45 +252,6 @@ namespace BXFW.Tools.Editor
                 w.Repaint();
             }
         }
-        /// <summary>
-        /// Make gui area drag and droppable.
-        /// </summary>
-        public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Func<bool> shouldAcceptDragCheck, Rect? customRect = null)
-        {
-            var shouldAcceptDrag = shouldAcceptDragCheck.Invoke();
-            if (!shouldAcceptDrag)
-                return;
-
-            MakeDroppableAreaGUI(onDragAcceptAction, customRect);
-        }
-        /// <summary>
-        /// Make gui area drag and drop.
-        /// <br>This always accepts drops.</br>
-        /// <br>Usage : <see cref="DragAndDrop.objectReferences"/> is all you need.</br>
-        /// </summary>
-        public static void MakeDroppableAreaGUI(Action onDragAcceptAction, Rect? customRect = null)
-        {
-            Event evt = Event.current;
-            switch (evt.type)
-            {
-                case EventType.DragUpdated:
-                case EventType.DragPerform:
-                    Rect dropArea = customRect ??
-                        GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-
-                    if (!dropArea.Contains(evt.mousePosition))
-                        return;
-
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-
-                    if (evt.type == EventType.DragPerform)
-                    {
-                        DragAndDrop.AcceptDrag();
-                        onDragAcceptAction?.Invoke();
-                    }
-                    break;
-            }
-        }
 
         /// <summary>
         /// Draw default inspector with commands inbetween. (Allowing to put custom gui between).
@@ -506,15 +262,16 @@ namespace BXFW.Tools.Editor
         /// If passed <see langword="null"/> this method will act like <see cref="UnityEditor.Editor.DrawDefaultInspector"/>.
         /// </param>
         /// <example>
-        /// // Info : The Generic '/\' is replaced with '[]'.
-        /// serializedObject.DrawDefaultInspector(new Dictionary[string, KeyValuePair[MatchGUIActionOrder, Action]] 
+        /// <![CDATA[
+        /// serializedObject.DrawDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> 
         /// {
-        ///     { nameof(FromAnyClass.ElementNameYouWant), new KeyValuePair[MatchGUIActionOrder, System.Action](MatchGUIActionOrder.Before, () => 
+        ///     { nameof(FromAnyClass.ElementNameYouWant), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.Before, () => 
         ///         {
         ///             // Write your commands here.
         ///         })
         ///     }
         /// });
+        /// ]]>
         /// </example>
         /// <returns><see cref="EditorGUI.EndChangeCheck"/> (whether if a field was modified inside this method)</returns>
         public static bool DrawCustomDefaultInspector(this SerializedObject obj, Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> onStringMatchEvent)
@@ -530,7 +287,6 @@ namespace BXFW.Tools.Editor
             obj.UpdateIfRequiredOrScript();
 
             // Loop through properties and create one field (including children) foreach top level property.
-            // Why unity? includeChildren = 'expanded'
             SerializedProperty property = obj.GetIterator();
             bool expanded = true;
             while (property.NextVisible(expanded))
@@ -563,18 +319,40 @@ namespace BXFW.Tools.Editor
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
-                                    Pair.Value();
+                                {
+                                    try
+                                    {
+                                        Pair.Value();
+                                    }
+                                    catch (ExitGUIException)
+                                    {
+                                        return true;
+                                    }
+                                }
                             }
 
                             if ((Pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
+                            {
                                 EditorGUILayout.PropertyField(property, true);
+                            }
 
                             if ((Pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
                             {
                                 hasInvokedCustomCommand = true;
 
                                 if (Pair.Value != null)
-                                    Pair.Value();
+                                {
+                                    try
+                                    {
+                                        Pair.Value();
+                                    }
+                                    // Stop drawing GUI if this was thrown
+                                    // This is how the unity does flow control to it's interface, amazing really.
+                                    catch (ExitGUIException)
+                                    {
+                                        return true;
+                                    }
+                                }
                             }
 
                             expanded = false;
@@ -602,270 +380,65 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public static bool IsDisposed(this SerializedObject obj)
         {
-            return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
-        }
-        /// <summary>
-        /// Returns whether if this 'SerializedProperty' is disposed.
-        /// </summary>
-        public static bool IsDisposed(this SerializedProperty obj)
-        {
-            return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(obj) == IntPtr.Zero;
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+            }
+
+            return (IntPtr)typeof(SerializedObject).GetField("m_NativeObjectPtr", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj) == IntPtr.Zero;
         }
 
         /// <summary>
-        /// Returns the children (regardless of visibility) of the SerializedProperty.
-        /// <br/>
-        /// <br>This method won't work with Linq methods that cast this <see cref="IEnumerable{T}"/> 
-        /// to arrays because it doesn't 'Copy()' the returned element. You will need a custom delegate to convert each element to a copied one.</br>
+        /// Calls the 'OnValidate' method on <paramref name="obj"/>'s <see cref="SerializedObject.targetObjects"/>.
         /// </summary>
-        public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)
+        /// <param name="obj">SerializedObject list to call 'OnValidate' on. This cannot be null or disposed.</param>
+        /// <returns>Whether if any of the objects had 'OnValidate' method and those were called.</returns>
+        public static bool CallOnValidate(this SerializedObject obj)
         {
-            property = property.Copy();
-            SerializedProperty nextElement = property.Copy();
-            
-            bool hasNextElement = nextElement.NextVisible(false);
-            if (!hasNextElement)
+            // GameObject.SendMessage is not viable due to the objects could be ScriptableObject,
+            // which can have a OnValidate but ScriptableObject has no SendMessage, so use Reflection
+            if (obj == null)
             {
-                nextElement = null;
+                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::CallOnValidate] Target was null.");
+            }
+            if (obj.IsDisposed())
+            {
+                throw new ArgumentException("[EditorAdditionals::CallOnValidate] Given SerializedObject was disposed. Cannot do anything.", nameof(obj));
             }
 
-            // Get next child
-            property.NextVisible(true);
-
-            do
+            bool calledOnValidateOnce = false;
+            foreach (UnityEngine.Object target in obj.targetObjects)
             {
-                // Skipped to the next element
-                if (SerializedProperty.EqualContents(property, nextElement))
+                if (CallOnValidate(target))
                 {
-                    yield break;
-                }
-
-                // yield return the current gathered child property.
-                yield return property;
-            }
-            while (property.NextVisible(false));
-        }
-
-        /// <summary>
-        /// Gets visible children of '<see cref="SerializedProperty"/>' at 1 level depth.
-        /// </summary>
-        /// <param name="serializedProperty">Parent '<see cref="SerializedProperty"/>'.</param>
-        /// <returns>Collection of '<see cref="SerializedProperty"/>' children.</returns>
-        public static IEnumerable<SerializedProperty> GetVisibleChildren(this SerializedProperty serializedProperty)
-        {
-            SerializedProperty currentProperty = serializedProperty.Copy();     // Children iterating property
-            SerializedProperty nextSiblingProperty = serializedProperty.Copy(); // Non-children property
-            {
-                // Move to the initial non-children visible in the next invisible sibling property
-                nextSiblingProperty.NextVisible(false);
-            }
-
-            // Check initial visibility with children
-            if (currentProperty.NextVisible(true))
-            {
-                do
-                {
-                    // Check if the 'currentProperty' is now equal to a 'non-children' property
-                    if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
-                        break;
-
-                    // Use '.Copy' for making 'Enumerable.ToArray' work
-                    // This is due to yield return'd value will be always be the same 'currentProperty' if we don't copy it
-                    // But for a linear read of this IEnumerable without laying it out to an array, it will be fine
-                    // tl;dr : basically copy the value to make it different
-                    using SerializedProperty copyProp = currentProperty.Copy();
-                    yield return copyProp;
-                }
-                while (currentProperty.NextVisible(false));
-            }
-        }
-
-        [Flags]
-        public enum EditorListOption
-        {
-            None = 0,
-            ListSize = 1,
-            ListLabel = 2,
-            Default = ListSize | ListLabel
-        }
-        /// <summary>
-        /// Shows an array inspector (using unity default).
-        /// </summary>
-        public static void ShowEditorList(SerializedProperty list, EditorListOption options = EditorListOption.Default)
-        {
-            bool showListLabel = (options & EditorListOption.ListLabel) != 0, showListSize = (options & EditorListOption.ListSize) != 0;
-
-            if (showListLabel)
-            {
-                GUILayout.BeginHorizontal();
-                EditorGUILayout.PropertyField(list);
-                EditorGUI.indentLevel += 1;
-            }
-
-            if (!showListLabel || list.isExpanded)
-            {
-                if (showListSize)
-                {
-                    EditorGUILayout.PropertyField(list.FindPropertyRelative("Array.size"));
-                    if (showListLabel)
-                    {
-                        GUILayout.EndHorizontal();
-                    }
-                }
-
-                for (int i = 0; i < list.arraySize; i++)
-                {
-                    EditorGUILayout.PropertyField(list.GetArrayElementAtIndex(i));
+                    calledOnValidateOnce = true;
                 }
             }
 
-            if (showListLabel)
-            {
-                EditorGUI.indentLevel -= 1;
-            }
-        }
-        /// <summary>
-        /// Create array with fields.
-        /// This is a more primitive array drawer, but it works.
-        /// </summary>
-        /// <param name="obj">Serialized object of target.</param>
-        /// <param name="arrayName">Array field name.</param>
-        /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other methods.</param>
-        public static void UnityArrayGUI(this SerializedObject obj, string arrayName, Action<int> onArrayFieldDrawn = null)
-        {
-            UnityArrayGUI(obj, true, arrayName, onArrayFieldDrawn);
-        }
-        /// <summary>
-        /// Create array with fields.
-        /// This is a more primitive array drawer, but it works.
-        /// </summary>
-        /// <param name="obj">Serialized object of target.</param>
-        /// <param name="arrayName">Array field name.</param>
-        /// <param name="onArrayFieldDrawn">Called when the array field is drawn, but not required unlike other 'UnityArrayGUI' methods.</param>
-        public static bool UnityArrayGUI(this SerializedObject obj, bool toggle, string arrayName, Action<int> onArrayFieldDrawn = null)
-        {
-            // Get size of array
-            SerializedProperty arraySizeTarget = obj.FindProperty(string.Format("{0}.Array.size", arrayName));
-            int arrSize = arraySizeTarget.intValue;
-            string arrName = obj.FindProperty(arrayName).name;
-
-            // Also draws the 'PropertyField'
-            void OnFieldDrawnCustom(int i)
-            {
-                // Create property field.
-                SerializedProperty prop = obj.FindProperty(arrayName).GetArrayElementAtIndex(i);
-
-                // If our property is null, ignore.
-                if (prop == null)
-                    throw new NullReferenceException(string.Format("[EditorAdditionals::UnityArrayGUI] The drawn property at index {0} does not exist. This should not happen.", i));
-
-                EditorGUILayout.PropertyField(prop);
-
-                onArrayFieldDrawn?.Invoke(i);
-            }
-
-            bool toggleValue = UnityArrayCustomGUIInternal(toggle, new GUIContent(arrName), arrSize, (int sz) => { arraySizeTarget.intValue = sz; }, OnFieldDrawnCustom);
-            obj.ApplyModifiedProperties();
-            return toggleValue;
+            return calledOnValidateOnce;
         }
 
         /// <summary>
-        /// Create custom GUI array with fields. (if you are lazy for doing a <see cref="PropertyDrawer"/>)
-        /// <br>Needs to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
+        /// Calls the 'OnValidate' method on <paramref name="target"/>.
         /// </summary>
-        /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
-        /// <param name="label">Label to draw for the array.</param>
-        /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
-        /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
-        public static bool UnityArrayGUICustom<T>(bool toggle, GUIContent label, ref T[] array, Action<int> onArrayFieldDrawn)
-            where T : new()
+        /// <param name="target">Target to call 'OnValidate' on. This can be null, but this method will always return <see langword="false"/> in a case of null.</param>
+        /// <returns>Whether if the given <paramref name="target"/> had 'OnValidate' method it was called.</returns>
+        public static bool CallOnValidate(UnityEngine.Object target)
         {
-            List<T> copyArray = new List<T>(array); // Allocate tempoary resizable array
-            bool toggleStatus = UnityArrayCustomGUIInternal(toggle, label, copyArray.Count, (int sz) => { copyArray.Resize(sz); }, onArrayFieldDrawn);
-            // This only works for resize, we also have to get a 'ref array' for this to be doable.
-            if (copyArray.Count != array.Length)
+            if (target == null)
             {
-                array = copyArray.ToArray();        // Set the tempoary array to the ref array
+                return false;
             }
 
-            // While this will cause a ton of garbage, unless we have lower level control of c# 
-            // (SerializedProperty.m_NativePropertyPtr with documentation or something similar) doubt i can do better while avoiding boilerplate.
-            // The original plan was to pass the ref into a delegate and use Array.Resize but ref parameters on delegates are no-no :/
-            return toggleStatus;
-        }
-        /// <summary>
-        /// Create custom GUI array with fields. (if you are lazy for doing a <see cref="PropertyDrawer"/>)
-        /// <br>Needs to take an persistent bool value for dropdown menu. Pass true always if required to be open.</br>
-        /// <br>Passes parameter 'label' as $"{typeof(T).Name} List"</br>
-        /// </summary>
-        /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
-        /// <param name="array">Generic draw target array. Required to be passed by reference as it's resized automatically.</param>
-        /// <param name="onArrayFieldDrawn">Event to draw generic ui when fired. <c>THIS IS REQUIRED.</c></param>
-        public static bool UnityArrayGUICustom<T>(bool toggle, ref T[] array, Action<int> onArrayFieldDrawn)
-            where T : new()
-        {
-            return UnityArrayGUICustom(toggle, new GUIContent(string.Format("{0} List", typeof(T).Name)), ref array, onArrayFieldDrawn);
-        }
-
-        /// <summary>
-        /// Draws a custom array view with a delegate that contains resizing function, and a custom GUI drawing function supplied by the client.
-        /// <br/><br/>
-        /// TODO : Add GUI Rect area placed drawing capabilities. Also retain GUILayout area while doing that 
-        /// (use the GUILayoutUtility.GetRect? or use some internal very secret method that does not allocate an area)
-        /// </summary>
-        private static bool UnityArrayCustomGUIInternal(bool toggle, GUIContent label, int arraySize, Action<int> onArrayResize, Action<int> onArrayFieldDrawn)
-        {
-            int prevIndent = EditorGUI.indentLevel;
-
-            EditorGUI.indentLevel = prevIndent + 2;
-            // Create the size & dropdown field
-            GUILayout.BeginHorizontal();
-
-            bool currToggleDropdwnState = GUILayout.Toggle(toggle, string.Empty, EditorStyles.popup, GUILayout.MaxWidth(20f));
-            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
-            GUILayout.FlexibleSpace();
-            int currentSizeField = Mathf.Clamp(EditorGUILayout.IntField("Size", arraySize, GUILayout.MaxWidth(200f), GUILayout.MinWidth(150f)), 0, int.MaxValue);
-            // Resize array
-            if (currentSizeField != arraySize)
+            // Looking for parameterless 'OnValidate' method
+            MethodInfo onValidateMethod = target.GetType().GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[0], null);
+            if (onValidateMethod == null)
             {
-                onArrayResize(currentSizeField);
-            }
-            GUILayout.EndHorizontal();
-
-            if (toggle)
-            {
-                EditorGUI.indentLevel = prevIndent + 3;
-                // Create the array fields (stupid)
-                for (int i = 0; i < arraySize; i++)
-                {
-                    EditorGUI.indentLevel--;
-                    EditorGUILayout.LabelField(string.Format("Element {0}", i), EditorStyles.boldLabel);
-                    EditorGUI.indentLevel++;
-
-                    onArrayFieldDrawn.Invoke(i);
-                }
-
-                EditorGUI.indentLevel = prevIndent + 1;
-                GUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("+"))
-                {
-                    currentSizeField = Mathf.Clamp(currentSizeField + 1, 0, int.MaxValue);
-                    onArrayResize(currentSizeField);
-                }
-                if (GUILayout.Button("-"))
-                {
-                    currentSizeField = Mathf.Clamp(currentSizeField - 1, 0, int.MaxValue);
-                    onArrayResize(currentSizeField);
-                }
-                GUILayout.EndHorizontal();
+                return false;
             }
 
-            // Keep previous indent
-            EditorGUI.indentLevel = prevIndent;
-
-            return currToggleDropdwnState;
+            onValidateMethod.Invoke(target, null);
+            return true;
         }
-        #endregion
     }
 }

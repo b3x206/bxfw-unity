@@ -1,68 +1,187 @@
 using UnityEngine;
 using UnityEditor;
-using BXFW.Data;
-using BXFW.Tools.Editor;
+using System;
+using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Linq;
+using BXFW.Data;
+using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// A <see cref="CultureInfo.TwoLetterISOLanguageName"/> names selector <see cref="SearchDropdown"/>.
+    /// </summary>
+    public class LocalizationKeySelectorDropdown : SearchDropdown
+    {
+        public class Item : SearchDropdownElement
+        {
+            /// <summary>
+            /// The two letter or whatever format localization key that this item has.
+            /// </summary>
+            public readonly string localeKey;
+            /// <summary>
+            /// Whether if this is an existing key on the localization data.
+            /// </summary>
+            public readonly bool exists = false;
+
+            public Item(string prettyName, string key, bool existing) : base(prettyName)
+            {
+                localeKey = key;
+                exists = existing;
+            }
+        }
+
+        /// <summary>
+        /// Data to generate the dropdown accordingly to.
+        /// </summary>
+        private readonly LocalizedTextData m_referenceData;
+        private readonly string m_editedLocale;
+        /// <summary>
+        /// Whether to add a none element, which selects an item with null <see cref="Item.localeKey"/>.
+        /// </summary>
+        public bool addNoneElement;
+        protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
+
+        private class CultureInfoTwoLetterComparer : IEqualityComparer<CultureInfo>
+        {
+            private static CultureInfoTwoLetterComparer m_Default;
+            public static CultureInfoTwoLetterComparer Default
+            {
+                get
+                {
+                    m_Default ??= new CultureInfoTwoLetterComparer();
+
+                    return m_Default;
+                }
+            }
+
+            public bool Equals(CultureInfo x, CultureInfo y)
+            {
+                if (x is null)
+                {
+                    return y is null;
+                }
+
+                return x.TwoLetterISOLanguageName == y.TwoLetterISOLanguageName;
+            }
+
+            public int GetHashCode(CultureInfo obj)
+            {
+                return obj.TwoLetterISOLanguageName.GetHashCode();
+            }
+        }
+
+        protected override SearchDropdownElement BuildRoot()
+        {
+            SearchDropdownElement rootItem = new SearchDropdownElement("Languages");
+            List<CultureInfo> addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures).Distinct(CultureInfoTwoLetterComparer.Default));
+            addableLanguageList.Sort((x, y) => x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName));
+
+            if (addNoneElement)
+            {
+                rootItem.Add(new Item("None", string.Empty, false));
+                rootItem.Add(new SearchDropdownSeperatorElement());
+            }
+
+            // Show selected ones if 'm_referenceData' does exist
+            if (m_referenceData != null)
+            {
+                foreach (KeyValuePair<string, string> idValuePair in m_referenceData)
+                {
+                    bool IsMatchingTwoLetterISO(CultureInfo ci)
+                    {
+                        return ci.TwoLetterISOLanguageName == idValuePair.Key;
+                    }
+
+                    // Remove + check if it was removed.
+                    int removeInfoIndex = addableLanguageList.IndexOf(IsMatchingTwoLetterISO);
+                    if (removeInfoIndex >= 0)
+                    {
+                        CultureInfo removeInfo = addableLanguageList[removeInfoIndex];
+                        string optionName = $"{removeInfo.EnglishName} ({idValuePair.Key}) [Exists]";
+                        Item keyOption = new Item(optionName, idValuePair.Key, true)
+                        {
+                            Selected = idValuePair.Key == m_editedLocale
+                        };
+                        rootItem.Add(keyOption);
+
+                        // Remove everything for duplicate two letters
+                        addableLanguageList.RemoveAll(IsMatchingTwoLetterISO);
+                    }
+                }
+
+                rootItem.Add(new SearchDropdownSeperatorElement());
+            }
+
+            // Show the rest of localizations
+            for (int i = 0; i < addableLanguageList.Count; i++)
+            {
+                CultureInfo info = addableLanguageList[i];
+                Item keyOption = new Item($"{info.EnglishName} ({info.TwoLetterISOLanguageName})", info.TwoLetterISOLanguageName, false)
+                {
+                    Selected = info.TwoLetterISOLanguageName == m_editedLocale
+                };
+                rootItem.Add(keyOption);
+            }
+
+            // Cannot constraint window size as that is not very possible.
+            return rootItem;
+        }
+
+        public LocalizationKeySelectorDropdown()
+        { }
+        /// <summary>
+        /// Adds the currently selected locale as <paramref name="editedLocale"/>.
+        /// </summary>
+        public LocalizationKeySelectorDropdown(string editedLocale)
+        {
+            m_editedLocale = editedLocale;
+        }
+        /// <summary>
+        /// Adds the currently selected locale as <paramref name="editedLocale"/> and the contained locale data keys as <paramref name="data"/>.
+        /// </summary>
+        public LocalizationKeySelectorDropdown(LocalizedTextData data, string editedLocale)
+        {
+            m_referenceData = data;
+            m_editedLocale = editedLocale;
+        }
+    }
+
     [CustomPropertyDrawer(typeof(LocalizedTextData))]
     public class LocalizedTextDataEditor : PropertyDrawer
     {
         /// <summary>
-        /// Height padding applied in the editor view.
-        /// </summary>
-        private const float PADDING = 2f;
-        /// <summary>
         /// Height of the text area.
         /// </summary>
-        private const float HEIGHT = 72f;
+        private const float TextAreaHeight = 72f;
         /// <summary>
         /// Indent applied (to child elements) when the property field is uncollapsed.
         /// </summary>
-        private const float INDENT = 15f;
+        private const float InnerElementIndent = 15f;
+
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext(2f);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            // Foldout
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             if (!property.isExpanded)
-                return EditorGUIUtility.singleLineHeight + PADDING;
+            {
+                return height;
+            }
 
-            return currentPropY + PADDING;
+            // TextID
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            // Selected Locale
+            height += EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+            // TextArea
+            height += TextAreaHeight + mainCtx.Padding;
+
+            return height;
         }
 
-        private float currentPropY = -1f;
-        private Rect GetPropertyRect(Rect parentRect, float customHeight = -1f)
-        {
-            var propHeight = customHeight > 0f ? customHeight : EditorGUIUtility.singleLineHeight;
-            //if (currentPropY == -1f)
-            //{
-            //    // First call
-            //    currentPropY = parentRect.y;
-            //}
-
-            Rect r = new Rect(parentRect.x, parentRect.y + currentPropY, parentRect.width, propHeight);
-            // Add height later
-            currentPropY += propHeight;
-
-            return r;
-        }
-
-        private string GetPropertyKey(SerializedProperty property)
-        {
-            return string.Format("{0}::{1}",
-                property.serializedObject.targetObject.name ?? property.serializedObject.targetObject.GetInstanceID().ToString(),
-                property.propertyPath);
-        }
-        /// <summary>
-        /// The currently edited locale for that <see cref="SerializedProperty"/>.
-        /// TODO : A persistent way of binding custom datas to <see cref="SerializedProperty"/>ies.
-        /// <br/>
-        /// <br>BXFW.Tools.Editor.SerializedPropertyCustomData[SerializedProperty prop].Get&lt;TObject&gt;(string dataName)?</br>
-        /// <br>Use a json-alike thing (not very much type safe or we could bind type names to bind data to ensure?)</br>
-        /// </summary>
-        private readonly Dictionary<string, string> editedLocales = new Dictionary<string, string>();
+        private static readonly string KeyEditLocale = $"{nameof(LocalizedTextDataEditor)}::EditedLocale";
         private static GUIStyle placeholderStyle;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -71,16 +190,16 @@ namespace BXFW.ScriptEditor
                 placeholderStyle = new GUIStyle(GUI.skin.label);
                 placeholderStyle.normal.textColor = Color.gray;
             }
+            mainCtx.Reset();
 
-            position.height -= PADDING;
-            position.y += PADDING / 2f;
-            currentPropY = -1f;
+            // TODO + FIXME : This style of getting property target will cause inability to change values of a LocalizedTextData that is on a struct.
+            // Use the 'property.FindPropertyRelative' instead and only use 'GetTarget' as a means of getting the property values if needed.
+            PropertyTargetInfo targetPair = property.GetTarget();
+            LocalizedTextData target = targetPair.value as LocalizedTextData;
 
-            var targetPair = property.GetTarget();
-            var target = targetPair.Value as LocalizedTextData;
-            var gEnabled = GUI.enabled;
+            position = EditorGUI.IndentedRect(position);
 
-            Rect initialFoldoutRect = GetPropertyRect(position);
+            Rect initialFoldoutRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
             label = EditorGUI.BeginProperty(initialFoldoutRect, label, property);
             property.isExpanded = EditorGUI.Foldout(initialFoldoutRect, property.isExpanded, label);
 
@@ -91,119 +210,96 @@ namespace BXFW.ScriptEditor
             }
 
             // Indent
-            position.x += INDENT;
-            position.width -= INDENT;
+            position.x += InnerElementIndent;
+            position.width -= InnerElementIndent;
+            // For some reason this gets used the other EditorGUI properties (and acts as if it was a bug)
+            // But it doesn't get used with EditorGUI.DropdownButton
+            int previousIndentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
 
             // Gather currently edited locale value
-            string editedLocaleValue = LocalizedTextData.DefaultLocale; // default
-            if (!editedLocales.TryGetValue(GetPropertyKey(property), out string savedEditedLocaleValue))
-            {
-                // Set saved value.
-                editedLocales.Add(GetPropertyKey(property), editedLocaleValue);
-                savedEditedLocaleValue = editedLocaleValue;
-            }
-            // Get saved Value
-            editedLocaleValue = savedEditedLocaleValue;
+            string editedLocaleValue = property.GetString(KeyEditLocale, LocalizedTextData.DefaultLocale); // default
             // Add to target if it does not exist
-            if (!target.Data.ContainsKey(editedLocaleValue))
+            if (!target.LocaleDatas.ContainsKey(editedLocaleValue))
             {
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
-                target.Data.Add(editedLocaleValue, string.Empty);
+                target.LocaleDatas.Add(editedLocaleValue, string.Empty);
             }
 
             // LocalizedTextData.TextID (could be useful for classifying in an array with linq commands)
-            Rect txtIDAreaRect = GetPropertyRect(position);
-            string tIDValue = EditorGUI.TextField(txtIDAreaRect, "Text ID", target.TextID);
+            Rect textIDAreaRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            string textIDValue = EditorGUI.TextField(textIDAreaRect, "Text ID", target.TextID);
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "set TextID value");
-                target.TextID = tIDValue;
+                target.TextID = textIDValue;
             }
 
-            // Get a empty property rect for nice spacing (yes this is a solution, i am expert at solving)
-            GetPropertyRect(position, PADDING * 2f);
-
             // Show the locale selector
-            Rect dropdownRect = GetPropertyRect(position);
-            if (EditorGUI.DropdownButton(new Rect(dropdownRect) { width = dropdownRect.width - 35 }, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
+            Rect baseDropdownRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            Rect dropdownRect = new Rect(baseDropdownRect) { width = baseDropdownRect.width - 35f };
+            if (EditorGUI.DropdownButton(dropdownRect, new GUIContent(string.Format("Locale ({0})", editedLocaleValue)), FocusType.Keyboard))
             {
-                var addableLanguageList = new List<CultureInfo>(CultureInfo.GetCultures(CultureTypes.NeutralCultures));
-                addableLanguageList.Sort((CultureInfo x, CultureInfo y) => { return x.TwoLetterISOLanguageName.CompareTo(y.TwoLetterISOLanguageName); });
-                GenericMenu menu = new GenericMenu();
-
-                menu.AddItem(new GUIContent("Cancel"), false, () => { });
-
-                // Add existing (to switch into locale previews)
-                menu.AddSeparator(string.Empty);
-                foreach (var idValuePair in target)
+                LocalizationKeySelectorDropdown localeSelectorDropdown = new LocalizationKeySelectorDropdown(target, editedLocaleValue);
+                localeSelectorDropdown.OnElementSelectedEvent += (SearchDropdownElement item) =>
                 {
-                    // Remove + check if it was removed.
-                    if (addableLanguageList.RemoveAll(ci => ci.TwoLetterISOLanguageName == idValuePair.Key) != 0)
+                    if (!(item is LocalizationKeySelectorDropdown.Item key))
                     {
-                        menu.AddItem(new GUIContent(string.Format("{0} (exists)", idValuePair.Key)), idValuePair.Key == editedLocaleValue, () =>
-                        {
-                            // Switch the currently edited locale.
-                            editedLocales[GetPropertyKey(property)] = idValuePair.Key;
-                            editedLocaleValue = idValuePair.Key;
-                            EditorAdditionals.RepaintAll();
-                            EditorGUIUtility.editingTextField = false;
-                        });
+                        return;
                     }
-                }
 
-                // Add non-existing
-                menu.AddSeparator(string.Empty);
-                for (int i = 0; i < addableLanguageList.Count; i++)
-                {
-                    CultureInfo info = addableLanguageList[i];
-
-                    menu.AddItem(new GUIContent(info.TwoLetterISOLanguageName.ToString()), false, () =>
+                    // Switch the currently edited locale, if the key doesn't exist create one.
+                    if (!key.exists)
                     {
                         Undo.RecordObject(property.serializedObject.targetObject, "add locale (dict)");
-                        editedLocales[GetPropertyKey(property)] = info.TwoLetterISOLanguageName;
-                        target.Data.Add(info.TwoLetterISOLanguageName, string.Empty);
-                        EditorAdditionals.RepaintAll();
-                        EditorGUIUtility.editingTextField = false;
-                    });
-                }
+                        target.LocaleDatas.Add(key.localeKey, string.Empty);
+                    }
 
-                menu.ShowAsContext();
+                    property.SetString(KeyEditLocale, key.localeKey);
+                    editedLocaleValue = key.localeKey;
+                    EditorAdditionals.RepaintAll();
+                    EditorGUIUtility.editingTextField = false;
+                };
+
+                localeSelectorDropdown.Show(dropdownRect);
             }
 
             // Remove locale menu button
-            GUI.enabled = target.Data.Keys.Count > 1;
-            Rect removeLocaleBtnRect = new Rect(dropdownRect) { x = dropdownRect.x + (dropdownRect.width - 30), width = 30 };
-            if (GUI.Button(removeLocaleBtnRect, new GUIContent("X")))
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(target.LocaleDatas.Keys.Count <= 1))
             {
-                // Remove from object
-                Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
-                target.Data.Remove(editedLocaleValue);
-                // Set edited locale value
-                editedLocaleValue = target.Data.Keys.First();
-                editedLocales[GetPropertyKey(property)] = editedLocaleValue;
+                Rect removeLocaleBtnRect = new Rect(baseDropdownRect) { x = baseDropdownRect.x + (baseDropdownRect.width - 30), width = 30 };
+                if (GUI.Button(removeLocaleBtnRect, new GUIContent("X", "Removes the currently selected locale key and value.")))
+                {
+                    // Remove from object
+                    Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
+                    target.LocaleDatas.Remove(editedLocaleValue);
+                    // Set edited locale value
+                    editedLocaleValue = target.LocaleDatas.Keys.First();
+                    property.SetString(KeyEditLocale, editedLocaleValue);
+                }
             }
-            GUI.enabled = gEnabled;
 
             // Interface will show an GenericMenu dropdown, text area and locale itself
             EditorGUI.BeginChangeCheck();
-            Rect txtEditAreaRect = GetPropertyRect(position, HEIGHT);
-            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.Data[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
+            Rect txtEditAreaRect = mainCtx.GetPropertyRect(position, TextAreaHeight);
+            string lValue = EditorGUI.TextArea(txtEditAreaRect, target.LocaleDatas[editedLocaleValue], new GUIStyle(EditorStyles.textArea) { wordWrap = true });
             // placeholder (if locale string value is empty)
             if (string.IsNullOrEmpty(lValue))
             {
-                EditorGUI.LabelField(new Rect(txtEditAreaRect) 
+                EditorGUI.LabelField(new Rect(txtEditAreaRect)
                 {
-                    x = txtEditAreaRect.x + 2f, 
+                    x = txtEditAreaRect.x + 2f,
                     height = EditorGUIUtility.singleLineHeight
                 }, "<empty>", placeholderStyle);
             }
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "set locale string");
-                target.Data[editedLocaleValue] = lValue;
+                target.LocaleDatas[editedLocaleValue] = lValue;
             }
 
-            // End prop
+            // End prop + reset stuff
+            EditorGUI.indentLevel = previousIndentLevel;
             EditorGUI.EndProperty();
         }
     }

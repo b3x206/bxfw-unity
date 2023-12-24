@@ -13,13 +13,19 @@ namespace BXFW
     public class MBVertSnappableTransform : MonoBehaviour
     {
         /// <summary>
-        /// Boolean to check if whether a <see cref="SnappableCubeTransform"/> is setup.
+        /// Boolean to check if this snappable transform is setup.
         /// </summary>
-        public bool SIsSetup { get; private set; } = false;
+        public bool IsSetup { get; private set; } = false;
+        /// <summary>
+        /// The previous transformation matrix.
+        /// <br>Used to check if the transform was changed in position, scale or rotation.</br>
+        /// </summary>
         protected Matrix4x4 PrevTrsMatrix { get; private set; } = Matrix4x4.zero;
 
         [SerializeField, HideInInspector] private MeshFilter m_CurrentMeshFilter;
-        /// <summary>Current mesh filter on this object that the script is attached to.</summary>
+        /// <summary>
+        /// Current mesh filter on this object that the script is also attached to.
+        /// </summary>
         public MeshFilter CurrentMeshFilter
         {
             get
@@ -33,9 +39,11 @@ namespace BXFW
             }
         }
 
+        /// <inheritdoc cref="VertPoints"/>
         private List<Vector3> m_VertPoints = new List<Vector3>(32);
         /// <summary>
-        /// Initilazed vertice points on the mesh filter.
+        /// Vertex points of given <see cref="CurrentMeshFilter"/>'s mesh transformed into
+        /// this <see cref="Component.transform"/>'s matrix.
         /// </summary>
         public List<Vector3> VertPoints
         {
@@ -44,28 +52,7 @@ namespace BXFW
                 // S was never used to be setup
                 // So because of this, even though the transform never changed we always update it's snap points
                 // (oh and also the transform can move during gameplay so i made a no-alloc method to avoid gc.alloc)
-                if (transform.localToWorldMatrix != PrevTrsMatrix ||
-                    !SIsSetup)
-                {
-                    UpdateSnapPoints();
-                    PrevTrsMatrix = transform.localToWorldMatrix;
-                }
-
-                return m_VertPoints;
-            }
-        }
-        /// <summary>
-        /// Vertices of the current mesh filter. (<see cref="CurrentMeshFilter"/>.mesh.vertices but cached)
-        /// </summary>
-        public List<Vector3> LocalVertPoints
-        {
-            get
-            {
-                // S was never used to be setup
-                // So because of this, even though the transform never changed we always update it's snap points
-                // (oh and also the transform can move during gameplay so i made a no-alloc method to avoid gc.alloc)
-                if (transform.localToWorldMatrix != PrevTrsMatrix ||
-                    !SIsSetup)
+                if (transform.localToWorldMatrix != PrevTrsMatrix || !IsSetup)
                 {
                     UpdateSnapPoints();
                     PrevTrsMatrix = transform.localToWorldMatrix;
@@ -79,22 +66,43 @@ namespace BXFW
         /// List of the local vertices for mesh.
         /// </summary>
         private List<Vector3> m_MeshVerts;
+        /// <summary>
+        /// Vertices of the current mesh filter. (<see cref="CurrentMeshFilter"/>.mesh.vertices but cached)
+        /// </summary>
+        public List<Vector3> LocalVertPoints
+        {
+            get
+            {
+                if (transform.localToWorldMatrix != PrevTrsMatrix || !IsSetup)
+                {
+                    UpdateSnapPoints();
+                    PrevTrsMatrix = transform.localToWorldMatrix;
+                }
+
+                return m_MeshVerts;
+            }
+        }
+
         private Mesh updatedPrevMesh;
-        /// <summary>Updates the snap points.</summary>
+        /// <summary>
+        /// Updates the snap points.
+        /// </summary>
         public void UpdateSnapPoints()
         {
+            // Mesh used in the mesh filter
             Mesh mesh;
-
 #if UNITY_EDITOR
             mesh = Application.isPlaying ? CurrentMeshFilter.mesh : CurrentMeshFilter.sharedMesh;
 #else
             mesh = CurrentMeshFilter.mesh;
 #endif
             if (mesh == null)
+            {
                 return;
+            }
 
             m_VertPoints ??= new List<Vector3>(mesh.vertexCount / 3);  // There are always 2 excess verts.
-            // Check existance of the vertex list or the updated mesh reference.
+            // Check existance of the vertex list or if the mesh updated.
             if (m_MeshVerts == null || updatedPrevMesh != mesh)
             {
                 // Now this is the local space vertices array.
@@ -103,6 +111,7 @@ namespace BXFW
                 // Get locals into m_VertPoints
                 m_MeshVerts = new List<Vector3>(mesh.vertexCount);
                 mesh.GetVertices(m_MeshVerts);
+                // Remove from duplicates
                 for (int i = 0; i < m_MeshVerts.Count; i++)
                 {
                     // Remove duplicates
@@ -110,7 +119,9 @@ namespace BXFW
                     bool isDuplicate = m_VertPoints.Contains(vert);
                     
                     if (isDuplicate)
+                    {
                         continue;
+                    }
 
                     m_VertPoints.Add(vert);
                 }
@@ -121,9 +132,11 @@ namespace BXFW
                 m_MeshVerts.AddRange(m_VertPoints);
             }
 
-            // Found out that my mistake is that i apply the same matrix transformations to the points that were already transformed.
-
+            // Found out that my mistake is that i apply the same matrix
+            // transformations to the points that were already transformed.
+            // --
             // Clear m_VertPoints from the values, now it's time for this array to be the world matrix points
+            // Clearing this array is fine as it already chunks the list.
             m_VertPoints.Clear();
             // Apply the transformation points for the local 
             for (int i = 0; i < m_MeshVerts.Count; i++)
@@ -131,14 +144,15 @@ namespace BXFW
                 m_VertPoints.Add(transform.localToWorldMatrix.MultiplyPoint3x4(m_MeshVerts[i]));
             }
 
-            SIsSetup = true;
+            IsSetup = true;
             updatedPrevMesh = mesh;
         }
 
+        /// <summary>
+        /// An action called when any of the <see cref="SnapTransform"/> methods were called.
+        /// </summary>
         protected Action OnSnapTransformCall;
-        protected Action OnAlignTransformCall;
-
-        #region Extension Functions
+        
         /// <summary>
         /// Snaps the given transform to this transform. (Depending on the <paramref name="SnapGiven"/>)
         /// </summary>
@@ -151,40 +165,42 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (snappableTarget == null)
+            {
                 return false;
+            }
 
             // there is no better way to check whether the scale is valid for snapping.
-            if (snappableTarget.transform.localScale.GetSmallestAxis() <= 0f ||
-                transform.localScale.GetSmallestAxis() <= 0f)
+            if (snappableTarget.transform.localScale.MinAxis() <= 0f ||
+                transform.localScale.MinAxis() <= 0f)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, snappableTarget.name));
                 return false;
             }
 
             // nvm this works fine. No touchy. (matrix and vector math always betrays you)
-            Transform SnapHelper = new GameObject("SnapHelper").transform;
+            Transform snapHelper = new GameObject("SnapHelper").transform;
 
             if (!snapTarget)
             {
-                var PrevParent = transform.parent;
+                var prevParent = transform.parent;
 
-                SnapHelper.position = VertPoints[pointThis];
-                transform.SetParent(SnapHelper, true);
-                SnapHelper.position = snappableTarget.VertPoints[pointTarget];
-                transform.SetParent(PrevParent, true);
+                snapHelper.position = VertPoints[pointThis];
+                transform.SetParent(snapHelper, true);
+                snapHelper.position = snappableTarget.VertPoints[pointTarget];
+                transform.SetParent(prevParent, true);
             }
             // Difference here is that we snap the target object instead of this object.
             else
             {
-                var PrevParent = snappableTarget.transform.parent;
+                var prevParent = snappableTarget.transform.parent;
 
-                SnapHelper.position = snappableTarget.VertPoints[pointTarget];
-                snappableTarget.transform.SetParent(SnapHelper, true);
-                SnapHelper.position = VertPoints[pointThis];
-                snappableTarget.transform.SetParent(PrevParent, true);
+                snapHelper.position = snappableTarget.VertPoints[pointTarget];
+                snappableTarget.transform.SetParent(snapHelper, true);
+                snapHelper.position = VertPoints[pointThis];
+                snappableTarget.transform.SetParent(prevParent, true);
             }
 
-            Destroy(SnapHelper.gameObject);
+            Destroy(snapHelper.gameObject);
             OnSnapTransformCall?.Invoke();
 
             return true;
@@ -201,7 +217,9 @@ namespace BXFW
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
 
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
@@ -209,37 +227,28 @@ namespace BXFW
                 return false;
             }
 
-            /// -- Create snap helper --
-            /// --> So here's the way snap helper works:
-            /// 1: Create the gameobject,
-            /// 2: Put this gameobject to the same place as the corner of the platform,
-            /// 3: Parent the platform to this gameobject,
-            /// 4: Place this gameobject to the target corner,
-            /// 5: Unparent the platform.
-            /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
+            var snapHelper = new GameObject("SnapHelper").transform;
 
-            // Difference here is that we snap the target object instead of this object.
             if (snapTarget)
             {
-                var PrevParent = transformTarget.transform.parent;
+                var prevParent = transformTarget.transform.parent;
 
-                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
-                transformTarget.transform.SetParent(SnapHelper, true);
-                SnapHelper.position = VertPoints[pointThis];
-                transformTarget.transform.SetParent(PrevParent, true);
+                snapHelper.position = transformTarget.SnapPoints[pointTarget].position;
+                transformTarget.transform.SetParent(snapHelper, true);
+                snapHelper.position = VertPoints[pointThis];
+                transformTarget.transform.SetParent(prevParent, true);
             }
             else
             {
-                var PrevParent = transform.parent;
+                var prevParent = transform.parent;
 
-                SnapHelper.position = VertPoints[pointThis];
-                transform.SetParent(SnapHelper, true);
-                SnapHelper.position = transformTarget.SnapPoints[pointTarget].position;
-                transform.SetParent(PrevParent, true);
+                snapHelper.position = VertPoints[pointThis];
+                transform.SetParent(snapHelper, true);
+                snapHelper.position = transformTarget.SnapPoints[pointTarget].position;
+                transform.SetParent(prevParent, true);
             }
 
-            Destroy(SnapHelper.gameObject);
+            Destroy(snapHelper.gameObject);
             OnSnapTransformCall?.Invoke();
 
             return true;
@@ -250,41 +259,35 @@ namespace BXFW
         /// <param name="transformTarget">Transform target. The default object to move.</param>
         /// <param name="pointThis">Snap point for object that calls this method.</param>
         /// <returns>Whether if the SnapTransform operation was successful.</returns>
-        public bool SnapTransform(Transform transformTarget, int pointThis, Vector3 transformTargetPosOffset = default)
+        public bool SnapTransform(Transform transformTarget, int pointThis, Vector3 pointOffset = default)
         {
             // Check target. (if null do nothing)
             if (transformTarget == null)
+            {
                 return false;
+            }
+
             if (transform.localScale.x == 0f || transform.localScale.y == 0f || transform.localScale.z == 0f)
             {
                 Debug.LogError(string.Format("[MBVertSnappableTransform::SnapTransform] Scale is invalid for snapping. Objects requested for snap : \"{0}->{1}\"", name, transformTarget.name));
                 return false;
             }
 
-            /// -- Create snap helper --
-            /// --> So here's the way snap helper works:
-            /// 1: Create the gameobject,
-            /// 2: Put this gameobject to the same place as the corner of the platform,
-            /// 3: Parent the platform to this gameobject,
-            /// 4: Place this gameobject to the target corner,
-            /// 5: Unparent the platform.
-            /// Rinse and repeat. 
-            var SnapHelper = new GameObject("SnapHelper").transform;
+            var snapHelper = new GameObject("SnapHelper").transform;
 
             // Difference here is that we snap the target object instead of this object.
-            var PrevParent = transformTarget.transform.parent;
+            var prevParent = transformTarget.transform.parent;
 
-            SnapHelper.position = transformTarget.position + transformTargetPosOffset;
-            transformTarget.transform.SetParent(SnapHelper, true);
-            SnapHelper.position = VertPoints[pointThis];
-            transformTarget.transform.SetParent(PrevParent, true);
+            snapHelper.position = transformTarget.position + pointOffset;
+            transformTarget.transform.SetParent(snapHelper, true);
+            snapHelper.position = VertPoints[pointThis];
+            transformTarget.transform.SetParent(prevParent, true);
 
-            Destroy(SnapHelper.gameObject);
+            Destroy(snapHelper.gameObject);
             OnSnapTransformCall?.Invoke();
 
             return true;
         }
-        #endregion
 
 #if UNITY_EDITOR
         protected virtual void OnDrawGizmosSelected()

@@ -1,11 +1,9 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 namespace BXFW.UI
 {
-    /// This class solely exists for making an editor for the <see cref="MultiUIManager{TElement}"/>.
-    /// (it could also have been an interface but i wanted to limit the type
-    /// that the MultiUIManager will inherit + custom property drawers don't like interfaces)
     /// <summary>
     /// Contains the base variables for multi UI management.
     /// </summary>
@@ -34,7 +32,7 @@ namespace BXFW.UI
         }
         /// <summary>
         /// Maximum amount of elements that can be spawned in.
-        /// <br>The minimum value that 'ElementCount' can be set is 0.</br>
+        /// <br>The minimum value that '<see cref="ElementCount"/>' can be set is 0.</br>
         /// </summary>
         protected virtual int MaxElementCount => short.MaxValue;
 
@@ -77,7 +75,14 @@ namespace BXFW.UI
         /// (and not reset the ref object) just set the <see cref="ElementCount"/> to zero.
         /// </br>
         /// </summary>
-        public abstract void ResetElements();
+        /// <param name="clearChildTransform">Clears/Destroys everything in child transform.</param>
+        public abstract void ResetElements(bool clearChildTransform = false);
+
+        /// <summary>
+        /// Returns a iterable list of the attached objects as in components.
+        /// <br>Use the '<see cref="MultiUIManager{TElement}.GetEnumerator"/>' method instead of this unless you have no access to the type parameter.</br>
+        /// </summary>
+        public abstract IEnumerable<Component> IterableElements();
 
 #if UNITY_EDITOR
         /// <summary>
@@ -88,7 +93,7 @@ namespace BXFW.UI
         protected override void Reset()
         {
             base.Reset();
-            ResetElements();
+            ResetElements(true);
         }
 #endif
     }

@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections.Generic;
 
 namespace BXFW.UI
 {
@@ -10,96 +9,127 @@ namespace BXFW.UI
     /// </summary>
     public class UIMenuManager : MonoBehaviour
     {
-        #region -- Variables
-
-        #region Standard Vars
         [Header(":: UI Menu Manager ::")]
-        // Inspector
-        public bool AllowTwoMenuAtOnce = false;
+        public bool allowTwoMenuAtOnce = false;
 
         // Status
-        public bool InsideMenu { get { return _CurrentUIMenu != null; } }
-        #endregion
+        /// <summary>
+        /// Whether if there's a menu open currently.
+        /// <br>This bool is just a result of comparing the <see cref="CurrentUIMenu"/> to <see langword="null"/>.</br>
+        /// </summary>
+        public bool InsideMenu => m_CurrentUIMenu != null;
 
-        #region Menu Management Vars
-        [SerializeField] protected UIMenu _CurrentUIMenu;
-        /// <summary>Currently open <see cref="UIMenu"/>.</summary>
-        public UIMenu CurrentUIMenu { get { return _CurrentUIMenu; } }
-        protected List<UISubMenu> _CurrentUISubMenus = new List<UISubMenu>();
-        /// <summary>Currently open sub-menus.</summary>
-        public ReadOnlyCollection<UISubMenu> CurrentUISubMenus
-        {
-            get { return _CurrentUISubMenus.AsReadOnly(); }
-        }
-        #endregion
-
-        #endregion
+        [SerializeField] protected UIMenu m_CurrentUIMenu;
+        /// <summary>
+        /// Currently open <see cref="UIMenu"/>.
+        /// </summary>
+        public UIMenu CurrentUIMenu => m_CurrentUIMenu;
+        protected List<UISubMenu> m_CurrentUISubMenus = new List<UISubMenu>();
+        /// <summary>
+        /// Currently open sub-menus.
+        /// <br>This shouldn't be directly added/removed from, use the
+        /// <see cref="OpenMenu(UIMenu)"/>or <see cref="CloseMenu(UIMenu)"/> functions.</br>
+        /// </summary>
+        public IReadOnlyList<UISubMenu> CurrentUISubMenus => m_CurrentUISubMenus;
 
         #region -- Menu Management Functions
         // -- Used for opening different menus
-        // WARNING : Use these methods for opening menus,
-        // not the methods inside indiviual UIMenu.
+        /// <summary>
+        /// Opens a menu.
+        /// <br>If the <see cref="allowTwoMenuAtOnce"/> is <see langword="false"/> and 
+        /// manager is <see cref="InsideMenu"/> the current menu will be closed.</br>
+        /// </summary>
+        /// <param name="menu">Target menu to open. This mustn't be null.</param>
         public void OpenMenu(UIMenu menu)
         {
-            if (InsideMenu && !AllowTwoMenuAtOnce)
+            if (InsideMenu && !allowTwoMenuAtOnce)
             {
                 ExitCurrentMenu();
             }
 
             menu.OpenMenu();
-            _CurrentUIMenu = menu;
+            m_CurrentUIMenu = menu;
         }
+        /// <summary>
+        /// Closes a menu.
+        /// <br>If the <see cref="allowTwoMenuAtOnce"/> is <see langword="false"/> and
+        /// the manager is <see cref="InsideMenu"/> all current menu will be closed.</br>
+        /// </summary>
+        /// <param name="menu">Target menu to open. This mustn't be null.</param>
         public void CloseMenu(UIMenu menu)
         {
-            if (InsideMenu && !AllowTwoMenuAtOnce)
+            if (InsideMenu && !allowTwoMenuAtOnce)
             {
                 // If we are not actually exiting the current menu
-                if (_CurrentUIMenu != menu)
+                if (m_CurrentUIMenu != menu)
                 {
                     ExitCurrentMenu();
                 }
             }
 
             menu.CloseMenu();
-            if (_CurrentUIMenu == menu)
+            if (m_CurrentUIMenu == menu)
             {
-                _CurrentUIMenu = null;
+                m_CurrentUIMenu = null;
             }
         }
+        /// <summary>
+        /// Exits the <see cref="CurrentUIMenu"/> open.
+        /// <br>If <see cref="InsideMenu"/> is <see langword="false"/> this does nothing.</br>
+        /// </summary>
         public void ExitCurrentMenu()
         {
-            if (!InsideMenu) { return; }
+            if (!InsideMenu)
+            {
+                return;
+            }
 
-            _CurrentUIMenu.CloseMenu();
-            _CurrentUIMenu = null;
+            m_CurrentUIMenu.CloseMenu();
+            m_CurrentUIMenu = null;
         }
         // -------- SubMenu
+        /// <summary>
+        /// Opens a SubMenu.
+        /// <br>There can be any amount of SubMenus open all at once.</br>
+        /// </summary>
+        /// <param name="menu">Target menu to open. This mustn't be null.</param>
         public void OpenSubMenu(UISubMenu menu)
         {
-            if (!_CurrentUISubMenus.Contains(menu))
+            if (!m_CurrentUISubMenus.Contains(menu))
             {
-                _CurrentUISubMenus.Add(menu);
+                m_CurrentUISubMenus.Add(menu);
             }
             else
             {
-                Debug.LogWarning(string.Format("[UIMenuManager::OpenSubMenu] Sub menu '{0}' is already open.", menu.transform.GetPath()));
-                // No need to open sub menu twice.
+                Debug.LogWarning($"[UIMenuManager::OpenSubMenu] SubMenu '{menu.name}' is already open.", menu);
                 return;
             }
 
             menu.OpenMenu();
         }
+        /// <summary>
+        /// Closes a SubMenu.
+        /// </summary>
+        /// <param name="menu">Target menu to open. This mustn't be null.</param>
         public void CloseSubMenu(UISubMenu menu)
         {
             menu.CloseMenu();
-            _CurrentUISubMenus.Remove(menu);
+            m_CurrentUISubMenus.Remove(menu);
         }
+        /// <summary>
+        /// Closes all currently closed SubMenu's.
+        /// </summary>
         public void CloseAllSubMenus()
         {
-            for (int i = _CurrentUISubMenus.Count - 1; i > -1; i--)
+            for (int i = m_CurrentUISubMenus.Count - 1; i > -1; i--)
             {
-                _CurrentUISubMenus[i].CloseMenu();
-                _CurrentUISubMenus.RemoveAt(i);
+                var subMenu = m_CurrentUISubMenus[i];
+                if (subMenu != null)
+                {
+                    subMenu.CloseMenu();
+                }
+
+                m_CurrentUISubMenus.RemoveAt(i);
             }
         }
         #endregion

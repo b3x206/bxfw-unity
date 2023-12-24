@@ -11,13 +11,13 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// Directory to save.
         /// </summary>
-        private readonly string DirSave = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Prefabs/GenMeshes");
+        private readonly string SAVE_DIRECTORY = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Prefabs/GenMeshes");
         /// <summary>
         /// The absolute dir + file name to save.
         /// </summary>
         private string GetFileSaveDir(ReCalculateCubeUV Target)
         {
-            return string.Format("{0}.asset", Path.Combine(DirSave, Target.CubeMeshName));
+            return string.Format("{0}.asset", Path.Combine(SAVE_DIRECTORY, Target.cubeMeshName));
         }
         /// <summary>
         /// Returns the unity (relative) save directory.
@@ -28,7 +28,7 @@ namespace BXFW.ScriptEditor
             get
             {
                 // Remove the extension
-                var UFilePath = DirSave.Split('.')[0];
+                var UFilePath = SAVE_DIRECTORY.Split('.')[0];
                 // Remove the junk. (Add 1 to omit '/', Subtract 7 to include the 'Assets' directory on the start)
                 UFilePath = UFilePath.Substring(UFilePath.IndexOf('/', Directory.GetCurrentDirectory().Length) - 6);
 
@@ -40,7 +40,7 @@ namespace BXFW.ScriptEditor
         /// </summary>
         private string GetUFileSave(ReCalculateCubeUV Target)
         {
-            return string.Format("{0}.asset", Path.Combine(UDirSave, Target.CubeMeshName));
+            return string.Format("{0}.asset", Path.Combine(UDirSave, Target.cubeMeshName));
         }
 
         #region Utility
@@ -63,15 +63,17 @@ namespace BXFW.ScriptEditor
         private Mesh GetUVCube(ReCalculateCubeUV Target)
         {
             // Get Directory
-            if (!Directory.Exists(DirSave))
-                Directory.CreateDirectory(DirSave);
-
-            if (string.IsNullOrEmpty(Target.CubeMeshName))
+            if (!Directory.Exists(SAVE_DIRECTORY))
             {
-                Target.CubeMeshName = "Cube_InstUV";
+                Directory.CreateDirectory(SAVE_DIRECTORY);
             }
 
-            string[] FileNames = Directory.GetFiles(DirSave, string.Format("{0}.*", Target.CubeMeshName));
+            if (string.IsNullOrEmpty(Target.cubeMeshName))
+            {
+                Target.cubeMeshName = "Cube_InstUV";
+            }
+
+            string[] FileNames = Directory.GetFiles(SAVE_DIRECTORY, string.Format("{0}.*", Target.cubeMeshName));
 
             // At least one matching file exists, the file name is files[0].
             // Use that cube as mesh.
@@ -88,7 +90,7 @@ namespace BXFW.ScriptEditor
                 else
                 {
                     // This error shouldn't happen.
-                    Debug.LogError(string.Format("[ReCalculcateCubeUV] The loaded mesh was null. There's no such asset named as '{0}'?", Target.CubeMeshName));
+                    Debug.LogError(string.Format("[ReCalculcateCubeUV] The loaded mesh was null. There's no such asset named as '{0}'?", Target.cubeMeshName));
                     return null;
                 }
             }
@@ -99,6 +101,7 @@ namespace BXFW.ScriptEditor
         }
         #endregion
 
+        private const int MAX_UNIQUE_NAME_ITERS = ushort.MaxValue;
         public override void OnInspectorGUI()
         {
             var targets = base.targets.Cast<ReCalculateCubeUV>().ToArray();
@@ -117,14 +120,16 @@ namespace BXFW.ScriptEditor
                 var TargetMeshFilter = target.GetComponent<MeshFilter>();
 
                 if (TargetRenderer == null || TargetMeshFilter == null)
+                {
                     continue;
+                }
 
                 // Only show this HelpBox if the target mesh wasn't applied to this object also.
                 if (File.Exists(GetFileSaveDir(target)) && 
-                    TargetMeshFilter.sharedMesh != null && TargetMeshFilter.sharedMesh.name != target.CubeMeshName &&
+                    TargetMeshFilter.sharedMesh != null && TargetMeshFilter.sharedMesh.name != target.cubeMeshName &&
                     !drawnMeshAssetExistsWarning)
                 {
-                    EditorGUILayout.HelpBox(string.Format("[ReCalculateCubeUV] A mesh asset with the same name {0} exists. Please change the name to prevent data loss.", target.CubeMeshName), MessageType.Warning);
+                    EditorGUILayout.HelpBox(string.Format("[ReCalculateCubeUV] A mesh asset with the same name {0} exists. Please change the name to prevent data loss.", target.cubeMeshName), MessageType.Warning);
                     drawnMeshAssetExistsWarning = true;
                 }
                 if (TargetRenderer.sharedMaterial != null && TargetRenderer.sharedMaterial.mainTexture != null &&
@@ -139,7 +144,6 @@ namespace BXFW.ScriptEditor
             if (drawnMeshAssetExistsWarning)
             {
                 int uniqueIndex = 0;
-                const int MAX_ITERS = ushort.MaxValue;
                 if (GUILayout.Button("Fix Warning"))
                 {
                     Undo.IncrementCurrentGroup();
@@ -149,14 +153,14 @@ namespace BXFW.ScriptEditor
                     {
                         var TargetMeshFilter = target.GetComponent<MeshFilter>();
 
-                        while (File.Exists(GetFileSaveDir(target)) && TargetMeshFilter.sharedMesh.name != target.CubeMeshName)
+                        while (File.Exists(GetFileSaveDir(target)) && TargetMeshFilter.sharedMesh.name != target.cubeMeshName)
                         {
                             Undo.RecordObject(target, string.Empty);
-                            target.CubeMeshName += string.Format("_{0}", uniqueIndex + 1);
+                            target.cubeMeshName += string.Format("_{0}", uniqueIndex + 1);
 
-                            if (uniqueIndex >= MAX_ITERS)
+                            if (uniqueIndex >= MAX_UNIQUE_NAME_ITERS)
                             {
-                                throw new System.OperationCanceledException(string.Format("[ReCalculateCubeUVEditor::OnInspectorGUI::FixWarning] Iterations exceeded maximum ({0}).", MAX_ITERS));
+                                throw new System.OperationCanceledException(string.Format("[ReCalculateCubeUVEditor::OnInspectorGUI::FixWarning] Name uniqueifiying iterations exceeded maximum ({0}).", MAX_UNIQUE_NAME_ITERS));
                             }
 
                             uniqueIndex++;
@@ -187,7 +191,7 @@ namespace BXFW.ScriptEditor
                         // Make name unique if it exists
                         if (File.Exists(GetFileSaveDir(target)))
                         {
-                            target.CubeMeshName += string.Format("_{0}", i);
+                            target.cubeMeshName += string.Format("_{0}", i);
                         }
                     }
 

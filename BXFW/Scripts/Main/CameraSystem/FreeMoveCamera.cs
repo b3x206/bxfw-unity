@@ -3,81 +3,83 @@ using System.Collections.Generic;
 
 namespace BXFW
 {
-    /// This camera component does not depend on any GameObject followings, so it can solely update in the 'Update' method.
+    /// This transform move component does not depend on any GameObject followings, so it can solely update in the 'Update' method.
     /// <summary>
-    /// Camera that can freely move around the scene.
+    /// Transform that can freely move around the scene. (this is not a specific camera behaviour)
     /// <br>The movement keys are WASD or arrow keys and the user can use the mouse to look around.</br>
     /// </summary>
     [RequireComponent(typeof(Transform))]
     public class FreeMoveCamera : MonoBehaviour
     {
+        /// <summary>
+        /// Component list to disable/enable when the camera is enable/disabled.
+        /// </summary>
         [Header("-- Debug Settings")]
-        public Behaviour[] DisableComponentOnEnable;
+        public List<Behaviour> disableComponentsOnEnable = new List<Behaviour>();
 
         [Header("-- Camera Settings")]
-        public Transform MoveTransform;
+        public Transform moveTransform;
         public bool IsEnabled
         {
-            get { return isEnabled; }
+            get { return m_IsEnabled; }
             set
             {
-                isEnabled = value;
+                m_IsEnabled = value;
                 enabled = value;
             }
         }
-        [SerializeField] private bool isEnabled = true;
-        public bool LookRawInput = true;
-        public float LookSensitivity = 10f;
-        public float CameraMoveSpeed = 10f;
-        public float BoostedCameraMoveSpeedAdd = 10f;
-        public Vector2 MinMaxXRotation = Vector2.zero;
-        public Vector2 MinMaxYRotation = Vector2.zero;
+        [SerializeField] private bool m_IsEnabled = true;
+        public float moveSpeed = 10f;
+        public float boostedMoveSpeedAdd = 10f;
+        public MinMaxValue xRotationRange = MinMaxValue.Zero;
+        public MinMaxValue yRotationRange = MinMaxValue.Zero;
 
-        // -- Input Settings -- //
-        private readonly IList<string> InputLookAxis    = new string[] { "Mouse X", "Mouse Y" };
-        [Header(":: Input Settings ::")]
+        [Header("Input Settings")]
+        public bool lookRawInput = true;
+        public float lookSensitivity = 10f;
         public bool InputAdjustMoveSpeedMouseWheel = false;
-        public CustomInputEvent InputMoveForward        = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
-        public CustomInputEvent InputMoveBackward       = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
-        public CustomInputEvent InputMoveLeft           = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
-        public CustomInputEvent InputMoveRight          = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
-        public CustomInputEvent InputMoveBoost          = new KeyCode[] { KeyCode.LeftShift, KeyCode.RightShift };
-        public CustomInputEvent InputMoveDescend        = new KeyCode[] { KeyCode.Q };
-        public CustomInputEvent InputMoveAscend         = new KeyCode[] { KeyCode.E };
-        [InspectorLine(.4f, .4f, .4f)]
-        public CustomInputEvent InputEventDisableEnable = new KeyCode[] { KeyCode.F8 };
-        
+        public CustomInputEvent inputMoveForward = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
+        public CustomInputEvent inputMoveBackward = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
+        public CustomInputEvent inputMoveLeft = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
+        public CustomInputEvent inputMoveRight = new KeyCode[] { KeyCode.D, KeyCode.RightArrow };
+        public CustomInputEvent inputMoveBoost = new KeyCode[] { KeyCode.LeftShift, KeyCode.RightShift };
+        public CustomInputEvent inputMoveDescend = new KeyCode[] { KeyCode.Q };
+        public CustomInputEvent inputMoveAscend = new KeyCode[] { KeyCode.E };
+
         /// <summary>
         /// The target transform to move around.
         /// </summary>
         public Transform TargetTransform { get; protected set; }
-        protected Quaternion originalRotation;
-        protected bool isInit = false;
+        protected Quaternion m_originalRotation;
+        protected bool m_isInit = false;
         private void Start()
         {
             if (!IsEnabled)
+            {
                 return;
+            }
 
             // Initilaze resets quaternion rotation.
             Initilaze();
         }
         protected virtual void Initilaze()
         {
-            if (isInit)
+            if (m_isInit)
+            {
                 return;
+            }
 
-            TargetTransform = MoveTransform == null ? GetComponent<Transform>() : MoveTransform;
+            TargetTransform = moveTransform == null ? GetComponent<Transform>() : moveTransform;
 
             // Initial rotation shouldn't have X axis rotation, otherwise the angleaxis does stupid stuff and the Z rotates too.
             TargetTransform.rotation = Quaternion.Euler(0f, TargetTransform.rotation.eulerAngles.y, 0f);
-            originalRotation = TargetTransform.rotation;
-            isInit = true;
+            m_originalRotation = TargetTransform.rotation;
+            m_isInit = true;
         }
 
-        protected float GetMouseAxis(int Axis)
+        protected float GetMouseAxis(string axisName)
         {
-            var AxisName = InputLookAxis[Axis];
-            return LookRawInput ? Input.GetAxisRaw(AxisName) : Input.GetAxis(AxisName);
+            return lookRawInput ? Input.GetAxisRaw(axisName) : Input.GetAxis(axisName);
         }
 
         protected float CurrentRotationX = 0f, CurrentRotationY = 0f;
@@ -92,58 +94,58 @@ namespace BXFW
                 }
 
                 // Rotate camera
-                CurrentRotationX += GetMouseAxis(0) * LookSensitivity;
-                CurrentRotationY += GetMouseAxis(1) * LookSensitivity;
-                if (MinMaxXRotation.x != 0f && MinMaxXRotation.y != 0f)
+                CurrentRotationX += GetMouseAxis("Mouse X") * lookSensitivity;
+                CurrentRotationY += GetMouseAxis("Mouse Y") * lookSensitivity;
+                if (xRotationRange != MinMaxValue.Zero)
                 {
-                    CurrentRotationX = Mathf.Clamp(CurrentRotationX, MinMaxXRotation.x, MinMaxXRotation.y);
+                    CurrentRotationX = xRotationRange.ClampBetween(CurrentRotationX);
                 }
-                if (MinMaxYRotation.x != 0f && MinMaxYRotation.y != 0f)
+                if (yRotationRange != MinMaxValue.Zero)
                 {
-                    CurrentRotationY = Mathf.Clamp(CurrentRotationY, MinMaxYRotation.x, MinMaxYRotation.y);
+                    CurrentRotationY = yRotationRange.ClampBetween(CurrentRotationY);
                 }
 
-                TargetTransform.rotation = originalRotation *
+                TargetTransform.rotation = m_originalRotation *
                     (Quaternion.AngleAxis(CurrentRotationX, Vector3.up) * Quaternion.AngleAxis(CurrentRotationY, -Vector3.right));
 
                 // Move player
-                Vector3 MoveVec = Vector3.zero;
-                if (InputMoveForward)
+                Vector3 inputVector = Vector3.zero;
+                if (inputMoveForward)
                 {
-                    MoveVec += Vector3.forward;
+                    inputVector += Vector3.forward;
                 }
-                if (InputMoveBackward)
+                if (inputMoveBackward)
                 {
-                    MoveVec += Vector3.back;
+                    inputVector += Vector3.back;
                 }
-                if (InputMoveLeft)
+                if (inputMoveLeft)
                 {
-                    MoveVec += Vector3.left;
+                    inputVector += Vector3.left;
                 }
-                if (InputMoveRight)
+                if (inputMoveRight)
                 {
-                    MoveVec += Vector3.right;
+                    inputVector += Vector3.right;
                 }
                 // Ascend / Descend
-                if (InputMoveDescend)
+                if (inputMoveDescend)
                 {
-                    MoveVec += Vector3.down;
+                    inputVector += Vector3.down;
                 }
-                if (InputMoveAscend)
+                if (inputMoveAscend)
                 {
-                    MoveVec += Vector3.up;
+                    inputVector += Vector3.up;
                 }
                 // Normalize movement to make 'r = 1' and to make diagonal movements consistent
-                MoveVec = MoveVec.normalized;
+                inputVector = inputVector.normalized;
 
                 Vector3 MoveTranslate;
-                if (InputMoveBoost)
+                if (inputMoveBoost)
                 {
-                    MoveTranslate = (BoostedCameraMoveSpeedAdd + CameraMoveSpeed) * Time.deltaTime * MoveVec;
+                    MoveTranslate = (boostedMoveSpeedAdd + moveSpeed) * Time.deltaTime * inputVector;
                 }
                 else
                 {
-                    MoveTranslate = CameraMoveSpeed * Time.deltaTime * MoveVec;
+                    MoveTranslate = moveSpeed * Time.deltaTime * inputVector;
                 }
 
                 // Adjust Move Speed
@@ -151,8 +153,7 @@ namespace BXFW
                 {
                     if (Input.mouseScrollDelta != Vector2.zero)
                     {
-                        CameraMoveSpeed = Mathf.Clamp(CameraMoveSpeed + Input.mouseScrollDelta.y, 1f, float.MaxValue);
-                        Debug.Log(string.Format("[CameraDebugMove::Update] Set Move speed to : {0}", CameraMoveSpeed));
+                        moveSpeed = Mathf.Clamp(moveSpeed + Input.mouseScrollDelta.y, 1f, float.MaxValue);
                     }
                 }
 
@@ -170,20 +171,24 @@ namespace BXFW
 
         private void OnEnable()
         {
-            foreach (var comp in DisableComponentOnEnable)
+            foreach (var comp in disableComponentsOnEnable)
             {
                 comp.enabled = false;
             }
 
-            if (!isInit)
+            if (!m_isInit)
+            {
                 Initilaze();
+            }
         }
         private void OnDisable()
         {
-            foreach (var comp in DisableComponentOnEnable)
+            foreach (var comp in disableComponentsOnEnable)
             {
                 if (comp == null)
+                {
                     continue;
+                }
 
                 comp.enabled = true;
             }

@@ -8,25 +8,23 @@ namespace BXFW
     public class PlayerFPSCamera : MonoBehaviour
     {
         [Header("Camera References")]
-        [SerializeField] private Transform playerTransform;
+        [SerializeField] private Transform m_playerTransform;
 
         [Header("Camera Settings")]
-        /// Note about RawMouseLook : Keep it true as default, otherwise mouse movement is jerky.
-        [SerializeField] private bool rawMouseLook = true;
-        public bool SensitivityMouseRawInput { get => rawMouseLook; set => rawMouseLook = value; }
-
-        [SerializeField] private float sensitivityMouse = 100f;
-        public float SensitivityMouseCamera { get => sensitivityMouse; set => sensitivityMouse = value; }
+        // Note about RawMouseLook : Keep it true as default, otherwise mouse movement could be jerky.
+        [SerializeField] private bool m_UseRawInputLook = true;
+        public bool UseRawInputLook { get => m_UseRawInputLook; set => m_UseRawInputLook = value; }
+        [SerializeField] private float m_LookSensitivity = 100f;
+        public float LookSensitivity { get => m_LookSensitivity; set => m_LookSensitivity = value; }
 
         [Header("Camera Constraints")]
-        private float xRotation = 0f;
-        [Tooltip("The limit is splitted to 2 before acting as input")]
-        [SerializeField] private float headRotationLimit = 180f;
-        public InputAxis currentAxes = InputAxis.MouseX | InputAxis.MouseY;
+        public MinMaxValue headXRotationLimit = new MinMaxValue(-85f, 85f);
+        public MouseInputAxis currentAxes = MouseInputAxis.MouseX | MouseInputAxis.MouseY;
 
+        private float m_currentXRotation = 0f;
         private void Update()
         {
-            if (currentAxes != InputAxis.None)
+            if (currentAxes != MouseInputAxis.None)
             {
                 CameraLookUpdate();
             }
@@ -34,34 +32,35 @@ namespace BXFW
 
         private void CameraLookUpdate()
         {
-            // Mouse input calc
-            float mouseX = (rawMouseLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X")) * sensitivityMouse * Time.smoothDeltaTime;
-            float mouseY = (rawMouseLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * sensitivityMouse * Time.smoothDeltaTime;
-
-            // Mouse up looking
-            xRotation -= mouseY;
-            xRotation = Mathf.Clamp(xRotation, -headRotationLimit / 2f, headRotationLimit / 2f);
-
-            // Rotate player with camera
-            switch (currentAxes)
+            // - Mouse up looking
+            if ((currentAxes & MouseInputAxis.MouseX) == MouseInputAxis.MouseX)
             {
-                case InputAxis.MouseX | InputAxis.MouseY:
-                    // You can probably use euler function method as well, it's unity being unity.
-                    transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);
-                    playerTransform.Rotate(Vector3.up * mouseX);
-                    break;
+                float mouseX = (m_UseRawInputLook ? Input.GetAxisRaw("Mouse X") : Input.GetAxis("Mouse X")) * m_LookSensitivity * Time.smoothDeltaTime;
 
-                case InputAxis.MouseX:
-                    playerTransform.Rotate(Vector3.up * mouseX);
-                    break;
-                case InputAxis.MouseY:
-                    transform.localRotation = Quaternion.AngleAxis(xRotation, Vector3.right);
-                    break;
+                // Rotate with 'mouseX' delta
+                m_playerTransform.Rotate(Vector3.up * mouseX);
+            }
+            if ((currentAxes & MouseInputAxis.MouseY) == MouseInputAxis.MouseY)
+            {
+                float mouseY = (m_UseRawInputLook ? Input.GetAxisRaw("Mouse Y") : Input.GetAxis("Mouse Y")) * m_LookSensitivity * Time.smoothDeltaTime;
 
-                case InputAxis.None:
-                default:
-                    break;
+                m_currentXRotation = headXRotationLimit.ClampBetween(m_currentXRotation - mouseY);
+                transform.localRotation = Quaternion.AngleAxis(m_currentXRotation, Vector3.right);
             }
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (headXRotationLimit != MinMaxValue.Zero)
+            {
+                Quaternion centerRotation = transform.rotation.AxisEulerQuaternion(TransformAxis.YAxis) * Quaternion.AngleAxis(-90f, Vector3.up);
+                // Move rotation to be centered
+                centerRotation *= Quaternion.AngleAxis((headXRotationLimit.Min + headXRotationLimit.Max) / 2f, Vector3.forward);
+
+                GizmoUtility.DrawArc(transform.position, centerRotation, 1f, headXRotationLimit.Size());
+            }
+        }
+#endif
     }
 }

@@ -9,92 +9,105 @@ using System.Collections;
 
 namespace BXFW.UI
 {
+    /// <summary>
+    /// A child element of a <see cref="TabSystem"/>.
+    /// </summary>
     [RequireComponent(typeof(Image))]
-    public class TabButton : MonoBehaviour,
-        IPointerClickHandler, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler
+    public sealed class TabButton : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        /// <summary>
+        /// A button related event, used as the fade type.
+        /// </summary>
         [Serializable]
-        public class TabButtonUnityEvent : UnityEvent<Image, TabButton> { }
+        public class ButtonEvent : UnityEvent<Image, TabButton> { }
 
         // primary type
-        public FadeType FadeType { get { return ParentTabSystem.ButtonFadeType; } }
+        /// <summary>
+        /// The fade type contained by the <see cref="ParentTabSystem"/>.
+        /// </summary>
+        public FadeType FadeType => ParentTabSystem.ButtonFadeType;
 
-        private Image buttonBackgroundImage;
-        public Image ButtonBackgroundImage
+        private Image m_BackgroundImage;
+        public Image BackgroundImage
         {
             get
             {
-                if (buttonBackgroundImage == null)
-                    buttonBackgroundImage = GetComponent<Image>();
+                if (m_BackgroundImage == null)
+                {
+                    m_BackgroundImage = GetComponent<Image>();
+                }
 
-                return buttonBackgroundImage;
+                return m_BackgroundImage;
             }
         }
         // color fade
         public Color PrevColor { get; private set; }
-        public Color DisableColor { get { return ParentTabSystem.FadeColorTargetDisabled; } }
-        public Color HoverColor { get { return ParentTabSystem.FadeColorTargetHover; } }
         // sprite swap
-        private Sprite PrevSprite;
+        public Sprite PrevSprite { get; private set; }
 
         [Header(":: Tab Button Content")]
-        [Tooltip("Content of this button. Every button has unique content.\n" +
-            "Set this to update the image & icon.")]
-        [SerializeField] private Content buttonContent = new Content();
-        public Content ButtonContent
+        [Tooltip("Content of this button. Every button has unique content.\nSet this to update the image & icon.")]
+        [SerializeField] private Content m_Content = new Content();
+        /// <summary>
+        /// Content of this button. Buttons can have different contents.
+        /// </summary>
+        public Content Content
         {
-            get { return buttonContent; }
+            get => m_Content;
             set
             {
-                buttonContent = value ?? new Content(); // Set new Content as 'GenerateButtonContent' doesn't like null content.
-
+                m_Content = value ?? new Content(); // Set new Content as 'GenerateButtonContent' doesn't like null content.
                 GenerateButtonContent();
             }
         }
 
-        [SerializeField] private bool mInteractable = true;
+        [SerializeField] private bool m_Interactable = true;
         /// <summary>
         /// Whether if this button is interactable.
         /// <br>Note : The parent tab system's interactability overrides this buttons.</br>
         /// </summary>
         public bool Interactable
         {
-            get { return ParentTabSystem.Interactable && mInteractable; }
-            set { mInteractable = value; }
+            get { return ParentTabSystem.Interactable && m_Interactable; }
+            set { m_Interactable = value; }
         }
 
         [Header(":: Tab Button Reference")]
-        [SerializeField] private TMP_Text buttonText;
-        [SerializeField] private Image buttonImage;
-        public TMP_Text ButtonText { get { return buttonText; } internal set { buttonText = value; } }
-        public Image ButtonImage { get { return buttonImage; } internal set { buttonImage = value; } }
+        [SerializeField] private TMP_Text m_ButtonText;
+        [SerializeField] private Image m_ButtonImage;
+        public TMP_Text ButtonText { get => m_ButtonText; internal set => m_ButtonText = value; }
+        public Image ButtonImage { get => m_ButtonImage; internal set => m_ButtonImage = value; }
 
         [Header(":: Internal Reference")]
         [ReadOnlyView, SerializeField] internal int ButtonIndex = 0;
-        [ReadOnlyView, SerializeField] internal TabSystem ParentTabSystem;
+        /// <summary>
+        /// The parent tab system that this tab button is a member of.
+        /// </summary>
+        public TabSystem ParentTabSystem => m_ParentTabSystem;
+        [ReadOnlyView, SerializeField] internal TabSystem m_ParentTabSystem;
 
         // -- Initilaze
         private void Start()
         {
             if (ParentTabSystem == null)
             {
-                Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Will try to get it.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Will try to get it.", this.GetPath()), this);
                 var parentTab = GetComponentInParent<TabSystem>();
 
                 if (parentTab == null)
                 {
-                    Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Failed to get component.", this.GetPath()));
+                    Debug.LogWarning(string.Format("[TabButton (name -> '{0}')] The parent tab system is null. Failed to get component.", this.GetPath()), this);
                     return;
                 }
 
-                ParentTabSystem = parentTab;
+                m_ParentTabSystem = parentTab;
             }
 
             // Set Colors
-            PrevColor = ButtonBackgroundImage.color;
+            PrevColor = BackgroundImage.color;
 
             // Set Images
-            PrevSprite = ButtonBackgroundImage.sprite;
+            PrevSprite = BackgroundImage.sprite;
 
             // If selected object.
             if (ButtonIndex == 0)
@@ -107,7 +120,7 @@ namespace BXFW.UI
         }
 
         /// <summary>
-        /// <br>Generates content from <see cref="buttonContent"/>.</br>
+        /// <br>Generates content from <see cref="m_Content"/>.</br>
         /// </summary>
         /// <param name="onValidateCall">
         /// This parameter specifies whether if this method was called from an 'OnValidate' method.
@@ -118,14 +131,9 @@ namespace BXFW.UI
             if (ButtonText != null)
             {
                 // Receive content if the 'image or sprite' does exist (& our content is null)
-                if (!string.IsNullOrWhiteSpace(ButtonContent.text))
+                if (!string.IsNullOrWhiteSpace(Content.text))
                 {
-                    ButtonText.SetText(ButtonContent.text);
-                    ButtonText.gameObject.SetActive(true);
-                }
-                else if (!string.IsNullOrWhiteSpace(ButtonText.text) && ButtonContent.receiveContentFromComponents)
-                {
-                    ButtonContent.text = ButtonText.text;
+                    ButtonText.SetText(Content.text);
                     ButtonText.gameObject.SetActive(true);
                 }
                 else
@@ -133,22 +141,17 @@ namespace BXFW.UI
                     ButtonText.gameObject.SetActive(false);
                 }
             }
-            else if (Application.isPlaying && !onValidateCall && !string.IsNullOrWhiteSpace(ButtonContent.text))
+            else if (Application.isPlaying && !onValidateCall && !string.IsNullOrWhiteSpace(Content.text))
             {
                 // Print only if tried to set content
-                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonText field in button \"{0}\" is null.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonText field in button \"{0}\" is null.", this.GetPath()), this);
             }
 
             if (ButtonImage != null)
             {
-                if (ButtonContent.image != null)
+                if (Content.sprite != null)
                 {
-                    ButtonImage.sprite = ButtonContent.image;
-                    ButtonImage.gameObject.SetActive(true);
-                }
-                else if (ButtonImage.sprite != null && ButtonContent.receiveContentFromComponents)
-                {
-                    ButtonContent.image = ButtonImage.sprite;
+                    ButtonImage.sprite = Content.sprite;
                     ButtonImage.gameObject.SetActive(true);
                 }
                 else
@@ -156,34 +159,40 @@ namespace BXFW.UI
                     ButtonImage.gameObject.SetActive(false);
                 }
             }
-            else if (Application.isPlaying && !onValidateCall && ButtonContent.image != null)
+            else if (Application.isPlaying && !onValidateCall && Content.sprite != null)
             {
-                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonImage field in button \"{0}\" is null.", this.GetPath()));
+                Debug.LogWarning(string.Format("[TabButton::GenerateButtonContent] ButtonImage field in button \"{0}\" is null.", this.GetPath()), this);
             }
         }
+#if UNITY_EDITOR
         private void OnValidate()
         {
             GenerateButtonContent(true);
         }
+#endif
 
         #region PointerClick Events
         // -- Invoke the actual click here.
         public void OnPointerClick(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
-            ParentTabSystem.OnTabButtonsClicked?.Invoke(transform.GetSiblingIndex());
+            ParentTabSystem.onTabButtonClicked?.Invoke(transform.GetSiblingIndex());
 
             ParentTabSystem.CurrentSelectedTab = this;
-            ParentTabSystem.UpdateButtonAppearances();
+            ParentTabSystem.UpdateElementsAppearance();
         }
 
         // -- Visual Updates
         public void OnPointerDown(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -193,7 +202,9 @@ namespace BXFW.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -203,7 +214,9 @@ namespace BXFW.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             if (!Interactable)
+            {
                 return;
+            }
 
             if (ParentTabSystem.CurrentSelectedTab != this)
             {
@@ -228,11 +241,11 @@ namespace BXFW.UI
                             TweenColorFade(ParentTabSystem.FadeColorTargetDefault, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            if (PrevSprite != null) { ButtonBackgroundImage.sprite = ParentTabSystem.DefaultSpriteToSwap; }
-                            else { ButtonBackgroundImage.sprite = null; }
+                            if (PrevSprite != null) { BackgroundImage.sprite = ParentTabSystem.DefaultSpriteToSwap; }
+                            else { BackgroundImage.sprite = null; }
                             break;
                         case FadeType.CustomUnityEvent:
-                            ParentTabSystem.ButtonCustomEventOnReset?.Invoke(ButtonBackgroundImage, this);
+                            ParentTabSystem.ButtonCustomEventOnReset?.Invoke(BackgroundImage, this);
                             break;
                     }
                     break;
@@ -243,10 +256,10 @@ namespace BXFW.UI
                             TweenColorFade(ParentTabSystem.FadeColorTargetHover, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            ButtonBackgroundImage.sprite = ParentTabSystem.HoverSpriteToSwap;
+                            BackgroundImage.sprite = ParentTabSystem.HoverSpriteToSwap;
                             break;
                         case FadeType.CustomUnityEvent:
-                            ParentTabSystem.ButtonCustomEventOnHover?.Invoke(ButtonBackgroundImage, this);
+                            ParentTabSystem.ButtonCustomEventOnHover?.Invoke(BackgroundImage, this);
                             break;
                     }
                     break;
@@ -257,10 +270,10 @@ namespace BXFW.UI
                             TweenColorFade(ParentTabSystem.FadeColorTargetClick, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            ButtonBackgroundImage.sprite = ParentTabSystem.TargetSpriteToSwap;
+                            BackgroundImage.sprite = ParentTabSystem.TargetSpriteToSwap;
                             break;
                         case FadeType.CustomUnityEvent:
-                            ParentTabSystem.ButtonCustomEventOnClick?.Invoke(ButtonBackgroundImage, this);
+                            ParentTabSystem.ButtonCustomEventOnClick?.Invoke(BackgroundImage, this);
                             break;
                     }
                     break;
@@ -268,21 +281,21 @@ namespace BXFW.UI
                     switch (FadeType)
                     {
                         case FadeType.ColorFade:
-                            TweenColorFade(DisableColor, ParentTabSystem.FadeSpeed);
+                            TweenColorFade(ParentTabSystem.FadeColorTargetDisabled, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            if (PrevSprite != null) { ButtonBackgroundImage.sprite = ParentTabSystem.DisabledSpriteToSwap; }
-                            else { ButtonBackgroundImage.sprite = null; }
+                            if (PrevSprite != null) { BackgroundImage.sprite = ParentTabSystem.DisabledSpriteToSwap; }
+                            else { BackgroundImage.sprite = null; }
                             break;
                         case FadeType.CustomUnityEvent:
-                            ParentTabSystem.ButtonCustomEventOnDisable?.Invoke(ButtonBackgroundImage, this);
+                            ParentTabSystem.ButtonCustomEventOnDisable?.Invoke(BackgroundImage, this);
                             break;
                     }
                     break;
 
                 default:
                     // Reset if no state was assigned.
-                    Debug.LogWarning(string.Format("[TabButton::SetButtonAppearance] No behaviour defined for state : \"{0}\". Reseting instead.", state));
+                    Debug.LogWarning(string.Format("[TabButton::SetButtonAppearance] No behaviour defined for state : \"{0}\". Reseting instead.", state), this);
                     goto case ButtonState.Reset;
             }
         }
@@ -291,7 +304,10 @@ namespace BXFW.UI
         #region Color Fading
         private void TweenColorFade(Color Target, float Duration)
         {
-            if (!gameObject.activeInHierarchy) return; // Do not start coroutines if the object isn't active.
+            if (!gameObject.activeInHierarchy)
+            {
+                return; // Do not start coroutines if the object isn't active.
+            }
 
             StartCoroutine(CoroutineTweenColorFade(Target, Duration));
         }
@@ -299,24 +315,26 @@ namespace BXFW.UI
         private IEnumerator CoroutineTweenColorFade(Color Target, float Duration)
         {
             // Color manipulation
-            Color CurrentPrevColor = ButtonBackgroundImage.color;
+            Color CurrentPrevColor = BackgroundImage.color;
             bool TargetIsPrevColor = Target == PrevColor;
 
             if (ParentTabSystem.FadeSubtractFromCurrentColor)
+            {
                 Target = TargetIsPrevColor ? Target : CurrentPrevColor - Target;
+            }
             // else, leave it unchanged
 
             if (!Application.isPlaying)
             {
                 // Set the color instantly as the 'UnityEditor' doesn't support tween.
-                ButtonBackgroundImage.color = Target;
+                BackgroundImage.color = Target;
 
                 yield break;
             }
 
             if (Duration <= 0f)
             {
-                ButtonBackgroundImage.color = Target;
+                BackgroundImage.color = Target;
 
                 yield break;
             }
@@ -327,12 +345,12 @@ namespace BXFW.UI
             while (T <= 1.0f)
             {
                 T += Time.deltaTime / Duration;
-                ButtonBackgroundImage.color = Color.Lerp(CurrentPrevColor, Target, Mathf.SmoothStep(0, 1, T));
+                BackgroundImage.color = Color.Lerp(CurrentPrevColor, Target, Mathf.SmoothStep(0f, 1f, T));
                 yield return null;
             }
 
             // Set end value.
-            ButtonBackgroundImage.color = Target;
+            BackgroundImage.color = Target;
         }
         #endregion
     }

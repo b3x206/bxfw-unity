@@ -1,230 +1,85 @@
-using BXFW.Tweening;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
+using BXFW.Tweening;
 
-[assembly: InternalsVisibleTo("BXFW.Editor")]
 namespace BXFW.UI
 {
     /// <summary>
     /// Displays the progress of <see cref="SwipableUI"/>.
     /// </summary>
-    public class SwipableUIProgressDisplay : MonoBehaviour
+    public sealed class SwipableUIProgressDisplay : MultiUIManager<Image>
     {
         [Header(":: References")]
-        public SwipableUI TargetSwipableUI;
+        public SwipableUI targetSwipableUI;
+
         [Header(":: Settings")]
-        public FadeType ChildImageFadeType = FadeType.ColorFade;
-        public bool ChangeColorWithTween = true;
-        public BXTweenPropertyFloat ChildImageColorFadeTween = new BXTweenPropertyFloat(.15f);
-        public Color ActiveColor = Color.white;
-        public Color DisabledColor = new Color(.7f, .7f, .7f, .7f);
-        public Sprite ActiveSprite;
-        public Sprite DisabledSprite;
+        public FadeType childImageFadeType = FadeType.ColorFade;
 
-        [SerializeField, ReadOnlyView] private Image baseChildProgressImage;
-        [SerializeField, HideInInspector] private List<Image> childProgressImages = new List<Image>();
+        public bool colorFadeUseTween = true;
+        public BXSTweenFloatContext colorFadeTween = new BXSTweenFloatContext(.15f);
+        public Color activeColor = Color.white;
+        public Color disabledColor = new Color(.7f, .7f, .7f, .7f);
 
-        /// <summary>
-        /// Generates a child image if it doesn't exist.
-        /// </summary>
-        internal void GenerateChildImage()
+        public Sprite activeSprite;
+        public Sprite disabledSprite;
+
+        protected override void Awake()
         {
-            // Create a child image showing status
-            if (baseChildProgressImage == null)
-            {
-                // Create new child gameobject
-                var cProgressImage = new GameObject("ProgressImage");
-                baseChildProgressImage = cProgressImage.AddComponent<Image>();
+            base.Awake();
 
-                // -- Hardcoded defaults
-                // Add layout group & content resizer as this is 'probably' the first time this gameobject is created.
-                if (!gameObject.TryGetComponent(out HorizontalLayoutGroup contentLayout))
-                    contentLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
-                contentLayout.spacing = 10f;
-                contentLayout.childAlignment = TextAnchor.MiddleCenter;
-
-                // Set transform as parent after 'content layout thing' as that resizes the object to an invalid size.
-                baseChildProgressImage.transform.SetParent(transform);
-                baseChildProgressImage.transform.localScale = Vector3.one;
-
-                if (!gameObject.TryGetComponent(out ContentSizeFitter contentSizeFitter))
-                    contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
-                contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
-                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
-
-                // 0'th image is special.
-                childProgressImages.Add(baseChildProgressImage);
-            }
-
-            GenerateDisplay();
-        }
-
-        private void Awake()
-        {
-            if (TargetSwipableUI == null)
+            if (targetSwipableUI == null)
             {
                 Debug.LogWarning($"[SwipableUIProgressDisplay::Awake] Field 'TargetSwipableUI' is null on object {transform.GetPath()}.");
                 return;
             }
 
-            GenerateDisplay();
-
-            TargetSwipableUI.OnClampItemMenuChanged += GenerateDisplay;
-            TargetSwipableUI.OnMenuChangeEvent.AddListener(OnMenuChanged);
-            prevMenuIndex = TargetSwipableUI.CurrentMenu;
+            targetSwipableUI.OnMenuCountChanged += OnMenuCountChanged;
+            targetSwipableUI.OnMenuChangeEvent.AddListener(OnMenuChanged);
+            m_prevMenuIndex = targetSwipableUI.CurrentMenu;
+            UpdateElementsAppearance();
         }
-
-        private int prevMenuIndex = 0; // Swipable menu can only start from this index, however we still assign it to it's 'CurrentMenu' variable.
-
-        private void OnMenuChanged(int menuIndex)
+        protected override void OnEnable()
         {
-            if (prevMenuIndex == menuIndex) return; // Don't do anything if the menu index is the same.
+            base.OnEnable();
 
-            // Change images using the current fade type
-            switch (ChildImageFadeType)
+            if (ElementCount != targetSwipableUI.MenuCount)
             {
-                // These events are discarded
-                case FadeType.None:
-                case FadeType.CustomUnityEvent:
-                // These are the only 2 valid ones.
-                case FadeType.ColorFade:
-                    if (ChangeColorWithTween)
-                    {
-                        // Since prevMenuIndex is changed after this tween is started, it will change the incorrect tweens color.
-                        var pMenuIndexPersistent = prevMenuIndex;
-                        ChildImageColorFadeTween.StartTween(0f, 1f, (float f) =>
-                        {
-                            SetAllChildExceptIndex(DisabledColor, 
-                                Color.Lerp(childProgressImages[menuIndex].color, ActiveColor, f), menuIndex);
-                            // Change the previous image seperately
-                            childProgressImages[pMenuIndexPersistent].color = Color.Lerp(childProgressImages[pMenuIndexPersistent].color, DisabledColor, f);
-                            //childProgressImages[menuIndex].color = Color.Lerp(childProgressImages[menuIndex].color, ActiveColor, f);
-                        });
-                    }
-                    else
-                    {
-                        SetAllChildExceptIndex(DisabledColor, ActiveColor, menuIndex);
-                    }
-                    break;
-                case FadeType.SpriteSwap:
-                    SetAllChildExceptIndex(DisabledSprite, ActiveSprite, menuIndex);
-                    //childProgressImages[menuIndex].sprite = ActiveSprite;
-                    break;
+                OnMenuCountChanged();
             }
-
-            prevMenuIndex = menuIndex;
         }
-
-        /// <summary>
-        /// Generates this UIProgressDisplay.
-        /// <br><b>NOTE:</b> Only generates if <see cref="TargetSwipableUI"/> isn't null.</br>
-        /// </summary>
-        public void GenerateDisplay()
+        protected override void OnDestroy()
         {
-            if (TargetSwipableUI == null) return;
-            if (childProgressImages == null) GenerateChildImage();
-            if (TargetSwipableUI.ClampItemMenu == 0)
+            if (targetSwipableUI == null)
             {
-                // 0 is special case for only the base object being enabled.
-                if (!baseChildProgressImage.gameObject.activeInHierarchy)
-                    baseChildProgressImage.gameObject.SetActive(true);
-
-                // Destroy all except base
-                // Disable primary gameobject & destroy until 0
-                for (int i = 1; i < childProgressImages.Count; i++)
-                {
-                    if (!Application.isPlaying)
-                        DestroyImmediate(childProgressImages[i].gameObject);
-                    else
-                        Destroy(childProgressImages[i].gameObject);
-                }
-
-                CleanChildImageList();
                 return;
             }
 
-            // ClampItemMenu is an array index
-            // Create
-            while (childProgressImages.Count < TargetSwipableUI.ClampItemMenu + 1)
-            {
-                if (!baseChildProgressImage.gameObject.activeInHierarchy)
-                    baseChildProgressImage.gameObject.SetActive(true);
-
-                Image imageInst = Instantiate(baseChildProgressImage, transform);
-
-                switch (ChildImageFadeType)
-                {
-                    // These events are discarded
-                    case FadeType.None:
-                    case FadeType.CustomUnityEvent:
-                    // These are the only 2 valid ones.
-                    case FadeType.ColorFade:
-                        imageInst.color = childProgressImages.Count == TargetSwipableUI.CurrentMenu ? ActiveColor : DisabledColor;
-                        break;
-                    case FadeType.SpriteSwap:
-                        imageInst.sprite = childProgressImages.Count == TargetSwipableUI.CurrentMenu ? ActiveSprite : DisabledSprite;
-                        break;
-                }
-
-                childProgressImages.Add(imageInst);
-            }
-            // Destroy
-            while (childProgressImages.Count > TargetSwipableUI.ClampItemMenu + 1)
-            {
-                // Destroy all if there's no clamp
-                if (TargetSwipableUI.ClampItemMenu < 0)
-                {
-                    // Disable primary gameobject & destroy until 0
-                    for (int i = 1; i < childProgressImages.Count; i++)
-                    {
-                        if (!Application.isPlaying)
-                            DestroyImmediate(childProgressImages[i].gameObject);
-                        else
-                            Destroy(childProgressImages[i].gameObject);
-                    }
-
-                    CleanChildImageList();
-
-                    baseChildProgressImage.gameObject.SetActive(false);
-                    return;
-                }
-
-                // Destroy normally
-                if (!Application.isPlaying)
-                    DestroyImmediate(childProgressImages[childProgressImages.Count - 1].gameObject);
-                else
-                    Destroy(childProgressImages[childProgressImages.Count - 1].gameObject);
-
-                CleanChildImageList();
-            }
+            targetSwipableUI.OnMenuCountChanged -= OnMenuCountChanged;
         }
 
-        public void SetAllChildExceptIndex(Color disabled, Color enabled, int enabledIndex)
+        // -- Used for tweening
+        private void SetAllChildExceptIndex(Color disabled, Color enabled, int enabledIndex)
         {
-            for (int i = 0; i < childProgressImages.Count; i++)
+            for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = childProgressImages[i];
+                var img = m_Elements[i];
                 if (img == null)
                 {
-                    Debug.LogWarning($"[SwipableUIProgressDisplay] One of the images are null on object '{name}'.");
-                    CleanChildImageList();
+                    CleanupElementsList();
                     continue;
                 }
-                
+
                 img.color = i == enabledIndex ? enabled : disabled;
             }
         }
-        public void SetAllChildExceptIndex(Sprite disabled, Sprite enabled, int enabledIndex)
+        private void SetAllChildExceptIndex(Sprite disabled, Sprite enabled, int enabledIndex)
         {
-            for (int i = 0; i < childProgressImages.Count; i++)
+            for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = childProgressImages[i];
+                var img = m_Elements[i];
                 if (img == null)
                 {
-                    Debug.LogWarning($"[SwipableUIProgressDisplay] One of the images are null on object '{name}'.");
-                    CleanChildImageList();
+                    CleanupElementsList();
                     continue;
                 }
 
@@ -232,9 +87,118 @@ namespace BXFW.UI
             }
         }
 
-        public void CleanChildImageList()
+        private void OnMenuCountChanged()
         {
-            childProgressImages.RemoveAll((x) => x == null);
+            ElementCount = targetSwipableUI.MenuCount;
+            UpdateElementsAppearance();
+        }
+
+        // Swipable menu can only start from this index, however we still assign it to it's 'CurrentMenu' variable.
+        private int m_prevMenuIndex = 0;
+        private void OnMenuChanged(int menuIndex)
+        {
+            // Change images using the current fade type
+            switch (childImageFadeType)
+            {
+                // These events are discarded
+                case FadeType.None:
+                case FadeType.CustomUnityEvent:
+                // These are the only 2 valid ones.
+                case FadeType.ColorFade:
+                    if (colorFadeUseTween)
+                    {
+                        if (!colorFadeTween.IsValid)
+                        {
+                            colorFadeTween.SetStartValue(0f).SetEndValue(1f);
+                        }
+
+                        // Since prevMenuIndex is changed after this tween is started, it will change the incorrect tweens color.
+                        var prevMenuPersistentIndex = m_prevMenuIndex;
+                        colorFadeTween.SetSetter((float f) =>
+                        {
+                            SetAllChildExceptIndex(
+                                disabledColor, 
+                                Color.Lerp(disabledColor, activeColor, f), 
+                                menuIndex
+                            );
+
+                            // Change the previous image seperately
+                            m_Elements[prevMenuPersistentIndex].color = Color.Lerp(activeColor, disabledColor, f);
+                        });
+                        colorFadeTween.Play();
+                    }
+                    else
+                    {
+                        SetAllChildExceptIndex(disabledColor, activeColor, menuIndex);
+                    }
+                    break;
+                case FadeType.SpriteSwap:
+                    SetAllChildExceptIndex(disabledSprite, activeSprite, menuIndex);
+                    break;
+            }
+
+            m_prevMenuIndex = menuIndex;
+        }
+
+        protected override Image OnCreateElement(Image referenceElement)
+        {
+            Image createImage;
+
+            if (referenceElement == null)
+            {
+                // Create new child gameobject
+                var cProgressImage = new GameObject();
+                createImage = cProgressImage.AddComponent<Image>();
+
+                // -- Hardcoded defaults
+                // Add layout group & content resizer to this object as this moment is 'probably' the first time this gameobject is created.
+                if (!gameObject.TryGetComponent(out HorizontalLayoutGroup contentLayout))
+                {
+                    contentLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
+                }
+
+                contentLayout.spacing = 10f;
+                contentLayout.childAlignment = TextAnchor.MiddleCenter;
+
+                if (!gameObject.TryGetComponent(out ContentSizeFitter contentSizeFitter))
+                {
+                    contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
+                }
+
+                contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+            }
+            else
+            {
+                createImage = Instantiate(referenceElement);
+            }
+
+            createImage.transform.SetParent(ParentTransform);
+            createImage.name = $"ProgressImage{m_Elements.Count}";
+
+            return createImage;
+        }
+
+        public override void UpdateElementsAppearance()
+        {
+            if (targetSwipableUI == null)
+            {
+                return;
+            }
+
+            switch (childImageFadeType)
+            {
+                // These events are discarded
+                case FadeType.None:
+                case FadeType.CustomUnityEvent:
+                // These are the only 2 valid ones.
+                case FadeType.ColorFade:
+                    SetAllChildExceptIndex(disabledColor, activeColor, targetSwipableUI.CurrentMenu);
+                    break;
+                case FadeType.SpriteSwap:
+                    SetAllChildExceptIndex(disabledSprite, activeSprite, targetSwipableUI.CurrentMenu);
+                    break;
+            }
         }
     }
 }

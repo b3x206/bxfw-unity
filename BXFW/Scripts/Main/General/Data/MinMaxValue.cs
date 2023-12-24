@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BXFW
 {
     /// <summary>
-    /// Contains a minimum/maximum value.
+    /// Contains a minimum/maximum value range.
     /// <br><see cref="Min"/> cannot be larger than <see cref="Max"/> and the other way around.</br>
     /// <br/>
     /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
@@ -12,6 +12,7 @@ namespace BXFW
     [Serializable]
     public struct MinMaxValue : IEquatable<MinMaxValue>, IEquatable<MinMaxValueInt>
     {
+        // - Variable+Property
         [SerializeField] private float m_Min;
         [SerializeField] private float m_Max;
 
@@ -20,7 +21,7 @@ namespace BXFW
             get { return m_Min; }
             set
             {
-                m_Min = Mathf.Clamp(value, float.NegativeInfinity, Max);
+                m_Min = Math.Clamp(value, float.NegativeInfinity, Max);
             }
         }
         public float Max
@@ -28,28 +29,35 @@ namespace BXFW
             get { return m_Max; }
             set
             {
-                m_Max = Mathf.Clamp(value, Min, float.PositiveInfinity);
+                m_Max = Math.Clamp(value, Min, float.PositiveInfinity);
             }
         }
 
+        // - Ctors
         /// <summary>
         /// Constructs the MinMaxValue.
-        /// <br>Checks the given parameters for appopriateness.</br>
+        /// <br>Checks the given parameters for appopriateness. If the values are misplaced, they are swapped.</br>
         /// </summary>
         public MinMaxValue(float min, float max)
         {
             // Check if the rules apply for those values
             if (min > max)
-                max = min;
+            {
+                (min, max) = (max, min);
+            }
 
             m_Min = min;
             m_Max = max;
         }
 
+        // - Constants
+        public static readonly MinMaxValue Zero = new MinMaxValue(0f, 0f);
+
+        // - Methods
         /// <summary>
         /// Returns a random value between <see cref="Min"/> and <see cref="Max"/>.
         /// </summary>
-        public float GetRandomBetween()
+        public float RandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
         }
@@ -60,9 +68,17 @@ namespace BXFW
         /// <returns>Clamped value.</returns>
         public float ClampBetween(float value)
         {
-            return Mathf.Clamp(value, Min, Max);
+            return Math.Clamp(value, Min, Max);
+        }
+        /// <summary>
+        /// 1D size difference as <see cref="Max"/> - <see cref="Min"/>
+        /// </summary>
+        public float Size()
+        {
+            return Max - Min;
         }
 
+        // - Operators
         public static implicit operator Vector2(MinMaxValue value)
         {
             return new Vector2(value.Min, value.Max);
@@ -76,7 +92,7 @@ namespace BXFW
         /// Multiplies the <see cref="MinMaxValue"/> by <paramref name="rhs"/>.
         /// <br>If 'rhs' is a negative number and <see cref="Min"/> is more than <see cref="Max"/>, the values will swap.</br>
         /// </summary>
-        public static MinMaxValue operator*(MinMaxValue lhs, float rhs)
+        public static MinMaxValue operator *(MinMaxValue lhs, float rhs)
         {
             lhs.m_Min *= rhs;
             lhs.m_Max *= rhs;
@@ -86,9 +102,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    float prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -113,9 +127,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    float prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -127,11 +139,17 @@ namespace BXFW
             return lhs;
         }
 
-        public static bool operator==(MinMaxValue lhs, MinMaxValue rhs)
+        public static bool operator ==(MinMaxValue lhs, MinMaxValue rhs)
         {
-            return lhs.Equals(rhs);
+            // Epsilon equals
+            float diffMin = lhs.Min - rhs.Min;
+            float diffMax = lhs.Max - rhs.Max;
+
+            // mul twice to force flip sign to positive
+            // epsilon is multiplied by 4 for possible 4x epsilons difference
+            return (diffMin * diffMin) + (diffMax * diffMax) < float.Epsilon * 4f;
         }
-        public static bool operator!=(MinMaxValue lhs, MinMaxValue rhs)
+        public static bool operator !=(MinMaxValue lhs, MinMaxValue rhs)
         {
             return !(lhs == rhs);
         }
@@ -172,13 +190,14 @@ namespace BXFW
     }
 
     /// <summary>
-    /// Same as <see cref="MinMaxValue"/>, but integers.
+    /// Same as <see cref="MinMaxValue"/> range, but integers.
     /// <br/>
     /// <br>This struct supports <see cref="ClampAttribute"/>.</br>
     /// </summary>
     [Serializable]
     public struct MinMaxValueInt : IEquatable<MinMaxValueInt>, IEquatable<MinMaxValue>
     {
+        // - Variables+Property
         [SerializeField] private int m_Min;
         [SerializeField] private int m_Max;
 
@@ -199,23 +218,30 @@ namespace BXFW
             }
         }
 
+        // - Ctors
         /// <summary>
         /// Constructs the MinMaxValueInt.
-        /// <br>Checks the values for appopriateness.</br>
+        /// <br>Checks the values for appopriateness. If the values are misplaced, they are swapped.</br>
         /// </summary>
         public MinMaxValueInt(int min, int max)
         {
             if (min > max)
-                max = min;
+            {
+                (min, max) = (max, min);
+            }
 
             m_Min = min;
             m_Max = max;
         }
 
+        // - Constants
+        public static readonly MinMaxValueInt Zero = new MinMaxValueInt(0, 0);
+
+        // - Methods
         /// <summary>
         /// Returns a random value between min and max.
         /// </summary>
-        public int GetRandomBetween()
+        public int RandomBetween()
         {
             return UnityEngine.Random.Range(Min, Max);
         }
@@ -226,9 +252,17 @@ namespace BXFW
         /// <returns>Clamped value.</returns>
         public int ClampBetween(int value)
         {
-            return Mathf.Clamp(value, Min, Max);
+            return Math.Clamp(value, Min, Max);
+        }
+        /// <summary>
+        /// 1D size difference as <see cref="Max"/> - <see cref="Min"/>
+        /// </summary>
+        public int Size()
+        {
+            return Max - Min;
         }
 
+        // - Operators
         public static implicit operator Vector2(MinMaxValueInt value)
         {
             return new Vector2Int(value.Min, value.Max);
@@ -240,6 +274,10 @@ namespace BXFW
         public static implicit operator MinMaxValueInt(Vector2Int value)
         {
             return new MinMaxValueInt(value.x, value.y);
+        }
+        public static explicit operator MinMaxValue(MinMaxValueInt value)
+        {
+            return new MinMaxValue(value.Min, value.Max);
         }
 
         /// <summary>
@@ -256,9 +294,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    int prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -283,9 +319,7 @@ namespace BXFW
                 // Sign flipped
                 if (rhs < 0)
                 {
-                    int prevMin = lhs.m_Min;
-                    lhs.m_Min = lhs.m_Max;
-                    lhs.m_Max = prevMin;
+                    (lhs.m_Max, lhs.m_Min) = (lhs.m_Min, lhs.m_Max);
                 }
                 // No sign flipping, clamp min
                 else
@@ -299,6 +333,7 @@ namespace BXFW
 
         public static bool operator ==(MinMaxValueInt lhs, MinMaxValueInt rhs)
         {
+            // int is int, doesn't require epsilon shenanigans
             return lhs.Equals(rhs);
         }
         public static bool operator !=(MinMaxValueInt lhs, MinMaxValueInt rhs)

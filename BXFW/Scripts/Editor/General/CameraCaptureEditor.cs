@@ -7,7 +7,7 @@ using BXFW.Tools.Editor;
 namespace BXFW.ScriptEditor
 {
     [CustomEditor(typeof(CameraCapture)), CanEditMultipleObjects]
-    public class CameraCaptureInspector : Editor
+    public class CameraCaptureEditor : Editor
     {
         public override void OnInspectorGUI()
         {
@@ -15,7 +15,7 @@ namespace BXFW.ScriptEditor
 
             serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
             {
-                { nameof(CameraCapture.CaptureKey), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After,
+                { nameof(CameraCapture.captureKey), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.After,
                     () =>
                     {
                         if (targets.Length <= 1)

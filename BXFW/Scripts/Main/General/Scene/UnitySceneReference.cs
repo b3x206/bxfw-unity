@@ -6,13 +6,13 @@ namespace BXFW.SceneManagement
 {
     /// <summary>
     /// Allows for scripts to reference a unity scene, but only in editor. (has no support for 'StreamingAssets' or 'AssetBundles')
-    /// The scene should be registered in the build settings.
+    /// <br>The scene should be registered in the build settings to be loadable, otherwise only the GUID of the scene is contained.</br>
     /// </summary>
     [Serializable]
     public sealed class UnitySceneReference
     {
         // Serialize the GUID as it never changes (unless the scene was deleted, etc.)
-        [SerializeField] private SerializableGUID sceneGUID;
+        [SerializeField] private string sceneGUID;
         [SerializeField] private int sceneIndex = -1;
 
         private bool CheckSceneIndexValidity()
@@ -23,7 +23,7 @@ namespace BXFW.SceneManagement
                 var editorScn = UnityEditor.EditorBuildSettings.scenes[i];
 
                 // Check current index validity
-                if (editorScn.guid == sceneGUID)
+                if (editorScn.guid.ToString() == sceneGUID)
                 {
                     if (sceneIndex != i)
                     {
@@ -71,8 +71,8 @@ namespace BXFW.SceneManagement
                 }
 
 #if UNITY_EDITOR
-                var eScn = UnityEditor.EditorBuildSettings.scenes[sceneIndex];
-                return new SceneEntry(eScn.path, new SerializableGUID(eScn.guid));
+                var editorScene = UnityEditor.EditorBuildSettings.scenes[sceneIndex];
+                return new SceneEntry(editorScene.path, editorScene.guid.ToString());
 #else
                 return UnitySceneReferenceList.Instance.entries[sceneIndex];
 #endif
@@ -96,7 +96,6 @@ namespace BXFW.SceneManagement
                 }
                 
                 Scene loadedScene = SceneManager.GetSceneByBuildIndex(sceneIndex);
-
                 return loadedScene;
             }
         }
@@ -109,7 +108,6 @@ namespace BXFW.SceneManagement
             get
             {
                 CheckSceneIndexValidity();
-
                 return sceneIndex;
             }
         }

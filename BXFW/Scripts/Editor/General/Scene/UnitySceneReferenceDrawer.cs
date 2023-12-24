@@ -20,37 +20,50 @@ namespace BXFW.ScriptEditor
         public int callbackOrder => 0;
         public static bool DeleteSceneListAfterBuild = true;
 
-        private const string RELATIVE_DIR_NAME = "SceneList";
-        private const string FILE_NAME = "ListReference";
+        private static string RelativeDirectoryName = string.Empty;
+        private const string FileName = "MainSceneList";
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            // Gather new name
+            RelativeDirectoryName = $"{Random.Range(0, int.MaxValue)}__SceneList";
+
             // Pack the references with a serialized list of scene references
             // This class is stored in 'UnitySceneReference'?
             if (UnitySceneReferenceList.Instance == null)
-                UnitySceneReferenceList.CreateEditorInstance(RELATIVE_DIR_NAME, FILE_NAME);
+            {
+                UnitySceneReferenceList.CreateEditorInstance(RelativeDirectoryName, FileName);
+            }
 
             // Gather entries from 'EditorBuildSettings.scenes' and convert them.
             SceneEntry[] entries = new SceneEntry[EditorBuildSettings.scenes.Length];
             for (int i = 0; i < EditorBuildSettings.scenes.Length; i++)
             {
                 var editorScene = EditorBuildSettings.scenes[i];
-                entries[i] = new SceneEntry(editorScene.path, new SerializableGUID(editorScene.guid));
+                entries[i] = new SceneEntry(editorScene.path, editorScene.guid.ToString());
             }
 
             // Add the entry.
             UnitySceneReferenceList.Instance.entries = entries;
+            AssetDatabase.Refresh();
         }
 
         public void OnPostprocessBuild(BuildReport report)
         {
             if (DeleteSceneListAfterBuild)
             {
-                string assetDirRelative = string.Format("Assets/Resources/{0}", RELATIVE_DIR_NAME);
+                // delete the asset and it's meta
+                string assetName = $"{Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", RelativeDirectoryName, FileName)}.asset";
+                File.Delete(assetName);
+                File.Delete($"{assetName}.meta");
 
-                AssetDatabase.DeleteAsset(string.Format("{0}.asset", Path.Combine(assetDirRelative, FILE_NAME)));
+                // delete the directory and it's meta
+                string assetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", RelativeDirectoryName);
+                Directory.Delete(assetDirectory);
+                File.Delete($"{assetDirectory}.meta");
                 AssetDatabase.Refresh();
-                FileUtil.DeleteFileOrDirectory(assetDirRelative);
+
+                RelativeDirectoryName = string.Empty;
             }
         }
     }
@@ -59,132 +72,123 @@ namespace BXFW.ScriptEditor
     /// Draws the property inspector for the <see cref="UnitySceneReference"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(UnitySceneReference))]
-    internal class UnitySceneReferenceDrawer : PropertyDrawer
+    public class UnitySceneReferenceDrawer : PropertyDrawer
     {
-        private SceneAsset sceneAsset;
-        private SerializedProperty sceneGUID;
-        private SerializableGUID SceneGUIDValue 
-        { 
-            get { return (SerializableGUID)sceneGUID.GetTarget().Value; }
-        }
-        private void SetSceneGUIDValue(SerializedProperty property, SerializableGUID value)
+        private string m_previousTargetSceneGUID;
+        private SceneAsset m_targetSceneAsset;
+        private SerializedProperty m_sceneGUIDProperty;
+        private SerializedProperty m_sceneIndexProperty;
+        private string SceneGUIDValue => (string)m_sceneGUIDProperty.GetTarget().value;
+        private bool ShowDetailsGUI => !string.IsNullOrEmpty(SceneGUIDValue);
+
+        // -- Utility
+        private void GatherRelativeProperties(SerializedProperty property)
         {
-            // Passed 'property' param is the parent. (UnitySceneReference)
-            var guidFieldInfo = sceneGUID.GetTarget(); // This is the field info we need to set
+            m_sceneIndexProperty = property.FindPropertyRelative("sceneIndex");
+            m_sceneGUIDProperty = property.FindPropertyRelative("sceneGUID");
+        }
+        private void SetSceneGUIDValue(SerializedProperty property, string value)
+        {
+            if (m_sceneGUIDProperty == null || m_sceneGUIDProperty.IsDisposed())
+            {
+                GatherRelativeProperties(property);
+            }
 
             // Serialize the stuff we do (otherwise it doesn't serialize, as we use a EditorGUI.ObjectField)
             // Can record entire parent object, as it's probably just the script.
-            Undo.RecordObject(property.serializedObject.targetObject, "set scene");
-            guidFieldInfo.Key.SetValue(property.GetTarget().Value, value);
+            m_sceneGUIDProperty.stringValue = value;
         }
-        private SerializedProperty sceneIndex;
-
-        private bool ShowOtherGUI => SceneGUIDValue != default;
         private bool ShowWarningGUI(SerializedProperty property)
         {
-            return ShowWarningGUI((UnitySceneReference)property.GetTarget().Value);
+            return ShowWarningGUI((UnitySceneReference)property.GetTarget().value);
         }
         private bool ShowWarningGUI(UnitySceneReference target)
         {
-            return ShowOtherGUI && !target.SceneLoadable;
+            return ShowDetailsGUI && !target.SceneLoadable;
         }
 
-        private void GatherRelativeProperties(SerializedProperty property)
-        {
-            sceneIndex = property.FindPropertyRelative("sceneIndex");
-            sceneGUID = property.FindPropertyRelative("sceneGUID");
-        }
+        // -- GUI
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
+        private const float WarningHelpBoxHeight = 38f;
+        private const float FixIssueButtonHeight = 24f;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             GatherRelativeProperties(property);
-            sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(SceneGUIDValue));
-
-            return (EditorGUIUtility.singleLineHeight + 2) * (1 + (ShowWarningGUI(property) ? 3.8f : 0));
-        }
-
-        private float currentY;
-        public Rect GetFieldRect(Rect pos, SerializedProperty property, float padding = 2f)
-        {
-            return GetFieldRect(pos, EditorGUI.GetPropertyHeight(property), padding);
-        }
-        public Rect GetFieldRect(Rect pos, float height = -1f, float padding = 2f)
-        {
-            if (height <= 0f)
-                height = EditorGUIUtility.singleLineHeight;
-
-            Rect r = new Rect
+            // Load if the scene was modified
+            if (m_previousTargetSceneGUID != SceneGUIDValue)
             {
-                x = pos.x,
-                y = currentY + (padding / 2f),
-                width = pos.width,
-                height = height - (padding / 2f)
-            };
+                m_targetSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(SceneGUIDValue));
+                m_previousTargetSceneGUID = SceneGUIDValue;
+            }
 
-            currentY += height;
-            return r;
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+
+            if (ShowWarningGUI(property))
+            {
+                height += WarningHelpBoxHeight + mainCtx.Padding;
+                height += FixIssueButtonHeight + mainCtx.Padding;
+            }
+
+            return height;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
             GatherRelativeProperties(property);
-            UnitySceneReference target = (UnitySceneReference)property.GetTarget().Value;
-            currentY = position.y;
+            UnitySceneReference target = (UnitySceneReference)property.GetTarget().value;
+            mainCtx.Reset();
 
-            Rect scAssetGUIAreaRect = GetFieldRect(position);
-            float scAssetGUIareaWidth = scAssetGUIAreaRect.width; // prev width
-            const float scAssetGUISmallerWidth = .9f;
+            Rect sceneAssetFieldRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
+            float sceneAssetFieldWidth = sceneAssetFieldRect.width; // prev width
+            const float sceneAssetFieldSmallerWidth = 0.9f;
 
-            if (ShowOtherGUI)
+            if (ShowDetailsGUI)
             {
-                scAssetGUIAreaRect.width = scAssetGUIareaWidth * scAssetGUISmallerWidth;
+                sceneAssetFieldRect.width = sceneAssetFieldWidth * sceneAssetFieldSmallerWidth;
             }
-            sceneAsset = (SceneAsset)EditorGUI.ObjectField(scAssetGUIAreaRect, "Scene Asset", sceneAsset, typeof(SceneAsset), false);
-            if (ShowOtherGUI)
+            m_targetSceneAsset = (SceneAsset)EditorGUI.ObjectField(sceneAssetFieldRect, "Scene Asset", m_targetSceneAsset, typeof(SceneAsset), false);
+            if (ShowDetailsGUI)
             {
-                scAssetGUIAreaRect.x += scAssetGUIareaWidth * scAssetGUISmallerWidth;
-                scAssetGUIAreaRect.width = scAssetGUIareaWidth * (1f - scAssetGUISmallerWidth);
+                sceneAssetFieldRect.x += sceneAssetFieldWidth * sceneAssetFieldSmallerWidth;
+                sceneAssetFieldRect.width = sceneAssetFieldWidth * (1f - sceneAssetFieldSmallerWidth);
 
-                var gEnabled = GUI.enabled;
-                GUI.enabled = false;
-                GUI.Label(scAssetGUIAreaRect, $"I:{target.SceneIndex}", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
-                GUI.enabled = gEnabled;
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
+                {
+                    GUI.Label(sceneAssetFieldRect, $"I:{target.SceneIndex}", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
+                }
             }
 
-            string scenePath = AssetDatabase.GetAssetPath(sceneAsset);
+            string scenePath = AssetDatabase.GetAssetPath(m_targetSceneAsset);
             GUID sceneGUID = AssetDatabase.GUIDFromAssetPath(scenePath);
+            string sceneGUIDString = sceneGUID.ToString();
             // Register the 'SceneAsset'
-            if (SceneGUIDValue != sceneGUID)
+            if (SceneGUIDValue != sceneGUIDString)
             {
-                // First plan was to modify runtime scenes and add the given reference
-                // But unity says it can load scenes from the editor soo
-                // But it can't be loaded as well, so yeah.
-
                 // Set parent record undos so that we can undo what we did
                 // (check whether if the given GUID is empty, otherwise don't call the intensive conversion constructor which does reflections)
-                SetSceneGUIDValue(property, sceneGUID.Empty() ? default : new SerializableGUID(sceneGUID));
+                SetSceneGUIDValue(property, sceneGUID.Empty() ? string.Empty : sceneGUIDString);
             }
 
-            if (ShowOtherGUI)
+            // This accomodates for the 'ShowDetailsGUI'
+            if (ShowWarningGUI(target))
             {
-                if (ShowWarningGUI(property))
+                EditorGUI.HelpBox(mainCtx.GetPropertyRect(position, WarningHelpBoxHeight), "[UnitySceneReference] Given scene does not exist on the Player Settings Scene build index.\nIt will be impossible to load this asset.", MessageType.Warning);
+
+                if (GUI.Button(mainCtx.GetPropertyRect(position, FixIssueButtonHeight), "Fix Issue"))
                 {
-                    EditorGUI.HelpBox(GetFieldRect(position, EditorGUIUtility.singleLineHeight * 2.3f), "[UnitySceneReference] Given scene does not exist on the Player Settings Scene build index.\nIt will be impossible to load this asset.", MessageType.Warning);
-
-                    if (GUI.Button(GetFieldRect(position, EditorGUIUtility.singleLineHeight * 1.5f), "Fix Issue"))
+                    List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes.Length + 1);
+                    foreach (EditorBuildSettingsScene sceneReg in EditorBuildSettings.scenes)
                     {
-                        List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes.Length + 1);
-                        foreach (var sceneReg in EditorBuildSettings.scenes)
-                        {
-                            scenes.Add(sceneReg);
-                        }
-                        scenes.Add(new EditorBuildSettingsScene(sceneGUID, true));
-
-                        // Assign and log the index
-                        EditorBuildSettings.scenes = scenes.ToArray();
-                        sceneIndex.intValue = EditorBuildSettings.scenes.Length - 1;
-                        Debug.Log($"[UnitySceneReference] Assigned scene to index {EditorBuildSettings.scenes.Length - 1}.");
+                        scenes.Add(sceneReg);
                     }
+                    scenes.Add(new EditorBuildSettingsScene(sceneGUID, true));
+
+                    // Assign and log the index
+                    EditorBuildSettings.scenes = scenes.ToArray();
+                    m_sceneIndexProperty.intValue = EditorBuildSettings.scenes.Length - 1;
+                    Debug.Log($"[UnitySceneReference] Assigned scene to index {EditorBuildSettings.scenes.Length - 1}.");
                 }
             }
 

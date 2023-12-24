@@ -18,7 +18,10 @@ namespace BXFW.Tools.Editor
         /// <br>No 'Run' should be called on this method.</br>
         /// </summary>
         /// <returns>Return <see langword="true"/> if the warning was acknowledged.</returns>
-        public virtual bool GetWarning() { return true; }
+        public virtual bool GetWarning()
+        {
+            return true;
+        }
 
         /// <summary>
         /// Called when the task should be run.

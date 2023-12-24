@@ -1,5 +1,4 @@
 using BXFW.Tweening;
-
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,7 +24,9 @@ namespace BXFW.UI
                 m_ProgressBarImg = value;
 
                 if (m_ProgressBarImg == null)
+                {
                     return;
+                }
 
                 SetProgress(m_ProgressValue);
             }
@@ -42,7 +43,9 @@ namespace BXFW.UI
                 m_ProgressValue = Mathf.Clamp01(value);
 
                 if (m_ProgressBarImg == null)
+                {
                     return;
+                }
 
                 SetProgress(m_ProgressValue);
             }
@@ -52,14 +55,16 @@ namespace BXFW.UI
         /// The <see cref="UnityEngine.RectTransform"/> of this Image.
         /// </summary>
         public RectTransform RectTransform
-        { 
+        {
             get
             {
                 if (m_rectTransform == null)
+                {
                     m_rectTransform = GetComponent<RectTransform>();
+                }
 
                 return m_rectTransform;
-            } 
+            }
         }
         [SerializeField] private Image m_background;
         /// <summary>
@@ -71,7 +76,9 @@ namespace BXFW.UI
             get
             {
                 if (m_background == null)
+                {
                     TryGetComponent(out m_background);
+                }
 
                 return m_background;
             }
@@ -86,7 +93,7 @@ namespace BXFW.UI
         /// Progress bar tweened move interpolation.
         /// <br>Only works when <see cref="SetProgress(float, bool)"/> is called with UseTween = true.</br>
         /// </summary>
-        public BXTweenPropertyFloat ProgressInterp = new BXTweenPropertyFloat(.1f);
+        public BXSTweenFloatContext setProgressTween = new BXSTweenFloatContext(0.1f);
 
         // -- Methods -- //
         // Initilaze
@@ -121,35 +128,45 @@ namespace BXFW.UI
                 m_ProgressBarImg.fillMethod = Image.FillMethod.Horizontal; // Default fillMethod.
             }
         }
-        
+
         // Progress
         private void OnValidate()
         {
             SetProgress(m_ProgressValue);
         }
-        public void SetProgress(float ProgressSet, bool UseTween = false)
+        /// <summary>
+        /// Sets a progress.
+        /// </summary>
+        /// <param name="setProgress">Progress to set between 0f~1f.</param>
+        /// <param name="useTween">Whether to use tween during the progress bar's interpolation.</param>
+        public void SetProgress(float setProgress, bool useTween = false)
         {
             if (m_ProgressBarImg == null)
-                return; // Image is null, don't put any error, as it fills the console because of the 'OnValidate' call.
-
-            ProgressSet = Mathf.Clamp01(ProgressSet);
-            if (UseTween)
             {
-                if (!ProgressInterp.IsSetup)
+                return; // Image is null, don't put any error, as it fills the console because of the 'OnValidate' call.
+            }
+
+            setProgress = Mathf.Clamp01(setProgress);
+            if (useTween)
+            {
+                if (!setProgressTween.IsValid)
                 {
                     // Setup tween
-                    ProgressInterp.SetupProperty((float f) => { m_ProgressBarImg.fillAmount = f; });
+                    // But this allocates more garbage than expected.
+                    // Eh whatever, it's only one time allocation anyways
+                    setProgressTween.SetSetter((float f) => m_ProgressBarImg.fillAmount = f);
                 }
 
-                ProgressInterp.StartTween(m_ProgressBarImg.fillAmount, ProgressSet);
+                // This just allocates JIT garbage
+                setProgressTween.SetStartValue(m_ProgressBarImg.fillAmount).SetEndValue(setProgress).Play();
             }
             else
             {
-                m_ProgressBarImg.fillAmount = ProgressSet;
+                m_ProgressBarImg.fillAmount = setProgress;
                 m_ProgressBarImg.color = m_ProgressBarImg.color;
             }
 
-            m_ProgressValue = ProgressSet;
+            m_ProgressValue = setProgress;
         }
 
         // Editor
@@ -161,30 +178,30 @@ namespace BXFW.UI
         private static void CreateUIProgressBar(UnityEditor.MenuCommand cmd)
         {
             // Create & Align
-            var PBar = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
-            UnityEditor.GameObjectUtility.SetParentAndAlign(PBar.gameObject, (GameObject)cmd.context);
-            PBar.RectTransform.sizeDelta = new Vector2(200f, 75f);
+            UIProgressBar progressBarComponent = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
+            UnityEditor.GameObjectUtility.SetParentAndAlign(progressBarComponent.gameObject, (GameObject)cmd.context);
+            progressBarComponent.RectTransform.sizeDelta = new Vector2(200f, 75f);
             // Create the mask for the 'PBar'
-            var PBarBGImage = PBar.gameObject.AddComponent<Image>();
-            PBar.gameObject.AddComponent<Mask>();
-            PBarBGImage.color = new Color(1f, 1f, 1f, .4f);
+            Image progressBarBackground = progressBarComponent.gameObject.AddComponent<Image>();
+            progressBarComponent.gameObject.AddComponent<Mask>();
+            progressBarBackground.color = new Color(1f, 1f, 1f, .4f);
 
             // Create another gameObject, with stretch of this object.
-            var PBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
-            PBarImage.transform.SetParent(PBar.transform);
+            Image progressBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
+            progressBarImage.transform.SetParent(progressBarComponent.transform);
             // Scale is weird when you put something to a rect transform
-            PBarImage.transform.localScale = Vector3.one;
+            progressBarImage.transform.localScale = Vector3.one;
             // This sets the UI stretch (after setting parent ofc)
-            PBarImage.rectTransform.anchorMin = new Vector2(0, 0);
-            PBarImage.rectTransform.anchorMax = new Vector2(1, 1);
-            PBarImage.rectTransform.offsetMin = Vector2.zero;
-            PBarImage.rectTransform.offsetMax = Vector2.zero;
+            progressBarImage.rectTransform.anchorMin = new Vector2(0, 0);
+            progressBarImage.rectTransform.anchorMax = new Vector2(1, 1);
+            progressBarImage.rectTransform.offsetMin = Vector2.zero;
+            progressBarImage.rectTransform.offsetMax = Vector2.zero;
 
             // Set the 'PBarImage' as the target image
-            PBar.m_ProgressBarImg = PBarImage;
-            PBar.Initilaze(); // Call initilaze for setting up the image.
+            progressBarComponent.m_ProgressBarImg = progressBarImage;
+            progressBarComponent.Initilaze(); // Call initilaze for setting up the image.
 
-            UnityEditor.Undo.RegisterCreatedObjectUndo(PBar.gameObject, "create progress bar");
+            UnityEditor.Undo.RegisterCreatedObjectUndo(progressBarComponent.gameObject, "create progress bar");
         }
 #endif
     }

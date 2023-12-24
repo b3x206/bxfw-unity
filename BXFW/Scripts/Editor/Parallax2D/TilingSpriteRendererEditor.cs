@@ -12,8 +12,44 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(TilingSpriteRenderer)), CanEditMultipleObjects]
     public class TilingSpriteRendererEditor : Editor
     {
-        private const float IntFieldActionButtonWidth = 17.5f;
-        private readonly List<Object> undoRecord = new List<Object>();
+        private const float NUM_FIELD_ACTION_BTN_WIDTH = 17.5f;
+        private readonly List<Object> m_undoRecord = new List<Object>();
+
+        private void OnSceneGUI()
+        {
+            // Draw a bounding box for one target (targets doesn't work on OnSceneGUI)
+            var hMatrix = Handles.matrix;
+            var target = base.target as TilingSpriteRenderer;
+            // Only do drawing if the target is autotile
+            if (!target.AutoTile)
+            {
+                return;
+            }
+
+            Transform tTrs = target.transform;
+
+            // Only position + rotation
+            Handles.matrix = Matrix4x4.TRS(tTrs.position, tTrs.rotation, Vector3.one);
+            // just draw a cube + rectangle showing bounds
+            // because when i try to do scaling the thing it always tries to work additively making it fly away
+            // This is because i have skill issue
+            EditorGUI.BeginChangeCheck();
+            Vector3 topRight = new Vector3(tTrs.lossyScale.x, tTrs.lossyScale.y, tTrs.position.z);
+            Handles.CubeHandleCap(0, topRight, Quaternion.identity, HandleUtility.GetHandleSize(topRight) * .3f, EventType.Repaint);
+
+            Vector3 topLeft = new Vector3(-tTrs.lossyScale.x, tTrs.lossyScale.y, 0f);
+            Handles.CubeHandleCap(0, topLeft, Quaternion.identity, HandleUtility.GetHandleSize(topLeft) * .3f, EventType.Repaint);
+
+            Vector3 bottomRight = new Vector3(tTrs.lossyScale.x, -tTrs.lossyScale.y, 0f);
+            Handles.CubeHandleCap(0, bottomRight, Quaternion.identity, HandleUtility.GetHandleSize(bottomRight) * .3f, EventType.Repaint);
+
+            Vector3 bottomLeft = new Vector3(-tTrs.lossyScale.x, -tTrs.lossyScale.y, 0f);
+            Handles.CubeHandleCap(0, bottomLeft, Quaternion.identity, HandleUtility.GetHandleSize(bottomLeft) * .3f, EventType.Repaint);
+
+            Handles.DrawSolidRectangleWithOutline(new Vector3[] { bottomLeft, bottomRight, topRight, topLeft }, new Color(.4f, .4f, .4f, .1f), Color.black);
+
+            Handles.matrix = hMatrix;
+        }
 
         /// <summary>
         /// Automatically registers <see cref="TilingSpriteRenderer.GenerateGrid"/> method based undos. (for an 'Editor.target', but custom targets can be passed)
@@ -31,7 +67,9 @@ namespace BXFW.ScriptEditor
             // TODO : Merge undos into one using the Undo group creation outside the foreach
             //var Targets = targets.Cast<TilingSpriteRenderer>();
             if (target == null)
+            {
                 target = (TilingSpriteRenderer)base.target;
+            }
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(undoMsg);
@@ -40,53 +78,55 @@ namespace BXFW.ScriptEditor
             // Record previous state of 'Targets'
             //foreach (var item in Targets)
             //{
-            undoRecord.Add(target);
+            m_undoRecord.Add(target);
             // to be destroyed / created SpriteRenderers gameobjects
             foreach (SpriteRenderer sr in target.AllRendererObjects)
             {
                 if (sr == null)
+                {
                     continue;
+                }
 
-                undoRecord.Add(sr.gameObject);
+                m_undoRecord.Add(sr.gameObject);
             }
             //}
             
-            Undo.RecordObjects(undoRecord.ToArray(), string.Empty);
+            Undo.RecordObjects(m_undoRecord.ToArray(), string.Empty);
 
             undoableGenerateAction();
             //foreach (var item in Targets)
             //{
             // Register creations (for undo)
-            foreach (var undoRegister in target.AllRendererObjects.Where(sr => !undoRecord.Contains(sr.gameObject)))
+            foreach (var undoRegister in target.AllRendererObjects.Where(sr => !m_undoRecord.Contains(sr.gameObject)))
             {
                 if (undoRegister == null)
+                {
                     continue;
+                }
 
                 Undo.RegisterCreatedObjectUndo(undoRegister.gameObject, string.Empty);
             }
             //}
 
             Undo.CollapseUndoOperations(undoID);
-            undoRecord.Clear();
+            m_undoRecord.Clear();
         }
 
         public override void OnInspectorGUI()
         {
             // -- Init
-            //var Target = target as TilingSpriteRenderer;
-            //var TSo = serializedObject;
+            //var target = base.target as TilingSpriteRenderer;
+            //var tso = serializedObject;
 
             // Multiple editors (casting 'targets')
             var guiTargets = targets.Cast<TilingSpriteRenderer>().ToArray();
             DrawGUIForTargets(guiTargets, serializedObject);
         }
-        protected void DrawGUIForTargets(TilingSpriteRenderer[] Targets, SerializedObject TSo)
+        protected void DrawGUIForTargets(TilingSpriteRenderer[] targets, SerializedObject so)
         {
             // -- Init
-            undoRecord.Clear();
-            //if (undoRecord.Capacity <= 0)
-            //    undoRecord.Capacity = Target.AllRendererObjects.Count + 1;
-            var gEnabled = GUI.enabled;
+            m_undoRecord.Clear();
+
             var showMixed = EditorGUI.showMixedValue;
 
             var DefaultLabelStyle = new GUIStyle(GUI.skin.label)
@@ -99,24 +139,24 @@ namespace BXFW.ScriptEditor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("General Settings", DefaultLabelStyle);
 
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(TilingSpriteRenderer.GridOnAwake)));
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.gridOnAwake)));
             EditorGUI.BeginChangeCheck();
 
-            var checkColor = Targets[0].Color;
-            EditorGUI.showMixedValue = Targets.Any(t => t.Color != checkColor);
+            var checkColor = targets[0].Color;
+            EditorGUI.showMixedValue = targets.Any(t => t.Color != checkColor);
             var tSRColor = EditorGUILayout.ColorField(nameof(TilingSpriteRenderer.Color), checkColor);
             EditorGUI.showMixedValue = showMixed;
 
             if (EditorGUI.EndChangeCheck())
             {
                 // This one is not included in UndoRecordGridGeneration as it just modifies grid elements without destroying or creating them.
-                foreach (var target in Targets)
+                foreach (var target in targets)
                 {
                     if (!EditorApplication.isPlaying)
                     {
-                        undoRecord.Add(target);
-                        undoRecord.AddRange(target.AllRendererObjects);
-                        Undo.RecordObjects(undoRecord.ToArray(), "change value RendColor");
+                        m_undoRecord.Add(target);
+                        m_undoRecord.AddRange(target.AllRendererObjects);
+                        Undo.RecordObjects(m_undoRecord.ToArray(), "change value RendColor");
                     }
 
                     target.Color = tSRColor;
@@ -128,15 +168,30 @@ namespace BXFW.ScriptEditor
                 }
             }
             // Property fields already support CanEditMultipleObjects
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(TilingSpriteRenderer.TiledSprite)));
+            // -- AutoTile
+            EditorGUI.BeginChangeCheck();
+
+            var checkTiledSprite = targets[0].TiledSprite;
+            EditorGUI.showMixedValue = targets.Any(t => t.TiledSprite != checkTiledSprite);
+            var tTiledSpriteValue = EditorGUILayout.ObjectField("Sprite", checkTiledSprite, typeof(Sprite), false) as Sprite;
+            if (EditorGUI.EndChangeCheck())
+            {
+                foreach (var target in targets)
+                {
+                    UndoRecordGridGeneration(() => target.TiledSprite = tTiledSpriteValue, $"change value {nameof(TilingSpriteRenderer.TiledSprite)}", target);
+                }
+
+                SceneView.RepaintAll();
+            }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Camera Resize Options", DefaultLabelStyle);
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(TilingSpriteRenderer.CameraResize)));
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.cameraResize)));
 
-            GUI.enabled = Targets.Any(t => t.CameraResize);
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(TilingSpriteRenderer.ResizeTargetCamera)));
-            GUI.enabled = gEnabled;
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targets.All(t => !t.cameraResize)))
+            {
+                EditorGUILayout.PropertyField(so.FindProperty(nameof(TilingSpriteRenderer.resizeTargetCamera)));
+            }
 
             // ---- Tile Options Start   ---- //
             EditorGUILayout.Space();
@@ -144,14 +199,14 @@ namespace BXFW.ScriptEditor
             // -- AutoTile
             EditorGUI.BeginChangeCheck();
 
-            var checkAutoTile = Targets[0].AutoTile;
-            EditorGUI.showMixedValue = Targets.Any(t => t.AutoTile != checkAutoTile);
-            var tAT_Value = EditorGUILayout.Toggle(nameof(TilingSpriteRenderer.AutoTile), checkAutoTile);
+            var checkAutoTile = targets[0].AutoTile;
+            EditorGUI.showMixedValue = targets.Any(t => t.AutoTile != checkAutoTile);
+            var tAutoTileValue = EditorGUILayout.Toggle("Auto Tile", checkAutoTile);
             if (EditorGUI.EndChangeCheck())
             {
-                foreach (var target in Targets)
+                foreach (var target in targets)
                 {
-                    UndoRecordGridGeneration(() => target.AutoTile = tAT_Value, $"change value {nameof(TilingSpriteRenderer.AutoTile)}", target);
+                    UndoRecordGridGeneration(() => target.AutoTile = tAutoTileValue, $"change value {nameof(TilingSpriteRenderer.AutoTile)}", target);
                 }
 
                 SceneView.RepaintAll();
@@ -161,21 +216,24 @@ namespace BXFW.ScriptEditor
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.BeginHorizontal();
 
-            TransformAxis2D tAGA_Value = Targets[0].AllowGridAxis;
-            EditorGUI.showMixedValue = Targets.Any(t => t.AllowGridAxis != tAGA_Value);
+            TransformAxis2D tAllowAxisValue = targets[0].AllowGridAxis;
+            EditorGUI.showMixedValue = targets.Any(t => t.AllowGridAxis != tAllowAxisValue);
             EditorGUILayout.LabelField(nameof(TilingSpriteRenderer.AllowGridAxis), GUILayout.Width(160f));
             EditorGUILayout.LabelField("X:", GUILayout.Width(15f));
-            tAGA_Value |= EditorGUILayout.Toggle((tAGA_Value & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? TransformAxis2D.XAxis : TransformAxis2D.None;
+            bool allowXAxis = EditorGUILayout.Toggle((tAllowAxisValue & TransformAxis2D.XAxis) == TransformAxis2D.XAxis);
+            tAllowAxisValue = (allowXAxis ? (tAllowAxisValue | TransformAxis2D.XAxis) : (tAllowAxisValue & ~TransformAxis2D.XAxis));
             EditorGUILayout.LabelField("Y:", GUILayout.Width(15f));
-            tAGA_Value |= EditorGUILayout.Toggle((tAGA_Value & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? TransformAxis2D.YAxis : TransformAxis2D.None;
+            bool allowYAxis = EditorGUILayout.Toggle((tAllowAxisValue & TransformAxis2D.YAxis) == TransformAxis2D.YAxis);
+            tAllowAxisValue = (allowYAxis ? (tAllowAxisValue | TransformAxis2D.YAxis) : (tAllowAxisValue & ~TransformAxis2D.YAxis));
+
             EditorGUI.showMixedValue = showMixed;
 
             EditorGUILayout.EndHorizontal();
             if (EditorGUI.EndChangeCheck())
             {
-                foreach (var target in Targets)
+                foreach (var target in targets)
                 {
-                    UndoRecordGridGeneration(() => target.AllowGridAxis = tAGA_Value, $"change value {nameof(TilingSpriteRenderer.AllowGridAxis)}", target);
+                    UndoRecordGridGeneration(() => target.AllowGridAxis = tAllowAxisValue, $"change value {nameof(TilingSpriteRenderer.AllowGridAxis)}", target);
                 }
 
                 if (GUI.changed)
@@ -184,196 +242,69 @@ namespace BXFW.ScriptEditor
                 }
             }
 
-            GUI.enabled = Targets.All(t => !t.AutoTile);
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
-
-            var checkGridX = Targets[0].GridX;
-            EditorGUI.showMixedValue = Targets.Any(t => t.GridX != checkGridX);
-            var tGX_Value = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridX), checkGridX);
-            if (GUILayout.Button("+", GUILayout.Width(IntFieldActionButtonWidth))) { tGX_Value++; }
-            if (GUILayout.Button("-", GUILayout.Width(IntFieldActionButtonWidth))) { tGX_Value--; }
-            EditorGUI.showMixedValue = showMixed;
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
+            // -- Manual Tile Management
+            using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(targets.Any(t => t.AutoTile)))
             {
-                foreach (var target in Targets)
+                EditorGUI.BeginChangeCheck();
+                GUILayout.BeginHorizontal();
+
+                var checkGridX = targets[0].GridX;
+                EditorGUI.showMixedValue = targets.Any(t => t.GridX != checkGridX);
+                var tGridXValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridX), checkGridX);
+                if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue++; }
+                if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridXValue--; }
+                EditorGUI.showMixedValue = showMixed;
+
+                GUILayout.EndHorizontal();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    UndoRecordGridGeneration(() => target.GridX = tGX_Value, $"change value {nameof(TilingSpriteRenderer.GridX)}", target);
+                    foreach (var target in targets)
+                    {
+                        UndoRecordGridGeneration(() => target.GridX = tGridXValue, $"change value {nameof(TilingSpriteRenderer.GridX)}", target);
+                    }
+
+                    SceneView.RepaintAll();
                 }
 
-                SceneView.RepaintAll();
-            }
+                EditorGUI.BeginChangeCheck();
+                GUILayout.BeginHorizontal();
 
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
+                var checkGridY = targets[0].GridY;
+                EditorGUI.showMixedValue = targets.Any(t => t.GridY != checkGridY);
+                var tGridYValue = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridY), checkGridY);
+                if (GUILayout.Button("+", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue++; }
+                if (GUILayout.Button("-", GUILayout.Width(NUM_FIELD_ACTION_BTN_WIDTH))) { tGridYValue--; }
+                EditorGUI.showMixedValue = showMixed;
 
-            var checkGridY = Targets[0].GridY;
-            EditorGUI.showMixedValue = Targets.Any(t => t.GridY != checkGridY);
-            var tGY_Value = EditorGUILayout.IntField(nameof(TilingSpriteRenderer.GridY), checkGridY);
-            if (GUILayout.Button("+", GUILayout.Width(IntFieldActionButtonWidth))) { tGY_Value++; }
-            if (GUILayout.Button("-", GUILayout.Width(IntFieldActionButtonWidth))) { tGY_Value--; }
-            EditorGUI.showMixedValue = showMixed;
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
-            {
-                foreach (var target in Targets)
+                GUILayout.EndHorizontal();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    UndoRecordGridGeneration(() => target.GridY = tGY_Value, $"change value {nameof(TilingSpriteRenderer.GridY)}", target);
-                }
+                    foreach (var target in targets)
+                    {
+                        UndoRecordGridGeneration(() => target.GridY = tGridYValue, $"change value {nameof(TilingSpriteRenderer.GridY)}", target);
+                    }
 
-                SceneView.RepaintAll();
+                    SceneView.RepaintAll();
+                }
             }
-            GUI.enabled = true;
-            TSo.ApplyModifiedProperties();
+            so.ApplyModifiedProperties();
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Generate Sprites"))
             {
-                foreach (var target in Targets)
+                foreach (var target in targets)
                 {
                     UndoRecordGridGeneration(() => target.GenerateGrid(), "call GenerateSprites", target);
                 }
             }
             if (GUILayout.Button("Clear Sprites"))
             {
-                foreach (var target in Targets)
+                foreach (var target in targets)
                 {
                     UndoRecordGridGeneration(() => target.ClearGrid(), "call ClearGrid", target);
                 }
             }
             GUILayout.EndHorizontal();
         }
-
-        /// <summary>
-        /// Draws a gui for single target.
-        /// </summary>
-        protected void DrawGUIForTarget(TilingSpriteRenderer Target, SerializedObject TSo)
-        {
-            // -- Init
-            undoRecord.Clear();
-            if (undoRecord.Capacity <= 0)
-                undoRecord.Capacity = Target.AllRendererObjects.Count + 1;
-            var gEnabled = GUI.enabled;
-
-            var DefaultLabelStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontStyle = FontStyle.Bold,
-                fontSize = 14
-            };
-
-            // -- Settings
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("General Settings", DefaultLabelStyle);
-
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(Target.GridOnAwake)));
-            EditorGUI.BeginChangeCheck();
-            var tSRColor = EditorGUILayout.ColorField(nameof(Target.Color), Target.Color);
-            if (EditorGUI.EndChangeCheck())
-            {
-                // This one is not included in UndoRecordGridGeneration as it just modifies grid elements without destroying or creating them.
-                undoRecord.Add(Target);
-                undoRecord.AddRange(Target.AllRendererObjects);
-                Undo.RecordObjects(undoRecord.ToArray(), $"change value RendColor on {Target.name}");
-
-                Target.Color = tSRColor;
-
-                if (GUI.changed)
-                {
-                    SceneView.RepaintAll();
-                }
-            }
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(Target.TiledSprite)));
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Camera Resize Options", DefaultLabelStyle);
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(Target.CameraResize)));
-
-            GUI.enabled = Target.CameraResize;
-            EditorGUILayout.PropertyField(TSo.FindProperty(nameof(Target.ResizeTargetCamera)));
-            GUI.enabled = gEnabled;
-
-            // ---- Tile Options Start   ---- //
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Tile Options", DefaultLabelStyle);
-            // -- AutoTile
-            EditorGUI.BeginChangeCheck();
-            var tAT_Value = EditorGUILayout.Toggle(nameof(Target.AutoTile), Target.AutoTile);
-            if (EditorGUI.EndChangeCheck())
-            {
-                UndoRecordGridGeneration(() => Target.AutoTile = tAT_Value, $"change value {nameof(Target.AutoTile)} on {Target.name}");
-
-                SceneView.RepaintAll();
-            }
-
-            // -- Tile Grid X-Y && AllowGridAxis
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.BeginHorizontal();
-
-            TransformAxis2D tAGA_Value = TransformAxis2D.None;
-            EditorGUILayout.LabelField(nameof(Target.AllowGridAxis), GUILayout.Width(160f));
-            EditorGUILayout.LabelField("X:", GUILayout.Width(15f));
-            tAGA_Value |= EditorGUILayout.Toggle((Target.AllowGridAxis & TransformAxis2D.XAxis) == TransformAxis2D.XAxis) ? TransformAxis2D.XAxis : TransformAxis2D.None;
-            EditorGUILayout.LabelField("Y:", GUILayout.Width(15f));
-            tAGA_Value |= EditorGUILayout.Toggle((Target.AllowGridAxis & TransformAxis2D.YAxis) == TransformAxis2D.YAxis) ? TransformAxis2D.YAxis : TransformAxis2D.None;
-
-            EditorGUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
-            {
-                UndoRecordGridGeneration(() => Target.AllowGridAxis = tAGA_Value, $"change value {nameof(Target.AllowGridAxis)} on {Target.name}");
-
-                if (GUI.changed)
-                {
-                    SceneView.RepaintAll();
-                }
-            }
-
-            GUI.enabled = !Target.AutoTile;
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
-
-            var tGX_Value = EditorGUILayout.IntField(nameof(Target.GridX), Target.GridX);
-            if (GUILayout.Button("+", GUILayout.Width(IntFieldActionButtonWidth))) { tGX_Value++; }
-            if (GUILayout.Button("-", GUILayout.Width(IntFieldActionButtonWidth))) { tGX_Value--; }
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
-            {
-                UndoRecordGridGeneration(() => Target.GridX = tGX_Value, $"change value {nameof(Target.GridX)} on {Target.name}");
-
-                SceneView.RepaintAll();
-            }
-
-            EditorGUI.BeginChangeCheck();
-            GUILayout.BeginHorizontal();
-
-            var tGY_Value = EditorGUILayout.IntField(nameof(Target.GridY), Target.GridY);
-            if (GUILayout.Button("+", GUILayout.Width(IntFieldActionButtonWidth))) { tGY_Value++; }
-            if (GUILayout.Button("-", GUILayout.Width(IntFieldActionButtonWidth))) { tGY_Value--; }
-
-            GUILayout.EndHorizontal();
-            if (EditorGUI.EndChangeCheck())
-            {
-                UndoRecordGridGeneration(() => Target.GridY = tGY_Value, $"change value {nameof(Target.GridY)} on {Target.name}");
-
-                SceneView.RepaintAll();
-            }
-            GUI.enabled = true;
-            TSo.ApplyModifiedProperties();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Generate Sprites"))
-            {
-                UndoRecordGridGeneration(() => Target.GenerateGrid(), $"call GenerateSprites on object {Target.name}");
-            }
-            if (GUILayout.Button("Clear Sprites"))
-            {
-                UndoRecordGridGeneration(() => Target.ClearGrid(), $"call ClearGrid on object {Target.name}");
-            }
-            GUILayout.EndHorizontal();
-        }
     }
 }
-

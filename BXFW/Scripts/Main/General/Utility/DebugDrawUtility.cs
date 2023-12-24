@@ -71,6 +71,94 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Draws an arc.
+        /// </summary>
+        /// <param name="origin">World point origin point of the arc.</param>
+        /// <param name="rotation">Rotation of this arc.</param>
+        /// <param name="distance">Distance relative to the origin.</param>
+        /// <param name="arcAngle">The size of the arc, in degrees. Converted to radians by <see cref="Mathf.Deg2Rad"/>.</param>
+        /// <param name="drawLinesFromOrigin">Draws 2 lines towards the starting and ending position from <paramref name="origin"/>.</param>
+        public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, Color color, float duration, bool drawLinesFromOrigin = true)
+        {
+            // rotate direction by that so it actually looks towards
+            // The center of the arc is the (direction * origin) * distance), but it's not needed.
+
+            // this number should be even, but an odd number of segments are drawn
+            // because i am still stuck in how to do for loops
+            int segments = 48;
+            int halfSegments = segments / 2;
+
+            // Draw origin line for initial
+            Vector3 prevPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(-arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(-arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            if (drawLinesFromOrigin)
+            {
+                Debug.DrawLine(origin, prevPosition, color, duration);
+            }
+
+            for (int i = -halfSegments + 1; i < halfSegments; i++)
+            {
+                // initial line is already drawn
+                // since lerp only goes from -0.49.. -> 0.5, the arc angle will be completed.
+                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.49..
+                float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
+                float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
+                Vector3 arcToPosition = origin + (rotation * new Vector3(c, s) * distance);
+
+                // Primary line
+                Debug.DrawLine(prevPosition, arcToPosition, color, duration);
+
+                prevPosition = arcToPosition;
+            }
+
+            // Final line
+            Vector3 lastPosition = origin + (rotation * new Vector3(
+                Mathf.Cos(arcAngle / 2f * Mathf.Deg2Rad),
+                Mathf.Sin(arcAngle / 2f * Mathf.Deg2Rad)
+            ) * distance);
+
+            // Draw normal + origin line for the last time
+            Debug.DrawLine(prevPosition, lastPosition, color, duration);
+            if (drawLinesFromOrigin)
+            {
+                Debug.DrawLine(origin, lastPosition, color, duration);
+            }
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, Color, float, bool)"/>
+        public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, Color color, bool drawLinesFromOrigin = true)
+        {
+            DrawArc(origin, rotation, distance, arcAngle, color, 0f, drawLinesFromOrigin);
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, Color, float, bool)"/>
+        public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            DrawArc(origin, rotation, distance, arcAngle, Color.white, 0f, drawLinesFromOrigin);
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, Color, float, bool)"/>
+        /// <param name="direction">
+        /// Direction relative to the origin point.
+        /// Converted to a look rotation with upwards of <see cref="Vector3.up"/> and rotated in <see cref="Vector3.up"/> axis by 90f degrees.
+        /// </param>
+        public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, Color color, float duration, bool drawLinesFromOrigin = true)
+        {
+            Quaternion rotation = direction == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(direction, Vector3.up) * Quaternion.AngleAxis(90f, Vector3.up);
+            DrawArc(origin, rotation, distance, arcAngle, color, duration, drawLinesFromOrigin);
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Vector3, float, float, Color, float, bool)"/>
+        public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, Color color, bool drawLinesFromOrigin = true)
+        {
+            DrawArc(origin, direction, distance, arcAngle, color, 0f, drawLinesFromOrigin);
+        }
+        /// <inheritdoc cref="DrawArc(Vector3, Vector3, float, float, Color, float, bool)"/>
+        public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, bool drawLinesFromOrigin = true)
+        {
+            DrawArc(origin, direction, distance, arcAngle, Color.white, 0f, drawLinesFromOrigin);
+        }
+
+        /// <summary>
         /// Draws a circle to the scene using <see cref="Debug"/>.
         /// </summary>
         /// <param name="pos">Position of the circle.</param>
@@ -91,7 +179,9 @@ namespace BXFW
                 // Rotate using 'direction'.
                 Vector3 setVector = new Vector3(c, s, 0f);
                 if (direction != Vector3.zero)
+                {
                     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+                }
 
                 v[i] = setVector;
             }
@@ -100,8 +190,8 @@ namespace BXFW
             for (int i = 0; i < len; i++)
             {
                 // Calculate sphere points using radius
-                Vector3 sX = pos + (radius * v[(0 * len) + i]);
-                Vector3 eX = pos + (radius * v[(0 * len) + ((i + 1) % len)]);
+                Vector3 sX = pos + (radius * v[i]);
+                Vector3 eX = pos + (radius * v[(i + 1) % len]);
 
                 Debug.DrawLine(sX, eX, color, duration, depthTest);
             }
@@ -148,10 +238,14 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Draws a cube to the debug context.
-        /// <br>This cube is not rotated by function.</br>
+        /// Draws a square to the debug context.
         /// </summary>
-        public static void DrawCube(Vector3 pos, Vector2 size, Color color, float duration, bool depthTest)
+        /// <param name="pos">Position of the square.</param>
+        /// <param name="size">Size of the square.</param>
+        /// <param name="color">Color of the square.</param>
+        /// <param name="duration">How long the square will be visible after it's initial drawing call.</param>
+        /// <param name="depthTest">Whether to test the depth of the drawn square (can be occluded by in front rendered objects)</param>
+        public static void DrawSquare(Vector3 pos, Vector2 size, Color color, float duration, bool depthTest)
         {
             Vector3[] verts = new Vector3[4];
 
@@ -168,39 +262,22 @@ namespace BXFW
             Debug.DrawLine(verts[1], verts[3], color, duration, depthTest);
             Debug.DrawLine(verts[2], verts[3], color, duration, depthTest);
         }
-        public static void DrawCube(Vector3 pos, Vector2 size, Color color, float duration)
+        /// <inheritdoc cref="DrawSquare(Vector3, Vector2, Color, float, bool)"/>
+        public static void DrawSquare(Vector3 pos, Vector2 size, Color color, float duration)
         {
-            DrawCube(pos, size, color, duration, true);
+            DrawSquare(pos, size, color, duration, true);
         }
-        public static void DrawCube(Vector3 pos, Vector2 size, Color color)
+        /// <inheritdoc cref="DrawSquare(Vector3, Vector2, Color, float, bool)"/>
+        public static void DrawSquare(Vector3 pos, Vector2 size, Color color)
         {
-            DrawCube(pos, size, color, 0f, true);
+            DrawSquare(pos, size, color, 0f, true);
         }
-        public static void DrawCube(Vector3 pos, Vector2 size)
+        /// <inheritdoc cref="DrawSquare(Vector3, Vector2, Color, float, bool)"/>
+        public static void DrawSquare(Vector3 pos, Vector2 size)
         {
-            DrawCube(pos, size, Color.white, 0f, true);
+            DrawSquare(pos, size, Color.white, 0f, true);
         }
 
-        /// <summary>
-        /// Draws an arrow in <see cref="Debug"/> context.
-        /// <br>Draw color by default is <see cref="Color.white"/>.</br>
-        /// </summary>
-        public static void DrawArrow(Vector3 pos, Vector3 direction)
-        {
-            DrawArrow(pos, direction, Color.white, 0f, 0.25f, 20.0f);
-        }
-        /// <summary>
-        /// Draws an arrow in <see cref="Debug"/> context.
-        /// <br>Draw duration is 0.</br>
-        /// </summary>
-        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color)
-        {
-            DrawArrow(pos, direction, color, 0f, 0.25f, 20.0f);
-        }
-        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float duration)
-        {
-            DrawArrow(pos, direction, color, duration, 0.25f, 20.0f);
-        }
         /// <summary>
         /// Draws an arrow in <see cref="Debug"/> context.
         /// </summary>
@@ -212,6 +289,29 @@ namespace BXFW
             Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
             Debug.DrawRay(pos + direction, right * arrowHeadLength, color, duration);
             Debug.DrawRay(pos + direction, left * arrowHeadLength, color, duration);
+        }
+        /// <summary>
+        /// Draws an arrow in debug context.
+        /// </summary>
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float duration)
+        {
+            DrawArrow(pos, direction, color, duration, 0.25f, 20.0f);
+        }
+        /// <summary>
+        /// Draws an arrow in <see cref="Debug"/> context.
+        /// <br>Draw duration is 0.</br>
+        /// </summary>
+        public static void DrawArrow(Vector3 pos, Vector3 direction, Color color)
+        {
+            DrawArrow(pos, direction, color, 0f, 0.25f, 20.0f);
+        }
+        /// <summary>
+        /// Draws an arrow in <see cref="Debug"/> context.
+        /// <br>Draw color by default is <see cref="Color.white"/>.</br>
+        /// </summary>
+        public static void DrawArrow(Vector3 pos, Vector3 direction)
+        {
+            DrawArrow(pos, direction, Color.white, 0f, 0.25f, 20.0f);
         }
     }
 }
