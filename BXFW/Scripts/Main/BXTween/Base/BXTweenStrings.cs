@@ -21,7 +21,6 @@ namespace BXFW.Tweening
         #region (Private) Rich Text Formatting
         private static string FmtRichText(string RichFmtTarget, bool Bold, Color FmtColor)
         {
-#if UNITY_EDITOR
             // Format colors
             string logColorTag = string.Format("<color=#{0}>", ColorUtility.ToHtmlStringRGB(FmtColor).ToLowerInvariant());
             // Split and cover the \n's with the color tag for proper coloring.
@@ -40,25 +39,38 @@ namespace BXFW.Tweening
             }
 
             return string.Format(Bold ? "<b>{1}{0}</color></b>" : "{1}{0}</color>", fmtTarget.ToString(), logColorTag);
-#else
-            return RichFmtTarget;
-#endif
         }
         internal static string LogRich(string s, bool Bold = false)
         {
+#if UNITY_EDITOR
             return FmtRichText(s, Bold, CurrentSettings.LogColor);
+#else
+            return s;
+#endif
         }
         internal static string LogDiagRich(string s, bool Bold = false)
         {
+#if UNITY_EDITOR
             return FmtRichText(s, Bold, CurrentSettings.LogDiagColor);
+#else
+            return s;
+#endif   
         }
         internal static string WarnRich(string s, bool Bold = false)
         {
+#if UNITY_EDITOR
             return FmtRichText(s, Bold, CurrentSettings.WarnColor);
+#else
+            return s;
+#endif  
         }
         internal static string ErrRich(string s, bool Bold = false)
         {
+#if UNITY_EDITOR
             return FmtRichText(s, Bold, CurrentSettings.ErrColor);
+#else
+            return s;
+#endif  
         }
         #endregion
 

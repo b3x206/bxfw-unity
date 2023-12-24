@@ -20,16 +20,19 @@ namespace BXFW.ScriptEditor
         public int callbackOrder => 0;
         public static bool DeleteSceneListAfterBuild = true;
 
-        private const string RELATIVE_DIR_NAME = "SceneList";
-        private const string FILE_NAME = "ListReference";
+        private static string RelativeDirectoryName = string.Empty;
+        private const string FileName = "MainSceneList";
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            // Gather new name
+            RelativeDirectoryName = $"{Random.Range(0, int.MaxValue)}__SceneList";
+
             // Pack the references with a serialized list of scene references
             // This class is stored in 'UnitySceneReference'?
             if (UnitySceneReferenceList.Instance == null)
             {
-                UnitySceneReferenceList.CreateEditorInstance(RELATIVE_DIR_NAME, FILE_NAME);
+                UnitySceneReferenceList.CreateEditorInstance(RelativeDirectoryName, FileName);
             }
 
             // Gather entries from 'EditorBuildSettings.scenes' and convert them.
@@ -42,17 +45,25 @@ namespace BXFW.ScriptEditor
 
             // Add the entry.
             UnitySceneReferenceList.Instance.entries = entries;
+            AssetDatabase.Refresh();
         }
 
         public void OnPostprocessBuild(BuildReport report)
         {
             if (DeleteSceneListAfterBuild)
             {
-                string assetDirRelative = string.Format("Assets/Resources/{0}", RELATIVE_DIR_NAME);
+                // delete the asset and it's meta
+                string assetName = $"{Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", RelativeDirectoryName, FileName)}.asset";
+                File.Delete(assetName);
+                File.Delete($"{assetName}.meta");
 
-                AssetDatabase.DeleteAsset(string.Format("{0}.asset", Path.Combine(assetDirRelative, FILE_NAME)));
+                // delete the directory and it's meta
+                string assetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources/", RelativeDirectoryName);
+                Directory.Delete(assetDirectory);
+                File.Delete($"{assetDirectory}.meta");
                 AssetDatabase.Refresh();
-                FileUtil.DeleteFileOrDirectory(assetDirRelative);
+
+                RelativeDirectoryName = string.Empty;
             }
         }
     }
@@ -65,8 +76,8 @@ namespace BXFW.ScriptEditor
     {
         private SceneAsset sceneAsset;
         private SerializedProperty sceneGUID;
-        private SerializableGUID SceneGUIDValue 
-        { 
+        private SerializableGUID SceneGUIDValue
+        {
             get { return (SerializableGUID)sceneGUID.GetTarget().Value; }
         }
         private void SetSceneGUIDValue(SerializedProperty property, SerializableGUID value)
@@ -96,36 +107,25 @@ namespace BXFW.ScriptEditor
             sceneIndex = property.FindPropertyRelative("sceneIndex");
             sceneGUID = property.FindPropertyRelative("sceneGUID");
         }
+
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
+        private const float WarningHelpBoxHeight = 38f;
+        private const float FixIssueButtonHeight = 24f;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             GatherRelativeProperties(property);
             sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(SceneGUIDValue));
 
-            return (EditorGUIUtility.singleLineHeight + 2) * (1 + (ShowWarningGUI(property) ? 3.8f : 0));
-        }
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
 
-        private float currentY;
-        public Rect GetFieldRect(Rect pos, SerializedProperty property, float padding = 2f)
-        {
-            return GetFieldRect(pos, EditorGUI.GetPropertyHeight(property), padding);
-        }
-        public Rect GetFieldRect(Rect pos, float height = -1f, float padding = 2f)
-        {
-            if (height <= 0f)
+            if (ShowWarningGUI(property))
             {
-                height = EditorGUIUtility.singleLineHeight;
+                height += WarningHelpBoxHeight + mainCtx.Padding;
+                height += FixIssueButtonHeight + mainCtx.Padding;
             }
 
-            Rect r = new Rect
-            {
-                x = pos.x,
-                y = currentY + (padding / 2f),
-                width = pos.width,
-                height = height - (padding / 2f)
-            };
-
-            currentY += height;
-            return r;
+            return height;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -133,9 +133,9 @@ namespace BXFW.ScriptEditor
             EditorGUI.BeginProperty(position, label, property);
             GatherRelativeProperties(property);
             UnitySceneReference target = (UnitySceneReference)property.GetTarget().Value;
-            currentY = position.y;
+            mainCtx.Reset();
 
-            Rect scAssetGUIAreaRect = GetFieldRect(position);
+            Rect scAssetGUIAreaRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
             float scAssetGUIareaWidth = scAssetGUIAreaRect.width; // prev width
             const float scAssetGUISmallerWidth = .9f;
 
@@ -173,9 +173,9 @@ namespace BXFW.ScriptEditor
             {
                 if (ShowWarningGUI(property))
                 {
-                    EditorGUI.HelpBox(GetFieldRect(position, EditorGUIUtility.singleLineHeight * 2.3f), "[UnitySceneReference] Given scene does not exist on the Player Settings Scene build index.\nIt will be impossible to load this asset.", MessageType.Warning);
+                    EditorGUI.HelpBox(mainCtx.GetPropertyRect(position, WarningHelpBoxHeight), "[UnitySceneReference] Given scene does not exist on the Player Settings Scene build index.\nIt will be impossible to load this asset.", MessageType.Warning);
 
-                    if (GUI.Button(GetFieldRect(position, EditorGUIUtility.singleLineHeight * 1.5f), "Fix Issue"))
+                    if (GUI.Button(mainCtx.GetPropertyRect(position, FixIssueButtonHeight), "Fix Issue"))
                     {
                         List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes.Length + 1);
                         foreach (var sceneReg in EditorBuildSettings.scenes)

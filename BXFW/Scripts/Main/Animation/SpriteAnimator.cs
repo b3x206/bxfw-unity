@@ -87,9 +87,13 @@ namespace BXFW
         /// Current frame of the animation.
         /// </summary>
         public int CurrentFrame { get; private set; } = 0;
-        /// <summary> Current animation timer. </summary>
+        /// <summary>
+        /// Current animation timer.
+        /// </summary>
         private float timer;
-        /// <summary> The starting sprite. When the anim finishes this will be set to <see cref="animateSprite"/>. </summary> 
+        /// <summary>
+        /// The starting sprite. When the anim finishes this will be set to <see cref="animateSprite"/>.
+        /// </summary> 
         public Sprite initialSprite;
 
         private void Start()
