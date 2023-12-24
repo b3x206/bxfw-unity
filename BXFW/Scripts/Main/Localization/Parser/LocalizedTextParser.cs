@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 
@@ -8,22 +7,29 @@ using UnityEngine;
 namespace BXFW.Data
 {
     /// <summary>
-    /// <br><b>Please don't use this parser, use the <see cref="LocalizedTextListAsset"/>.</b></br>
+    /// <br><b>Use this parser only to convert the <see cref="TextAsset"/>s to the <see cref="LocalizedTextListAsset"/>.</b></br>
     /// <br>This is just left for the <c>ConvertLocalizedTextDataToAsset</c> converter.</br>
-    /// <br>And this class will be hidden as internal.</br>
     /// </summary>
     /// <example>
+    /// <![CDATA[
     /// ; Here's how the data type looks like
-    /// ; Lines starting with ';' are completely ignored. NOTE : This only applies if lines start with ';'. You can't put ';' to comment out parts of the locale file.
-    /// ; For some reason git does not correctly commit the turkish characters, save your locale file as utf8, this file is probs ansi.
-    /// TEXT_ID => en="Text Content", tr="Yazi icerik"
+    /// ; Lines starting with ';' are completely ignored.
+    /// ; NOTE : This only applies if lines start with ';'. You can't put ';' after the start to comment out parts of the locale file.
+    /// ; Save your locale file as utf8, this file is ansi so it uses ansi replacements (that don't break utf8).
+    /// 
+    /// ; Pragma definitions have a key and a value
+    /// ; And these definitions can take anything
+    /// #pragma SomethingWithValue "Anything really"
+    /// 
+    /// TEXT1_ID => en="Text Content", tr="Yazi icerik"
     /// TEXT2_ID => en="Other Text Content", tr="Diger yazi icerigi"
     /// TEXT3_ID => en="More Text Content", tr="Daha fazla yazi icerigi"
+    /// ]]>
     /// </example>
     public static class LocalizedTextParser
     {
         /// <summary>
-        /// Exception that occurs when the parse fails.
+        /// Exception that occurs when the parsing fails.
         /// </summary>
         public class ParseException : Exception
         {
@@ -38,19 +44,19 @@ namespace BXFW.Data
         }
         
         // inside 'SurroundChar' tokens
-        public const char NewLineChar = '\n';
-        public const char SpaceChar = ' ';
-        public const char TabChar = '\t';
-        public const char VerticalTabChar = '\v';
-        public const char EscapeChar = '\\';
+        private const char NewLineChar = '\n';
+        private const char SpaceChar = ' ';
+        private const char TabChar = '\t';
+        private const char VerticalTabChar = '\v';
+        private const char EscapeChar = '\\';
         // tokens
-        public const char CommentChar = ';';
-        public const char LocaleDefSeperateChar = ',';
-        public const char SurroundChar = '"';
-        public const char LocaleDefChar = '=';
-        public const char PragmaDefChar = '#';
-        public const string PragmaDefString = "pragma";
-        public const string TextIDDefChar = "=>";
+        private const char CommentChar = ';';
+        private const char LocaleDefSeperateChar = ',';
+        private const char SurroundChar = '"';
+        private const char LocaleDefChar = '=';
+        private const char PragmaDefChar = '#';
+        private const string PragmaDefString = "pragma";
+        private const string TextIDDefChar = "=>";
 
         /// <summary>
         /// Utility function for creating a <see cref="Dictionary{TKey, TValue}"/> from <paramref name="listKeys"/> and <paramref name="listValues"/>.
@@ -80,43 +86,6 @@ namespace BXFW.Data
             return dict;
         }
         /// <summary>
-        /// Converts the strings with quotations to have escape characters in it. (for the parse saving file)
-        /// </summary>
-        private static string ConvertToParseableString(this string target)
-        {
-            var newStr = new StringBuilder(target.Length);
-
-            foreach (var c in target)
-            {
-                // TODO : Make a list of 'EscapableChars' (maybe again)
-                if (c == SurroundChar)
-                {
-                    // Add this instead.
-                    newStr.Append("\\\"");
-                    continue;
-                }
-                if (c == EscapeChar)
-                {
-                    newStr.Append("\\\\");
-                    continue;
-                }
-                if (c == NewLineChar)
-                {
-                    newStr.Append("\\n");
-                    continue;
-                }
-                if (c == TabChar)
-                {
-                    newStr.Append("\\t");
-                    continue;
-                }
-
-                newStr.Append(c);
-            }
-
-            return newStr.ToString();
-        }
-        /// <summary>
         /// Reads string until it's no longer whitespace and returns the index of non-whitespace char.
         /// <br>Returns -1 if all of the string is whitespace.</br>
         /// </summary>
@@ -144,7 +113,7 @@ namespace BXFW.Data
         /// <param name="parseString">The string to parse.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parseString"/> is null.</exception>
         /// <exception cref="ParseException">Thrown when any parse related error occurs.</exception>
-        public static List<LocalizedTextData> Parse(string parseString)
+        public static List<LocalizedTextData> Parse(string parseString, out Dictionary<string, string> globalPragmaSettings)
         {
             if (string.IsNullOrWhiteSpace(parseString))
             {
@@ -154,7 +123,7 @@ namespace BXFW.Data
             // Split lines and prepare list of text code representations.
             string[] parseStringSplit = parseString.Split(NewLineChar);
             var currentAsset = new List<LocalizedTextData>();
-            var globalPragmaSettings = new Dictionary<string, string>();
+            globalPragmaSettings = new Dictionary<string, string>();
 
             // Iterate all lines
             for (int i = 0; i < parseStringSplit.Length; i++)
@@ -250,7 +219,7 @@ namespace BXFW.Data
                     // We can ignore comment char + pragma char for now.
                     // Parse the string contained in quotations
                     StringBuilder localeValueParsed = new StringBuilder(localeValue.Length);
-                    // TODO : Handle these chars better (For now this will do).
+                    // Handle these chars better (For now this will do).
                     var localeValueParseBegin = false;
                     var currDataStrIsEscapeChar = false;
                     foreach (char dataChar in localeValue)
@@ -344,80 +313,10 @@ namespace BXFW.Data
             // Return created list.
             return currentAsset;
         }
-
-        /// <summary>
-        /// Saves the list.
-        /// </summary>
-        /// <returns>The resulting string to be written.</returns>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentException"/>
-        [Obsolete("Please don't use the 'LocalizedTextParser'. Save the LocalizedTextListAssetEditor as JSON instead.")]
-        public static string Save(List<LocalizedTextData> assets, Dictionary<string, string> pragmaDefinitions = null)
+        /// <inheritdoc cref="Parse(string, out Dictionary{string, string})"/>
+        public static List<LocalizedTextData> Parse(string parseString)
         {
-            if (assets == null)
-            {
-                throw new ArgumentNullException("[LocalizedAssetParser::Save] Error while saving : argument named 'assets' passed is null.");
-            }
-
-            if (assets.Count <= 0)
-            {
-                throw new ArgumentException("[LocalizedAssetParser::Save] Given save list is empty (Count <= 0).");
-            }
-
-            // Save using the string builder.
-            // Approximate capacity of the 'StringBuilder' is the length of the dictionary strings.
-            int stringAllocSize = assets.Sum((tData) => tData.StringSize);
-            var sb = new StringBuilder(stringAllocSize);
-            var writtenPragmas = new Dictionary<string, string>(assets.Count);
-
-            foreach (LocalizedTextData text in assets)
-            {
-                // -- Pragma Def
-                foreach (KeyValuePair<string, string> pragma in pragmaDefinitions)
-                {
-                    if (string.IsNullOrWhiteSpace(pragma.Key) || string.IsNullOrWhiteSpace(pragma.Value))
-                    {
-                        continue;
-                    }
-
-                    // Insert to string builder if the pragma does not exist.
-                    if (!writtenPragmas.TryGetValue(pragma.Key, out string _))
-                    {
-                        writtenPragmas.Add(pragma.Key, pragma.Value);
-                        sb.Insert(0, string.Format(
-                            "{0}{1} {2} {3}{4}", 
-                            PragmaDefChar, PragmaDefString, pragma.Key, pragma.Value, NewLineChar
-                        ));
-                    }
-                }
-
-                // -- Actual string
-                // Append the textID + TextIDChar define
-                // It looks like : TEXT_ID => 
-                sb.Append(string.Format("{0} {1} ", text.TextID, TextIDDefChar));
-
-                for (int i = 0; i < text.LocaleDatas.Count; i++)
-                {
-                    var textWLocaleKey = text.LocaleDatas.Keys.ToArray()[i];
-                    var textWLocaleValue = text.LocaleDatas.Values.ToArray()[i];
-
-                    // Append the dictionary data. 
-                    // It looks like : localeValue="whatever here is there.", (comma added if other elements exist)
-                    sb.Append(
-                        // yes, inferred string (whatever the '$' thing before "" is called) is indeed nicer to work with
-                        string.Format("{0}{1}{2}{3}{2}{4} ",
-                            textWLocaleKey, LocaleDefChar, SurroundChar,        // Definition Char
-                            textWLocaleValue.ConvertToParseableString(),        // Content
-                            i != assets.Count - 1 ? LocaleDefSeperateChar : ' ' // Seperation comma (parse)
-                        )
-                    );
-                }
-
-                // Create a new line
-                sb.Append(NewLineChar);
-            }
-
-            return sb.ToString();
+            return Parse(parseString, out Dictionary<string, string> _);
         }
     }
 }

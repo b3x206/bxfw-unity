@@ -129,6 +129,10 @@ namespace BXFW.Tools.Editor
         private const float ElementNameBarPadding = 15f;
         private const float CheckmarkIconWidth = 15f;
         public const string SearchBarControlName = "SearchDropdownWindowBar";
+        /// <summary>
+        /// Width of the element lists view.
+        /// </summary>
+        private float ElementsViewWidth => position.width - (GUI.skin.verticalScrollbar.fixedWidth * 1.25f);
 
         // -- State
         /// <summary>
@@ -139,7 +143,7 @@ namespace BXFW.Tools.Editor
         /// The search filter elements.
         /// <br>This list is cleared once searching is done.</br>
         /// </summary>
-        private SearchDropdownElement searchFilteredElements = new SearchDropdownElement("Results", 128);
+        private readonly SearchDropdownElement searchFilteredElements = new SearchDropdownElement("Results", 128);
         /// <summary>
         /// Task dispatched for searching the 'searchString'.
         /// </summary>
@@ -148,9 +152,7 @@ namespace BXFW.Tools.Editor
         /// Cancellation token used for the <see cref="searchingTask"/>.
         /// </summary>
         private CancellationTokenSource searchingTaskCancellationSource = new CancellationTokenSource();
-        /// <summary>
-        /// The current string query to apply for the searching filtering.
-        /// </summary>
+        /// <inheritdoc cref="SearchString"/>
         private string m_SearchString;
         /// <summary>
         /// State of whether if the searching task reached limit.
@@ -158,7 +160,6 @@ namespace BXFW.Tools.Editor
         private bool reachedSearchLimit = false;
         /// <summary>
         /// Whether if this window is closing with a selection intent.
-        /// <br>This value is only used with <see cref="SearchDropdown.AllowSelectionOfElementsWithChild"/>.</br>
         /// </summary>
         public bool IsClosingWithSelectionIntent { get; private set; } = true;
         /// <summary>
@@ -167,7 +168,10 @@ namespace BXFW.Tools.Editor
         /// <br/>
         /// <br>This is needed as asynchronous/seperate thread searching will add/remove values in different <see cref="OnGUI"/> calls.</br>
         /// </summary>
-        private int lastLayoutElementsSize = -1;
+        private int lastLayoutElementsCount = -1;
+        /// <summary>
+        /// The current string query to apply for the searching filtering.
+        /// </summary>
         public string SearchString
         {
             get
@@ -183,7 +187,7 @@ namespace BXFW.Tools.Editor
 
                 // Reset state
                 reachedSearchLimit = false;
-                lastLayoutElementsSize = 0;
+                lastLayoutElementsCount = 0;
 
                 // Set values
                 m_SearchString = value;
@@ -241,6 +245,20 @@ namespace BXFW.Tools.Editor
             }
         }
         private Vector2 scrollRectPosition = Vector2.zero;
+        /// <summary>
+        /// Index of the currently highlighted element.
+        /// <br>Used with the arrow key navigations / other things.</br>
+        /// </summary>
+        private int highlightedElementIndex = -1;
+        /// <summary>
+        /// Index of the first visible element.
+        /// <br>Calculated inside <see cref="DrawElement(SearchDropdownElement)"/>.</br>
+        /// </summary>
+        private int firstVisibleElementIndex = -1;
+        /// <summary>
+        /// The event before any draw calls from the <see cref="OnGUI"/>.
+        /// </summary>
+        private Event beforeDrawEvent;
 
         // --
         /// <summary>
@@ -338,6 +356,9 @@ namespace BXFW.Tools.Editor
                 return;
             }
 
+            // This idiot (EditorGUI.TextField) uses the global event
+            // So copy it for the 'HandleGlobalGUIEvents'
+            beforeDrawEvent = new Event(Event.current);
             if (parentManager.IsSearchable)
             {
                 DrawSearchBar();
@@ -432,6 +453,7 @@ namespace BXFW.Tools.Editor
                 width = elementBarRect.width - ((ElementNameBarPadding * 2f) + StyleList.LeftArrowStyle.fixedWidth + 5f)
             }, parentManager.DisplayCurrentElementsCount ? $"{lastElement.content.text} | {lastElement.Count}" : lastElement.content.text, StyleList.CenteredLabelStyle);
         }
+
         private readonly PropertyRectContext elementCtx = new PropertyRectContext(0f);
         /// <summary>
         /// Draws the current element tree/node.
@@ -444,21 +466,21 @@ namespace BXFW.Tools.Editor
             // * Rect Visibility calculation is incorrect [ X ]
             // * Elements are not getting state           [ X ]
             // TODO 1 : 
-            // * Add keyboard nav                         [   ]
+            // * Add keyboard nav                         [ X ]
             // * Add visual interactions                  [ X ]
             // TODO 2 : 
-            // * General optimization to be done (such as accumulating up the rect heights)             [   ]
-            // * Search results can contain elements with children (requires a seperate elements stack) [   ]
+            // * General optimization to be done (such as accumulating up the rect heights)                                          [   ]
+            // * Search results can contain elements with children (requires a seperate elements stack/slight restructuring of code) [   ]
 
             Event e = Event.current;
             elementCtx.Reset();
 
             if (e.type == EventType.Layout)
             {
-                lastLayoutElementsSize = element.Count;
+                lastLayoutElementsCount = element.Count;
             }
 
-            int elementSize = Mathf.Min(element.Count, lastLayoutElementsSize);
+            int elementSize = Mathf.Min(element.Count, lastLayoutElementsCount);
 
             // Draw no elements thing if no elements
             // We can return here as no elements to draw.
@@ -482,12 +504,14 @@ namespace BXFW.Tools.Editor
             // --
 
             // Inflate the bounds / visibility checking size a bit
-            Rect localWindowPosition = new Rect(scrollRectPosition.x, scrollRectPosition.y, position.width + 100f, position.height + 10f);
+            Rect localWindowAreaPosition = new Rect(scrollRectPosition.x, scrollRectPosition.y, position.width + 100f, position.height + 10f);
 
             // Begin a new area to not have horizontal scroll bars
             // Since the scroll view is handled by rect calculations
-            float elementsViewWidth = position.width - (GUI.skin.verticalScrollbar.fixedWidth * 1.25f);
-            GUILayout.BeginVertical(GUILayout.Width(elementsViewWidth));
+            GUILayout.BeginVertical(GUILayout.Width(ElementsViewWidth));
+
+            // Set this visible element index dirty
+            firstVisibleElementIndex = -1;
 
             // FIXME : Unoptimized ver
             // Reason : pushed rect quantity is too large
@@ -518,27 +542,52 @@ namespace BXFW.Tools.Editor
                 // Which causes the scroll box to overflow a bit
                 // So, what do? Begin an area? or something else?
                 // Yes, but use 'BeginVertical'
-                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(elementsViewWidth));
+                Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(ElementsViewWidth));
 
                 // Check if the rect is visible in any way
-                if (!AreRectsColliding(localWindowPosition, reservedRect))
+                if (!AreRectsColliding(localWindowAreaPosition, reservedRect))
                 {
                     continue;
                 }
+                // Get this value to help with performance for other methods
+                if (firstVisibleElementIndex < 0)
+                {
+                    firstVisibleElementIndex = i;
+                }
 
-                ElementGUIDrawingState state = child.Selected ? ElementGUIDrawingState.Selected : ElementGUIDrawingState.Default;
-                if (child.Interactable)
+                ElementGUIDrawingState state = ElementGUIDrawingState.Default;
+                bool currentElementIsHighlighted = highlightedElementIndex == i;
+
+                if (child.Selected)
+                {
+                    state = ElementGUIDrawingState.Selected;
+                }
+                if (currentElementIsHighlighted)
+                {
+                    state = ElementGUIDrawingState.Hover;
+                }
+
+                // It is safe to use the 'MouseMove' event in this window
+                if (child.Interactable && e.type == EventType.MouseMove)
                 {
                     if (reservedRect.Contains(e.mousePosition))
                     {
+                        // Mouse highlighting
+                        highlightedElementIndex = i;
+
                         if (e.isMouse && e.button == 0 && e.type == EventType.MouseDown)
                         {
-                            state = ElementGUIDrawingState.Pressed;
+                            state = ElementGUIDrawingState.Clicked;
                         }
                         else
                         {
                             state = ElementGUIDrawingState.Hover;
                         }
+                    }
+                    else if (highlightedElementIndex == i)
+                    {
+                        // Assume that the mouse exited the button
+                        highlightedElementIndex = -1;
                     }
                 }
 
@@ -581,20 +630,27 @@ namespace BXFW.Tools.Editor
                 }
 
                 // -- Interact / Process GUI
-                if (child.Interactable && reservedRect.Contains(e.mousePosition) && e.type == EventType.MouseUp && e.button == 0)
+                if (child.Interactable)
                 {
-                    // Push into the top of stack and stop drawing the rest
-                    // If the element has no more child, do a selected event + close
-                    m_ElementStack.Push(child);
-
-                    if (!child.HasChildren)
+                    if (reservedRect.Contains(e.mousePosition) && e.type == EventType.MouseUp && e.button == 0)
                     {
-                        IsClosingWithSelectionIntent = true;
-                        Close();
-                    }
+                        // Push into the top of stack and stop drawing the rest
+                        // If the element has no more child, do a selected event + close
+                        m_ElementStack.Push(child);
+                        // Select the first element
+                        // (note that this index is safe to set into any valid/invalid values)
+                        // (but any invalid values are ignored completely)
+                        highlightedElementIndex = 0;
 
-                    e.Use();
-                    break;
+                        if (!child.HasChildren)
+                        {
+                            IsClosingWithSelectionIntent = true;
+                            Close();
+                        }
+
+                        e.Use();
+                        break;
+                    }
                 }
             }
 
@@ -622,6 +678,53 @@ namespace BXFW.Tools.Editor
                 EditorGUILayout.HelpBox($"Reached the search limit of {parentManager.SearchElementsResultLimit}.\nMake your search query more accurate.", MessageType.Info);
             }
         }
+
+        /// <summary>
+        /// Get how much to move <see cref="scrollRectPosition"/>.y to make the <see cref="highlightedElementIndex"/> element visible.
+        /// </summary>
+        /// <param name="lastElement">The parent element that the children of it that is visible.</param>
+        /// <param name="deltaSign">Sign of the delta to check for. This makes the delta behaviour different depending on the given sign.</param>
+        private float GetHighlightedElementHeightDelta(SearchDropdownElement lastElement, int deltaSign)
+        {
+            // Yes, there could be a better way of doing this.
+            // But this works
+            if (deltaSign > 0)
+            {
+                // Calculate heights before the currently highlighted element
+                // Add the highlighted elements height as well.
+                float visibleWindowAreaHeight = position.height - ElementNameBarHeight;
+                if (parentManager.IsSearchable)
+                {
+                    visibleWindowAreaHeight -= SearchBarHeight;
+                }
+
+                float visibleUntilHighlightedHeight = 0f;
+                for (int i = firstVisibleElementIndex; i <= highlightedElementIndex; i++)
+                {
+                    // Check the current scroll rect position, if it cannot accomodate the 'nextElement' scroll as much as 'targetElementHeight'.
+                    SearchDropdownElement visibleNextElement = lastElement[i];
+                    visibleUntilHighlightedHeight += visibleNextElement.GetHeight(ElementsViewWidth);
+                }
+
+                // This returns a negative value without if (visibleHeightUntilHighlighted > visibleWindowAreaHeight)
+                return Mathf.Max(0, visibleUntilHighlightedHeight - visibleWindowAreaHeight);
+            }
+            if (deltaSign < 0)
+            {
+                // Calculate the height difference until the 'highlightedElementIndex' from to the 'firstVisibleElementIndex' in here
+                float negativeUntilVisibleDeltaHeight = 0f;
+
+                for (int i = highlightedElementIndex; i < firstVisibleElementIndex; i++)
+                {
+                    SearchDropdownElement visibleNextElement = lastElement[i];
+                    negativeUntilVisibleDeltaHeight -= visibleNextElement.GetHeight(ElementsViewWidth);
+                }
+
+                return negativeUntilVisibleDeltaHeight;
+            }
+
+            return 0;
+        }
         /// <summary>
         /// Handles global dropdown events. (such as keyboard events)
         /// <br>Has to be called from <see cref="OnGUI"/>.</br>
@@ -630,18 +733,21 @@ namespace BXFW.Tools.Editor
         {
             GUIAdditionals.CheckOnGUI();
 
+            // Get current unused event
+            Event e = beforeDrawEvent;
+
             // EventType.MouseMove doesn't repaint by itself
-            if (Event.current.type == EventType.MouseMove)
+            if (e.type == EventType.MouseMove)
             {
                 Repaint();
             }
 
-            // Handle keyboard events (TODO : Keyboard Arrow Key Navigation)
-            switch (Event.current.type)
+            // Handle keyboard events
+            switch (e.type)
             {
                 case EventType.KeyDown:
                     // Handle function keys
-                    switch (Event.current.keyCode)
+                    switch (e.keyCode)
                     {
                         case KeyCode.Escape:
                             // Pressing Escape while searching something should just clear the search query
@@ -659,11 +765,41 @@ namespace BXFW.Tools.Editor
                                 Close();
                             }
                             return;
+
+                        // Decrement/Increment highlighted element index
+                        case KeyCode.UpArrow:
+                            EditorGUIUtility.editingTextField = false;
+
+                            highlightedElementIndex = Mathf.Max(highlightedElementIndex - 1, 0);
+                            scrollRectPosition.y += GetHighlightedElementHeightDelta(lastElement, -1);
+                            Repaint();
+                            break;
+                        case KeyCode.DownArrow:
+                            EditorGUIUtility.editingTextField = false;
+
+                            highlightedElementIndex = Mathf.Min(highlightedElementIndex + 1, lastElement.Count - 1);
+                            // Check if the next element is visible, otherwise scroll it's height amount
+                            // Now it's o(n) but less n's thanks to the firstVisibleElementIndex, very wholesome
+                            scrollRectPosition.y += GetHighlightedElementHeightDelta(lastElement, 1);
+                            Repaint();
+                            break;
+
+                        // Go back
+                        case KeyCode.LeftArrow:
+                            if (lastElement != parentManager.RootElement)
+                            {
+                                m_ElementStack.Pop();
+                            }
+                            break;
+                        // Go forward, select if it doesn't have elements
+                        case KeyCode.RightArrow:
                         case KeyCode.Return:
                         case KeyCode.KeypadEnter:
                             // Stop editing text
                             EditorGUIUtility.editingTextField = false;
-                            SearchDropdownElement nextElement = lastElement.FirstOrDefault();
+                            SearchDropdownElement nextElement =
+                                highlightedElementIndex >= 0 && highlightedElementIndex < lastElement.Count
+                                ? lastElement[highlightedElementIndex] : lastElement.FirstOrDefault();
 
                             // Check if next element actually exists
                             if (nextElement == null)
@@ -672,8 +808,8 @@ namespace BXFW.Tools.Editor
                             }
                             // Select the next child into stack
                             m_ElementStack.Push(nextElement);
-                            // Click on the next element
-                            if (!nextElement.HasChildren)
+                            // Click on the next element (and only do this if it's not a right arrow click)
+                            if (!nextElement.HasChildren && e.keyCode != KeyCode.RightArrow)
                             {
                                 IsClosingWithSelectionIntent = true;
                                 Close();
@@ -690,8 +826,9 @@ namespace BXFW.Tools.Editor
                     {
                         // TODO : FocusTextInControl does selection of the previous characters
                         // If no characters are appended then an input is missed, either way both behaviours are annoying
-                        char character = Event.current.character;
-                        if (!Event.current.functionKey && !char.IsControl(character))
+                        // This is still not fixed even if we ignore the used event
+                        char character = e.character;
+                        if (!e.functionKey && !char.IsControl(character))
                         {
                             // Get the last key as nice key
                             EditorGUI.FocusTextInControl(SearchBarControlName);

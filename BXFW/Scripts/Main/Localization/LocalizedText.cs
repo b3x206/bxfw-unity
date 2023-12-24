@@ -31,13 +31,16 @@ namespace BXFW
         {
             get
             {
-                if (m_previousSingletonLocaleData == null)
+                if (useSingletonLocaleData)
                 {
-                    m_previousSingletonLocaleData = LocalizedTextListAsset.Instance;
-                }
-                if (useSingletonLocaleData && m_LocaleData != m_previousSingletonLocaleData)
-                {
-                    m_LocaleData = m_previousSingletonLocaleData;
+                    if (m_previousSingletonLocaleData == null)
+                    {
+                        m_previousSingletonLocaleData = LocalizedTextListAsset.Instance;
+                    }
+                    if (m_LocaleData != m_previousSingletonLocaleData)
+                    {
+                        m_LocaleData = m_previousSingletonLocaleData;
+                    }
                 }
 
                 return m_LocaleData;
@@ -73,7 +76,12 @@ namespace BXFW
         {
             TryGetComponent(out target);
 
-            Apply(false, false);
+            // This accesses the singleton on the objects to apply the text id.
+            // Which causes a warning output in the console (but why unity?)
+            if (!useSingletonLocaleData)
+            {
+                Apply(false, false);
+            }
         }
         private void Start()
         {

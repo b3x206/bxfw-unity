@@ -7,12 +7,12 @@ namespace BXFW.SceneManagement
     /// <br>Scene index of the entry is the index of target in <see cref="UnitySceneReferenceList.entries"/>.</br>
     /// </summary>
     [Serializable]
-    public sealed class SceneEntry : IEquatable<SerializableGUID>
+    public sealed class SceneEntry : IEquatable<string>
     {
         /// <summary>
         /// GUID of the scene in the editor.
         /// </summary>
-        public SerializableGUID editorGUID;
+        public string editorGUID;
         /// <summary>
         /// Path of the scene in the editor.
         /// </summary>
@@ -20,10 +20,9 @@ namespace BXFW.SceneManagement
 
         public SceneEntry() { }
         public SceneEntry(string path) { editorPath = path; }
-        public SceneEntry(SerializableGUID guid) { editorGUID = guid; }
-        public SceneEntry(string path, SerializableGUID guid) { editorPath = path; editorGUID = guid; }
+        public SceneEntry(string path, string guid) { editorPath = path; editorGUID = guid; }
 
-        public bool Equals(SerializableGUID other)
+        public bool Equals(string other)
         {
             return editorGUID == other;
         }

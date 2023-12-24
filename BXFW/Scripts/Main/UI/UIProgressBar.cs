@@ -178,30 +178,30 @@ namespace BXFW.UI
         private static void CreateUIProgressBar(UnityEditor.MenuCommand cmd)
         {
             // Create & Align
-            var PBar = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
-            UnityEditor.GameObjectUtility.SetParentAndAlign(PBar.gameObject, (GameObject)cmd.context);
-            PBar.RectTransform.sizeDelta = new Vector2(200f, 75f);
+            UIProgressBar progressBarComponent = new GameObject("Progress Bar").AddComponent<UIProgressBar>();
+            UnityEditor.GameObjectUtility.SetParentAndAlign(progressBarComponent.gameObject, (GameObject)cmd.context);
+            progressBarComponent.RectTransform.sizeDelta = new Vector2(200f, 75f);
             // Create the mask for the 'PBar'
-            var PBarBGImage = PBar.gameObject.AddComponent<Image>();
-            PBar.gameObject.AddComponent<Mask>();
-            PBarBGImage.color = new Color(1f, 1f, 1f, .4f);
+            Image progressBarBackground = progressBarComponent.gameObject.AddComponent<Image>();
+            progressBarComponent.gameObject.AddComponent<Mask>();
+            progressBarBackground.color = new Color(1f, 1f, 1f, .4f);
 
             // Create another gameObject, with stretch of this object.
-            var PBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
-            PBarImage.transform.SetParent(PBar.transform);
+            Image progressBarImage = new GameObject("Progress Bar Fill").AddComponent<Image>();
+            progressBarImage.transform.SetParent(progressBarComponent.transform);
             // Scale is weird when you put something to a rect transform
-            PBarImage.transform.localScale = Vector3.one;
+            progressBarImage.transform.localScale = Vector3.one;
             // This sets the UI stretch (after setting parent ofc)
-            PBarImage.rectTransform.anchorMin = new Vector2(0, 0);
-            PBarImage.rectTransform.anchorMax = new Vector2(1, 1);
-            PBarImage.rectTransform.offsetMin = Vector2.zero;
-            PBarImage.rectTransform.offsetMax = Vector2.zero;
+            progressBarImage.rectTransform.anchorMin = new Vector2(0, 0);
+            progressBarImage.rectTransform.anchorMax = new Vector2(1, 1);
+            progressBarImage.rectTransform.offsetMin = Vector2.zero;
+            progressBarImage.rectTransform.offsetMax = Vector2.zero;
 
             // Set the 'PBarImage' as the target image
-            PBar.m_ProgressBarImg = PBarImage;
-            PBar.Initilaze(); // Call initilaze for setting up the image.
+            progressBarComponent.m_ProgressBarImg = progressBarImage;
+            progressBarComponent.Initilaze(); // Call initilaze for setting up the image.
 
-            UnityEditor.Undo.RegisterCreatedObjectUndo(PBar.gameObject, "create progress bar");
+            UnityEditor.Undo.RegisterCreatedObjectUndo(progressBarComponent.gameObject, "create progress bar");
         }
 #endif
     }

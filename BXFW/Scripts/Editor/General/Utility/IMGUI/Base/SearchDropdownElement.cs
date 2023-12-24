@@ -11,14 +11,14 @@ namespace BXFW.Tools.Editor
     /// <br><see cref="Default"/> : The default drawing behaviour.</br>
     /// <br><see cref="Selected"/> : Selected element drawing behaviour.</br>
     /// <br><see cref="Hover"/> : Hovered element drawing behaviour.</br>
-    /// <br><see cref="Pressed"/> : Clicked/Pressed drawing behaviour.</br>
+    /// <br><see cref="Clicked"/> : Clicked/Pressed drawing behaviour.</br>
     /// </summary>
     public enum ElementGUIDrawingState
     {
         Default,
         Selected,
         Hover,
-        Pressed,
+        Clicked,
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ namespace BXFW.Tools.Editor
                 case ElementGUIDrawingState.Hover:
                     stateColor = new Color(0.15f, 0.15f, 0.15f);
                     break;
-                case ElementGUIDrawingState.Pressed:
+                case ElementGUIDrawingState.Clicked:
                     stateColor = new Color(0.1f, 0.1f, 0.1f);
                     break;
 

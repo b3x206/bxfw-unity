@@ -18,8 +18,10 @@ namespace BXFW.Data
             get
             {
 #if UNITY_EDITOR
+                // Check if the GUID is invalid
                 if (m_GUID == $"{ObjIdentifierValueSeperator}0")
                 {
+                    // Get the GUID if the application is not playing (otherwise the id may differ)
                     if (!Application.isPlaying)
                     {
                         m_GUID = Editor.UnityObjectIDUtility.GetUnityObjectIdentifier(this, ObjIdentifierValueSeperator);

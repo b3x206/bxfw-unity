@@ -52,13 +52,8 @@ namespace BXFW.Data
         /// The current localization data but as a IDictionary : <br/>
         /// <inheritdoc cref="m_LocaleDatas"/>
         /// </summary>
-        public IDictionary<string, string> LocaleDatas
-        {
-            get
-            {
-                return m_LocaleDatas;
-            }
-        }
+        public IDictionary<string, string> LocaleDatas => m_LocaleDatas;
+
         /// <summary>
         /// Returns the total size (approximation, takes the length of the dictionary strings) of the <see cref="LocalizedTextData"/> data.
         /// </summary>
@@ -67,14 +62,12 @@ namespace BXFW.Data
             get
             {
                 int sizeLocaleData = 0;
-                int sizePragma = 0;
-                
-                foreach (var localeDef in m_LocaleDatas)
+                foreach (KeyValuePair<string, string> localeDef in m_LocaleDatas)
                 {
                     sizeLocaleData += localeDef.Key.Length + localeDef.Value.Length;
                 }
 
-                return sizeLocaleData + sizePragma;
+                return sizeLocaleData;
             }
         }
 

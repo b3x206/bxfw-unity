@@ -193,7 +193,10 @@ namespace BXFW.ScriptEditor
             EditorGUI.LabelField(dropdownLabelRect, label);
             bool openWindow = EditorGUI.DropdownButton(
                 dropdownSelfRect,
-                new GUIContent(editType?.GetTypeDefinitionString(true, false) ?? "<null>", label.tooltip),
+                new GUIContent(
+                    editType?.GetTypeDefinitionString(true, false) ?? "<null>",
+                    string.IsNullOrEmpty(label.tooltip) ? editType?.AssemblyQualifiedName : label.tooltip
+                ),
                 FocusType.Keyboard
             );
 

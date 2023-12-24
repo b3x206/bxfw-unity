@@ -219,7 +219,7 @@ namespace BXFW
 
             Handles.EndGUI();
 #else
-            Debug.LogWarning("[GizmoUtility::DrawText] DrawText only works in unity editor.");
+            Debug.LogError("[GizmoUtility::DrawText] DrawText only works in unity editor.");
 #endif
         }
         // -- textSize

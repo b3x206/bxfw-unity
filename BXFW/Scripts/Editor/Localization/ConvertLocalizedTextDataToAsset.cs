@@ -1,5 +1,6 @@
 using BXFW.Data;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace BXFW.Tools.Editor
         public TextAsset targetTextAsset;
         private string exportDirectory;
         // Directory.GetCurrentDirectory() does not contain the last path limiter
-        // Which unity seems to freak out about
+        // Which unity seems to freak out about if the first path limiter is left in
         private string RelativeExportDirectory => exportDirectory?.Substring(Directory.GetCurrentDirectory().Length + 1);
 
         public override bool GetWarning()
@@ -34,7 +35,7 @@ namespace BXFW.Tools.Editor
                 RunWithAsset(ref generateAsset);
             }
             // ah yes, error handling
-            // This is what happens when no constructor access and no RAII
+            // This is what happens when no constructor access
             // As creation would have failed if 'CreateInstance' took ctor params.
             catch (Exception e)
             {
@@ -46,7 +47,11 @@ namespace BXFW.Tools.Editor
 
         private void RunWithAsset(ref LocalizedTextListAsset generateAsset)
         {
-            generateAsset.AddRange(LocalizedTextParser.Parse(targetTextAsset.text));
+            generateAsset.AddRange(LocalizedTextParser.Parse(targetTextAsset.text, out Dictionary<string, string> globalPragmaSettings));
+            if (globalPragmaSettings.Count > 0)
+            {
+                generateAsset.pragmaDefinitons = new SerializableDictionary<string, string>(globalPragmaSettings);
+            }
 
             AssetDatabase.CreateAsset(generateAsset, RelativeExportDirectory);
             AssetDatabase.SaveAssets();

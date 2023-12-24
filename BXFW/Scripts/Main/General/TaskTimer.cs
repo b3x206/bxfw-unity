@@ -5,7 +5,7 @@ using System.Linq;
 namespace BXFW
 {
     /// <summary>
-    /// Schedules timed actions (basically a timer).
+    /// Schedules timed actions to be invoked on the main thread (basically a timer).
     /// <br>Takes argumentless delegates.</br>
     /// </summary>
     public static class TaskTimer

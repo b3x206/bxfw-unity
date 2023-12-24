@@ -17,8 +17,6 @@ namespace BXFW
     {
         [SerializeField] protected List<T> m_list = new List<T>();
 
-        protected ObservedListBase() { }
-
         public IEnumerator<T> GetEnumerator()
         {
             return m_list.GetEnumerator();

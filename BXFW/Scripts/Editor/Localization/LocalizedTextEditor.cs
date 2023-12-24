@@ -54,7 +54,7 @@ namespace BXFW.ScriptEditor
                         // Show 3 as maximum (4th element is + more)
                         if (j == 3)
                         {
-                            availableLocalesSb.Append(string.Format(" + {0} more", keyCount - (j + 1)));
+                            availableLocalesSb.Append(string.Format(" + {0} more", keyCount - j));
                             break;
                         }
 

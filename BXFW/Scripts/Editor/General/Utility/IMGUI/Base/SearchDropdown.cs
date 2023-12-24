@@ -5,7 +5,6 @@ namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// A list dropdown displayer. Similar to the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/>, it also offers async searching and slightly better optimization.
-    /// <br>This class is still in work-in-progress, but it is faster than the AdvancedDropdown.</br>
     /// </summary>
     /// <remarks>
     /// The usage of this class can be found in the source.
@@ -83,8 +82,8 @@ namespace BXFW.Tools.Editor
     ///         
     ///         // Draw the dropdown button
     ///         EditorGUILayout.BeginHorizontal();
-    ///         EditorGUILayout.LabelField($"Dropdown Value : {target.dropdownSettingString}", GUILayout.Width(EditorGUIUtility.labelWidth));
-    ///         if (GUILayout.Button("Set Value From Dropdown"))
+    ///         EditorGUILayout.LabelField("Dropdown Setting String", GUILayout.Width(EditorGUIUtility.labelWidth));
+    ///         if (GUILayout.Button($"Value : {target.dropdownSettingString}"))
     ///         {
     ///             ExampleDropdown dropdown = new ExampleDropdown();
     ///             dropdown.Show(lastRepaintDropdownParentRect);
