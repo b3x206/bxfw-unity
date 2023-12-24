@@ -4,6 +4,8 @@ using UnityEngine;
 using System.IO;
 using System.Reflection;
 using System;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 
 /// Editor utils go on this namespace.
 /// You can use these.
@@ -173,6 +175,27 @@ namespace BXFW.Tweening.Editor
 
     internal static class BXTweenEditorUtils
     {
+        internal class BXTweenSettingsBuildCallback : IPreprocessBuildWithReport, IPostprocessBuildWithReport
+        {
+            public int callbackOrder => 0;
+            private string AbsoluteAssetPath => Path.Combine(Directory.GetCurrentDirectory(), "Assets/Resources", BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName);
+
+            public void OnPreprocessBuild(BuildReport report)
+            {                
+                // Serialize the current settings to the root as json
+                string settingsAsJson = JsonUtility.ToJson(BXTweenSettings.Instance);
+                File.WriteAllText($"{AbsoluteAssetPath}.json", settingsAsJson, System.Text.Encoding.UTF8);
+                AssetDatabase.Refresh();
+            }
+            public void OnPostprocessBuild(BuildReport report)
+            {
+                // Remove file when done
+                File.Delete($"{AbsoluteAssetPath}.json");
+                File.Delete($"{AbsoluteAssetPath}.json.meta");
+                AssetDatabase.Refresh();
+            }
+        }
+
         /// <summary>
         /// <b>EDITOR ONLY :</b> Prints all variables (properties) using <see cref="Debug.Log(object)"/>.
         /// </summary>

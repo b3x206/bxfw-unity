@@ -70,8 +70,11 @@ namespace BXFW
             }
 
             // Create & serialize instance of the resource.
-            // Find the directory
-            string loadableResourcesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "/Assets/Resources");
+            // Path.Combine with 2 parameters checks if the second argument is a rooted one and
+            // and that's why it fails, because '/' is unix root.
+            // --
+            // Whatever this works, Directory.GetCurrentDirectory returns the current directory without a path seperator on end.
+            string loadableResourcesDirectory = $"{Directory.GetCurrentDirectory()}/Assets/Resources";
             string checkedRelativeDir = relativeDir.Substring(relativeDir.IndexOf(loadableResourcesDirectory) + 1); // This relative directory omits the '/resources' junk.
             string relativeParentDir = Path.Combine("Assets/Resources/", checkedRelativeDir);
             string absoluteParentDir = Path.Combine(loadableResourcesDirectory, checkedRelativeDir);

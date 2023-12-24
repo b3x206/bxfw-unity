@@ -11,17 +11,13 @@ namespace BXFW.UI
     public class UIMenuManager : MonoBehaviour
     {
         #region -- Variables
-
-        #region Standard Vars
         [Header(":: UI Menu Manager ::")]
         // Inspector
         public bool AllowTwoMenuAtOnce = false;
 
         // Status
         public bool InsideMenu { get { return _CurrentUIMenu != null; } }
-        #endregion
-
-        #region Menu Management Vars
+        
         [SerializeField] protected UIMenu _CurrentUIMenu;
         /// <summary>Currently open <see cref="UIMenu"/>.</summary>
         public UIMenu CurrentUIMenu { get { return _CurrentUIMenu; } }
@@ -31,8 +27,6 @@ namespace BXFW.UI
         {
             get { return _CurrentUISubMenus.AsReadOnly(); }
         }
-        #endregion
-
         #endregion
 
         #region -- Menu Management Functions

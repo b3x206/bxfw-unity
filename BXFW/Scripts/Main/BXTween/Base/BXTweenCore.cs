@@ -64,7 +64,6 @@ namespace BXFW.Tweening
                 EditorDisposeBXTwObject();
             }
 #endif
-
             if (!CurrentSettings.enableBXTween)
             {
                 Debug.Log(BXTweenStrings.DLog_BXTwDisabled);
@@ -121,7 +120,6 @@ namespace BXFW.Tweening
             Current = null;
         }
 #endif
-
         // -- To Methods (Tween Coroutine Provider)
         /// <summary>
         /// The internal 'To' method. Takes a setter and a context.

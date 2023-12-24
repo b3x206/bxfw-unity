@@ -53,7 +53,18 @@ namespace BXFW.Tweening
                 // Get singleton
                 if (currentSettings == null)
                 {
+                    // Note : Load singleton as JSON while not in editor.
+                    // This is because unity is stupid and throws an serialization layout mismatch exception
+                    // Even though the data is properly serialized, the loading is probably getting truncated or something else
+                    // But when i try to do a minimal repro project with the same script and all of a sudden it works fine? what?
+#if UNITY_EDITOR
                     currentSettings = BXTweenSettings.Instance;
+#else
+                    TextAsset loadResourceTarget = Resources.Load<TextAsset>(System.IO.Path.Combine(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName));
+                    BXTweenSettings loadInstance = ScriptableObject.CreateInstance<BXTweenSettings>();
+                    JsonUtility.FromJsonOverwrite(loadResourceTarget.text, loadInstance);
+                    currentSettings = loadInstance;
+#endif
                 }
 
                 // Still null? Create new settings.
@@ -67,10 +78,10 @@ namespace BXFW.Tweening
                     // This will be here for debug (we can't check current settings whether if it's diagnostic mode because we just created it)
                     Debug.Log(BXTweenStrings.DLog_BXTwSettingsCreatedNew(string.Format("Assets/Resources/{0} | File : {1}", BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName)));
 #else
+                    // Create a tempoary resource using default settings. (assign this first to avoid loops)
+                    currentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
                     // maybe throw exception? making it more obvious that something has went wrong on compilation-generation process?
                     Debug.LogError(BXTweenStrings.Err_BXTwSettingsNoResource);
-                    // Create a tempoary resource using default settings.
-                    currentSettings = ScriptableObject.CreateInstance<BXTweenSettings>();
 #endif
                 }
 

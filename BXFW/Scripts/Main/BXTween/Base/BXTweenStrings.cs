@@ -40,6 +40,7 @@ namespace BXFW.Tweening
 
             return string.Format(Bold ? "<b>{1}{0}</color></b>" : "{1}{0}</color>", fmtTarget.ToString(), logColorTag);
         }
+        // Note : No need to read 'BXTween.CurrentSettings' if we aren't on editor
         internal static string LogRich(string s, bool Bold = false)
         {
 #if UNITY_EDITOR
