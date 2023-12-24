@@ -71,8 +71,8 @@ namespace BXFW.SceneManagement
                 }
 
 #if UNITY_EDITOR
-                var eScn = UnityEditor.EditorBuildSettings.scenes[sceneIndex];
-                return new SceneEntry(eScn.path, eScn.guid.ToString());
+                var editorScene = UnityEditor.EditorBuildSettings.scenes[sceneIndex];
+                return new SceneEntry(editorScene.path, editorScene.guid.ToString());
 #else
                 return UnitySceneReferenceList.Instance.entries[sceneIndex];
 #endif
@@ -96,7 +96,6 @@ namespace BXFW.SceneManagement
                 }
                 
                 Scene loadedScene = SceneManager.GetSceneByBuildIndex(sceneIndex);
-
                 return loadedScene;
             }
         }
@@ -109,7 +108,6 @@ namespace BXFW.SceneManagement
             get
             {
                 CheckSceneIndexValidity();
-
                 return sceneIndex;
             }
         }

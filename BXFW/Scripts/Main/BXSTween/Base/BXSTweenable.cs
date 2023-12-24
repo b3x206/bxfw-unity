@@ -168,7 +168,7 @@ namespace BXFW.Tweening
 
         /// <summary>
         /// The speed that this tween will run. 1 is normal speed and default value.
-        /// <br>This value can't be negative. It being negative will cause the <see cref="BXSTween.RunTweenable(IBXSTweenRunner, BXSTweenable)"/>
+        /// <br>This value can't be negative. It being negative will cause the <see cref="BXSTween.RunTweenable(ITickRunner, BXSTweenable)"/>
         /// to hang on this tween, but won't make this tween invalid.</br>
         /// </summary>
         public float Speed

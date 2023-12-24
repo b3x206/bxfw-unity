@@ -214,9 +214,9 @@ namespace BXFW.Tweening
 
         // -- Tweening
         /// <summary>
-        /// <b>!! TODO : </b>Optimize this method, do the checks only once?
-        /// <br>Runs a tweenable.</br>
+        /// Runs a tweenable.
         /// <br>The <paramref name="tween"/> itself contains the state.</br>
+        /// <br><b> TODO : </b>Optimize this method, do the checks only once?</br>
         /// </summary>
         public static void RunTweenable(ITickRunner runner, BXSTweenable tween)
         {

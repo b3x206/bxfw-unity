@@ -27,6 +27,9 @@ namespace BXFW.Tools.Editor
         /// <inheritdoc cref="SmoothDeltaTimeAsDouble"/>
         public static float SmoothDeltaTime => (float)SmoothDeltaTimeAsDouble;
 
+        /// <summary>
+        /// Hooks the <see cref="GetGlobalDeltaTime"/> to the <see cref="EditorApplication.update"/>.
+        /// </summary>
         static EditorTime()
         {
             lastTimeSinceStart = EditorApplication.timeSinceStartup;

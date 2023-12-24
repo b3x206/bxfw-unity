@@ -19,7 +19,7 @@ namespace BXFW.Data.Editor
         /// <summary>
         /// Returns the local file identifier for the <paramref name="target"/>.
         /// </summary>
-        public static long GetLocalFileIdentifier(UnityEngine.Object target)
+        public static long GetLocalFileIdentifier(Object target)
         {
             // Get the required field, this gives the InspectorMode enum field
             PropertyInfo inspectorModeInfo = typeof(SerializedObject).GetProperty("inspectorMode", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -53,7 +53,7 @@ namespace BXFW.Data.Editor
         /// <br>If the <paramref name="target"/> is not a scene object (i.e ScriptableObject or an asset importer thing), the file already has it's own GUID + fileID.</br>
         /// </summary>
         /// <param name="valueSeperator">The value seperator to use if you have a custom one.</param>
-        public static string GetUnityObjectIdentifier(UnityEngine.Object target, string valueSeperator = DefaultObjIdentifierValueSeperator)
+        public static string GetUnityObjectIdentifier(Object target, string valueSeperator = DefaultObjIdentifierValueSeperator)
         {
             string result;
 

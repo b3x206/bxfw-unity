@@ -237,7 +237,7 @@ namespace BXFW.ScriptEditor
 
                     // Write the bytes of type
                     // Creating a blank memory stream is a resizable one
-                    using MemoryStream ms = new MemoryStream();
+                    using MemoryStream ms = new MemoryStream(512);
                     using BinaryWriter writer = new BinaryWriter(ms);
 
                     SerializableType.Write(writer, setRootType);

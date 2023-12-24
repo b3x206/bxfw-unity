@@ -1,0 +1,17 @@
+{
+    "name": "com.b3x.bxfw",
+    "version": "0.1.0",
+    "displayName": "BXFW",
+    "description": "Personal tools for easier game development / prototyping / or just normal development. Note that this is not really recommended to be installed in this UnityPackage form, as it's meant to be tinkered with.",
+    "unity": "2021.3",
+    "dependencies":
+    {
+        "com.unity.textmeshpro": "3.0.6"
+    },
+    "author":
+    {
+        "name": "Barbaros Bayat",
+        "email": "b3x2088@gmail.com",
+        "url": "https://github.com/b3x206/"
+    }
+}

@@ -141,18 +141,18 @@ namespace BXFW.ScriptEditor
             mainCtx.Reset();
 
             Rect sceneAssetFieldRect = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
-            float scAssetGUIareaWidth = sceneAssetFieldRect.width; // prev width
-            const float scAssetGUISmallerWidth = 0.9f;
+            float sceneAssetFieldWidth = sceneAssetFieldRect.width; // prev width
+            const float sceneAssetFieldSmallerWidth = 0.9f;
 
             if (ShowDetailsGUI)
             {
-                sceneAssetFieldRect.width = scAssetGUIareaWidth * scAssetGUISmallerWidth;
+                sceneAssetFieldRect.width = sceneAssetFieldWidth * sceneAssetFieldSmallerWidth;
             }
             m_targetSceneAsset = (SceneAsset)EditorGUI.ObjectField(sceneAssetFieldRect, "Scene Asset", m_targetSceneAsset, typeof(SceneAsset), false);
             if (ShowDetailsGUI)
             {
-                sceneAssetFieldRect.x += scAssetGUIareaWidth * scAssetGUISmallerWidth;
-                sceneAssetFieldRect.width = scAssetGUIareaWidth * (1f - scAssetGUISmallerWidth);
+                sceneAssetFieldRect.x += sceneAssetFieldWidth * sceneAssetFieldSmallerWidth;
+                sceneAssetFieldRect.width = sceneAssetFieldWidth * (1f - sceneAssetFieldSmallerWidth);
 
                 using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(true))
                 {
@@ -166,10 +166,6 @@ namespace BXFW.ScriptEditor
             // Register the 'SceneAsset'
             if (SceneGUIDValue != sceneGUIDString)
             {
-                // First plan was to modify runtime scenes and add the given reference
-                // But unity says it can load scenes from the editor soo
-                // But it can't be loaded as well, so yeah.
-
                 // Set parent record undos so that we can undo what we did
                 // (check whether if the given GUID is empty, otherwise don't call the intensive conversion constructor which does reflections)
                 SetSceneGUIDValue(property, sceneGUID.Empty() ? string.Empty : sceneGUIDString);

@@ -154,18 +154,18 @@ namespace BXFW.Data
         public LocalizedTextData()
         { }
         /// <summary>
-        /// Creates a LocalizedTextData using a <see cref="Dictionary{TKey, TValue}"/>.
+        /// Creates a LocalizedTextData using a <see cref="IDictionary{TKey, TValue}"/>.
         /// <br>(without id, use for code based locale)</br>
         /// </summary>
-        public LocalizedTextData(Dictionary<string, string> values) 
+        public LocalizedTextData(IDictionary<string, string> values) 
             : this(new SerializableDictionary<string, string>(values))
         { }
         /// <summary>
-        /// Creates the 'LocalizedTextData' with the <see cref="Dictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
+        /// Creates the 'LocalizedTextData' with the <see cref="IDictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
         /// </summary>
         /// <param name="TextID">ID of the text.</param>
         /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
-        public LocalizedTextData(string TextID, Dictionary<string, string> values) 
+        public LocalizedTextData(string TextID, IDictionary<string, string> values) 
             : this(TextID, new SerializableDictionary<string, string>(values))
         { }
 

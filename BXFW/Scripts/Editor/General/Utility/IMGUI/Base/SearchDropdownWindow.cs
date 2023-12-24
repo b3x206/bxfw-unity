@@ -462,13 +462,10 @@ namespace BXFW.Tools.Editor
         /// <param name="element">Element to draw it's children.</param>
         private void DrawElement(SearchDropdownElement element)
         {
-            // FIXME :
-            // * Rect Visibility calculation is incorrect [ X ]
-            // * Elements are not getting state           [ X ]
-            // TODO 1 : 
+            // TODO (features) : 
             // * Add keyboard nav                         [ X ]
             // * Add visual interactions                  [ X ]
-            // TODO 2 : 
+            // TODO (optimizations) : 
             // * General optimization to be done (such as accumulating up the rect heights)                                          [   ]
             // * Search results can contain elements with children (requires a seperate elements stack/slight restructuring of code) [   ]
 
@@ -743,6 +740,8 @@ namespace BXFW.Tools.Editor
             }
 
             // Handle keyboard events
+            int previousHighlightedIndex = highlightedElementIndex;
+
             switch (e.type)
             {
                 case EventType.KeyDown:
@@ -770,14 +769,40 @@ namespace BXFW.Tools.Editor
                         case KeyCode.UpArrow:
                             EditorGUIUtility.editingTextField = false;
 
-                            highlightedElementIndex = Mathf.Max(highlightedElementIndex - 1, 0);
+                            // Iteratively select until the last valid interactable element
+                            do
+                            {
+                                highlightedElementIndex = Mathf.Max(highlightedElementIndex - 1, 0);
+
+                                // Cannot select last element
+                                if (highlightedElementIndex == 0 && !lastElement[highlightedElementIndex].Interactable)
+                                {
+                                    highlightedElementIndex = previousHighlightedIndex;
+                                    break;
+                                }
+                            }
+                            while (!lastElement[highlightedElementIndex].Interactable);
+
                             scrollRectPosition.y += GetHighlightedElementHeightDelta(lastElement, -1);
                             Repaint();
                             break;
                         case KeyCode.DownArrow:
                             EditorGUIUtility.editingTextField = false;
 
-                            highlightedElementIndex = Mathf.Min(highlightedElementIndex + 1, lastElement.Count - 1);
+                            // Iteratively select until the last valid interactable element
+                            do
+                            {
+                                highlightedElementIndex = Mathf.Min(highlightedElementIndex + 1, lastElement.Count - 1);
+
+                                // Cannot select last element
+                                if (highlightedElementIndex == lastElement.Count - 1 && !lastElement[highlightedElementIndex].Interactable)
+                                {
+                                    highlightedElementIndex = previousHighlightedIndex;
+                                    break;
+                                }
+                            }
+                            while (!lastElement[highlightedElementIndex].Interactable);
+
                             // Check if the next element is visible, otherwise scroll it's height amount
                             // Now it's o(n) but less n's thanks to the firstVisibleElementIndex, very wholesome
                             scrollRectPosition.y += GetHighlightedElementHeightDelta(lastElement, 1);
@@ -786,13 +811,19 @@ namespace BXFW.Tools.Editor
 
                         // Go back
                         case KeyCode.LeftArrow:
-                            if (lastElement != parentManager.RootElement)
+                            // Only go back while not editing text field.
+                            if (!EditorGUIUtility.editingTextField && lastElement != parentManager.RootElement)
                             {
                                 m_ElementStack.Pop();
                             }
                             break;
                         // Go forward, select if it doesn't have elements
                         case KeyCode.RightArrow:
+                            if (EditorGUIUtility.editingTextField)
+                            {
+                                break;
+                            }
+                            goto case KeyCode.Return;
                         case KeyCode.Return:
                         case KeyCode.KeypadEnter:
                             // Stop editing text
@@ -801,15 +832,16 @@ namespace BXFW.Tools.Editor
                                 highlightedElementIndex >= 0 && highlightedElementIndex < lastElement.Count
                                 ? lastElement[highlightedElementIndex] : lastElement.FirstOrDefault();
 
-                            // Check if next element actually exists
-                            if (nextElement == null)
+                            // Check if next element actually exists (or stop if we pressed the right arrow on a child without children [selection])
+                            if (nextElement == null || (!nextElement.HasChildren && e.keyCode == KeyCode.RightArrow))
                             {
                                 return;
                             }
+
                             // Select the next child into stack
                             m_ElementStack.Push(nextElement);
                             // Click on the next element (and only do this if it's not a right arrow click)
-                            if (!nextElement.HasChildren && e.keyCode != KeyCode.RightArrow)
+                            if (!nextElement.HasChildren)
                             {
                                 IsClosingWithSelectionIntent = true;
                                 Close();
