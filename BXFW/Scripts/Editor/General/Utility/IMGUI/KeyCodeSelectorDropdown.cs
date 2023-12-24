@@ -77,8 +77,8 @@ namespace BXFW.Tools.Editor
             foreach (KeyValuePair<int, KeyCode> pair in keyCodes.Indexed())
             {
                 // Append the name like this as 'GetEnumName' or 'Enum.ToString' always only gets the first alias for 'ToString'
-                rootElement.Add(new Item(pair.Value, $"{keyEnumNames[pair.Key]} <color=#a8d799> | {(long)pair.Value}</color>") 
-                { 
+                rootElement.Add(new Item(pair.Value, $"{keyEnumNames[pair.Key]} <color=#a8d799> | {(long)pair.Value}</color>")
+                {
                     Selected = pair.Value != KeyCode.None && pair.Value == selectedKeyCode
                 });
             }

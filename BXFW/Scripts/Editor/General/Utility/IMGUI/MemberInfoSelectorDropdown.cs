@@ -13,7 +13,7 @@ namespace BXFW.Tools.Editor
     public class MemberInfoSelectorDropdown : SearchDropdown
     {
         // .. At this rate i am just going to reimplement my own crappy intellisense lol
-        // TODO : Allow for item to be able to return it's own set path.
+        // TODO : Allow for item to be able to return it's own set access path.
 
         /// <summary>
         /// A <see cref="MemberInfo"/> selection predicate delegate typedef.
@@ -22,7 +22,7 @@ namespace BXFW.Tools.Editor
         /// <param name="accessModifierName">The access modifier name. Can be left blank/unassigned.</param>
         /// <param name="memberTypeName">The type name. Can be left blank/unassigned.</param>
         /// <returns>Whether if this selection delegate passes the predicate test.</returns>
-        public delegate bool SelectionDelegate(MemberInfo member, ref string accessModifierName, ref string memberTypeName);
+        public delegate bool MemberSelectionDelegate(MemberInfo member, ref string accessModifierName, ref string memberTypeName);
 
         /// <summary>
         /// Iterate the given <see cref="MemberInfo"/>, if the <see cref="MemberInfo"/> contains more members to iterate.
@@ -69,7 +69,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// A <see cref="MemberInfo"/> selection predicate.
         /// </summary>
-        public readonly SelectionDelegate memberSelectionPredicate;
+        public readonly MemberSelectionDelegate memberSelectionPredicate;
         /// <summary>
         /// A child member iteration predicate.
         /// <br>This should only iterate one layer of the given <see cref="MemberInfo"/>.</br>
@@ -195,7 +195,7 @@ namespace BXFW.Tools.Editor
             return rootItem;
         }
 
-        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, MemberSelectionDelegate, IterateMemberDelegate)"/>
         public MemberInfoSelectorDropdown(Type target)
         {
             if (target == null)
@@ -207,7 +207,7 @@ namespace BXFW.Tools.Editor
             memberSelectionPredicate = DefaultSelectionPredicate;
             memberChildIterationPredicate = DefaultIterationPredicate;
         }
-        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, MemberSelectionDelegate, IterateMemberDelegate)"/>
         /// <param name="allowMultiLevelMemberSelection">Whether to allow multi depth member info selection.</param>
         public MemberInfoSelectorDropdown(Type target, bool allowMultiLevelMemberSelection) : this(target)
         {
@@ -216,9 +216,9 @@ namespace BXFW.Tools.Editor
                 memberChildIterationPredicate = null;
             }
         }
-        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, MemberSelectionDelegate, IterateMemberDelegate)"/>
         /// <param name="allowMultiLevelMemberSelection">Whether to allow multi depth member info selection.</param>
-        public MemberInfoSelectorDropdown(Type target, SelectionDelegate memberPredicate, bool allowMultiLevelMemberSelection) : this(target)
+        public MemberInfoSelectorDropdown(Type target, MemberSelectionDelegate memberPredicate, bool allowMultiLevelMemberSelection) : this(target)
         {
             if (memberPredicate != null)
             {
@@ -230,15 +230,15 @@ namespace BXFW.Tools.Editor
                 memberChildIterationPredicate = null;
             }
         }
-        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
-        public MemberInfoSelectorDropdown(Type target, SelectionDelegate memberPredicate) : this(target)
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, MemberSelectionDelegate, IterateMemberDelegate)"/>
+        public MemberInfoSelectorDropdown(Type target, MemberSelectionDelegate memberPredicate) : this(target)
         {
             if (memberPredicate != null)
             {
                 memberSelectionPredicate = memberPredicate;
             }
         }
-        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, SelectionDelegate, IterateMemberDelegate)"/>
+        /// <inheritdoc cref="MemberInfoSelectorDropdown(Type, MemberSelectionDelegate, IterateMemberDelegate)"/>
         public MemberInfoSelectorDropdown(Type target, IterateMemberDelegate childIteratePredicate) : this(target)
         {
             memberChildIterationPredicate = childIteratePredicate;
@@ -252,7 +252,7 @@ namespace BXFW.Tools.Editor
         /// Child MemberInfo iteration predicate. 
         /// This must only iterate 1 layer, anything more/recursive iterations, will cause errorenous behaviour.
         /// </param>
-        public MemberInfoSelectorDropdown(Type target, SelectionDelegate memberPredicate, IterateMemberDelegate childIteratePredicate) : this(target)
+        public MemberInfoSelectorDropdown(Type target, MemberSelectionDelegate memberPredicate, IterateMemberDelegate childIteratePredicate) : this(target)
         {
             if (memberPredicate != null)
             {

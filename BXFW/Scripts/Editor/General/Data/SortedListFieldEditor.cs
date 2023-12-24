@@ -11,8 +11,8 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(SortedListBase), true)]
     public class SortedListFieldEditor : PropertyDrawer
     {
-        private const float WARN_BOX_HEIGHT = 40f;
-        private const float FOLDOUT_ARROW_WIDTH = 3f;
+        private const float WarningBoxHeight = 40f;
+        private const float FoldoutArrowWidth = 3f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -20,7 +20,7 @@ namespace BXFW.ScriptEditor
 
             // Only draw the warning box if the given child type is not serializable
             float height = listProperty == null ?
-                EditorGUIUtility.singleLineHeight + 2f + WARN_BOX_HEIGHT :
+                EditorGUIUtility.singleLineHeight + 2f + WarningBoxHeight :
                 EditorGUI.GetPropertyHeight(listProperty);
 
             return height;
@@ -40,15 +40,15 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.LabelField(new Rect(foldoutLabelRect)
                 {
-                    x = foldoutLabelRect.x + FOLDOUT_ARROW_WIDTH,
-                    width = foldoutLabelRect.width - FOLDOUT_ARROW_WIDTH
+                    x = foldoutLabelRect.x + FoldoutArrowWidth,
+                    width = foldoutLabelRect.width - FoldoutArrowWidth
                 }, label, EditorStyles.boldLabel);
 
                 EditorGUI.HelpBox(new Rect()
                 {
                     x = foldoutLabelRect.x + 12f,
                     y = position.y + EditorGUIUtility.singleLineHeight + 2f,
-                    height = WARN_BOX_HEIGHT,
+                    height = WarningBoxHeight,
                     width = foldoutLabelRect.width - 12f
                 }, $"[SortedList] Type could not be serialized for field '{label.text}'! Ensure that the type is serialized.", MessageType.Warning);
 
@@ -76,8 +76,8 @@ namespace BXFW.ScriptEditor
             // Draw the label last to draw it over the given ReorderableList
             EditorGUI.LabelField(new Rect(foldoutLabelRect)
             {
-                x = foldoutLabelRect.x + FOLDOUT_ARROW_WIDTH,
-                width = foldoutLabelRect.width - FOLDOUT_ARROW_WIDTH
+                x = foldoutLabelRect.x + FoldoutArrowWidth,
+                width = foldoutLabelRect.width - FoldoutArrowWidth
             }, label, EditorStyles.boldLabel);
 
             EditorGUI.EndProperty();

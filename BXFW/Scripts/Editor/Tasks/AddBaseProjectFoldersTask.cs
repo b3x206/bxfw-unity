@@ -11,11 +11,11 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// The root asset folder, but for unity relative directories.
         /// </summary>
-        private const string UROOT_ASSET_FOLDER = "Assets";
+        private const string UnityRootAssetFolder = "Assets";
         /// <summary>
         /// The root asset folder, as an absolute path.
         /// </summary>
-        private string ROOT_ASSET_FOLDER => Path.Combine(Directory.GetCurrentDirectory(), UROOT_ASSET_FOLDER, RootDirectory);
+        private string AbsoluteRootAssetFolder => Path.Combine(Directory.GetCurrentDirectory(), UnityRootAssetFolder, RootDirectory);
         /// <summary>
         /// Default lists of paths to generate.
         /// </summary>
@@ -44,7 +44,7 @@ namespace BXFW.Tools.Editor
             {
                 // Clean string in list
                 string pathClean = path.TrimStart(' ', '/', '\\').TrimEnd(' ', '/', '\\');
-                string absPath = Path.Combine(ROOT_ASSET_FOLDER, pathClean);
+                string absPath = Path.Combine(AbsoluteRootAssetFolder, pathClean);
                 // Create directory if it does not exist (use System.IO instead of UnityEditor because the latter does not work)
                 // Directory.CreateDirectory creates the parent directory if it does not exist.
                 if (!Directory.Exists(absPath))
