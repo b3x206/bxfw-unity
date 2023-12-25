@@ -32,7 +32,6 @@ namespace BXFW.Tweening
             RuntimeHelpers.RunClassConstructor(bxTwEaseType.TypeHandle);
         }
 #endif
-
         // -- Runtime
         /// <summary>
         /// The <see cref="BXSTween"/> runner, but it's nullable one.
@@ -184,6 +183,18 @@ namespace BXFW.Tweening
             return foundList;
         }
 
+        /// <summary>
+        /// Sets the <see cref="List{T}.Capacity"/> of <see cref="RunningTweens"/> if the <paramref name="capacity"/> 
+        /// is higher than the <see cref="RunningTweens"/>'s capacity.
+        /// </summary>
+        /// <param name="capacity">Capacity to reserve.</param>
+        public static void ReserveTweenCapacity(int capacity)
+        {
+            if (RunningTweens.Capacity < capacity)
+            {
+                RunningTweens.Capacity = capacity;
+            }
+        }
         /// <summary>
         /// Stops all tweens of <see cref="RunningTweens"/>.
         /// </summary>

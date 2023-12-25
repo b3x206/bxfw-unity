@@ -19,7 +19,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// Default lists of paths to generate.
         /// </summary>
-        private static readonly IReadOnlyList<string> DEFAULT_FOLDERS_GEN = new[]
+        private static readonly IReadOnlyList<string> DefaultGenerateFolders = new[]
         {
             "Fonts",
             "Materials/Shaders",
@@ -29,18 +29,18 @@ namespace BXFW.Tools.Editor
         };
         // disallow illegal folder chars (except for directory seperators for making directories)
         [Tooltip("List of folders to generate."), DisallowChars("?<>:*|\"")]
-        public List<string> genFolderPaths;
+        public List<string> generateFolderPaths;
         [Tooltip("Root directory to generate the folders into."), DisallowChars("?<>:*|\"")]
         public string RootDirectory = string.Empty;
 
         private void OnEnable()
         {
-            genFolderPaths = new List<string>(DEFAULT_FOLDERS_GEN);
+            generateFolderPaths = new List<string>(DefaultGenerateFolders);
         }
 
         public override void Run()
         {
-            foreach (string path in genFolderPaths)
+            foreach (string path in generateFolderPaths)
             {
                 // Clean string in list
                 string pathClean = path.TrimStart(' ', '/', '\\').TrimEnd(' ', '/', '\\');
