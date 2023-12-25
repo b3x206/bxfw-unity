@@ -9,6 +9,7 @@ namespace BXFW.Tweening
     /// </summary>
     public interface ITweenCTX
     {
+        // -- Tween
         /// <summary>
         /// Duration of the tween context.
         /// </summary>
@@ -22,6 +23,10 @@ namespace BXFW.Tweening
         /// </summary>
         public int RepeatAmount { get; }
         /// <summary>
+        /// Repeat type of this tween.
+        /// </summary>
+        public RepeatType RepeatType { get; }
+        /// <summary>
         /// Whether if the tween is running.
         /// </summary>
         public bool IsRunning { get; }
@@ -34,28 +39,48 @@ namespace BXFW.Tweening
         /// </summary>
         public float CurrentElapsed { get; }
         /// <summary>
-        /// Called when the tween ends.
+        /// Whether to ignore the timescale.
         /// </summary>
-        public event BXTweenMethod TweenCompleteAction;
-        /// <summary>
-        /// Clears the interface <see cref="TweenCompleteAction"/>.
-        /// </summary>
-        public void ClearCompleteAction();
-
+        public bool IgnoreTimeScale { get; }
         /// <summary>
         /// Target object of the tween.
         /// <br>It is <i>recommended</i> for this to be assigned to a valid object.</br>
         /// </summary>
         UnityEngine.Object TargetObject { get; }
 
+        // -- Event
+        /// <summary>
+        /// Called when the tween starts.
+        /// </summary>
+        public BXTweenMethod OnStartAction { get; set; }
+        /// <summary>
+        /// Called when the tween ends.
+        /// </summary>
+        public BXTweenMethod OnEndAction { get; set; }
+
+        /// <summary>
+        /// Since BXTween is not based on a time evaluation system, this is a variable used for a bad workaround.
+        /// <br>BXSTween solves this, however only the older commits may be compatible with the bxfw-legacy branch..</br>
+        /// </summary>
+        public BXTweenMethod SequenceOnEndAction { get; set; }
+
+        /// <summary>
+        /// Clears the interface <see cref="OnStartAction"/>.
+        /// </summary>
+        public void ClearStartingEvents();
+        /// <summary>
+        /// Clears the interface <see cref="OnEndAction"/>.
+        /// </summary>
+        public void ClearEndingEvents();
+
         /// <summary>
         /// Stop the tween that is under this context.
         /// </summary>
-        void StopTween();
+        public void StopTween();
 
         /// <summary>
         /// Start the tween that is under this context.
         /// </summary>
-        void StartTween();
+        public void StartTween();
     }
 }

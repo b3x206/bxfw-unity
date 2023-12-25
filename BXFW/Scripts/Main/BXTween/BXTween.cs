@@ -15,7 +15,7 @@ namespace BXFW.Tweening
     /// <br>BXTween interpolates the following types, but can be extended:</br>
     /// <see cref="int"/>, <see cref="float"/>, <see cref="Color"/>, <see cref="Vector2"/>, 
     /// <see cref="Vector3"/>, <see cref="Quaternion"/> and <see cref="Matrix4x4"/>
-    /// <br>Custom 'To' methods can be registered by the user, however the <see cref="BXTweenProperty{T}"/>'ies most likely not work with them. (TODO)</br>
+    /// <br>Custom 'To' methods can be registered by the user, however the <see cref="BXTweenProperty{T}"/>'ies most likely not work with them.</br>
     /// <br>
     /// The tweening can agnostically be extended using custom delegates (on a float tween) with lerps of that respective 
     /// data type, however they are not as convenient for tweening. The extendability will be added later on.
@@ -46,6 +46,10 @@ namespace BXFW.Tweening
         }
 
         private static BXTweenSettings currentSettings;
+        /// <summary>
+        /// The current settings used on BXTween.
+        /// <br>This settings's properties, when modified on editor could be persistent but on built players it is always non-persistent.</br>
+        /// </summary>
         public static BXTweenSettings CurrentSettings
         {
             get
@@ -61,9 +65,12 @@ namespace BXFW.Tweening
                     currentSettings = BXTweenSettings.Instance;
 #else
                     TextAsset loadResourceTarget = Resources.Load<TextAsset>(System.IO.Path.Combine(BXTweenStrings.SettingsResourceCreatePath, BXTweenStrings.SettingsResourceCreateName));
-                    BXTweenSettings loadInstance = ScriptableObject.CreateInstance<BXTweenSettings>();
-                    JsonUtility.FromJsonOverwrite(loadResourceTarget.text, loadInstance);
-                    currentSettings = loadInstance;
+                    if (loadResourceTarget != null)
+                    {
+                        BXTweenSettings loadInstance = ScriptableObject.CreateInstance<BXTweenSettings>();
+                        JsonUtility.FromJsonOverwrite(loadResourceTarget.text, loadInstance);
+                        currentSettings = loadInstance;
+                    }
 #endif
                 }
 
@@ -89,6 +96,10 @@ namespace BXFW.Tweening
             }
         }
 
+        /// <summary>
+        /// The currently cached method list for <see cref="BXTween"/>,
+        /// used in <see cref="GenericTo{T}(T, T, float, BXTweenSetMethod{T}, UnityEngine.Object, bool)"/> and it's corresponding utility methods.
+        /// </summary>
         private static readonly MethodInfo[] BXTweenMethods = typeof(BXTween).GetMethods();
 
         #region Utility
@@ -200,7 +211,7 @@ namespace BXFW.Tweening
         }
         #endregion
 
-        #region Context Creation (To Methods)
+        #region Context Creation
         /// <summary>
         /// Create a tween manually. Note that you have to pass a tweenable type. (check using <see cref="IsTweenableType{T}"/>)
         /// <br>(More Info : Tweenable type is the ones that exist in <see cref="BXTween"/> class (except for the generic To).)</br>

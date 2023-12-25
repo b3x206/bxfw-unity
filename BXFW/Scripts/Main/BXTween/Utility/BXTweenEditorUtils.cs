@@ -182,8 +182,8 @@ namespace BXFW.Tweening.Editor
 
             public void OnPreprocessBuild(BuildReport report)
             {                
-                // Serialize the current settings to the root as json
-                string settingsAsJson = JsonUtility.ToJson(BXTweenSettings.Instance);
+                // Serialize the current settings to the root as json (use BXTween.CurrentSettings to avoid problems of null Instance being not handled)
+                string settingsAsJson = JsonUtility.ToJson(BXTween.CurrentSettings);
                 File.WriteAllText($"{AbsoluteAssetPath}.json", settingsAsJson, System.Text.Encoding.UTF8);
                 AssetDatabase.Refresh();
             }

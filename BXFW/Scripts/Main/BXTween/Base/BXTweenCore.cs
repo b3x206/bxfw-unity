@@ -46,6 +46,7 @@ namespace BXFW.Tweening
     ///     3 : Very coding pattern (what)
     ///     4 : Who cares about consistency? if the code works it's good enough.
     ///     5 : Throws exceptions while loading <see cref="BXTweenSettings"/> (epic and wholsum)
+    ///         [note : this is now fixed, but have to keep it as it has been here since <see cref="BXTweenSettings"/> have been introduced]
     /// 
     /// But why did you spend effort on this? there are better alternatives :
     ///     I don't know, and i made a new version. You are viewing the legacy version which will be not updated.
@@ -133,7 +134,7 @@ namespace BXFW.Tweening
             do
             {
                 // Check validity + get all settings 'WaitForEndOfFrame'
-                if (!ctx.ContextIsValid)
+                if (!ctx.IsValid)
                 {
                     Debug.LogError(BXTweenStrings.GetErr_ContextInvalidMsg(ctx.DebugGetContextInvalidMsg()));
                     yield break;
@@ -149,7 +150,7 @@ namespace BXFW.Tweening
                     {
                         if (ctx.InvokeDelayOnRepeat)
                         {
-                            if (!CurrentSettings.ignoreTimeScale)
+                            if (!ctx.IgnoreTimeScale)
                             {
                                 yield return new WaitForSeconds(ctx.Delay);
                             }
@@ -161,7 +162,7 @@ namespace BXFW.Tweening
                     }
                     else
                     {
-                        if (!CurrentSettings.ignoreTimeScale)
+                        if (!ctx.IgnoreTimeScale)
                         {
                             yield return new WaitForSeconds(ctx.Delay);
                         }
@@ -172,10 +173,7 @@ namespace BXFW.Tweening
                     }
                 }
 
-                if (ctx.OnStartAction != null)
-                {
-                    ctx.OnStartAction.Invoke();
-                }
+                ctx.OnStartAction?.Invoke();
 
                 // Main loop
                 float Elapsed = ctx.CurrentElapsed;
@@ -187,19 +185,16 @@ namespace BXFW.Tweening
                     bool canTick = true;
 
                     // We added option to ignore the timescale, so this is standard procedure.
-                    if (!CurrentSettings.ignoreTimeScale)
+                    if (!ctx.IgnoreTimeScale)
                     {
                         // Check if the timescale is tampered with
                         // if it's below zero, just skip the frame
-                        if (Time.timeScale <= 0f)
-                        {
-                            canTick = false;
-                        }
+                        canTick = Time.timeScale > Mathf.Epsilon;
                     }
                     // Tick cond check (should be true to tick)
-                    if (ctx.TickTweenConditionFunction != null)
+                    if (ctx.TickConditionFunction != null)
                     {
-                        if (!ctx.TickTweenConditionFunction())
+                        if (!ctx.TickConditionFunction())
                         {
                             canTick = false;
                         }
@@ -223,8 +218,7 @@ namespace BXFW.Tweening
 
                         // Set lerp
                         // NOTE : Always use 'LerpUnclamped' as the clamping is already done (or not done) in TimeSetLerp.
-
-                        T SetValue = lerpMethod(ctx.StartValue, ctx.EndValue, ctx.TimeSetLerp(Elapsed));
+                        T SetValue = lerpMethod(ctx.StartValue, ctx.EndValue, ctx.EasingEvalFunction(Elapsed));
                         ctx.CurrentElapsed = Elapsed;
 
                         try
@@ -243,9 +237,7 @@ namespace BXFW.Tweening
                             yield break;
                         }
 
-                        Elapsed += (CurrentSettings.ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
-                        // TODO : Add useFixedTime for BXTweenCTX?
-                        // yield return new WaitForFixedUpdate();
+                        Elapsed += (ctx.IgnoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime) / ctx.Duration;
                     }
                     
                     yield return null;

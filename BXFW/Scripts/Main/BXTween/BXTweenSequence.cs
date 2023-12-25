@@ -7,11 +7,9 @@ using UnityEngine;
 
 namespace BXFW.Tweening
 {
-    /// Kinda suprised that this works.
-    /// This is a hack job of a sequencer and it does not integrate to the <see cref="BXTween"/> methods.
-    /// This will be fixed when the BXTween is refactored. (<see cref="BXTweenCore"/> notes on top)
     /// <summary>
     /// A list of tweens that can be run sequentially or programatically.
+    /// <br>This is not tied inside the <see cref="BXTween"/> system, as <see cref="BXTween"/> was not built with that in mind.</br>
     /// </summary>
     [Serializable]
     public class BXTweenSequence : IEnumerable<ITweenCTX>
@@ -254,7 +252,7 @@ namespace BXFW.Tweening
                 }
 
                 runnable.tween.StartTween();
-                runnable.tween.TweenCompleteAction += () =>
+                runnable.tween.SequenceOnEndAction += () =>
                 {
                     OnIndiviualTweenEnd?.Invoke(new KeyValuePair<int, ITweenCTX>(runnable.priority, runnable.tween));
                 };
@@ -265,7 +263,7 @@ namespace BXFW.Tweening
                 throw new NullReferenceException(string.Format("[BXTweenSequence::RunRecursive] Sequence id={0} does not have any tweens on it.", currentRunPriority));
             }
 
-            longestDurationCtx.TweenCompleteAction += () =>
+            longestDurationCtx.SequenceOnEndAction += () =>
             {
                 if (currentRunPriority <= LastPriority)
                 {
@@ -293,7 +291,7 @@ namespace BXFW.Tweening
             currentRunPriority = 0;
             foreach (var runnable in m_Tweens)
             {
-                runnable.tween.ClearCompleteAction();
+                runnable.tween.SequenceOnEndAction = null;
                 runnable.tween.StopTween();
             }
         }

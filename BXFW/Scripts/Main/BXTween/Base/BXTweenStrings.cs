@@ -134,10 +134,9 @@ namespace BXFW.Tweening
         {
             return string.Format(@"Tween Info => '{0}' with target '{1}'
 Tween Details : Duration={2} Delay={3} StartVal={4} EndVal={5} HasEndActions={6} InvokeActionsOnManualStop={6}.",
-                    // why a ternary that returns "Null" if target object is null? 
-                    // because accessing the 'TargetObject' causes a MissingReferenceException if it was destroyed
-                    // yeah.
-                    gContext.ToString(), gContext.TargetObject == null ? "Null" : gContext.TargetObject.ToString(), gContext.Duration, gContext.Delay, gContext.StartValue, gContext.EndValue, gContext.OnEndAction == null, gContext.InvokeEventOnStop);
+                    gContext.ToString(), gContext.TargetObject == null ? "Null" : gContext.TargetObject.ToString(), gContext.Duration, gContext.Delay, 
+                    gContext.StartValue, gContext.EndValue, gContext.HasEndAction, gContext.InvokeEventOnStop
+                );
         }
         public static string DLog_BXTwCallGenericTo<T>(T StartValue, T TargetValue, float Duration, UnityEngine.Object TargetObject)
         {

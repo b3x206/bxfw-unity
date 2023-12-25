@@ -4,8 +4,7 @@ using UnityEngine;
 namespace BXFW.Tweening
 {
     /// <summary>
-    /// BXTweenSettings.
-    /// <br>For <see cref="BXTweenProperty{T}"/>'s, we use editor scripts on demand to access and set.</br>
+    /// BXTweenSettings which contains the settings for code created <see cref="BXTweenCTX{T}"/>'s.
     /// </summary>
     [Serializable]
     public class BXTweenSettings : ScriptableObjectSingleton<BXTweenSettings>
@@ -13,6 +12,10 @@ namespace BXFW.Tweening
         // -- BXTweenStrings Settings
         // :: General
         public bool enableBXTween = true;
+        /// <summary>
+        /// Global variable for whether to ignore the time scale.
+        /// <br>Instead of switching this for tweening, just use <see cref="BXTweenCTX{T}.SetIgnoreTimeScale(bool)"/> with <see langword="true"/> parameter.</br>
+        /// </summary>
         public bool ignoreTimeScale = false;
         public int maxTweens = 50;
 

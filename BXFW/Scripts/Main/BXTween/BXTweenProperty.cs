@@ -106,7 +106,7 @@ namespace BXFW.Tweening
         }
 
         /// <summary>Default tween curve value. Will be set if <see cref="UseTweenCurve"/> is true and <see cref="TweenCurve"/> is null.</summary>
-        protected readonly static AnimationCurve DEFAULT_TWCURVE_VALUE = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        protected readonly static AnimationCurve DefaultTweenCurveValue = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         /// <summary>
         /// Curve of the tween. This shouldn't return null, as it assigns itself to a default.
         /// <br>Setting this to a non-null/null value won't disable/enable the <see cref="TweenEase"/> (unlike <see cref="BXTweenCTX{T}"/>), 
@@ -119,12 +119,12 @@ namespace BXFW.Tweening
                 // Tween curve is null
                 if (_TweenCurve == null)
                 {
-                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                    _TweenCurve = DefaultTweenCurveValue;
                 }
                 // Tween curve is invalid (no keys)
                 if (_TweenCurve.keys.Length <= 0)
                 {
-                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                    _TweenCurve = DefaultTweenCurveValue;
                 }
 
                 return _TweenCurve;
@@ -133,7 +133,7 @@ namespace BXFW.Tweening
             {
                 if (value == null)
                 {
-                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                    _TweenCurve = DefaultTweenCurveValue;
                     return;
                 }
 
@@ -168,7 +168,7 @@ namespace BXFW.Tweening
                 // Set default value if null.
                 if (_UseTweenCurve && _TweenCurve == null)
                 {
-                    _TweenCurve = DEFAULT_TWCURVE_VALUE;
+                    _TweenCurve = DefaultTweenCurveValue;
                 }
 
                 // Don't call 'UpdateProperty' here as the inspector calls this every frame.
@@ -184,8 +184,15 @@ namespace BXFW.Tweening
                 UpdateProperty();
             }
         }
+
+        /// <summary>
+        /// Interface of the given tween.
+        /// </summary>
         public abstract ITweenCTX IContext { get; }
 
+        /// <summary>
+        /// Used to update the property's values and other things.
+        /// </summary>
         public abstract void UpdateProperty();
     }
     /// <summary>
@@ -254,6 +261,8 @@ namespace BXFW.Tweening
             }
 
             _TwContext = ctx;
+            // Add the event listener
+            TwContext.InternalOnEndAction = () => OnEndAction?.Invoke(TwContext);
 
             // ** Gather values from context.
             _Duration = ctx.Duration;
@@ -282,6 +291,8 @@ namespace BXFW.Tweening
             if (_TwContext == null)
             {
                 _TwContext = GenericTo(StartValue, EndValue, _Duration, Setter, null, false);
+                // Add the event listener
+                TwContext.InternalOnEndAction = () => OnEndAction?.Invoke(TwContext);
             }
             else
             {
@@ -290,9 +301,9 @@ namespace BXFW.Tweening
                     Debug.Log(BXTweenStrings.DLog_BXTwSetupPropertyTwCTXAlreadyExist);
                 }
 
-                // Set the setter too.
-                // Since this is called when 'StartTween' is also called, 
-                TwContext.SetSetter(Setter);
+                // Set the setter only to modify the tween
+                // 'UpdateProperty' does not update the 'StartValue' and 'EndValue' so set those as well.
+                TwContext.SetStartValue(StartValue).SetEndValue(EndValue).SetSetter(_Setter);
             }
 
             UpdateProperty();
@@ -356,12 +367,6 @@ namespace BXFW.Tweening
             TwContext.SetDelay(_Delay).SetDuration(_Duration).
                 SetCustomCurve(UseTweenCurve ? _TweenCurve : null, !_AllowInterpolationEaseOvershoot).SetEase(_TweenEase).
                 SetRepeatAmount(_RepeatAmount).SetRepeatType(_TweenRepeatType).SetTargetObject(_TargetObject);
-
-            // -- Null checks (for the ending actions, we still check null while invoking those)
-            if (OnEndAction != null)
-            {
-                TwContext.SetEndingEvent(OnEndAction);
-            }
 
             // Basically whenever we call 'SetSetter', the BXTweenContext tries whether if the setter is valid by calling it on a try block
             // This type of error checking is dumb so i removed it. (because it resets the object to c# default)
@@ -460,6 +465,9 @@ namespace BXFW.Tweening
     }
 
     #region BXTween Property Classes
+    /// <summary>
+    /// A property that can interpolate a float.
+    /// </summary>
     [Serializable]
     public sealed class BXTweenPropertyFloat : BXTweenProperty<float>
     {
@@ -474,6 +482,9 @@ namespace BXFW.Tweening
             }
         }
     }
+    /// <summary>
+    /// A property that can interpolate a Vector2.
+    /// </summary>
     [Serializable]
     public sealed class BXTweenPropertyVector2 : BXTweenProperty<Vector2>
     {
@@ -488,6 +499,9 @@ namespace BXFW.Tweening
             }
         }
     }
+    /// <summary>
+    /// A property that can interpolate a Vector3.
+    /// </summary>
     [Serializable]
     public sealed class BXTweenPropertyVector3 : BXTweenProperty<Vector3>
     {
@@ -502,6 +516,26 @@ namespace BXFW.Tweening
             }
         }
     }
+    /// <summary>
+    /// A property that can interpolate a Quaternion.
+    /// </summary>
+    [Serializable]
+    public sealed class BXTweenPropertyQuaternion : BXTweenProperty<Quaternion>
+    {
+        public BXTweenPropertyQuaternion(float duration, float delay = 0f, bool exPol = false, AnimationCurve c = null)
+        {
+            _Duration = duration;
+            _Delay = delay;
+            _AllowInterpolationEaseOvershoot = exPol;
+            if (c != null)
+            {
+                _TweenCurve = c;
+            }
+        }
+    }
+    /// <summary>
+    /// A property that can interpolate a color.
+    /// </summary>
     [Serializable]
     public sealed class BXTweenPropertyColor : BXTweenProperty<Color>
     {

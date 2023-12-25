@@ -29,19 +29,25 @@ namespace BXFW.Tweening
         PingPong = 0,
         Reset = 1
     }
+
     /// <summary>
     /// Tween context.
     /// Not serializable, but contains the currently running tween data.
-    /// <br>For a serializable alternative, use the <see cref="BXTweenProperty{T}"/>'s already defined classes 
-    /// (non-generic ones, you can also define custom classes for it by deriving from the given class)</br>
+    /// <br>
+    /// For a serializable alternative, use the <see cref="BXTweenProperty{T}"/>'s already defined classes 
+    /// (non-generic ones, you can also define custom classes for it by deriving from <see cref="BXTweenProperty{T}"/> with a serializable <typeparamref name="T"/>)
+    /// </br>
     /// </summary>
     public sealed class BXTweenCTX<T> : ITweenCTX
     {
         // ---- Variables ---- //
-        // Should be read-only for 'public' and only be able to set from methods (for daisy chaining of methods). 
-        // Most of the info is contained in the here.
-        // -- Standard Values
+        /// <summary>
+        /// The starting value of the tween.
+        /// </summary>
         public T StartValue { get; private set; }
+        /// <summary>
+        /// The target/ending value of the tween.
+        /// </summary>
         public T EndValue { get; private set; }
         // -- Settings
         /// <summary>
@@ -49,18 +55,40 @@ namespace BXFW.Tweening
         /// This enables / disables ending actions.
         /// </summary>
         public bool InvokeEventOnStop { get; private set; } = true;
+        /// <summary>
+        /// Duration of this tween.
+        /// </summary>
         public float Duration { get; private set; } = 0f;
+        /// <summary>
+        /// Delay of this tween.
+        /// </summary>
         public float Delay { get; private set; } = 0f;
+        /// <summary>
+        /// Whether to wait out the delaying if the tween repeats?
+        /// </summary>
         public bool InvokeDelayOnRepeat { get; private set; } = false;
+        /// <summary>
+        /// Amount of times to loop the tween.
+        /// </summary>
         public int RepeatAmount { get; private set; } = 0;
+        /// <summary>
+        /// Current looping type of this tween.
+        /// <br><see cref="RepeatType.Reset"/>    : Always loops the tweening from <see cref="StartValue"/> to <see cref="EndValue"/>.</br>
+        /// <br><see cref="RepeatType.PingPong"/> : Loops the tweening by swapping <see cref="StartValue"/> with <see cref="EndValue"/>.</br>
+        /// </summary>
         public RepeatType RepeatType { get; private set; } = CurrentSettings.DefaultRepeatType;
+        /// <summary>
+        /// Whether if this tween ignores <see cref="Time.timeScale"/>.
+        /// </summary>
+        public bool IgnoreTimeScale { get; private set; } = CurrentSettings.ignoreTimeScale;
+        /// <summary>
+        /// Whether to invoke the <see cref="OnEndAction"/> and <see cref="OnEndActionUnityEvent"/>
+        /// </summary>
         public bool InvokeEventOnRepeat { get; private set; } = true;
+
         // -- Status
         public bool IsRunning { get; private set; } = false;
-        public bool IsPaused
-        {
-            get { return CurrentElapsed > Mathf.Epsilon && !IsRunning; }
-        }
+        public bool IsPaused => CurrentElapsed > Mathf.Epsilon && !IsRunning;
         /// <summary>
         /// Helper variable for <see cref="IsValuesSwitched"/>.
         /// </summary>
@@ -70,10 +98,10 @@ namespace BXFW.Tweening
         /// <br>Usually returns false if the repeat type is <see cref="RepeatType.Reset"/> 
         ///     or if repeat amount is zero.</br>
         /// </summary>
-        public bool IsValuesSwitched
-        {
-            get { return _IsValuesSwitched && RepeatType != RepeatType.Reset; }
-        }
+        public bool IsValuesSwitched => _IsValuesSwitched && RepeatType != RepeatType.Reset;
+        /// <inheritdoc cref="IsValid"/>
+        [Obsolete("Use 'BXTweenCTX<T>.IsValid' instead.")]
+        public bool ContextIsValid => IsValid;
         /// <summary>
         /// Whether if the context is valid.
         /// <br>Context validity depends on 3 things (most of the time) -> </br>
@@ -81,7 +109,7 @@ namespace BXFW.Tweening
         /// <br>2 : Whether if the <see cref="IteratorCoroutine"/> is null or not.</br>
         /// <br>3 : If <see cref="TargetObjectIsOptional"/> is false and the <see cref="TargetObject"/> is whether null or not (if target object IS optional this is ignored)</br>
         /// </summary>
-        public bool ContextIsValid
+        public bool IsValid
         {
             get
             {
@@ -92,10 +120,10 @@ namespace BXFW.Tweening
             }
         }
         // -- Target (Identifier and Null checks)
-        private UnityEngine.Object _TargetObj;
-        public UnityEngine.Object TargetObject { get { return _TargetObj; } }
-        public bool TargetObjectIsOptional { get { return _TargetObj == null; } }
-        public IEnumerator IteratorCoroutine { get { return _IteratorCoroutine; } }
+        private UnityEngine.Object _TargetObject;
+        public UnityEngine.Object TargetObject => _TargetObject;
+        public bool TargetObjectIsOptional => _TargetObject == null;
+        public IEnumerator IteratorCoroutine => _IteratorCoroutine;
         // -- Pausing
         /// <summary>
         /// The current set value of the coroutine. (contains the actual value)
@@ -123,48 +151,52 @@ namespace BXFW.Tweening
         /// <summary>
         /// Boolean to whether to use a custom time curve for custom easings.
         /// </summary>
-        public bool UseCustomTwTimeCurve { get { return CustomTimeCurve != null; } }
+        public bool UseCustomTwTimeCurve => CustomTimeCurve != null;
+
         // -- Setter (subpart of Interpolation)
         /// <summary>
-        /// Time interpolation.
+        /// Time easing evaluation function.
         /// <br>Set when you set a <see cref="SetCustomCurve(AnimationCurve, bool)"/> or <see cref="SetEase(EaseType, bool)"/>.</br>
         /// </summary>
-        public BXTweenEaseSetMethod TimeSetLerp { get; private set; }
+        public BXTweenEaseSetMethod EasingEvalFunction { get; private set; }
+        /// <summary>
+        /// Function used to actually set the tweened value.
+        /// </summary>
         public BXTweenSetMethod<T> SetterFunction { get; private set; }
         /// <summary>
         /// Called when the tween is run every time.
         /// <br>It is also called in repeats.</br>
         /// </summary>
-        public BXTweenMethod OnStartAction { get; private set; }
-        public BXTweenMethod OnEndAction { get; private set; }
+        public BXTweenMethod OnStartAction { get; set; }
         /// <summary>
         /// Called when the tween is completed.
-        /// <br>(same as <see cref="OnEndAction"/>, just for the <see cref="ITweenCTX"/> interface)</br>
         /// </summary>
-        public event BXTweenMethod TweenCompleteAction;
-        public BXTweenMethod PersistentOnEndAction { get; private set; }
-        public BXTweenUnityEvent OnEndActionUnityEvent { get; private set; }
-        public Func<bool> TickTweenConditionFunction { get; private set; }
+        public BXTweenMethod OnEndAction { get; set; }
+        /// <summary>
+        /// Ending action that is used internally.
+        /// <br>This is because BXTween actually sucks and BXSTween on the newer branch is better.</br>
+        /// </summary>
+        internal BXTweenMethod InternalOnEndAction;
+        public BXTweenMethod SequenceOnEndAction { get; set; }
+
+        /// <summary>
+        /// A ticking condition function.
+        /// <br>Return <see langword="false"/> if the tween should not tick.</br>
+        /// <br>Return <see langword="true"/> if the tween should tick.</br>
+        /// <br>If the tween is not ticking, this means that the tween has been suspended.</br>
+        /// </summary>
+        public Func<bool> TickConditionFunction { get; private set; }
+        /// <summary>
+        /// Whether if this tween has a <see cref="OnEndAction"/>.
+        /// </summary>
+        public bool HasEndAction => OnEndAction != null;
 
         // --- Private Fields
-        // Coroutine / Iterator 
-        // Note : These are very extra for ensuring that the tween works, the coroutine takes the context by reference lol.
-        private readonly Func<BXTweenCTX<T>, IEnumerator> _GetTweenIteratorFn;   // Delegate to get coroutine suitable for this class
-        private IEnumerator _IteratorCoroutine;                     // Current setup iterator (not running)
-        private IEnumerator _CurrentIteratorCoroutine;              // Current running iterator
+        private readonly Func<BXTweenCTX<T>, IEnumerator> _GetTweenIteratorFn; // Delegate to get coroutine suitable for this class
+        private IEnumerator _IteratorCoroutine;                                // Current setup iterator (not running)
+        private IEnumerator _CurrentIteratorCoroutine;                         // Current running iterator
 
         #region Variable Setter
-        public BXTweenCTX<T> ClearEndingEvents()
-        {
-            OnEndAction = null;
-            ClearCompleteAction();
-
-            return this;
-        }
-        public void ClearCompleteAction()
-        {
-            TweenCompleteAction = null;
-        }
         /// <summary>
         /// Sets an event to be occured in end.
         /// </summary>
@@ -185,14 +217,9 @@ namespace BXFW.Tweening
 
             return this;
         }
-        /// <summary>
-        /// Sets an event to be occured in end.
-        /// </summary>
-        public BXTweenCTX<T> SetEndingEvent(BXTweenUnityEvent Event)
+        public void ClearEndingEvents()
         {
-            OnEndActionUnityEvent = Event;
-
-            return this;
+            OnEndAction = null;
         }
         /// <summary>
         /// Sets an event to be called in start.
@@ -214,6 +241,10 @@ namespace BXFW.Tweening
             }
 
             return this;
+        }
+        public void ClearStartingEvents()
+        {
+            OnEndAction = null;
         }
         public BXTweenCTX<T> SetInvokeEventsOnStop(bool value)
         {
@@ -253,6 +284,16 @@ namespace BXFW.Tweening
         public BXTweenCTX<T> SetInvokeDelayOnRepeat(bool value)
         {
             InvokeDelayOnRepeat = value;
+
+            return this;
+        }
+        /// <summary>
+        /// Sets whether if the tweening ignores current <see cref="Time.timeScale"/>.
+        /// </summary>
+        /// <param name="doIgnore">Whether to ignore the <see cref="Time.timeScale"/>.</param>
+        public BXTweenCTX<T> SetIgnoreTimeScale(bool doIgnore)
+        {
+            IgnoreTimeScale = doIgnore;
 
             return this;
         }
@@ -322,7 +363,7 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            TimeSetLerp = (float progress) => clamp01 ? Mathf.Clamp01(BXTweenEase.EasedValue(progress, Easing)) : BXTweenEase.EasedValue(progress, Easing);
+            EasingEvalFunction = (float progress) => clamp01 ? Mathf.Clamp01(BXTweenEase.EasedValue(progress, Easing)) : BXTweenEase.EasedValue(progress, Easing);
 
             return this;
         }
@@ -360,11 +401,11 @@ namespace BXFW.Tweening
             // Clamp value between 0-1
             if (clamp01)
             {
-                TimeSetLerp = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
+                EasingEvalFunction = (float progress) => { return Mathf.Clamp01(CustomTimeCurve.Evaluate(Mathf.Clamp01(progress))); };
             }
             else
             {
-                TimeSetLerp = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); };
+                EasingEvalFunction = (float progress) => { return CustomTimeCurve.Evaluate(Mathf.Clamp01(progress)); };
             }
 
             return this;
@@ -395,7 +436,7 @@ namespace BXFW.Tweening
         /// </summary>
         public BXTweenCTX<T> SetTickCondition(Func<bool> condition)
         {
-            TickTweenConditionFunction = condition;
+            TickConditionFunction = condition;
             return this;
         }
         /// <summary>
@@ -411,7 +452,7 @@ namespace BXFW.Tweening
                 return this;
             }
 
-            _TargetObj = obj;
+            _TargetObject = obj;
 
             return this;
         }
@@ -476,24 +517,20 @@ namespace BXFW.Tweening
         /// <summary>
         /// The main constructor.
         /// </summary>
-        public BXTweenCTX(T StartVal, T EndVal, UnityEngine.Object TargetO, float TDuration,
-            // Func Variable
-            BXTweenSetMethod<T> SetFunc, Func<BXTweenCTX<T>, IEnumerator> GetTweenIterFn,
-            BXTweenMethod PersistentEndMethod = null)
+        public BXTweenCTX(T startingValue, T endingValue, UnityEngine.Object targetObject, float duration, BXTweenSetMethod<T> setterFunction, Func<BXTweenCTX<T>, IEnumerator> GetTweenIterFn)
         {
             try
             {
                 // Public
-                StartValue = StartVal;
-                EndValue = EndVal;
-                SetterFunction = SetFunc; // Setup setter function.
+                StartValue = startingValue;
+                EndValue = endingValue;
+                SetterFunction = setterFunction; // Setup setter function.
                 SetterFunction += (T pValue) => { CurrentValue = pValue; }; // Add pausing delegate to the setter function.
-                PersistentOnEndAction = PersistentEndMethod;
 
-                Duration = TDuration;
+                Duration = duration;
 
                 // Private
-                _TargetObj = TargetO;
+                _TargetObject = targetObject;
                 _GetTweenIteratorFn = GetTweenIterFn;
 
                 // Functions to update (like ease)
@@ -532,8 +569,6 @@ namespace BXFW.Tweening
             CurrentValue = copyFrom.CurrentValue;
             CurrentElapsed = copyFrom.CurrentElapsed;
 
-            PersistentOnEndAction = copyFrom.PersistentOnEndAction;
-
             // Classes that need to be copied in other ways require other methods.
             if (copyFrom.CustomTimeCurve != null)
             {
@@ -545,10 +580,8 @@ namespace BXFW.Tweening
                 SetEndingEvent(copyFrom.OnEndAction);
             }
 
-            if (copyFrom.OnEndActionUnityEvent != null)
-            {
-                SetEndingEvent(copyFrom.OnEndActionUnityEvent);
-            }
+            InternalOnEndAction = copyFrom.InternalOnEndAction;
+            SequenceOnEndAction = copyFrom.SequenceOnEndAction;
 
             // !! setter(s), must not be null
             SetEase(copyFrom.Easing);
@@ -556,7 +589,7 @@ namespace BXFW.Tweening
 
             // private
             _IsValuesSwitched = copyFrom._IsValuesSwitched;
-            _TargetObj = copyFrom._TargetObj; // This can be a common reference anyways
+            _TargetObject = copyFrom._TargetObject;
 
             // Coroutine
             _GetTweenIteratorFn = copyFrom._GetTweenIteratorFn;
@@ -759,25 +792,10 @@ namespace BXFW.Tweening
         {
             try
             {
-                if (OnEndAction != null)
-                {
-                    OnEndAction.Invoke();
-                }
-
-                if (PersistentOnEndAction != null)
-                {
-                    PersistentOnEndAction.Invoke();
-                }
-
-                if (TweenCompleteAction != null)
-                {
-                    TweenCompleteAction.Invoke();
-                }
-
-                if (OnEndActionUnityEvent != null)
-                {
-                    OnEndActionUnityEvent.Invoke(this);
-                }
+                OnEndAction?.Invoke();
+                // -- Bad ones
+                InternalOnEndAction?.Invoke();
+                SequenceOnEndAction?.Invoke();
             }
             catch (Exception e)
             {
