@@ -502,9 +502,9 @@ namespace BXFW
         /// <summary>
         /// Resizes an IList array.
         /// </summary>
-        public static void Resize<T>(this IList<T> list, int sz) where T : new()
+        public static void Resize<T>(this IList<T> list, int sz)
         {
-            Resize(list, sz, new T());
+            Resize(list, sz, default);
         }
         public static void Resize<T>(this List<T> list, int sz, T newT)
         {
@@ -516,9 +516,9 @@ namespace BXFW
 
             Resize((IList<T>)list, sz, newT);
         }
-        public static void Resize<T>(this List<T> list, int sz) where T : new()
+        public static void Resize<T>(this List<T> list, int sz)
         {
-            Resize(list, sz, new T());
+            Resize(list, sz, default);
         }
 
         /// <summary>Resets array values to their default values.</summary>

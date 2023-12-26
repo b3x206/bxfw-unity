@@ -100,13 +100,20 @@ namespace BXFW.Tools.Editor
             // Create this function as it's more ergonomic compared to writing an inline delegate in this case.
             void OnFieldDrawnCustom(int i)
             {
+                // Should not retrieve the 'property.arraySize'th element
+                if (i >= property.arraySize)
+                {
+                    return;
+                }
+
                 // Create property field.
                 SerializedProperty prop = property.GetArrayElementAtIndex(i);
 
                 // If our property is null, ignore.
                 if (prop == null)
                 {
-                    throw new NullReferenceException(string.Format("[EditorGUIAdditionals::DrawArray] The drawn property at index {0} does not exist. This should not happen.", i));
+                    return;
+                    // throw new NullReferenceException(string.Format("[EditorGUIAdditionals::DrawArray] The drawn property at index {0} does not exist. This should not happen.", i));
                 }
 
                 EditorGUILayout.PropertyField(prop);
@@ -146,14 +153,6 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
-        /// A hack extension to workaround the 'no <c>in, out or ref</c> fields in a delegate'
-        /// <br>Because c# thinks every delegate is async functions that always assigns to global variables lol.</br>
-        /// </summary>
-        private static void ResizeDefault<T>(this IList<T> array, int size)
-        {
-            array.Resize(size, default);
-        }
-        /// <summary>
         /// Create custom GUI array with fields. (if you are lazy for doing a <see cref="PropertyDrawer"/> or <typeparamref name="T"/> is not serializable)
         /// </summary>
         /// <param name="toggle">Toggle boolean for the dropdown state. Required to keep an persistant state. Pass true if not intend to use.</param>
@@ -164,7 +163,7 @@ namespace BXFW.Tools.Editor
         public static bool DrawArray<T>(bool toggle, GUIContent label, in IList<T> array, Action<int> onArrayFieldDrawn)
         {
             // Edit : type extensions work, but no anonymous delegates or local methods.
-            return InternalDrawArrayGUILayout(toggle, label, array.Count, array.ResizeDefault, onArrayFieldDrawn);
+            return InternalDrawArrayGUILayout(toggle, label, array.Count, array.Resize, onArrayFieldDrawn);
         }
         /// <inheritdoc cref="DrawArray{T}(bool, GUIContent, in IList{T}, Action{int})"/>
         public static bool DrawArray<T>(bool toggle, in IList<T> array, Action<int> onArrayFieldDrawn)

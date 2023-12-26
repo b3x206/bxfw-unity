@@ -2,9 +2,7 @@
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace BXFW
 {
@@ -18,18 +16,21 @@ namespace BXFW
         public abstract int Count { get; }
 
         /// <summary>
+        /// Type of the key.
+        /// <br>Used for editor purposes but can also be used for reflection/information purposes as well.</br>
+        /// </summary>
+        public abstract Type KeyType { get; }
+
+        /// <summary>
+        /// Type of the value.
+        /// <br>Used for editor purposes but can also be used for reflection/information purposes as well.</br>
+        /// </summary>
+        public abstract Type ValueType { get; }
+
+        /// <summary>
         /// A sanity check used to ensure that the keys are unique.
         /// </summary>
         public abstract bool KeysAreUnique();
-
-        /// <summary>
-        /// Returns the key boxed as an <see cref="object"/>.
-        /// </summary>
-        public abstract object GetKey(int index);
-        /// <summary>
-        /// Sets the boxed key object <paramref name="value"/>.
-        /// </summary>
-        public abstract void SetKey(int index, object value);
     }
 
     /// If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
@@ -48,24 +49,239 @@ namespace BXFW
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
     {
-        // ?? : Unless this works fine, refactor this to use a 'Pair' data type.
+        // Time to literally deserialize all localization keys (fml)
+        // Pair time B) [this is because ReorderableList craps itself when you try to edit 2 SerializedProperties in a same one]
+        // While i did manage to achieve such a feat, it usually throws 12831283 exceptions before working so yeah.
+
         // -- here's an idiot rambling : 
-        // This is what you do when you don't learn DSA, you do this rubbish. (it work doe, adding complexity best case (N!^N!)!1!)
+        // without DSA this is what i would have done as a dictionary (it work doe, adding complexity best case (N!^N!)!1!)
         // However, doing a 'HashSet' based key list will disallow the unity serialization so do it "normally".
         // unity can't serialize any data type more complex than an generic array :)
         // --
-        [SerializeField, FormerlySerializedAs("keys")]
-        private List<TKey> m_Keys = new List<TKey>();
-        public ICollection<TKey> Keys => m_Keys;
+        // basically this dictionary is as o(n^2) as it gets
+        // --
 
-        [SerializeField, FormerlySerializedAs("values")]
-        private List<TValue> m_Values = new List<TValue>();
-        public ICollection<TValue> Values => m_Values;
+        /// <summary>
+        /// A pair datatype, this is used to make the pairing of data more easier and also make the editor no longer cursed.
+        /// </summary>
+        [Serializable]
+        public sealed class Pair : IEquatable<Pair>
+        {
+            /// <summary>
+            /// Key of this pair.
+            /// </summary>
+            public TKey key;
 
-        public override int Count => m_Keys.Count;
+            /// <summary>
+            /// Value of this pair.
+            /// </summary>
+            public TValue value;
+
+            /// <summary>
+            /// Creates a pair with empty values.
+            /// </summary>
+            public Pair()
+            { }
+
+            /// <summary>
+            /// Creates a pair with given values.
+            /// </summary>
+            public Pair(TKey key, TValue value)
+            {
+                this.key = key;
+                this.value = value;
+            }
+
+            public static explicit operator KeyValuePair<TKey, TValue>(Pair pair)
+            {
+                return new KeyValuePair<TKey, TValue>(pair.key, pair.value);
+            }
+
+            public bool Equals(Pair other)
+            {
+                if (other is null)
+                {
+                    return false;
+                }
+
+                return EqualityComparer<TKey>.Default.Equals(key, other.key) && EqualityComparer<TValue>.Default.Equals(value, other.value);
+            }
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(key, value);
+            }
+        }
+
+        /// <summary>
+        /// A lighter class to substitute for a key collection.
+        /// </summary>
+        public abstract class GenericCollection<TCollection> : ICollection<TCollection>, IEnumerable<TCollection>, IEnumerable, IReadOnlyCollection<TCollection>
+        {
+            protected SerializableDictionary<TKey, TValue> m_parentDictionary;
+
+            public GenericCollection(SerializableDictionary<TKey, TValue> parentDictionary)
+            {
+                m_parentDictionary = parentDictionary;
+            }
+
+            public int Count => m_parentDictionary.m_Pairs.Count;
+            public bool IsReadOnly => true;
+
+            public abstract bool Contains(TCollection item);
+            public abstract void CopyTo(TCollection[] array, int arrayIndex);
+            public abstract IEnumerator<TCollection> GetEnumerator();
+
+            void ICollection<TCollection>.Add(TCollection item)
+            {
+                throw new NotImplementedException("[SerializableDictionary::GenericCollection::Add] This method will always throw NotImplementedException.");
+            }
+            void ICollection<TCollection>.Clear()
+            {
+                throw new NotImplementedException("[SerializableDictionary::GenericCollection::Clear] This method will always throw NotImplementedException.");
+            }
+            bool ICollection<TCollection>.Remove(TCollection item)
+            {
+                throw new NotImplementedException("[SerializableDictionary::GenericCollection::Remove] This method will always throw NotImplementedException.");
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+        }
+
+        /// <summary>
+        /// A collection of keys in this dictionary.
+        /// </summary>
+        public sealed class KeyCollection : GenericCollection<TKey>
+        {
+            public KeyCollection(SerializableDictionary<TKey, TValue> parentDictionary) : base(parentDictionary)
+            { }
+
+            public override bool Contains(TKey item)
+            {
+                for (int i = 0; i < m_parentDictionary.Count; i++)
+                {
+                    if (m_parentDictionary.m_Comparer.Equals(m_parentDictionary.m_Pairs[i].key, item))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            public override void CopyTo(TKey[] array, int arrayIndex)
+            {
+                if (array == null)
+                {
+                    throw new ArgumentNullException(nameof(array), "[SerializableDictionary::KeyCollection::CopyTo] Given argument was null.");
+                }
+                if ((m_parentDictionary.Count + arrayIndex) > array.Length)
+                {
+                    throw new ArgumentException("[SerializableDictionary::KeyCollection::CopyTo] Given array size is less than the collection size + offset.", nameof(array));
+                }
+
+                for (int i = arrayIndex; i < m_parentDictionary.Count; i++)
+                {
+                    array[i] = m_parentDictionary.m_Pairs[i].key;
+                }
+            }
+
+            public override IEnumerator<TKey> GetEnumerator()
+            {
+                for (int i = 0; i < m_parentDictionary.Count; i++)
+                {
+                    yield return m_parentDictionary.m_Pairs[i].key;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A collection of values in this dictionary.
+        /// <br>The values are synchronized to the base <see cref="SerializableDictionary{TKey, TValue}"/>, there is no need to refresh reference.</br>
+        /// </summary>
+        public sealed class ValueCollection : GenericCollection<TValue>
+        {
+            public ValueCollection(SerializableDictionary<TKey, TValue> parentDictionary) : base(parentDictionary)
+            { }
+
+            public override bool Contains(TValue item)
+            {
+                return Contains(item, EqualityComparer<TValue>.Default);
+            }
+
+            public bool Contains(TValue item, IEqualityComparer<TValue> comparer)
+            {
+                for (int i = 0; i < m_parentDictionary.Count; i++)
+                {
+                    if (comparer.Equals(m_parentDictionary.m_Pairs[i].value, item))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            public override void CopyTo(TValue[] array, int arrayIndex)
+            {
+                if (array == null)
+                {
+                    throw new ArgumentNullException(nameof(array), "[SerializableDictionary::KeyCollection::CopyTo] Given argument was null.");
+                }
+                if ((m_parentDictionary.Count + arrayIndex) > array.Length)
+                {
+                    throw new ArgumentException("[SerializableDictionary::KeyCollection::CopyTo] Given array size is less than the collection size + offset.", nameof(array));
+                }
+
+                for (int i = arrayIndex; i < m_parentDictionary.Count; i++)
+                {
+                    array[i] = m_parentDictionary.m_Pairs[i].value;
+                }
+            }
+
+            public override IEnumerator<TValue> GetEnumerator()
+            {
+                for (int i = 0; i < m_parentDictionary.Count; i++)
+                {
+                    yield return m_parentDictionary.m_Pairs[i].value;
+                }
+            }
+        }
+
+        [SerializeField]
+        private List<Pair> m_Pairs = new List<Pair>();
+
+        private KeyCollection m_CachedKeysCollection;
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys => Keys;
+        public KeyCollection Keys
+        {
+            get
+            {
+                m_CachedKeysCollection ??= new KeyCollection(this);
+                return m_CachedKeysCollection;
+            }
+        }
+
+        private ValueCollection m_CachedValuesCollection;
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => Values;
+        public ValueCollection Values
+        {
+            get
+            {
+                m_CachedValuesCollection ??= new ValueCollection(this);
+                return m_CachedValuesCollection;
+            }
+        }
+
+        public override int Count => m_Pairs.Count;
         public bool IsReadOnly => false;
 
-        private IEqualityComparer<TKey> m_Comparer = EqualityComparer<TKey>.Default;
+        public override Type KeyType => typeof(TKey);
+        public override Type ValueType => typeof(TValue);
+
+        private readonly IEqualityComparer<TKey> m_Comparer = EqualityComparer<TKey>.Default;
         /// <summary>
         /// The equality comparer that this dictionary uses.
         /// </summary>
@@ -80,9 +296,9 @@ namespace BXFW
         /// <param name="key">Key to search for.</param>
         private int IndexOfKey(TKey key)
         {
-            for (int i = 0; i < m_Keys.Count; i++)
+            for (int i = 0; i < m_Pairs.Count; i++)
             {
-                if (Comparer.Equals(m_Keys[i], key))
+                if (Comparer.Equals(m_Pairs[i].key, key))
                 {
                     return i;
                 }
@@ -93,9 +309,16 @@ namespace BXFW
 
         public override bool KeysAreUnique()
         {
-            // HashSet's don't serialize, but it's a fast and performant unique ensuring data type
-            HashSet<TKey> uniqueKeys = new HashSet<TKey>(m_Keys);
-            return uniqueKeys.Count == m_Keys.Count;
+            HashSet<TKey> currentKeys = new HashSet<TKey>(m_Pairs.Count);
+            for (int i = 0; i < m_Pairs.Count; i++)
+            {
+                if (!currentKeys.Add(m_Pairs[i].key))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public TValue this[TKey key]
@@ -109,7 +332,7 @@ namespace BXFW
                 }
 
                 // Key/Values are matched according to their indices
-                return m_Values[index];
+                return m_Pairs[index].value;
             }
             set
             {
@@ -119,7 +342,7 @@ namespace BXFW
                     throw new KeyNotFoundException("[SerializableDictionary::this[]::set] Given key value was not found.");
                 }
 
-                m_Values[index] = value;
+                m_Pairs[index].value = value;
             }
         }
         /// <summary>
@@ -139,30 +362,7 @@ namespace BXFW
                 return defaultValue;
             }
 
-            return m_Values[index];
-        }
-        public override object GetKey(int index)
-        {
-            return m_Keys[index];
-        }
-        public override void SetKey(int index, object value)
-        {
-            if (index < 0 || index >= Count)
-            {
-                throw new ArgumentException($"[SerializableDictionary::SetKey] Given index {index} is out of bounds.");
-            }
-            // Unbox type
-            if (!(value is TKey key))
-            {
-                throw new ArgumentException("[SerializableDictionary::SetKey] Given boxed key value is not 'TKey'.");
-            }
-            // Check if unboxed value is valid
-            if (typeof(TKey).IsNullable() && Comparer.Equals(key, default))
-            {
-                throw new ArgumentNullException("[SerializableDictionary::SetKey] Given boxed key value is null.");
-            }
-
-            m_Keys[index] = key;
+            return m_Pairs[index].value;
         }
 
         public void Add(TKey key, TValue value)
@@ -176,23 +376,14 @@ namespace BXFW
                 throw new ArgumentException("[SerializableDictionary::Add] An element with the same key already exists in the dictionary.", nameof(key));
             }
 
-            // Assert the size of the keys and values
-            if (m_Values.Count != m_Keys.Count)
-            {
-                // Sizes don't match, resize and throw exception?
-                // Or just silently resize values to be equal to 'm_Keys'
-                m_Values.Resize(m_Keys.Count, default);
-            }
-
-            m_Keys.Add(key);
-            m_Values.Add(value);
+            m_Pairs.Add(new Pair(key, value));
         }
 
         public bool ContainsKey(TKey key)
         {
-            for (int i = 0; i < m_Keys.Count; i++)
+            for (int i = 0; i < m_Pairs.Count; i++)
             {
-                if (Comparer.Equals(m_Keys[i], key))
+                if (Comparer.Equals(m_Pairs[i].key, key))
                 {
                     return true;
                 }
@@ -211,16 +402,7 @@ namespace BXFW
                 return false;
             }
 
-            // Set the size of the keys and values
-            if (m_Values.Count != m_Keys.Count)
-            {
-                m_Values.Resize(m_Keys.Count, default);
-            }
-
-            // Remove values at
-            m_Keys.RemoveAt(index);
-            m_Values.RemoveAt(index);
-
+            m_Pairs.RemoveAt(index);
             return true;
         }
 
@@ -243,8 +425,7 @@ namespace BXFW
 
         public void Clear()
         {
-            m_Keys.Clear();
-            m_Values.Clear();
+            m_Pairs.Clear();
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -274,9 +455,9 @@ namespace BXFW
                 throw new ArgumentException("[SerializableDictionary::CopyTo] Failed to copy into given array. Array length is smaller than dictionary or index is out of bounds", nameof(array));
             }
 
-            for (int i = 0; i < Count; i++)
+            for (int i = arrayIndex; i < Count; i++)
             {
-                array[i + arrayIndex] = new KeyValuePair<TKey, TValue>(m_Keys[i], m_Values[i]);
+                array[i] = (KeyValuePair<TKey, TValue>)m_Pairs[i];
             }
         }
 
@@ -302,15 +483,14 @@ namespace BXFW
 
         public void TrimExcess()
         {
-            m_Keys.TrimExcess();
-            m_Values.TrimExcess();
+            m_Pairs.TrimExcess();
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             for (int i = 0; i < Count; i++)
             {
-                yield return new KeyValuePair<TKey, TValue>(m_Keys[i], m_Values[i]);
+                yield return (KeyValuePair<TKey, TValue>)m_Pairs[i];
             }
         }
 
@@ -330,17 +510,38 @@ namespace BXFW
         /// </summary>
         public SerializableDictionary(int capacity)
         {
-            m_Keys.Capacity = capacity;
-            m_Values.Capacity = capacity;
+            m_Pairs.Capacity = capacity;
         }
         /// <summary>
         /// Creates a dictionary from another dictionary.
         /// </summary>
         public SerializableDictionary(IDictionary<TKey, TValue> dict)
         {
+            if (dict == null)
+            {
+                throw new ArgumentNullException(nameof(dict), "[SerializableDictionary::ctor] Given argument was null.");
+            }
+
             // Copy values to the pairs
-            m_Keys = new List<TKey>(dict.Keys);
-            m_Values = new List<TValue>(dict.Values);
+            m_Pairs.Capacity = dict.Count;
+
+            // Initial keys add loop
+            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity);
+            foreach (TKey dictKey in dict.Keys)
+            {
+                // o(n^2) moment
+                if (!keysSet.Add(dictKey))
+                {
+                    throw new ArgumentException("[SerializableDictionary::ctor] Given 'dict' contains duplicate keys.", nameof(dict));
+                }
+
+                m_Pairs.Add(new Pair() { key = dictKey });
+            }
+            // The thing is, the foreach iteration is index matched according to the 'IDictionary' spec.
+            foreach (KeyValuePair<int, TValue> indexedValuePair in dict.Values.Indexed())
+            {
+                m_Pairs[indexedValuePair.Key].value = indexedValuePair.Value;
+            }
         }
         public SerializableDictionary(IDictionary<TKey, TValue> dict, IEqualityComparer<TKey> comparer)
             : this(dict)
@@ -352,10 +553,21 @@ namespace BXFW
         /// </summary>
         public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values)
         {
-            m_Keys.Capacity = m_Values.Capacity = values.Count();
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values), "[SerializableDictionary::ctor] Given argument was null.");
+            }
 
+            m_Pairs.Capacity = values.Count();
+
+            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity);
             foreach (KeyValuePair<TKey, TValue> pair in values)
             {
+                if (!keysSet.Add(pair.Key))
+                {
+                    throw new ArgumentException("[SerializableDictionary::ctor] Given 'values' collection contains duplicate keys.", nameof(values));
+                }
+
                 Add(pair);
             }
         }

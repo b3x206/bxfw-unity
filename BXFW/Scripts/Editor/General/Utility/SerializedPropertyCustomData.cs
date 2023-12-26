@@ -101,12 +101,16 @@ namespace BXFW.Tools.Editor
         /// <br>B : The FileID of object/component that this <paramref name="property"/> is contained in.</br>
         /// <br>C : And the property path of this current <paramref name="property"/>.</br>
         /// <br>These are combined to return a unique fingerprint of the property.</br>
+        /// <br/>
+        /// <br><see cref="ArgumentException"/> : Thrown if <paramref name="property"/> is editing multiple objects (<see cref="SerializedProperty.serializedObject"/>.isEditingMultipleObjects).</br>
+        /// <br>In this case use the <see cref="GetMultiIDStrings(SerializedProperty)"/> or <see cref="GetMultiIDStringsNoAlloc(SerializedProperty, string[])"/>.</br>
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public static string GetIDString(this SerializedProperty property)
         {
             if (property.serializedObject.isEditingMultipleObjects)
             {
-                throw new ArgumentException(@"[SerializedPropertyCustomData::GetPropertyString] Property is owned by multiple objects. Use 'GetMultiEditPropertyStrings' 
+                throw new ArgumentException(@"[SerializedPropertyCustomData::GetIDString] Property is owned by multiple objects. Use 'GetMultiIDStrings' 
 or don't call this if the 'property.serializedObject.isEditingMultipleObjects' is true.", nameof(property));
             }
 
@@ -326,9 +330,19 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
             }
         }
         /// <inheritdoc cref="SetValue{T}(in SerializableDictionary{string, T}, SerializedProperty, Func{int, string}, T)"/>
-        public static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, Func<UnityEngine.Object, string> keyReturnPredicate, T value)
+        private static void SetValue<T>(in SerializableDictionary<string, T> targetDict, SerializedProperty property, Func<UnityEngine.Object, string> keyReturnPredicate, T value)
         {
             SetValue(targetDict, property, (int i) => keyReturnPredicate(property.serializedObject.targetObjects[i]), value);
+        }
+
+        /// <summary>
+        /// Marks the <see cref="MainContainer"/> dirty to apply the saved keys.
+        /// <br>This is <b>not</b> automatically called after a key has been set.</br>
+        /// </summary>
+        public static void SaveData()
+        {
+            EditorUtility.SetDirty(MainContainer);
+            AssetDatabase.SaveAssetIfDirty(MainContainer);
         }
 
         /// <summary>

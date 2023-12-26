@@ -84,20 +84,20 @@ namespace BXFW.ScriptEditor
 
             bool showMixed = EditorGUI.showMixedValue;
 
-            property.GetTargetsNoAlloc(targetPairs);
-            var firstValuePair = targetPairs.First();
-            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValueInt)p.value) != ((MinMaxValueInt)firstValuePair.value));
+            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
 
             EditorGUI.BeginChangeCheck();
-            Vector2Int v = EditorGUI.Vector2IntField(position, label, (MinMaxValueInt)firstValuePair.value);
+            using SerializedProperty minProperty = property.FindPropertyRelative("m_Min");
+            using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
+
+            Vector2Int setValue = EditorGUI.Vector2IntField(position, label, new Vector2Int(minProperty.intValue, maxProperty.intValue));
+
             if (EditorGUI.EndChangeCheck())
             {
-                Vector2Int setValue = v;
-                using SerializedProperty minProperty = property.FindPropertyRelative("m_Min");
-                using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
-
+                property.GetTargetsNoAlloc(targetPairs);
+                
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = firstValuePair.fieldInfo.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = targetPairs[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2Int(

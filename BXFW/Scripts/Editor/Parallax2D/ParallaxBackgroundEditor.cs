@@ -128,8 +128,8 @@ namespace BXFW
                 position.height -= Padding;
                 position.y += Padding / 2f;
 
-                using var spSprite = property.FindPropertyRelative(nameof(LayerRegistry.sprite));
-                using var spParallax = property.FindPropertyRelative(nameof(LayerRegistry.parallaxAmount));
+                using SerializedProperty spSprite = property.FindPropertyRelative(nameof(LayerRegistry.sprite));
+                using SerializedProperty spParallax = property.FindPropertyRelative(nameof(LayerRegistry.parallaxAmount));
                 // Draw both horizontally
                 Rect fieldRect = new Rect(position);
 

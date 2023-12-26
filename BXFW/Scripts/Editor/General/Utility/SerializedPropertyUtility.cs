@@ -183,7 +183,7 @@ namespace BXFW.Tools.Editor
                         // Element doesn't exist in the array
                         if (!isSuccess)
                         {
-                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'.", propertyPath, targetAsArray));
+                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'. This may occur due to out of bounds indexing of the array or just the property path not existing.", propertyPath, targetAsArray));
                         }
                     }
                     else // Array parse failure, should only happen on the ends of the array (i.e size field)
