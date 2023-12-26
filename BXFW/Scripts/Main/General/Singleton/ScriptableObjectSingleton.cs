@@ -50,8 +50,6 @@ namespace BXFW
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
-        // Yes, this is a terrible workaround to bypass the 'ScriptableObject size is not the same1!1!!' errors
-        // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions solely
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.PreserveSig)]
 #if UNITY_EDITOR
         public

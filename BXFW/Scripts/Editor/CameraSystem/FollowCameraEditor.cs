@@ -12,48 +12,46 @@ namespace BXFW.ScriptEditor
     /// Property drawer for the <see cref="FollowCamera.CameraOffset"/>.
     /// </summary>
     [CustomPropertyDrawer(typeof(FollowCamera.CameraOffset), true)]
-    public class FollowCameraOffsetEditor : PropertyDrawer
+    public sealed class FollowCameraOffsetEditor : PropertyDrawer
     {
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            bool drawPosClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
+            bool drawPositionClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
 
-            return (drawPosClamp ? EditorGUIUtility.singleLineHeight * 6 : EditorGUIUtility.singleLineHeight * 3) + 12;
-        }
+            // use pos clamp toggle + pos + rot
+            float height = (EditorGUIUtility.singleLineHeight + mainCtx.Padding) * 3;
 
-        /// <summary>
-        /// Returns a single rect sized property rect.
-        /// </summary>
-        private Rect GetPropertyRect(Rect parentRect, int index)
-        {
-            return new Rect(parentRect.x, parentRect.y + (18 * index), parentRect.width, 22f);
+            if (drawPositionClamp)
+            {
+                // position clamps
+                height += (EditorGUIUtility.singleLineHeight + mainCtx.Padding) * 3;
+            }
+
+            return height;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            bool DrawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
+            bool drawXYZClamp = property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)).boolValue;
+            mainCtx.Reset();
 
-            EditorGUI.PropertyField(GetPropertyRect(position, 0), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)));
-            if (DrawXYZClamp)
+            EditorGUI.BeginProperty(position, label, property);
+            EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.usePositionClamp)));
+            EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.position)));
+            EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.eulerRotation)));
+
+            if (drawXYZClamp)
             {
-                // Rest of the gui
-                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.position)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.eulerRotation)));
-
                 // indent by 15
                 Rect indentRect = new Rect(position) { x = position.x + 15f, width = position.width - 15f };
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 3), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posXClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 4), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posYClamp)));
-                EditorGUI.PropertyField(GetPropertyRect(indentRect, 5), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posZClamp)));
-            }
-            else
-            {
-                // Without the clamp stuff
-                EditorGUI.PropertyField(GetPropertyRect(position, 1), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.position)));
-                EditorGUI.PropertyField(GetPropertyRect(position, 2), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.eulerRotation)));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentRect, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posXClamp)));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentRect, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posYClamp)));
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(indentRect, EditorGUIUtility.singleLineHeight), property.FindPropertyRelative(nameof(FollowCamera.CameraOffset.posZClamp)));
             }
 
-            property.serializedObject.ApplyModifiedProperties();
+            EditorGUI.EndProperty();
         }
     }
 
@@ -63,9 +61,9 @@ namespace BXFW.ScriptEditor
         public override void OnInspectorGUI()
         {
             // Variable
-            var targets = base.targets.Cast<FollowCamera>().ToArray();
-            var showMixed = EditorGUI.showMixedValue;
-            var styleLabel = new GUIStyle
+            FollowCamera[] targets = base.targets.Cast<FollowCamera>().ToArray();
+            bool showMixed = EditorGUI.showMixedValue;
+            GUIStyle styleLabel = new GUIStyle
             {
                 alignment = TextAnchor.UpperCenter,
                 fontStyle = FontStyle.Bold

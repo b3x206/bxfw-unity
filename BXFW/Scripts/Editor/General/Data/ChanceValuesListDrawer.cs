@@ -7,7 +7,6 @@ using BXFW.Tools.Editor;
 
 namespace BXFW.ScriptEditor
 {
-    // TODO : Fix or test array of arrays using ChanceListData, it crashes unity (doesn't crash anymore, needs reproduction?)
     // ---------------------------
     // | > Array                 | // Array in a ReorderableList GUI view
     // |                  [ 0 ]  |
@@ -32,47 +31,36 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(ChanceValuesListBase), true)]
     public class ChanceValuesListDrawer : PropertyDrawer
     {
-        protected virtual string LIST_FIELD_NAME => "m_list";
-        protected virtual string LIST_VALUE_VAL_NAME => "Value";
-        protected virtual string LIST_VALUE_CHANCE_NAME => $"m_{nameof(IChanceValue.Chance)}";
-        private float currentY = 0;
-        private float DefaultGUIHeight => EditorGUIUtility.singleLineHeight + 2;
-        private Rect GetPosition(Rect position, float height = -1f)
-        {
-            if (height < 0f)
-            {
-                height = DefaultGUIHeight;
-            }
+        /// <summary>
+        /// The nameof the <see cref="ChanceValuesListBase"/>'s list field.
+        /// </summary>
+        protected virtual string ListFieldName => "m_list";
+        /// <summary>
+        /// The nameof the <see cref="ChanceValue{T}"/>'s value field.
+        /// </summary>
+        protected virtual string ListChanceValueFieldName => "Value";
+        /// <summary>
+        /// The nameof the <see cref="ChanceValue{T}"/>'s chance field.
+        /// </summary>
+        protected virtual string ListValueChanceName => $"m_{nameof(IChanceValue.Chance)}";
 
-            Rect r = new Rect
-            {
-                x = position.x,
-                y = position.y + currentY,
-                width = position.width,
-                height = height
-            };
-
-            currentY += height;
-
-            return r;
-        }
+        private readonly PropertyRectContext mainCtx = new PropertyRectContext();
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
             // Check the child array property.
             if (!property.isExpanded)
             {
-                return DefaultGUIHeight;
+                return height;
             }
-
-            currentY = DefaultGUIHeight;
+            // Get the list properties heights
             foreach (SerializedProperty p in property.GetVisibleChildren())
             {
-                // Debug.Log($"h | p:{p.name}, h (no child):{EditorGUI.GetPropertyHeight(p, label, false)}, h:{EditorGUI.GetPropertyHeight(p, label, true)}");
-                currentY += EditorGUI.GetPropertyHeight(p, label, true);
+                height += EditorGUI.GetPropertyHeight(p, label, true);
             }
 
-            return currentY;
+            return height;
         }
 
         /// <summary>
@@ -87,13 +75,13 @@ namespace BXFW.ScriptEditor
         private readonly List<KeyValuePair<IChanceValue, float>> prevChanceList = new List<KeyValuePair<IChanceValue, float>>();
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            currentY = 0f;
+            mainCtx.Reset();
 
-            var target = property.GetTarget().value as ChanceValuesListBase;
-            Rect foldoutPosition = GetPosition(position);
+            ChanceValuesListBase target = (ChanceValuesListBase)property.GetTarget().value;
+            Rect foldoutPosition = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
             property.isExpanded = EditorGUI.Foldout(foldoutPosition, property.isExpanded, label);
             // The array property used for this GUI call
-            using SerializedProperty arrayProperty = property.FindPropertyRelative(LIST_FIELD_NAME);
+            using SerializedProperty arrayProperty = property.FindPropertyRelative(ListFieldName);
 
             // Make drag drop area
             EditorGUIAdditionals.MakeDragDropArea(() =>
@@ -169,8 +157,8 @@ namespace BXFW.ScriptEditor
                         assignObj = g.GetComponent(targetType);
                     }
 
-                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_VAL_NAME).objectReferenceValue = assignObj;
-                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = addedChance;
+                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ListChanceValueFieldName).objectReferenceValue = assignObj;
+                    arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ListValueChanceName).floatValue = addedChance;
                 }
             }, () => GUI.enabled, new Rect(position) { height = EditorGUIUtility.singleLineHeight + 2f });
 
@@ -182,12 +170,13 @@ namespace BXFW.ScriptEditor
                     GenericMenu rmbDropdown = new GenericMenu();
 
                     // Copy the 'arrayProperty' as it's disposed when it's made.
+                    // Yes we need one memory leak here to not have 'SerializedProperty dispose!!1! You can't use it.'
                     SerializedProperty localCopyArray = arrayProperty.Copy();
                     rmbDropdown.AddItem(new GUIContent("Distribute Evenly", "Distributes all values evenly."), false, () =>
                     {
                         for (int i = 0; i < localCopyArray.arraySize; i++)
                         {
-                            localCopyArray.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = ChanceValuesListBase.ChanceUpperLimit / localCopyArray.arraySize;
+                            localCopyArray.GetArrayElementAtIndex(i).FindPropertyRelative(ListValueChanceName).floatValue = ChanceValuesListBase.ChanceUpperLimit / localCopyArray.arraySize;
                         }
 
                         // and this thing to call too, always needed because you can't determine
@@ -217,7 +206,7 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.BeginChangeCheck();
                 // Draw property itself
-                EditorGUI.PropertyField(GetPosition(position, EditorGUI.GetPropertyHeight(p, GUIContent.none, true)), p);
+                EditorGUI.PropertyField(mainCtx.GetPropertyRect(position, EditorGUI.GetPropertyHeight(p, GUIContent.none, true)), p);
                 // Apply property early to check for array chances
                 p.serializedObject.ApplyModifiedProperties();
 
@@ -230,7 +219,7 @@ namespace BXFW.ScriptEditor
                         // Set only single element chance.
                         if (target.ChanceValues.Count == 1)
                         {
-                            arrayProperty.GetArrayElementAtIndex(0).FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = ChanceValuesListBase.ChanceUpperLimit;
+                            arrayProperty.GetArrayElementAtIndex(0).FindPropertyRelative(ListValueChanceName).floatValue = ChanceValuesListBase.ChanceUpperLimit;
                         }
 
                         continue;
@@ -258,7 +247,7 @@ namespace BXFW.ScriptEditor
                         {
                             // New item added but can just set the chance to zero
                             arrayProperty.GetArrayElementAtIndex(arrayProperty.arraySize - 1)
-                                .FindPropertyRelative(LIST_VALUE_CHANCE_NAME).floatValue = 0f;
+                                .FindPropertyRelative(ListValueChanceName).floatValue = 0f;
                         }
                         if (target.ChanceValues.Count < prevChanceList.Count)
                         {
@@ -284,7 +273,7 @@ namespace BXFW.ScriptEditor
                         // Only use the current valid values. (try not to divide by 0 to avoid NaN)
                         float deltaValue = delta / (validChanceDataCount <= 1 ? target.ChanceValues.Count - 1 : validChanceDataCount - 1);
                         // Since target is read-only do the assigning using the SerializedProperty
-                        using SerializedProperty valueChanceField = arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(LIST_VALUE_CHANCE_NAME);
+                        using SerializedProperty valueChanceField = arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ListValueChanceName);
                         valueChanceField.floatValue = Mathf.Clamp(valueChanceField.floatValue + deltaValue, 0f, ChanceValuesListBase.ChanceUpperLimit);
                     }
 

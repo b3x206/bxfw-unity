@@ -51,7 +51,7 @@ namespace BXFW.ScriptEditor
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(property.serializedObject.targetObject, "set clamped float");
-                        property.doubleValue = v;
+                        property.floatValue = v;
                     }
                 }
                 else // Assume it's a double
@@ -84,7 +84,7 @@ namespace BXFW.ScriptEditor
             }
             else
             {
-                EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either int or float.", MessageType.Warning);
+                EditorGUI.HelpBox(position, "Given type isn't valid. Please pass either long, double or MinMaxValue. (lower bit numbers allowed)", MessageType.Warning);
             }
 
             EditorGUI.showMixedValue = previousShowMixedValue;

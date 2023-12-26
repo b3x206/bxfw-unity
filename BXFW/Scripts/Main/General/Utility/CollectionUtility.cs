@@ -304,7 +304,7 @@ namespace BXFW
         /// </summary>
         public static T MinOrDefault<T>(this IEnumerable<T> collection) where T : IComparable<T>
         {
-            return MinOrDefault(collection, default);
+            return MinOrDefault(collection, (T)default);
         }
         /// <summary>
         /// Returns the minimum value in collection, but does not throw exceptions if the array is empty.
@@ -317,6 +317,11 @@ namespace BXFW
             {
                 foreach (T elem in collection)
                 {
+                    if (UnitySafeEqualityComparer.Default.Equals(elem, null))
+                    {
+                        continue;
+                    }
+
                     // Smaller
                     if (elem.CompareTo(min) < 0)
                     {
@@ -333,7 +338,7 @@ namespace BXFW
         /// </summary>
         public static T MaxOrDefault<T>(this IEnumerable<T> collection) where T : IComparable<T>
         {
-            return MaxOrDefault(collection, default);
+            return MaxOrDefault(collection, (T)default);
         }
         /// <summary>
         /// Returns the maximum value in collection, but does not throw exceptions if the array is empty.
@@ -346,6 +351,11 @@ namespace BXFW
             {
                 foreach (T elem in collection)
                 {
+                    if (UnitySafeEqualityComparer.Default.Equals(elem, null))
+                    {
+                        continue;
+                    }
+
                     // Larger
                     if (elem.CompareTo(max) > 0)
                     {

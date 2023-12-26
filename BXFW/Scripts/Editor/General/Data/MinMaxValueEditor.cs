@@ -28,21 +28,20 @@ namespace BXFW.ScriptEditor
             bool showMixed = EditorGUI.showMixedValue;
 
             // Do this becuase this is still technically not a property field GUI drawer
-            property.GetTargetsNoAlloc(targetPairs);
-            var firstValuePair = targetPairs.First();
-            EditorGUI.showMixedValue = targetPairs.Any(p => ((MinMaxValue)p.value) != ((MinMaxValue)firstValuePair.value));
+            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
 
-            Vector2 v = EditorGUI.Vector2Field(position, label, (MinMaxValue)firstValuePair.value);
+            using SerializedProperty minProperty = property.FindPropertyRelative("m_Min");
+            using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
+
+            Vector2 setValue = EditorGUI.Vector2Field(position, label, new Vector2(minProperty.floatValue, maxProperty.floatValue));
 
             if (EditorGUI.EndChangeCheck())
             {
-                Vector2 setValue = v;
-
-                using SerializedProperty minProperty = property.FindPropertyRelative("m_Min");
-                using SerializedProperty maxProperty = property.FindPropertyRelative("m_Max");
+                property.GetTargetsNoAlloc(targetPairs);
 
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = firstValuePair.fieldInfo.GetCustomAttribute<ClampAttribute>();
+                // This may set invalid values though, but it's ok for now.
+                ClampAttribute clamp = targetPairs[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2(
