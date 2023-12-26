@@ -4,6 +4,7 @@ using System.Linq;
 using BXFW.Tools.Editor;
 using UnityEditorInternal;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace BXFW.ScriptEditor
 {
@@ -47,7 +48,8 @@ namespace BXFW.ScriptEditor
             // Yes, this is not a very nice way of doing this, but it will do for now.
             // Because the 'ReorderableList' is not quite draggable if this is not done.
             string sPropId = property.GetIDString();
-            if (!idDrawList.TryGetValue(sPropId, out ReorderableList list))
+            FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (!idDrawList.TryGetValue(sPropId, out ReorderableList list) || ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed())
             {
                 list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, true, true)
                 {
