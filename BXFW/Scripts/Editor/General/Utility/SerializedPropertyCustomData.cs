@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
+using BXFW.Collections;
 // docfx moment
 #if UNITY_EDITOR
 using BXFW.Data.Editor;

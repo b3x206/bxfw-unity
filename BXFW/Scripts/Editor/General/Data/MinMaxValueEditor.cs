@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 
@@ -12,7 +11,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValue))]
     public class MinMaxValueEditor : PropertyDrawer
     {
-        private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
+        private readonly List<PropertyTargetInfo> targetPropertyFields = new List<PropertyTargetInfo>();
         private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -37,11 +36,11 @@ namespace BXFW.ScriptEditor
 
             if (EditorGUI.EndChangeCheck())
             {
-                property.GetTargetsNoAlloc(targetPairs);
+                // note to self : Multi editing only happens with the same types, which in that case would have the same attribute on the same object.
+                property.GetTargetsNoAlloc(targetPropertyFields);
 
                 // Check supported attributes (for the first object)
-                // This may set invalid values though, but it's ok for now.
-                ClampAttribute clamp = targetPairs[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = targetPropertyFields[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2(
@@ -69,7 +68,7 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValueInt))]
     public class MinMaxValueIntEditor : PropertyDrawer
     {
-        private readonly List<PropertyTargetInfo> targetPairs = new List<PropertyTargetInfo>();
+        private readonly List<PropertyTargetInfo> targetPropertyFields = new List<PropertyTargetInfo>();
         private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -94,10 +93,10 @@ namespace BXFW.ScriptEditor
 
             if (EditorGUI.EndChangeCheck())
             {
-                property.GetTargetsNoAlloc(targetPairs);
-                
+                property.GetTargetsNoAlloc(targetPropertyFields);
+
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = targetPairs[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = targetPropertyFields[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2Int(

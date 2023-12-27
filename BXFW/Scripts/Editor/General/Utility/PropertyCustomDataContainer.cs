@@ -1,3 +1,5 @@
+using BXFW.Collections;
+
 namespace BXFW.Tools.Editor
 {
     /// <summary>

@@ -63,6 +63,7 @@ namespace BXFW.ScriptEditor
                 File.Delete($"{assetDirectory}.meta");
                 AssetDatabase.Refresh();
 
+                // screw you meta (both the company and the unity file)
                 RelativeDirectoryName = string.Empty;
             }
         }

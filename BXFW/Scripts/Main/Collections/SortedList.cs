@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace BXFW
+namespace BXFW.Collections
 {
     /// <summary>
     /// Class used to specify the base for the '<see cref="SortedList{T}"/>'.

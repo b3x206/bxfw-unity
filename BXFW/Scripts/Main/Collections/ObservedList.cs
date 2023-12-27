@@ -6,7 +6,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace BXFW
+namespace BXFW.Collections
 {
     /// <summary>
     /// Contains virtual methods to override to create a observed list.

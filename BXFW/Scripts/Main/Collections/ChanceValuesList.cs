@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-namespace BXFW
+namespace BXFW.Collections
 {
     /// <summary>
     /// Implements the basic interface for <see cref="ChanceValue{T}"/>.

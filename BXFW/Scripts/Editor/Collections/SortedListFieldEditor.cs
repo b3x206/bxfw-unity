@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using BXFW.Tools.Editor;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Collections.ScriptEditor
 {
     /// <summary>
     /// An inspector for the <see cref="SortedListBase"/>.

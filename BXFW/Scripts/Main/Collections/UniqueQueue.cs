@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace BXFW
+namespace BXFW.Collections
 {
     /// <summary>
     /// A <see cref="Queue{T}"/> that only holds unique items.

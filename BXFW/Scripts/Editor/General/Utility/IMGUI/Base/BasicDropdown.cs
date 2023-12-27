@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdown"/> but simpler and has no GUI by default.

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using BXFW.Collections;
 using BXFW.Tweening.Events;
 
 namespace BXFW.Tweening
@@ -149,7 +150,10 @@ namespace BXFW.Tweening
 
             // Play
             base.Play();
-            // The 'BXSTweenable.Play' doesn't reset
+
+            // Reset after calling first play
+            // (Play does not call 'Reset' if not playing tweens,
+            // which with sequences Reset always has to be called)
             Reset();
         }
         /// <summary>
@@ -157,11 +161,15 @@ namespace BXFW.Tweening
         /// </summary>
         public override void Stop()
         {
+            // Stop resets this, but do the stopping of children tweens after stopping this sequence first
+            // The previous impl was faulty both that it didn't cache the 'TotalElapsed' and it did the comparison in reverse
+            // Causing arbitrary 'OnEndAction' calls even though the child tween was meant to be stopped.
+            float previousTotalElapsed = TotalElapsed;
             base.Stop();
 
             // Stop everything (note : Only not do this if the elapsed is 1f, which means all tweens are finished)
-            // This is because the 'OnEndAction' does not get called for the BXSTweenable
-            for (int i = 0; i < m_RunnableTweens.Count && (TotalElapsed >= 1f - float.Epsilon); i++)
+            // This is because the 'OnEndAction' does not get called for the child BXSTweenables
+            for (int i = 0; i < m_RunnableTweens.Count && (previousTotalElapsed < 1f - float.Epsilon); i++)
             {
                 m_RunnableTweens[i].tween.Stop();
             }

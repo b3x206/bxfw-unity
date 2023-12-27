@@ -2,7 +2,7 @@
 using UnityEditor;
 using BXFW.Tools.Editor;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Collections.ScriptEditor
 {
     /// <summary>
     /// Draws an inspector for <see cref="RangeFloatArray"/>.

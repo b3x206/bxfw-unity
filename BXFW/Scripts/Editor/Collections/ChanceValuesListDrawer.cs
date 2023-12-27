@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using BXFW.Tools.Editor;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Collections.ScriptEditor
 {
     // ---------------------------
     // | > Array                 | // Array in a ReorderableList GUI view

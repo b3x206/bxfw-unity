@@ -3,9 +3,8 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Codice.Client.BaseCommands.BranchExplorer;
 
-namespace BXFW
+namespace BXFW.Collections
 {
     /// <summary>
     /// Base used for the <see cref="SerializableDictionary{TKey, TValue}"/>.

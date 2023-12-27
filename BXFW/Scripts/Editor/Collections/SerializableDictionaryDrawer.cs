@@ -6,7 +6,7 @@ using UnityEditorInternal;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace BXFW.ScriptEditor
+namespace BXFW.Collections.ScriptEditor
 {
     /// <summary>
     /// This class allows for editing a <see cref="SerializableDictionary{TKey, TValue}"/> in a kinda scuffed way.
