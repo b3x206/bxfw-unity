@@ -431,7 +431,7 @@ namespace BXFW.Tools.Editor
             }
 
             // Looking for parameterless 'OnValidate' method
-            MethodInfo onValidateMethod = target.GetType().GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[0], null);
+            MethodInfo onValidateMethod = target.GetType().GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null);
             if (onValidateMethod == null)
             {
                 return false;

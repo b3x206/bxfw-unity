@@ -12,7 +12,7 @@ namespace BXFW.Data
     /// <br/>
     /// <br>To create new of this class, use the following step:</br>
     /// <br><c><see langword="new"/> <see cref="LocalizedTextData"/>(localized_text_id, 
-    /// <see langword="new"/> Dictionary&lt;<see cref="string"/>, <see cref="string"/>&gt; { { language_id, text_content } })</c></br>
+    /// <see langword="new"/> Dictionary&lt;<see cref="string"/>, <see cref="string"/>&gt; { { "language_id", "text content" } })</c></br>
     /// <br/>
     /// </summary>
     [Serializable]

@@ -52,7 +52,7 @@ namespace BXFW.ScriptEditor
             {
                 EditorGUI.HelpBox(
                     position,
-                    string.Format("Warning : Usage of 'InspectorBigSpriteFieldDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
+                    string.Format("Warning : Usage of 'SpriteAreaDrawer' on field \"{0} {1}\" even though the field type isn't sprite.", property.type, property.name),
                     MessageType.Warning
                 );
                 return;

@@ -23,7 +23,7 @@ namespace BXFW.ScriptEditor
                         bool targetIsEnabledTest = Targets[0].IsEnabled;
                         bool showMixed = EditorGUI.showMixedValue;
                         EditorGUI.showMixedValue = Targets.Any(c => c.IsEnabled != targetIsEnabledTest);
-                        var setIsEnabled = EditorGUILayout.Toggle(new GUIContent("Is Enabled", "Set whether if the free move camera is enabled."), targetIsEnabledTest);
+                        bool setIsEnabled = EditorGUILayout.Toggle(new GUIContent("Is Enabled", "Set whether if the free move camera is enabled."), targetIsEnabledTest);
                         EditorGUI.showMixedValue = showMixed;
 
                         if (EditorGUI.EndChangeCheck())
@@ -31,7 +31,7 @@ namespace BXFW.ScriptEditor
                             Undo.IncrementCurrentGroup();
                             Undo.SetCurrentGroupName("set enabled");
                             int undoID = Undo.GetCurrentGroup();
-                            foreach (var target in Targets)
+                            foreach (FreeMoveCamera target in Targets)
                             {
                                 Undo.RecordObject(target, string.Empty);
                                 target.IsEnabled = setIsEnabled;

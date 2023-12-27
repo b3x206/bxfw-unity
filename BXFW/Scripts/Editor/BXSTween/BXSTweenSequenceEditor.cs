@@ -12,7 +12,7 @@ namespace BXFW.Tweening.Editor
         /// <summary>
         /// Name list of fields to be omitted.
         /// </summary>
-        private static readonly string[] OMIT_NAMES =
+        private static readonly string[] FieldOmitNameList =
         {
             $"m_{nameof(BXSTweenable.TickType)}",
             $"m_{nameof(BXSTweenable.UseEaseCurve)}",
@@ -34,7 +34,7 @@ namespace BXFW.Tweening.Editor
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
-                if (OMIT_NAMES.Any(name => visibleProp.name == name))
+                if (FieldOmitNameList.Any(name => visibleProp.name == name))
                 {
                     continue;
                 }
@@ -73,7 +73,7 @@ namespace BXFW.Tweening.Editor
 
             foreach (var visibleProp in property.GetVisibleChildren())
             {
-                if (OMIT_NAMES.Any(name => visibleProp.name == name))
+                if (FieldOmitNameList.Any(name => visibleProp.name == name))
                 {
                     continue;
                 }

@@ -52,15 +52,15 @@ namespace BXFW.ScriptEditor
         /// Must be true if the previously drawn property's type was integral or it has the 'IComparable'.
         /// </summary>
         private bool propertyTypeValid;
-        private bool propertyParentTypeArray;
+        private bool propertyParentTypeIsArray;
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float addHeight = 0f;
 
-            propertyParentTypeArray = property.GetParentOfTargetField().fieldInfo.FieldType
+            propertyParentTypeIsArray = property.GetParentOfTargetField().fieldInfo.FieldType
                 .GetInterfaces()
                 .Any(i => i == typeof(IEnumerable) || i == typeof(IEnumerable<>));
-            propertyTypeValid = (propertyParentTypeArray && property.GetPropertyType()
+            propertyTypeValid = (propertyParentTypeIsArray && property.GetPropertyType()
                 .GetInterfaces()
                 .Any(i => i == typeof(IComparable) || i == typeof(IComparable<>)))
                 || property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.Float;
