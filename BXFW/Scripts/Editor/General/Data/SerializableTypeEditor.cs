@@ -7,6 +7,9 @@ using System.Linq;
 
 namespace BXFW.ScriptEditor
 {
+    /// <summary>
+    /// Edits the <see cref="SerializableType"/> in also a kinda scuffed way.
+    /// </summary>
     [CustomPropertyDrawer(typeof(SerializableType), true)]
     public class SerializableTypeEditor : PropertyDrawer
     {
@@ -102,7 +105,7 @@ namespace BXFW.ScriptEditor
 
         private static void SetTypeInType(ref Type check, Type target, int targetTypeIndex, Type setValue)
         {
-            // FIXME / TODO : This method's impl is kinda faulty
+            // FIXME / TODO : This method's impl is kinda faulty, i love traversing trees
             // Get the target type and the depth + generic type index
             // Otherwise it sets it incorrectly
 

@@ -11,7 +11,6 @@ namespace BXFW.ScriptEditor
     /// <summary>
     /// This class allows for editing a <see cref="SerializableDictionary{TKey, TValue}"/> in a kinda scuffed way.
     /// </summary>
-    /// TODO : Add a <see cref="BasicDropdown"/> as the adding context menu and make adding key+value experience more solid.
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
@@ -20,7 +19,11 @@ namespace BXFW.ScriptEditor
         /// <summary>
         /// General GUI height of displayed warning <see cref="EditorGUI.HelpBox(Rect, string, MessageType)"/>.
         /// </summary>
-        private const float DictionaryWarningHeight = 32;
+        private const float DictionaryWarningHeight = 36;
+        /// <summary>
+        /// GUI height for the 'Add Element' button.
+        /// </summary>
+        private const float AddElementButtonHeight = 30;
 
         /// <summary>
         /// Current reorderable list drawing list.
@@ -48,18 +51,28 @@ namespace BXFW.ScriptEditor
             // Yes, this is not a very nice way of doing this, but it will do for now.
             // Because the 'ReorderableList' is not quite draggable if this is not done.
             string sPropId = property.GetIDString();
+            // Check if the 'ReorderableList's SerializedObject is disposed
             FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (!idDrawList.TryGetValue(sPropId, out ReorderableList list) || ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed())
+            bool hasDrawList = idDrawList.TryGetValue(sPropId, out ReorderableList list);
+            bool serializedObjectDisposed = hasDrawList && ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed();
+            if (!hasDrawList || serializedObjectDisposed)
             {
-                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, true, true)
+                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, false, true)
                 {
                     drawHeaderCallback = DrawListHeader,
                     drawElementCallback = DrawListElements,
                     elementHeightCallback = GetElementHeight,
-                    onCanAddCallback = OnListCanAddCallback,
                 };
 
-                idDrawList.Add(sPropId, list);
+                if (!hasDrawList)
+                {
+                    idDrawList.Add(sPropId, list);
+                }
+                else
+                {
+                    idDrawList[sPropId] = list;
+                }
+
                 // 'Dictionary.Add's ordering is undefined behaviour (i love hashmaps)
                 if (idDrawList.Count > IdDrawListDictSizeLimit)
                 {
@@ -78,11 +91,14 @@ namespace BXFW.ScriptEditor
             listTargetProperty = property;
             height += list.GetHeight();
 
+            // Add Element button
+            height += AddElementButtonHeight + mainGUIContext.Padding;
+
             return height;
         }
 
         private SerializedProperty listTargetProperty;
-        private Rect lastRepaintRect;
+        private Rect addElementButtonRect;
 
         private void DrawListHeader(Rect r)
         {
@@ -141,54 +157,83 @@ namespace BXFW.ScriptEditor
                     // holy hell! new response just dropped
                     // This also uses the GUI so just exit GUI here
                     // (otherwise we get OnGUI stack empty cannot pop)
-                    Undo.PerformUndo();
                     EditorGUIUtility.editingTextField = false;
-                    throw new ExitGUIException();
+                    Undo.PerformUndo();
+                    GUIUtility.ExitGUI();
                 }
             }
         }
 
-        //private object m_CurrentAddDropdownBoxedValue;
-        private bool OnListCanAddCallback(ReorderableList list)
+        private void ShowAddDropdown()
         {
-            // TODO : EditorGUIAdditionals.AnyObjectField()?
-
             // Add in a result of the 'BasicDropdown'.
             // --
-            // This is the spicy part where we get to draw our own pair
+            // This is the spicy part where we get to draw our own key
             // And create a SerializedProperty from scratch
-            // And add it to the dict in some way
-            // From the very limited user api of unity serializer
-            //SerializableDictionaryBase dict = (SerializableDictionaryBase)onGUIProperty.GetTarget().value;
+            // --
+            // The dummy object workaround
+            // A : Use the dummy inside the 'dict'
+            SerializableDictionaryBase dict = (SerializableDictionaryBase)listTargetProperty.GetTarget().value;
 
-            //PropertyDrawer drawer = EditorAdditionals.GetPropertyDrawerFromType(dict.KeyType);
-            //FieldInfo currentBoxedDropdownValueField = typeof(SerializableDictionaryDrawer).GetField(nameof(m_CurrentAddDropdownBoxedValue), BindingFlags.NonPublic | BindingFlags.Instance);
-            //typeof(PropertyDrawer).GetField("m_FieldInfo", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(drawer, currentBoxedDropdownValueField);
+            // B : Draw the dummy
+            SerializedProperty pairDummyKeyProperty = listTargetProperty.FindPropertyRelative("m_DummyPair").FindPropertyRelative(nameof(SerializableDictionary<object, object>.Pair.key));
 
-            // aAAAAAAAh
-            // yes, we cannot 'ObjectField' c# types
-            // fun
-            //float drawerHeight = drawer.GetPropertyHeight()
-            //BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(lastRepaintRect), new Vector2(lastRepaintRect.width * 0.8f, 60f), (BasicDropdown d) =>
-            //{
-            //    Rect reservedDrawerRect = 
-            //    drawer.OnGUI();
-            //});
+            float keyPropertyHeight = EditorGUI.GetPropertyHeight(pairDummyKeyProperty);
 
-            //return false;
+            string guiKeyPropertyControlName = "SerializableDictionaryDrawer::AddDropdown::Key";
+            bool hasSelectedKeyPropertyControlOnce = false;
+            BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(addElementButtonRect), new Vector2(addElementButtonRect.width, 70f + keyPropertyHeight), (BasicDropdown dropdown) =>
+            {
+                GUI.SetNextControlName(guiKeyPropertyControlName);
+                EditorGUILayout.PropertyField(pairDummyKeyProperty);
+                // select on the first dropdown view
+                if (!hasSelectedKeyPropertyControlOnce)
+                {
+                    GUI.FocusControl(guiKeyPropertyControlName);
+                    hasSelectedKeyPropertyControlOnce = true;
+                }
+                pairDummyKeyProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
-            list.ClearSelection();
-            return true;
+                // warning and add buttons
+                bool keyInvalid = !dict.DummyPairIsValid();
+                using (EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(keyInvalid))
+                {
+                    bool hasPressedEnter = Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
+                    if ((GUILayout.Button("Add") || hasPressedEnter) && !keyInvalid)
+                    {
+                        // the thing is, we can't get a 'array cell' as a 'PropertyTargetInfo'
+                        // so the best thing i could do for now
+                        Undo.RecordObject(listTargetProperty.serializedObject.targetObject, "add pair");
+                        dict.AddDummyPair();
+
+                        //using SerializedProperty pairsProperty = listTargetProperty.FindPropertyRelative("m_Pairs");
+                        //pairsProperty.arraySize++;
+                        //PropertyTargetInfo info = pairsProperty.GetArrayElementAtIndex(pairsProperty.arraySize - 1).FindPropertyRelative(nameof(SerializableDictionary<object, object>.Pair.key)).GetTarget();
+
+                        //pairsProperty.serializedObject.ApplyModifiedProperties();
+                        dropdown.Close();
+                    }
+                }
+
+                if (keyInvalid)
+                {
+                    EditorGUILayout.HelpBox("Given key already exists or is invalid. Please use a different key.", MessageType.Info);
+                }
+
+                // on press esc, clear all tags and close window
+                if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
+                {
+                    dropdown.Close();
+                }
+            });
+            // and with that, our dictionary saga is concluded.
+            // the only TODO remaining is that the ability to add to struct parent dict's, but at that point this is just, stupidly hard with the constraints of the SerializedProperty
+            // (like i have to typetest to literally all ""supported"" SerializedPropertyType's and only do this object set if the type is not ""supported"")
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             mainGUIContext.Reset();
-
-            if (Event.current.type == EventType.Repaint)
-            {
-                lastRepaintRect = position;
-            }
 
             label = EditorGUI.BeginProperty(position, label, property);
 
@@ -233,6 +278,15 @@ namespace BXFW.ScriptEditor
             float height = list.GetHeight();
             list.DoList(mainGUIContext.GetPropertyRect(indentedPosition, height));
             property.serializedObject.ApplyModifiedProperties();
+
+            // Draw the '+ Add Element' button
+            addElementButtonRect = mainGUIContext.GetPropertyRect(indentedPosition, AddElementButtonHeight);
+            addElementButtonRect.x += indentedPosition.width * 0.1f;
+            addElementButtonRect.width = indentedPosition.width * 0.8f;
+            if (GUI.Button(addElementButtonRect, "+ Add Element"))
+            {
+                ShowAddDropdown();
+            }
 
             EditorGUI.indentLevel--;
         }

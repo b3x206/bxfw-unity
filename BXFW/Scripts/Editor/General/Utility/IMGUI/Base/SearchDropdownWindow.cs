@@ -863,7 +863,8 @@ namespace BXFW.Tools.Editor
                         if (!e.functionKey && !char.IsControl(character))
                         {
                             // Get the last key as nice key
-                            EditorGUI.FocusTextInControl(SearchBarControlName);
+                            // EditorGUI.FocusTextInControl(SearchBarControlName);
+                            GUI.FocusControl(SearchBarControlName);
                             SearchString += character;
                         }
                     }

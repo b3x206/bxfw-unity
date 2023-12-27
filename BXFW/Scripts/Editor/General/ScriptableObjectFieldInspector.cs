@@ -95,6 +95,12 @@ namespace BXFW
         protected virtual bool NameEditorEnforceNonNullName => false;
 
         /// <summary>
+        /// The default hide flags assigned to the created objects.
+        /// <br>If an object is meant to only exist in editor this can be changed.</br>
+        /// </summary>
+        protected virtual HideFlags DefaultHideFlags => HideFlags.None;
+
+        /// <summary>
         /// Position given is incorrect on EventType.Layout
         /// <br>Drawing GUILayout editors require a correct Repaint area, so we need the correct 'position' from the <see cref="EventType.Repaint"/>.</br>
         /// </summary>
@@ -161,6 +167,9 @@ namespace BXFW
                 {
                     Debug.Log(string.Format("[ScriptableObjectFieldInspector(DebugMode)::SetValueOfTarget(Search Custom Editor)] No suitable editor found for obj '{0}'.", obj));
                 }
+
+                // Set hideFlags here
+                obj.hideFlags = DefaultHideFlags;
             }
 
             // why (c# array moment)

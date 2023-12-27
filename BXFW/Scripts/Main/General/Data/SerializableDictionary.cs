@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Codice.Client.BaseCommands.BranchExplorer;
 
 namespace BXFW
 {
@@ -16,21 +17,19 @@ namespace BXFW
         public abstract int Count { get; }
 
         /// <summary>
-        /// Type of the key.
-        /// <br>Used for editor purposes but can also be used for reflection/information purposes as well.</br>
-        /// </summary>
-        public abstract Type KeyType { get; }
-
-        /// <summary>
-        /// Type of the value.
-        /// <br>Used for editor purposes but can also be used for reflection/information purposes as well.</br>
-        /// </summary>
-        public abstract Type ValueType { get; }
-
-        /// <summary>
         /// A sanity check used to ensure that the keys are unique.
         /// </summary>
         public abstract bool KeysAreUnique();
+
+        /// <summary>
+        /// Returns whether if the dummy pair is valid.
+        /// </summary>
+        internal abstract bool DummyPairIsValid();
+
+        /// <summary>
+        /// Adds the dummy pair.
+        /// </summary>
+        internal abstract void AddDummyPair();
     }
 
     /// If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
@@ -253,6 +252,12 @@ namespace BXFW
         [SerializeField]
         private List<Pair> m_Pairs = new List<Pair>();
 
+        /// <summary>
+        /// A pair that contains a dummy value.
+        /// </summary>
+        [SerializeField]
+        private Pair m_DummyPair;
+
         private KeyCollection m_CachedKeysCollection;
         ICollection<TKey> IDictionary<TKey, TValue>.Keys => Keys;
         public KeyCollection Keys
@@ -277,9 +282,6 @@ namespace BXFW
 
         public override int Count => m_Pairs.Count;
         public bool IsReadOnly => false;
-
-        public override Type KeyType => typeof(TKey);
-        public override Type ValueType => typeof(TValue);
 
         private readonly IEqualityComparer<TKey> m_Comparer = EqualityComparer<TKey>.Default;
         /// <summary>
@@ -363,6 +365,16 @@ namespace BXFW
             }
 
             return m_Pairs[index].value;
+        }
+
+        internal override bool DummyPairIsValid()
+        {
+            return !ContainsKey(m_DummyPair.key);
+        }
+        internal override void AddDummyPair()
+        {
+            Add(m_DummyPair.key, m_DummyPair.value);
+            m_DummyPair = new Pair();
         }
 
         public void Add(TKey key, TValue value)
