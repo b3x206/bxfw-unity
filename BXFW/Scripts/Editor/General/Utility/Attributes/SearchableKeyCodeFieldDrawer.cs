@@ -9,12 +9,18 @@ namespace BXFW.ScriptEditor
     {
         private const float WarningBoxHeight = 22f;
         private const float Padding = 2f;
-        private bool propertyTypeIsValid = true;
+        private bool propertyTypeIsValid = false;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float addHeight = 0f;
-            propertyTypeIsValid = property.GetPropertyType() == typeof(KeyCode) ;
+
+            // Ensure that the 'propertyTypeIsValid' gets called once per drawer
+            if (!propertyTypeIsValid)
+            {
+                propertyTypeIsValid = property.propertyType == SerializedPropertyType.Enum && property.GetPropertyType() == typeof(KeyCode);
+            }
+
             if (propertyTypeIsValid)
             {
                 addHeight += EditorGUIUtility.singleLineHeight + Padding;

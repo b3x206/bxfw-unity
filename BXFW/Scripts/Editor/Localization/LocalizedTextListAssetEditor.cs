@@ -111,7 +111,7 @@ namespace BXFW.ScriptEditor
                     string guiTagEditorControlName = "LocalizedTextListAssetEditor::TagField";
                     bool selectedTagEditorControlOnce = false;
 
-                    BasicDropdown.ShowDropdown(guiAreaRect, new Vector2(lastRepaintAddElementRect.width, dropdownStartingHeight), (dropdown) =>
+                    BasicDropdown.ShowDropdown(guiAreaRect, new Vector2(lastRepaintAddElementRect.width, dropdownStartingHeight), () =>
                     {
                         using SerializedProperty elementsProperty = serializedObject.FindProperty("m_textList");
 
@@ -134,7 +134,7 @@ namespace BXFW.ScriptEditor
                                 elementsProperty.arraySize++;
                                 elementsProperty.GetArrayElementAtIndex(elementsProperty.arraySize - 1).FindPropertyRelative(nameof(LocalizedTextData.TextID)).stringValue = addElementTextIDString;
                                 addElementTextIDString = string.Empty;
-                                dropdown.Close();
+                                BasicDropdown.HideDropdown();
 
                                 serializedObject.ApplyModifiedProperties();
                             }
@@ -149,7 +149,7 @@ namespace BXFW.ScriptEditor
                         if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
                         {
                             addElementTextIDString = string.Empty;
-                            dropdown.Close();
+                            BasicDropdown.HideDropdown();
                         }
                     });
                 }

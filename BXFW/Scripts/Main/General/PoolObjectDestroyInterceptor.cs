@@ -11,7 +11,7 @@ namespace BXFW
     /// </br>
     /// </summary>
     [AddComponentMenu(""), DisallowMultipleComponent]
-    public class PoolObjectDestroyInterceptor : MonoBehaviour
+    public sealed class PoolObjectDestroyInterceptor : MonoBehaviour
     {
         /// <summary>
         /// This flag is set to true if the object is to be removed by either the <see cref="ObjectPooler"/> 

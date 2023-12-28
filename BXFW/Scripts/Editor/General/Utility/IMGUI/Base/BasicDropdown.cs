@@ -25,7 +25,7 @@ namespace BXFW.Tools.Editor
         }
 
         private static BasicDropdown Instance;
-        private Action<BasicDropdown> onGUICall;
+        private Action onGUICall;
         /// <summary>
         /// Displays a BasicDropdown.
         /// </summary>
@@ -35,7 +35,7 @@ namespace BXFW.Tools.Editor
         /// </param>
         /// <param name="size">Size of the dropdown to display.</param>
         /// <param name="onGUICall">Callback done on the OnGUI.</param>
-        public static void ShowDropdown(Rect parentRect, Vector2 size, Action<BasicDropdown> onGUICall)
+        public static void ShowDropdown(Rect parentRect, Vector2 size, Action onGUICall)
         {
             if (Instance == null)
             {
@@ -72,6 +72,7 @@ namespace BXFW.Tools.Editor
             }
 
             Instance.Close();
+            DestroyImmediate(Instance);
         }
         /// <summary>
         /// Sets the position of the window.
@@ -95,7 +96,7 @@ namespace BXFW.Tools.Editor
                 return;
             }
 
-            onGUICall(this);
+            onGUICall();
         }
     }
 }

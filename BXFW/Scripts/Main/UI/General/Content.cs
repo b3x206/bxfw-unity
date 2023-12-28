@@ -14,6 +14,9 @@ namespace BXFW.UI
         [Tooltip("Sprite content."), SpriteArea]
         public Sprite sprite;
 
+        /// <summary>
+        /// The none content, used to specify an empty content.
+        /// </summary>
         public static readonly Content None = new Content();
 
         /// <summary>

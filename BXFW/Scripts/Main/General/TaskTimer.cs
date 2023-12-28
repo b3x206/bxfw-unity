@@ -109,7 +109,7 @@ namespace BXFW
             }
             public bool Equals(Action action, object caller)
             {
-                return GetHashCode() == HashCode.Combine(action, caller?.GetHashCode() ?? 0);
+                return GetHashCode() == HashCode.Combine(action, !UnitySafeEqualityComparer.Default.Equals(caller, null) ? caller.GetHashCode() : 0);
             }
 
             public override int GetHashCode()

@@ -433,6 +433,30 @@ namespace BXFW
             }
         }
         /// <summary>
+        /// Returns whether if the string on <paramref name="builder"/> is equal to <paramref name="str"/>.
+        /// </summary>
+        public static bool EqualString(this StringBuilder builder, string str)
+        {
+            // StringBuilder is apparently a linked list
+            // character is searched in m_ChunkPrevious if the chunk does not contain the given 'i' range on the index accessor
+            // This is truly amazing. What the hell.
+            int builderLength = builder.Length;
+            if (builderLength != str.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < builderLength; i++)
+            {
+                if (builder[i] != str[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        /// <summary>
         /// <see cref="Enumerable.Cast{TResult}(System.Collections.IEnumerable)"/> with a converter delegate.
         /// </summary>
         /// <typeparam name="TResult">Target type to cast into.</typeparam>

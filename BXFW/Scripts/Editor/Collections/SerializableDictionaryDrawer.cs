@@ -182,7 +182,7 @@ namespace BXFW.Collections.ScriptEditor
 
             string guiKeyPropertyControlName = "SerializableDictionaryDrawer::AddDropdown::Key";
             bool hasSelectedKeyPropertyControlOnce = false;
-            BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(addElementButtonRect), new Vector2(addElementButtonRect.width, 70f + keyPropertyHeight), (BasicDropdown dropdown) =>
+            BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(addElementButtonRect), new Vector2(addElementButtonRect.width, 70f + keyPropertyHeight), () =>
             {
                 GUI.SetNextControlName(guiKeyPropertyControlName);
                 EditorGUILayout.PropertyField(pairDummyKeyProperty);
@@ -211,7 +211,7 @@ namespace BXFW.Collections.ScriptEditor
                         //PropertyTargetInfo info = pairsProperty.GetArrayElementAtIndex(pairsProperty.arraySize - 1).FindPropertyRelative(nameof(SerializableDictionary<object, object>.Pair.key)).GetTarget();
 
                         //pairsProperty.serializedObject.ApplyModifiedProperties();
-                        dropdown.Close();
+                        BasicDropdown.HideDropdown();
                     }
                 }
 
@@ -223,7 +223,7 @@ namespace BXFW.Collections.ScriptEditor
                 // on press esc, clear all tags and close window
                 if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
                 {
-                    dropdown.Close();
+                    BasicDropdown.HideDropdown();
                 }
             });
             // and with that, our dictionary saga is concluded.

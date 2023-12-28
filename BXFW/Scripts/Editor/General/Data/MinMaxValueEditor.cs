@@ -37,10 +37,10 @@ namespace BXFW.ScriptEditor
             if (EditorGUI.EndChangeCheck())
             {
                 // note to self : Multi editing only happens with the same types, which in that case would have the same attribute on the same object.
-                property.GetTargetsNoAlloc(targetPropertyFields);
+                FieldInfo targetPropertyFieldInfo = property.GetTarget().fieldInfo;
 
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = targetPropertyFields[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = targetPropertyFieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2(

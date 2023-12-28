@@ -184,13 +184,14 @@ namespace BXFW.Collections.ScriptEditor
             if (modifyIndex >= 0)
             {
                 // works slightly better
+                // !! TODO : This breaks the 'BasicDropdown' for other scripts
                 if (!BasicDropdown.IsBeingShown())
                 {
-                    BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(modifyValueRect), modifyValueRect.size, (BasicDropdown dropdown) =>
+                    BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(modifyValueRect), modifyValueRect.size, () =>
                     {
                         if (modifyIndex < 0)
                         {
-                            dropdown.Close();
+                            BasicDropdown.HideDropdown();
                             interactedPropertyID = string.Empty;
                             return;
                         }
@@ -203,6 +204,13 @@ namespace BXFW.Collections.ScriptEditor
                             Undo.RecordObject(property.serializedObject.targetObject, "set RangeFloatArray value");
                             target[modifyIndex] = modified;
                         }
+
+                        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
+                        {
+                            BasicDropdown.HideDropdown();
+                            interactedPropertyID = string.Empty;
+                            modifyIndex = -1;
+                        }
                     });
                 }
                 else if (e.type == EventType.Repaint)
@@ -213,6 +221,8 @@ namespace BXFW.Collections.ScriptEditor
             else if (interactedPropertyID == currentPropertyID)
             {
                 BasicDropdown.HideDropdown();
+                //modifyIndex = -1;
+                //interactedPropertyID = string.Empty;
             }
 
             // -- Change checks for the 'Min/Max' values
@@ -244,7 +254,7 @@ namespace BXFW.Collections.ScriptEditor
                 };
                 // Draw a GUI seperately + Draw the index in a smaller font towards bottom
                 GUI.Box(draggableRect, new GUIContent(string.Empty, $"value={target[i]}\nindex={i}"), GUI.skin.horizontalSliderThumb);
-                GUI.Box(draggableTextRect, i.ToString(), tinyFontBoxStyle);
+                // GUI.Box(draggableTextRect, i.ToString(), tinyFontBoxStyle);
 
                 // Only call/check event(s) for single used GUI knob element
                 // Note : Using the event and the 'modifyIndex or dragIndex' being different also prevents that.

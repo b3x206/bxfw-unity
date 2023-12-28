@@ -4,8 +4,9 @@ using System.Runtime.CompilerServices;
 namespace BXFW.Tweening
 {
     /// <summary>
-    /// Custom linear interpolation methods used by BXTween.
+    /// Old custom linear interpolation methods used by BXTween.
     /// <br>Interpolates other non-mathematical data types.</br>
+    /// <br>This is kept as it's not really a problematical part of BXTween.</br>
     /// </summary>
     public static class BXTweenCustomLerp
     {

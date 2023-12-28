@@ -77,6 +77,12 @@ namespace BXFW.ScriptEditor
     {
         private string m_previousTargetSceneGUID;
         private SceneAsset m_targetSceneAsset;
+        private GUID GetTargetSceneGUID()
+        {
+            string scenePath = AssetDatabase.GetAssetPath(m_targetSceneAsset);
+            return AssetDatabase.GUIDFromAssetPath(scenePath);
+        } 
+
         private SerializedProperty m_sceneGUIDProperty;
         private SerializedProperty m_sceneIndexProperty;
         private string SceneGUIDValue => (string)m_sceneGUIDProperty.GetTarget().value;
@@ -99,13 +105,21 @@ namespace BXFW.ScriptEditor
             // Can record entire parent object, as it's probably just the script.
             m_sceneGUIDProperty.stringValue = value;
         }
+
+        private bool shouldShowWarningDirty = true;
+        private bool shouldShowWarningGUI = false;
         private bool ShowWarningGUI(SerializedProperty property)
         {
             return ShowWarningGUI((UnitySceneReference)property.GetTarget().value);
         }
         private bool ShowWarningGUI(UnitySceneReference target)
         {
-            return ShowDetailsGUI && !target.SceneLoadable;
+            if (shouldShowWarningDirty)
+            {
+                shouldShowWarningGUI = ShowDetailsGUI && !target.SceneLoadable;
+            }
+
+            return shouldShowWarningGUI;
         }
 
         // -- GUI
@@ -145,6 +159,7 @@ namespace BXFW.ScriptEditor
             float sceneAssetFieldWidth = sceneAssetFieldRect.width; // prev width
             const float sceneAssetFieldSmallerWidth = 0.9f;
 
+            EditorGUI.BeginChangeCheck();
             if (ShowDetailsGUI)
             {
                 sceneAssetFieldRect.width = sceneAssetFieldWidth * sceneAssetFieldSmallerWidth;
@@ -161,15 +176,21 @@ namespace BXFW.ScriptEditor
                 }
             }
 
-            string scenePath = AssetDatabase.GetAssetPath(m_targetSceneAsset);
-            GUID sceneGUID = AssetDatabase.GUIDFromAssetPath(scenePath);
-            string sceneGUIDString = sceneGUID.ToString();
-            // Register the 'SceneAsset'
-            if (SceneGUIDValue != sceneGUIDString)
+            if (EditorGUI.EndChangeCheck())
             {
-                // Set parent record undos so that we can undo what we did
-                // (check whether if the given GUID is empty, otherwise don't call the intensive conversion constructor which does reflections)
-                SetSceneGUIDValue(property, sceneGUID.Empty() ? string.Empty : sceneGUIDString);
+                GUID sceneGUID = GetTargetSceneGUID();
+                // 'sceneGUIDString' is many zeroes if 'sceneGUID' is empty.
+                string sceneGUIDString = sceneGUID.ToString();
+
+                // Register the 'SceneAsset'
+                if (SceneGUIDValue != sceneGUIDString)
+                {
+                    // Mark current inspector dirty
+                    shouldShowWarningDirty = true;
+                    // Set parent record undos so that we can undo what we did
+                    // (check whether if the given GUID is empty, otherwise don't call the intensive conversion constructor which does reflections)
+                    SetSceneGUIDValue(property, sceneGUID.Empty() ? string.Empty : sceneGUIDString);
+                }
             }
 
             // This accomodates for the 'ShowDetailsGUI'
@@ -184,7 +205,8 @@ namespace BXFW.ScriptEditor
                     {
                         scenes.Add(sceneReg);
                     }
-                    scenes.Add(new EditorBuildSettingsScene(sceneGUID, true));
+
+                    scenes.Add(new EditorBuildSettingsScene(GetTargetSceneGUID(), true));
 
                     // Assign and log the index
                     EditorBuildSettings.scenes = scenes.ToArray();

@@ -380,7 +380,7 @@ namespace BXFW.Collections
         {
             if (typeof(TKey).IsNullable() && Comparer.Equals(key, default))
             {
-                throw new ArgumentNullException("[SerializableDictionary::Add] Given key was null.", nameof(key));
+                throw new ArgumentNullException(nameof(key), "[SerializableDictionary::Add] Given key was null.");
             }
             if (ContainsKey(key))
             {

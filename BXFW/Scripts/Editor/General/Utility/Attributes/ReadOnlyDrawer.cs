@@ -14,15 +14,26 @@ namespace BXFW.ScriptEditor
         private PropertyDrawer targetTypeCustomDrawer;
         private bool UseCustomDrawer => targetTypeCustomDrawer != null;
 
+        private bool propertyHeightIsDirty = true;
+        private float propertyHeight = 0f;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             targetTypeCustomDrawer ??= EditorAdditionals.GetTargetPropertyDrawer(this);
 
-            return UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
+            if (propertyHeightIsDirty)
+            {
+                propertyHeight = UseCustomDrawer ? targetTypeCustomDrawer.GetPropertyHeight(property, label) : EditorGUI.GetPropertyHeight(property, label, true);
+                propertyHeightIsDirty = false;
+            }
+
+            return propertyHeight;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            // Use 'GUI.changed' after the drawers as it checks for any change
+            // Unlike 'EditorGUI.BeginChangeCheck' which only checks for specific controls
             using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(true))
             {
                 if (UseCustomDrawer)
@@ -35,6 +46,8 @@ namespace BXFW.ScriptEditor
                 {
                     EditorGUI.PropertyField(position, property, label, true);
                 }
+
+                propertyHeightIsDirty = GUI.changed;
             }
         }
     }

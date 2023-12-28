@@ -288,7 +288,7 @@ namespace BXFW
             // This class is meant to be constructed in the inspector anyways (or a MonoBehaviour ctor)
             // In a case of a MonoBehaviour ctor, it will be worse but still bearable as
             // 'CustomInputEvent' is meant to be attached to stuff like the main player (the input giver)
-            // + IEnumerable isn't that big of a performance penalty, unless you add the entire KeyCode list
+            // + IEnumerable isn't that big of a performance penalty, unless you add the entire KeyCode enum
             // If this causes issues in the future, know that this is because i was lazy
             keyBinds = new List<KeyCode>(keyCodes);
         }
@@ -300,10 +300,12 @@ namespace BXFW
         {
             isPolled = polled;
         }
-
-        public static implicit operator bool(CustomInputEvent iEvent)
+        /// <summary>
+        /// Returns whether if the event is pressed (<see cref="IsKey"/>)
+        /// </summary>
+        public static implicit operator bool(CustomInputEvent inputEvent)
         {
-            return iEvent.IsKey();
+            return inputEvent.IsKey();
         }
         // Interfaces does not support conversion 'operator'
         // So for the time being use the definite constructors.
@@ -318,9 +320,9 @@ namespace BXFW
 
         public static bool operator ==(CustomInputEvent lhs, CustomInputEvent rhs)
         {
-            if (Equals(lhs, null))
+            if (lhs is null)
             {
-                return Equals(rhs, null);
+                return rhs is null;
             }
 
             return lhs.Equals(rhs);
@@ -341,12 +343,7 @@ namespace BXFW
         }
         public override bool Equals(object obj)
         {
-            if (obj is CustomInputEvent e)
-            {
-                return Equals(e);
-            }
-
-            return false;
+            return Equals(obj as CustomInputEvent);
         }
         public override string ToString()
         {
@@ -367,7 +364,10 @@ namespace BXFW
         public override int GetHashCode()
         {
             int hashCode = 1734127663;
-            hashCode = (hashCode * -1521134295) + EqualityComparer<List<KeyCode>>.Default.GetHashCode(keyBinds);
+            unchecked
+            {
+                hashCode = (hashCode * -1521134295) + EqualityComparer<List<KeyCode>>.Default.GetHashCode(keyBinds);
+            }
             return hashCode;
         }
     }

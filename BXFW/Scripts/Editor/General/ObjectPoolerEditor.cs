@@ -113,10 +113,11 @@ namespace BXFW.ScriptEditor
                     // BasicDropdown expects a ScreenRect
                     Rect guiAreaRect = GUIUtility.GUIToScreenRect(lastRepaintAddElementRect);
                     float dropdownStartingHeight = 86f;
+
                     // more local variables, YEEEEEEEs! YYYEEEEEEESSS!
                     string guiTagEditorControlName = "PoolerEditorDropdown::TagField";
                     bool selectedTagEditorControlOnce = false;
-                    BasicDropdown.ShowDropdown(guiAreaRect, new Vector2(lastRepaintAddElementRect.width, dropdownStartingHeight), (dropdown) =>
+                    BasicDropdown.ShowDropdown(guiAreaRect, new Vector2(lastRepaintAddElementRect.width, dropdownStartingHeight), () =>
                     {
                         using SerializedProperty elementsProperty = serializedObject.FindProperty("m_pools");
 
@@ -139,7 +140,7 @@ namespace BXFW.ScriptEditor
                                 elementsProperty.arraySize++;
                                 elementsProperty.GetArrayElementAtIndex(elementsProperty.arraySize - 1).FindPropertyRelative(nameof(ObjectPooler.Pool.tag)).stringValue = addElementTagString;
                                 addElementTagString = string.Empty;
-                                dropdown.Close();
+                                BasicDropdown.HideDropdown();
 
                                 serializedObject.ApplyModifiedProperties();
                             }
@@ -154,7 +155,7 @@ namespace BXFW.ScriptEditor
                         if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
                         {
                             addElementTagString = string.Empty;
-                            dropdown.Close();
+                            BasicDropdown.HideDropdown();
                         }
                     });
                 }

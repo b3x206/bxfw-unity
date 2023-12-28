@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using UnityEditor;
 
 namespace BXFW.Tools.Editor
@@ -68,7 +67,6 @@ namespace BXFW.Tools.Editor
     /// </summary>
     public static class SerializedPropertyUtility
     {
-        private static readonly Regex ArrayIndexCapturePattern = new Regex(@"\[(\d*)\]");
         /// <summary>
         /// String token used to define a <see cref="SerializedProperty"/> array element.
         /// </summary>
@@ -112,13 +110,14 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(propertyPath), "[EditorAdditionals::GetTarget] Given argument was null.");
             }
 
-            object parent = null;
+            // State
+            object targetParent = null;
             FieldInfo targetInfo = null;
             object target = propertyRootParent;
-
-            string[] propertyNames = propertyPath.Split('.');
-
             bool isNextPropertyArrayIndex = false;
+
+            // Example property path : containerClass.offsetsWithNames.m_SomeArrayData.Array.data[0].childValue.anotherChildValue
+            string[] propertyNames = propertyPath.Split('.');
 
             for (int i = 0; i < propertyNames.Length && target != null; i++)
             {
@@ -135,87 +134,116 @@ namespace BXFW.Tools.Editor
                 {
                     // Gather -> data[index] -> the value on the 'index'
                     isNextPropertyArrayIndex = false;
-                    Match m = ArrayIndexCapturePattern.Match(propName);
+                    // Maximum string length of an Int32 is 10
+                    // Allocate a string as 'int.Parse' ignores whitespace
+                    // The only problem here is that strings are immutable, StringBuilder allocates more garbage than needed and unsafe is bad
+                    // Cannot use Marshaling (of char*) because that would end up being way slower than needed
+                    // (and c# is UTF-16 for some idiotic reason, it is because of microsoft)
 
-                    // Object is actually an array that unity serializes
-                    if (m.Success)
+                    // apparently base 10 string to int parsing is easy
+                    // (this is just because 'int.Parse' has no int range and we are expected to use string.Substring)
+                    int arrayIndex = 0;
+                    // shift the number by '10' and add the 'number' to self then add the diff of character between '9' to '0'.
+                    // This way we move in a base 10 manner (note : this only works for positive integers, but indexing ints are always positive)
+                    // (and to add support for negative int just negate the result after parsing the positive part)
+                    // --
+                    // Size of 'data[' token is 5, and start from the index 5 to parse the thing
+                    for (int j = 5; j < propName.Length; j++)
                     {
-                        var arrayIndex = int.Parse(m.Groups[1].Value);
-
-                        if (!(target is IEnumerable targetAsArray))
+                        char character = propName[j];
+                        // This character means stop
+                        if (character == ']')
                         {
-                            throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
+                            break;
+                        }
+
+                        // Check if any other char
+                        int charDifference = character - '0';
+                        if (charDifference < 0 || charDifference > 9)
+                        {
+                            // In a case of an array parsing failure, this was the default behaviour.
+                            // But let's just assume that is a faulty behaviour because the 'size' problem occured due to something else.
+
+                            // --
+                            // Array parse failure, should only happen on the ends of the array (i.e size field)
+                            // Instead of throwing an exception, just get the object
+                            // (as this may be called for the 'int size field' on the editor, for some reason)
+                            // try
+                            // {
+                            //     targetInfo = GetField(target, propName);
+                            //     targetParent = target;
+                            //     target = targetInfo.GetValue(target);
+                            // }
+                            // catch
+                            // {
+                            //     // It can also have an non-existent field for some reason
+                            //     // Because unity, so the method should give up (with the last information it has)
+                            //     // Maybe this should print a warning, but it's not too much of a thing (just a fallback)
+                            //     return new PropertyTargetInfo(targetInfo, target, targetParent);
+                            // }
+
+                            // break;
+                            throw new Exception($"[SerializedPropertyUtility::GetTarget] Failed to parse array index. Property path is {propertyPath}, current name is {propName}, character is {character}. Only expected digits.");
+                        }
+
+                        // Add multiplied by 10 number to itself and add the digit itself
+                        arrayIndex = (arrayIndex << 1) + (arrayIndex << 3) + charDifference;
+                    }
+
+                    if (!(target is IEnumerable targetAsArray))
+                    {
+                        throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
-                        }
+                    }
 
-                        var enumerator = targetAsArray.GetEnumerator();
-                        var isSuccess = false;
-                        //enumerator.Reset();
-                        for (int j = 0; enumerator.MoveNext(); j++)
+                    IEnumerator enumerator = targetAsArray.GetEnumerator();
+                    bool isSuccess = false;
+
+                    for (int j = 0; enumerator.MoveNext(); j++)
+                    {
+                        object item = enumerator.Current;
+
+                        if (arrayIndex == j)
                         {
-                            object item = enumerator.Current;
+                            // Update FieldInfo that will be returned
+                            // --
+                            // oh wait, that's impossible, riiight.
+                            // basically FieldInfo can't point into a c# array element member,
+                            // only the parent array container as it's just the object
+                            // (unless we are returning a managed memory pointer, which is not really possible unless unity does it)
+                            // (+ which it most likely won't because our result data is in ''safe'' FieldInfo type)
 
-                            if (arrayIndex == j)
-                            {
-                                // Update FieldInfo that will be returned
+                            // If the array contains a class or a struct, and the target is a member that actually is not an array value, it updates fine though.
+                            // So you could use a wrapper class that just contains the field as the target
+                            // (but we can't act like that, because c# arrays are covariant and casting c# arrays is not fun)
+                            // whatever just look at this : https://stackoverflow.com/questions/13790527/c-sharp-fieldinfo-setvalue-with-an-array-parameter-and-arbitrary-element-type
 
-                                // oh wait, that's impossible, riiight.
-                                // basically FieldInfo can't point into a c# array element member,
-                                // only the parent array container as it's just the object
-                                // (unless we are returning a managed memory pointer, which is not really possible unless unity does it)
-                                // (+ which it most likely won't because our result data is in ''safe'' FieldInfo type)
+                            // ---------- No Array Element FieldInfo? -------------
+                            // (would like to put megamind here, but git will most likely break it)
+                            targetParent = target; // Set parent to previous
+                            target = item;
+                            isSuccess = true;
 
-                                // If the array contains a class or a struct, and the target is a member that actually is not an array value, it updates fine though.
-                                // So you could use a wrapper class that just contains the field as the target
-                                // (but we can't act like that, because c# arrays are covariant and casting c# arrays is not fun)
-                                // whatever just look at this : https://stackoverflow.com/questions/13790527/c-sharp-fieldinfo-setvalue-with-an-array-parameter-and-arbitrary-element-type
-
-                                // ---------- No Array Element FieldInfo? -------------
-                                // (would like to put megamind here, but git will most likely break it)
-                                parent = target; // Set parent to previous
-                                target = item;
-                                isSuccess = true;
-
-                                break;
-                            }
-                        }
-
-                        // Element doesn't exist in the array
-                        if (!isSuccess)
-                        {
-                            throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'. This may occur due to out of bounds indexing of the array or just the property path not existing.", propertyPath, targetAsArray));
+                            break;
                         }
                     }
-                    else // Array parse failure, should only happen on the ends of the array (i.e size field)
-                    {
-                        // Instead of throwing an exception, get the object
-                        // (as this may be called for the 'int size field' on the editor, for some reason)
-                        try
-                        {
-                            targetInfo = GetField(target, propName);
-                            parent = target;
-                            target = targetInfo.GetValue(target);
-                        }
-                        catch
-                        {
-                            // It can also have an non-existent field for some reason
-                            // Because unity, so the method should give up (with the last information it has)
-                            // Maybe this should print a warning, but it's not too much of a thing (just a fallback)
 
-                            return new PropertyTargetInfo(targetInfo, target, parent);
-                        }
+                    // Element doesn't exist in the array
+                    if (!isSuccess)
+                    {
+                        throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'. This may occur due to out of bounds indexing of the array or just the property path not existing.", propertyPath, targetAsArray));
                     }
                 }
                 else
                 {
                     // Get next target + value.
                     targetInfo = GetField(target, propName);
-                    parent = target;
+                    targetParent = target;
                     target = targetInfo.GetValue(target);
                 }
             }
 
-            return new PropertyTargetInfo(targetInfo, target, parent);
+            return new PropertyTargetInfo(targetInfo, target, targetParent);
         }
 
         /// <summary>
@@ -347,7 +375,7 @@ namespace BXFW.Tools.Editor
         {
             if (prop == null)
             {
-                throw new ArgumentNullException("[EditorAdditionals::GetTarget] Field 'prop' is null!");
+                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTarget] Given argument 'prop' is null!");
             }
 
             return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
