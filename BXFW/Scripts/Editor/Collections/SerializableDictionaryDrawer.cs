@@ -5,6 +5,7 @@ using BXFW.Tools.Editor;
 using UnityEditorInternal;
 using System.Collections.Generic;
 using System.Reflection;
+using System;
 
 namespace BXFW.Collections.ScriptEditor
 {
@@ -14,16 +15,16 @@ namespace BXFW.Collections.ScriptEditor
     [CustomPropertyDrawer(typeof(SerializableDictionaryBase), true)]
     public class SerializableDictionaryDrawer : PropertyDrawer
     {
-        private readonly PropertyRectContext mainGUIContext = new PropertyRectContext();
-        private readonly PropertyRectContext reorderableListContext = new PropertyRectContext();
+        protected readonly PropertyRectContext mainGUIContext = new PropertyRectContext();
+        protected readonly PropertyRectContext reorderableListContext = new PropertyRectContext();
         /// <summary>
         /// General GUI height of displayed warning <see cref="EditorGUI.HelpBox(Rect, string, MessageType)"/>.
         /// </summary>
-        private const float DictionaryWarningHeight = 36;
+        protected const float DictionaryWarningHeight = 36;
         /// <summary>
         /// GUI height for the 'Add Element' button.
         /// </summary>
-        private const float AddElementButtonHeight = 30;
+        protected const float AddElementButtonHeight = 30;
 
         /// <summary>
         /// Current reorderable list drawing list.
@@ -32,6 +33,55 @@ namespace BXFW.Collections.ScriptEditor
         /// </summary>
         private static readonly Dictionary<string, ReorderableList> idDrawList = new Dictionary<string, ReorderableList>();
         private const int IdDrawListDictSizeLimit = 64;
+
+        /// <summary>
+        /// Returns the <see cref="ReorderableList"/> for the given <paramref name="property"/> with checks on the given <see cref="ReorderableList"/>.
+        /// <br>If the containing <see cref="ReorderableList"/> registry for <paramref name="property"/> is invalid or disposed a new list will be created.</br>
+        /// </summary>
+        /// <param name="property">The property to get / create it's <see cref="ReorderableList"/> for.</param>
+        /// <exception cref="ArgumentNullException"/>
+        protected ReorderableList GetListForProperty(SerializedProperty property)
+        {
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property), "[SerializableDictionaryDrawer::GetReorderableListForProperty] Given argument was null.");
+            }
+
+            // Add a ReorderableList to this SerializeableDictionaryDrawer
+            // Yes, this is not a very nice way of doing this, but it will do for now.
+            // Because the 'ReorderableList' is not quite draggable if this is not done.
+            string sPropId = property.GetIDString();
+            // Check if the 'ReorderableList's SerializedObject is disposed
+            FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool hasList = idDrawList.TryGetValue(sPropId, out ReorderableList list);
+            bool listSerializedObjectDisposed = hasList && ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed();
+            if (!hasList || listSerializedObjectDisposed)
+            {
+                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, false, true)
+                {
+                    drawHeaderCallback = DrawListHeader,
+                    elementHeightCallback = GetElementHeight,
+                    drawElementCallback = DrawListElements,
+                };
+
+                if (!hasList)
+                {
+                    idDrawList.Add(sPropId, list);
+                }
+                else
+                {
+                    idDrawList[sPropId] = list;
+                }
+
+                // 'Dictionary.Add's ordering is undefined behaviour (i love hashmaps)
+                if (idDrawList.Count > IdDrawListDictSizeLimit)
+                {
+                    idDrawList.Remove(idDrawList.Keys.First(k => k != sPropId));
+                }
+            }
+
+            return list;
+        }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -47,38 +97,7 @@ namespace BXFW.Collections.ScriptEditor
                 return height;
             }
 
-            // Add a ReorderableList to this SerializeableDictionaryDrawer
-            // Yes, this is not a very nice way of doing this, but it will do for now.
-            // Because the 'ReorderableList' is not quite draggable if this is not done.
-            string sPropId = property.GetIDString();
-            // Check if the 'ReorderableList's SerializedObject is disposed
-            FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
-            bool hasDrawList = idDrawList.TryGetValue(sPropId, out ReorderableList list);
-            bool serializedObjectDisposed = hasDrawList && ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed();
-            if (!hasDrawList || serializedObjectDisposed)
-            {
-                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, false, true)
-                {
-                    drawHeaderCallback = DrawListHeader,
-                    drawElementCallback = DrawListElements,
-                    elementHeightCallback = GetElementHeight,
-                };
-
-                if (!hasDrawList)
-                {
-                    idDrawList.Add(sPropId, list);
-                }
-                else
-                {
-                    idDrawList[sPropId] = list;
-                }
-
-                // 'Dictionary.Add's ordering is undefined behaviour (i love hashmaps)
-                if (idDrawList.Count > IdDrawListDictSizeLimit)
-                {
-                    idDrawList.Remove(idDrawList.Keys.First(k => k != sPropId));
-                }
-            }
+            ReorderableList list = GetListForProperty(property);
 
             // Sanity check thing
             SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
@@ -97,15 +116,14 @@ namespace BXFW.Collections.ScriptEditor
             return height;
         }
 
-        private SerializedProperty listTargetProperty;
-        private Rect addElementButtonRect;
+        protected SerializedProperty listTargetProperty;
+        protected Rect addElementButtonRect;
 
-        private void DrawListHeader(Rect r)
+        protected virtual void DrawListHeader(Rect r)
         {
             EditorGUI.LabelField(r, "Keys & Values");
         }
-
-        private float GetElementHeight(int index)
+        protected virtual float GetElementHeight(int index)
         {
             float height = 0f;
 
@@ -126,7 +144,7 @@ namespace BXFW.Collections.ScriptEditor
             height += EditorGUI.GetPropertyHeight(valueProperty) + reorderableListContext.Padding;
             return height;
         }
-        private void DrawListElements(Rect rect, int index, bool isActive, bool isFocused)
+        protected virtual void DrawListElements(Rect rect, int index, bool isActive, bool isFocused)
         {
             // Reset this per every call, as the rect is local lol.
             reorderableListContext.Reset();
@@ -164,7 +182,7 @@ namespace BXFW.Collections.ScriptEditor
             }
         }
 
-        private void ShowAddDropdown()
+        protected void ShowAddDropdown()
         {
             // Add in a result of the 'BasicDropdown'.
             // --
@@ -184,6 +202,13 @@ namespace BXFW.Collections.ScriptEditor
             bool hasSelectedKeyPropertyControlOnce = false;
             BasicDropdown.ShowDropdown(GUIUtility.GUIToScreenRect(addElementButtonRect), new Vector2(addElementButtonRect.width, 70f + keyPropertyHeight), () =>
             {
+                // Most likely the entire Inspector was hidden
+                if (pairDummyKeyProperty.IsDisposed())
+                {
+                    BasicDropdown.HideDropdown();
+                    return;
+                }
+
                 GUI.SetNextControlName(guiKeyPropertyControlName);
                 EditorGUILayout.PropertyField(pairDummyKeyProperty);
                 // select on the first dropdown view
@@ -227,7 +252,7 @@ namespace BXFW.Collections.ScriptEditor
                 }
             });
             // and with that, our dictionary saga is concluded.
-            // the only TODO remaining is that the ability to add to struct parent dict's, but at that point this is just, stupidly hard with the constraints of the SerializedProperty
+            // the only TODO remaining is that the ability to add to the struct owned dicts, but at that point this is just, stupidly hard with the constraints of the SerializedProperty
             // (like i have to typetest to literally all ""supported"" SerializedPropertyType's and only do this object set if the type is not ""supported"")
         }
 
@@ -253,8 +278,7 @@ namespace BXFW.Collections.ScriptEditor
             }
 
             // Get identity of 'SerializedDictionary'
-            string sPropId = property.GetIDString();
-            ReorderableList list = idDrawList[sPropId];
+            ReorderableList list = GetListForProperty(property);
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);

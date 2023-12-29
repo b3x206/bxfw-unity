@@ -117,6 +117,7 @@ namespace BXFW.ScriptEditor
             if (shouldShowWarningDirty)
             {
                 shouldShowWarningGUI = ShowDetailsGUI && !target.SceneLoadable;
+                shouldShowWarningDirty = false;
             }
 
             return shouldShowWarningGUI;

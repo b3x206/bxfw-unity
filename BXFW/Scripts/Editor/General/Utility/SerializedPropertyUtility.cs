@@ -53,10 +53,21 @@ namespace BXFW.Tools.Editor
         /// </summary>
         public bool TargetIsEnumerable => typeof(IEnumerable).IsAssignableFrom(fieldInfo.FieldType);
 
-        private PropertyTargetInfo() { }
-        public PropertyTargetInfo(FieldInfo fi, object target, object parent)
+        /// <summary>
+        /// Creates a PropertyTargetInfo with a setup.
+        /// </summary>
+        /// <param name="fInfo">Field info to give to this 'PropertyTargetInfo'. This value cannot be null.</param>
+        /// <param name="target">Target object that the <paramref name="fInfo"/> points to.</param>
+        /// <param name="parent">Parent object of <paramref name="target"/>.</param>
+        /// <exception cref="ArgumentNullException"/>
+        public PropertyTargetInfo(FieldInfo fInfo, object target, object parent)
         {
-            fieldInfo = fi;
+            if (fInfo == null)
+            {
+                throw new ArgumentNullException(nameof(fInfo), "[PropertyTargetInfo::ctor] Given 'fieldInfo' is null. A field info is required to be assigned.");
+            }
+
+            fieldInfo = fInfo;
             value = target;
             this.parent = parent;
         }
@@ -143,7 +154,7 @@ namespace BXFW.Tools.Editor
                     // apparently base 10 string to int parsing is easy
                     // (this is just because 'int.Parse' has no int range and we are expected to use string.Substring)
                     int arrayIndex = 0;
-                    // shift the number by '10' and add the 'number' to self then add the diff of character between '9' to '0'.
+                    // shift the number by '10' to push the last base 10 decimal to the n+1'th digit and add the 'number' to self then add the diff of character between '9' to '0'.
                     // This way we move in a base 10 manner (note : this only works for positive integers, but indexing ints are always positive)
                     // (and to add support for negative int just negate the result after parsing the positive part)
                     // --
@@ -183,7 +194,7 @@ namespace BXFW.Tools.Editor
                             // }
 
                             // break;
-                            throw new Exception($"[SerializedPropertyUtility::GetTarget] Failed to parse array index. Property path is {propertyPath}, current name is {propName}, character is {character}. Only expected digits.");
+                            throw new Exception($"[SerializedPropertyUtility::GetTarget] Failed to parse array index. Property path is {propertyPath}, current name is {propName}[{j}], character is {character}. Only expected digits.");
                         }
 
                         // Add multiplied by 10 number to itself and add the digit itself
@@ -482,6 +493,7 @@ namespace BXFW.Tools.Editor
             throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
         }
 
+        private static readonly FieldInfo NativePropertyPtrField = typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.NonPublic | BindingFlags.Instance);
         /// <summary>
         /// Returns whether if this 'SerializedProperty' is disposed.
         /// </summary>
@@ -492,8 +504,9 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
             }
 
-            return (IntPtr)typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj) == IntPtr.Zero;
+            return (IntPtr)NativePropertyPtrField.GetValue(obj) == IntPtr.Zero;
         }
+        private static readonly MethodInfo IsEndOfDataMethod = typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.NonPublic | BindingFlags.Instance);
         /// <summary>
         /// Returns whether if Next is callable on <paramref name="prop"/>.
         /// </summary>
@@ -504,7 +517,7 @@ namespace BXFW.Tools.Editor
                 throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::IsEndOfData] Target was null.");
             }
 
-            return (bool)typeof(SerializedProperty).GetMethod("EndOfData", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(prop, null);
+            return (bool)IsEndOfDataMethod.Invoke(prop, null);
         }
 
         /// <summary>

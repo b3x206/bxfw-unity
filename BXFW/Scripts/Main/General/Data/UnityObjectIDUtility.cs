@@ -45,6 +45,7 @@ namespace BXFW.Data.Editor
                 EditorUtility.SetDirty(target);
                 result = localIdProp.longValue;
             }
+
             return result;
         }
         /// <summary>

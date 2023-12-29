@@ -221,8 +221,9 @@ namespace BXFW.Collections.ScriptEditor
             else if (interactedPropertyID == currentPropertyID)
             {
                 BasicDropdown.HideDropdown();
-                //modifyIndex = -1;
-                //interactedPropertyID = string.Empty;
+                modifyIndex = -1;
+                // Reset the 'interactedPropertyID' to not be constantly hiding the dropdown
+                interactedPropertyID = string.Empty;
             }
 
             // -- Change checks for the 'Min/Max' values

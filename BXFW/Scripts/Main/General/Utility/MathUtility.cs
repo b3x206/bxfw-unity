@@ -47,24 +47,24 @@ namespace BXFW
         /// A clamped mapped linear interpolation.
         /// <br>Can be used to interpolate values according to other values.</br>
         /// </summary>
-        /// <param name="from">Returned value start. This is the value you will get if <paramref name="value"/> is equal to <paramref name="vFrom"/>.</param>
-        /// <param name="to">Returned value end. This is the value you will get if <paramref name="value"/> is equal to <paramref name="vTo"/>.</param>
-        /// <param name="vFrom">Mapping Range value start. The <paramref name="value"/> is assumed to be started from here.</param>
-        /// <param name="vTo">Mapping Range value end. The <paramref name="value"/> is assumed to be ending in here.</param>
-        /// <param name="value">The value that is the 'time' parameter. Goes between <paramref name="to"/>-&gt;<paramref name="vTo"/>.</param>
-        public static float Map(float from, float to, float vFrom, float vTo, float value)
+        /// <param name="from">Returned value start. This is the value you will get if <paramref name="value"/> is equal to <paramref name="valueFrom"/>.</param>
+        /// <param name="to">Returned value end. This is the value you will get if <paramref name="value"/> is equal to <paramref name="valueTo"/>.</param>
+        /// <param name="valueFrom">Mapping Range value start. The <paramref name="value"/> is assumed to be started from here.</param>
+        /// <param name="valueTo">Mapping Range value end. The <paramref name="value"/> is assumed to be ending in here.</param>
+        /// <param name="value">The value that is the 'time' parameter. Goes between <paramref name="to"/>-&gt;<paramref name="valueTo"/>.</param>
+        public static float Map(float from, float to, float valueFrom, float valueTo, float value)
         {
-            if (value <= vFrom)
+            if (value <= valueFrom)
             {
                 return from;
             }
-            else if (value >= vTo)
+            else if (value >= valueTo)
             {
                 return to;
             }
 
             // a + ((b - a) * t) but goofy
-            return from + ((to - from) * ((value - vFrom) / (vTo - vFrom)));
+            return from + ((to - from) * ((value - valueFrom) / (valueTo - valueFrom)));
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace BXFW
         /// <param name="maxDelta">Maximum change in <paramref name="current"/> to <paramref name="target"/> allowed.</param>
         public static double MoveTowards(double current, double target, double maxDelta)
         {
-            // Delta is larger than the given values difference
+            // Delta is smaller than the max delta
             if (Math.Abs(target - current) <= maxDelta)
             {
                 return target;
@@ -309,11 +309,11 @@ namespace BXFW
                     return Vector3.forward;
 
                 case TransformAxis.XAxis | TransformAxis.YAxis:
-                    return new Vector3(1f, 0f, 1f);
+                    return Vector3.right + Vector3.up;
                 case TransformAxis.YAxis | TransformAxis.ZAxis:
-                    return new Vector3(0f, 1f, 1f);
+                    return Vector3.up + Vector3.forward;
                 case TransformAxis.XAxis | TransformAxis.ZAxis:
-                    return new Vector3(1f, 0f, 1f);
+                    return Vector3.right + Vector3.forward;
 
                 default:
                 case TransformAxis.XYZAxis:
@@ -572,10 +572,7 @@ namespace BXFW
         /// </summary>
         public static Vector3 GetScale(this Matrix4x4 matrix)
         {
-            Vector3 scale;
-            scale.x = matrix.GetColumn(0).magnitude;
-            scale.y = matrix.GetColumn(1).magnitude;
-            scale.z = matrix.GetColumn(2).magnitude;
+            Vector3 scale = new Vector3(matrix.GetColumn(0).magnitude, matrix.GetColumn(1).magnitude, matrix.GetColumn(2).magnitude);
             return scale;
         }
         /// <summary>

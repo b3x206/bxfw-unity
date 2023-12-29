@@ -57,44 +57,7 @@ namespace BXFW.Tools.Editor
         }
 
         // -- ID Binding
-        /// <summary>
-        /// The MD5 generator used.
-        /// <br>MD5 is not secure and should not be used if security is a high priority.</br>
-        /// </summary>
-        private static readonly MD5Cng m_md5 = new MD5Cng();
-        /// <summary>
-        /// Returns the MD5 hash of given <paramref name="s"/>.
-        /// <br>This is used to bind id's.</br>
-        /// </summary>
-        private static string StringToMD5(string s)
-        {
-            byte[] hash = m_md5.ComputeHash(Encoding.Default.GetBytes(s));
-            StringBuilder sb = new StringBuilder(hash.Length);
-
-            foreach (byte b in hash)
-            {
-                // will return 2 char hex representation.
-                sb.Append(Convert.ToString(b, 16));
-            }
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// If this is <see langword="true"/> then the key won't be hashed and can be inspected for errors.
-        /// </summary>
-        public static bool keyDebugMode = false;
-        /// <summary>
-        /// Calls <see cref="UnityObjectIDUtility.GetUnityObjectIdentifier(UnityEngine.Object, string)"/>.
-        /// <br/>
-        /// <br>This is then hashed using MD5 if debug mode is disabled. (as SHA1 string is too long)</br>
-        /// </summary>
-        private static string GetUnityObjectIdentifier(UnityEngine.Object target)
-        {
-            string result = UnityObjectIDUtility.GetUnityObjectIdentifier(target);
-
-            return !keyDebugMode ? StringToMD5(result) : result;
-        }
+        // MD5 is removed as it can cause hash clashes, the ID string does not contain sensitive data and it allocates garbage
 
         /// <summary>
         /// Returns a unique property identity string, usable to get an id depending on the situation;
@@ -115,7 +78,7 @@ namespace BXFW.Tools.Editor
 or don't call this if the 'property.serializedObject.isEditingMultipleObjects' is true.", nameof(property));
             }
 
-            return $"{GetUnityObjectIdentifier(property.serializedObject.targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}";
+            return $"{UnityObjectIDUtility.GetUnityObjectIdentifier(property.serializedObject.targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}";
         }
 
         /// <summary>
@@ -150,7 +113,7 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
             for (int i = 0; i < Mathf.Min(strings.Length, property.serializedObject.targetObjects.Length); i++)
             {
                 UnityEngine.Object targetObject = property.serializedObject.targetObjects[i];
-                strings[i] = $"{GetUnityObjectIdentifier(targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}";
+                strings[i] = $"{UnityObjectIDUtility.GetUnityObjectIdentifier(targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}";
             }
 
             return property.serializedObject.targetObjects.Length;
@@ -175,7 +138,7 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
             for (int i = 0; i < property.serializedObject.targetObjects.Length; i++)
             {
                 UnityEngine.Object targetObject = property.serializedObject.targetObjects[i];
-                strings.Add($"{GetUnityObjectIdentifier(targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}");
+                strings.Add($"{UnityObjectIDUtility.GetUnityObjectIdentifier(targetObject)}{UnityObjectIDUtility.DefaultObjIdentifierValueSeperator}{property.propertyPath}");
             }
         }
 

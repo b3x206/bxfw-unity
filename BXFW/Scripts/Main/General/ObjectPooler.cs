@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace BXFW
 {
@@ -527,6 +528,8 @@ namespace BXFW
         // Spawning a PooledObject from another IPooledObject's callback causes an issue due to the shared state Instance
         // This causes more than 1 times access to the m_PooledBehavioursCache in the same loop.
         // Or you know, finally acknowledge that Singletons are a bad idea because of situations like this.
+        // --
+        // Edit : ListPool apparently is a useful class for allocating lists away somewhere with the given type. very cool unity
 
         /// <inheritdoc cref="SpawnFromPool(string, Vector3, Quaternion, Transform)"/>
         private GameObject SpawnFromPoolInternal(string tag, Vector3 position, Quaternion rotation, Transform parent)
@@ -557,32 +560,21 @@ namespace BXFW
             objToSpawn.transform.SetParent(parent);
             objToSpawn.transform.SetPositionAndRotation(position, rotation);
 
-            // In this foreach loop, use the 'objToSpawn' as the cache provider
-            // This is what i call memory fragmentation!!11!
-            // This is the dirty and quick hack to solve this
-            // ----
-            // We can lock 'm_PooledBehaviourCache',
-            // but this will cause the obvious issue of the same crap happening with a different exception
-            // ----
-            // You know what, the best thing to do here is to allocate a tempoary array.
-            // Sure, this will allocate GC garbage. But it is still the most viable thing to do now.
-            // This is because i don't know about ProblemFactory'ies or SingleTonOfOhNos
-            // ----
-            // FIXME
-
-            // - Reserve 16 IPooledBehaviour's because no one in their right mind
-            // would put more than 16 IPooledBehaviour components to the same object.
-            List<IPooledBehaviour> pooledBehaviours = new List<IPooledBehaviour>(16);
-            objToSpawn.GetComponents(pooledBehaviours);
-
-            foreach (IPooledBehaviour behaviour in pooledBehaviours)
+            // apparently 'ListPool' + 'CollectionPool' is a thing
+            // LET'S GOO SINGLETON TIME epic W play of the game!!1!!
+            using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
             {
-                if (behaviour == null)
-                {
-                    continue;
-                }
+                objToSpawn.GetComponents(pooledBehaviours);
 
-                behaviour.OnPoolSpawn();
+                foreach (IPooledBehaviour behaviour in pooledBehaviours)
+                {
+                    if (behaviour == null)
+                    {
+                        continue;
+                    }
+
+                    behaviour.OnPoolSpawn();
+                }
             }
 
             // Re-enqueue the object to the last spawn place
@@ -637,17 +629,19 @@ namespace BXFW
                 obj.transform.SetParent(transform);
             }
 
-            List<IPooledBehaviour> pooledBehaviours = new List<IPooledBehaviour>(16);
-            obj.GetComponents(pooledBehaviours);
-
-            foreach (IPooledBehaviour behaviour in pooledBehaviours)
+            using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
             {
-                if (behaviour == null)
-                {
-                    continue;
-                }
+                obj.GetComponents(pooledBehaviours);
 
-                behaviour.OnPoolDespawn();
+                foreach (IPooledBehaviour behaviour in pooledBehaviours)
+                {
+                    if (behaviour == null)
+                    {
+                        continue;
+                    }
+
+                    behaviour.OnPoolDespawn();
+                }
             }
 
             targetPool.m_poolQueue.Add(obj);

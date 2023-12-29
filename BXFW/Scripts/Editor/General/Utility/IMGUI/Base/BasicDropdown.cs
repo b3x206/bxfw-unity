@@ -74,6 +74,15 @@ namespace BXFW.Tools.Editor
             Instance.Close();
             DestroyImmediate(Instance);
         }
+        public static Rect GetPosition()
+        {
+            if (Instance == null)
+            {
+                throw new InvalidOperationException("[BasicDropdown::GetPosition] Cannot get position while window is not being shown.");
+            }
+
+            return Instance.position;
+        }
         /// <summary>
         /// Sets the position of the window.
         /// <br>If the BasicDropdown instance doesn't exist this does nothing.</br>
@@ -96,6 +105,7 @@ namespace BXFW.Tools.Editor
                 return;
             }
 
+            EditorGUI.DrawRect(new Rect(Vector2.zero, position.size), EditorGUIUtility.isProSkin ? new Color(0.3f, 0.3f, 0.3f) : new Color(0.62f, 0.62f, 0.62f));
             onGUICall();
         }
     }
