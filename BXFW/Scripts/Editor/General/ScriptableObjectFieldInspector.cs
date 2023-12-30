@@ -792,7 +792,7 @@ namespace BXFW
             if (targetHasAssetPath)
             {
                 // Display a button to highlight the asset source
-                if (GUI.Button(propertyFoldoutOptsRect, "Show On Project"))
+                if (GUI.Button(propertyFoldoutOptsRect, new GUIContent("Show On Project", "Uses 'ProjectWindowUtil' to show the target on the project window.")))
                 {
                     // Highlight the source object in the 'Project' folder
                     ProjectWindowUtil.ShowCreatedAsset(target);
@@ -802,7 +802,7 @@ namespace BXFW
             }
 
             propertyFoldoutOptsRect.width = positionWidth * DeleteBtnWidth;
-            if (GUI.Button(propertyFoldoutOptsRect, "Delete"))
+            if (GUI.Button(propertyFoldoutOptsRect, new GUIContent("Delete", targetHasAssetPath ? "Removes the asset reference (with undo)" : "Deletes and destroys the asset (with undo)")))
             {
                 // If the object would still like to exist, don't do 'DestroyObjectImmediate', instead just remove the reference
                 if (!targetHasAssetPath)

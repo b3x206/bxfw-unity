@@ -121,7 +121,7 @@ namespace BXFW.Collections.ScriptEditor
 
         protected virtual void DrawListHeader(Rect r)
         {
-            EditorGUI.LabelField(r, "Keys & Values");
+            GUI.Label(r, "Keys & Values");
         }
         protected virtual float GetElementHeight(int index)
         {

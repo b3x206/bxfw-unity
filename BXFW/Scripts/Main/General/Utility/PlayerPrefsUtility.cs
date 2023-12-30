@@ -313,7 +313,8 @@ namespace BXFW
                 return;
             }
 
-            PlayerPrefs.SetInt(string.Format("{0}_ENUM:{1}", key, typeof(T).Name), Convert.ToInt32(value));
+            // PlayerPrefs.SetInt(string.Format("{0}_ENUM:{1}", key, typeof(T).Name), Convert.ToInt32(value));
+            SetLongInternal(string.Format("{0}_{1}", key, typeof(T).Name), Convert.ToInt64(value), "ENUM");
         }
         /// <inheritdoc cref="GetEnum{T}(string)"/>
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
@@ -324,14 +325,15 @@ namespace BXFW
                 Debug.LogError(string.Format("[PlayerPrefsUtility::SetEnum] Couldn't get the savekey because it is null. Key={0}", key));
                 return default;
             }
-            string prefixKey = string.Format("{0}_ENUM:{1}", key, typeof(T).Name);
+            string prefixKey = string.Format("{0}_{1}", key, typeof(T).Name);
 
-            if (!PlayerPrefs.HasKey(prefixKey))
+            bool hasKey = PlayerPrefs.HasKey(string.Format("{0}_l32ENUM", prefixKey)) && PlayerPrefs.HasKey(string.Format("{0}_u32ENUM", prefixKey));
+            if (!hasKey)
             {
                 return defaultValue;
             }
 
-            return (T)(object)PlayerPrefs.GetInt(prefixKey);
+            return (T)Convert.ChangeType(GetLongInternal(prefixKey, "ENUM"), typeof(T).GetEnumUnderlyingType());
         }
         /// <summary>
         /// Returns a value set by <see cref="SetEnum{T}(string, T)"/>.
@@ -394,7 +396,8 @@ namespace BXFW
             }
             if (tType.IsEnum)
             {
-                return PlayerPrefs.HasKey(string.Format("{0}_ENUM:{1}", key, typeof(T).Name));
+                string prefixKey = string.Format("{0}_{1}", key, typeof(T).Name);
+                return PlayerPrefs.HasKey(string.Format("{0}_l32ENUM", prefixKey)) && PlayerPrefs.HasKey(string.Format("{0}_u32ENUM", prefixKey));
             }
 
             return PlayerPrefs.HasKey(key);
