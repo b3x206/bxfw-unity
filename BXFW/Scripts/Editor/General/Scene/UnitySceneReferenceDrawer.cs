@@ -26,7 +26,10 @@ namespace BXFW.ScriptEditor
         public void OnPreprocessBuild(BuildReport report)
         {
             // Gather new name
-            RelativeDirectoryName = $"{Random.Range(0, int.MaxValue)}__SceneList";
+            if (string.IsNullOrEmpty(RelativeDirectoryName))
+            {
+                RelativeDirectoryName = $"{Random.Range(0, int.MaxValue)}.SceneList";
+            }
 
             // Pack the references with a serialized list of scene references
             // This class is stored in 'UnitySceneReference'?
@@ -63,7 +66,7 @@ namespace BXFW.ScriptEditor
                 File.Delete($"{assetDirectory}.meta");
                 AssetDatabase.Refresh();
 
-                // screw you meta (both the company and the unity file)
+                // screw you meta
                 RelativeDirectoryName = string.Empty;
             }
         }
