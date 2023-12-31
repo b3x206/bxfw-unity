@@ -13,6 +13,9 @@ namespace BXFW
         // TODO : Use a HashMap of prefabs (in runtime) for O(1) searching of Prefabs on Despawn methods
         // However, i want both a List (random removal/dequeueing of arbitary elements), Queue (self-explanatory) and a HashSet (also same) in one.
         // Hmmmm. Not fun.
+        // --
+        // TODO 2 : Finish (or borrow) the 'Deque' and use that for the 'Pool.m_poolQueue'.
+        // The first two is apparently just a 'Deque', the third one is [unknown if possible?]
 
         /// <summary>
         /// Defines a pooling prefab, to create a pooled object collection.
@@ -528,8 +531,6 @@ namespace BXFW
         // Spawning a PooledObject from another IPooledObject's callback causes an issue due to the shared state Instance
         // This causes more than 1 times access to the m_PooledBehavioursCache in the same loop.
         // Or you know, finally acknowledge that Singletons are a bad idea because of situations like this.
-        // --
-        // Edit : ListPool apparently is a useful class for allocating lists away somewhere with the given type. very cool unity
 
         /// <inheritdoc cref="SpawnFromPool(string, Vector3, Quaternion, Transform)"/>
         private GameObject SpawnFromPoolInternal(string tag, Vector3 position, Quaternion rotation, Transform parent)

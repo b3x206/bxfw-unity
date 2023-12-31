@@ -46,7 +46,7 @@ namespace BXFW.UI
             TMPro_EventManager.TEXT_CHANGED_EVENT?.Remove(OnTextChangedEvent);
         }
 
-        private void OnTextChangedEvent(UnityEngine.Object textObj)
+        private void OnTextChangedEvent(Object textObj)
         {
             if (textObj == target)
             {
@@ -69,7 +69,11 @@ namespace BXFW.UI
         {
             if (targetTextChanged)
             {
-                lastPreferredValues = target.GetPreferredValues();
+                // No dirty/caching exists on 'GetPrefferedValues'
+                // Use the 'target.preferredWidth/target.preferredHeight' instead
+                // But this version does not support / take account of the margins? what the hell?
+                // Eh whatever this thing allocates enough garbage and has performance loss anyways.
+                lastPreferredValues = new Vector2(target.preferredWidth, target.preferredHeight);
                 targetTextChanged = false;
             }
 
