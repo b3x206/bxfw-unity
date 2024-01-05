@@ -615,6 +615,8 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(obj), "[ObjectPooler::DespawnPoolObject] Given object was null.");
             }
 
+            // TODO : This removal sucks in terms of performance
+            // Maybe store the index in the pool element / GameObject itself (hashset)?
             bool removalResult = targetPool.m_poolQueue.Remove(obj);
 
             if (!removalResult)

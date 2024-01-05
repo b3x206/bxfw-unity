@@ -568,14 +568,20 @@ namespace BXFW.Tweening
         /// </summary>
         public IEnumerator<BXSTweenable> GetEnumerator()
         {
-            return m_RunnableTweens.Cast(runnable => runnable.tween).GetEnumerator();
+            for (int i = 0; i < m_RunnableTweens.Count; i++)
+            {
+                yield return m_RunnableTweens[i].tween;
+            }
         }
         /// <summary>
         /// The iterator that also returns the priority.
         /// </summary>
         IEnumerator<KeyValuePair<int, BXSTweenable>> IEnumerable<KeyValuePair<int, BXSTweenable>>.GetEnumerator()
         {
-            return m_RunnableTweens.Cast(runnable => new KeyValuePair<int, BXSTweenable>(runnable.priority, runnable.tween)).GetEnumerator();
+            for (int i = 0; i < m_RunnableTweens.Count; i++)
+            {
+                yield return new KeyValuePair<int, BXSTweenable>(m_RunnableTweens[i].priority, m_RunnableTweens[i].tween);
+            }
         }
         /// <summary>
         /// Base 'IEnumerable'.

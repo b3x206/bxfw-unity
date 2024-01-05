@@ -13,87 +13,46 @@ namespace BXFW.Collections
     /// <typeparam name="T">Type of the children contained.</typeparam>
     public class Deque<T> : ICollection<T>
     {
-        // TODO : This is a mostly bad attempt on doing a Double ended queue
-        // Maybe steal something MIT licensed from github? (with proper attributions)
-        // TODO 2 : Test this crap
-        // TODO 3 : Add the 'AddFirstRange' and 'AddLastRange' methods
-        // --
-        // Because i am very lazy, i just use 'List<T>'.
-        // --
-        // **** How Deque works? [some sort of explainer?] ****
-        // Basically, imagine two arrays
-        // One of these arrays are the 'm_tailCollection' which is the starts of the Queue
-        // The other one is the 'm_headCollection' which is the ends of the Queue
-        // -- [] => array def or index def | () => cell of <T> --
-        //  m_tailCollection       -  m_headCollection
-        // [ (1) (2) (3) (4) (5) ] - [ (1) (2) (3) (4) (5) ]
-        //   [0] [1] [2] [3] [4]   -   [0] [1] [2] [3] [4]
-        // --
-        // The m_tailCollection is always assumed to be reverse iterated.
-        // While the 'm_headCollection' is forward iterated and the values dequeued will be just set null.
-        // --
-        //  m_tailCollection (treated reverse) - m_headCollection
-        // [ (5) (4) (3) (2) (1) ]             - [ (1) (2) (3) (4) (5) ]
-        //   [4] [3] [2] [1] [0]               -   [0] [1] [2] [3] [4]
-        // --
-        // In this case, the 'm_tailIndex = 4' and the 'm_headIndex' is also 4.
-        // So, how does 'running out of tail' or 'running out of head' behaves?
-        // Well, if any of the indices are negative, we just add to the other array
-        // (this means tail operation will add to head if the head has some free space.)
-        // And i guess that's pretty much it.
-        // --
-        // Oh and also both the head and tail collection can be differently sized (m_tailIndex / m_headIndex). K thx bye.
-        // -- 
-        // But why 2 arrays?
-        // This is because enqueueing without 2 arrays would have been o(N) (we would have to list.Insert(0, someItem))
-        // I want both insertions to be o(1), but this maybe will create memory fragmentation which could be worse, idk.
+        /// <summary>
+        /// The current list collection of the deque.
+        /// </summary>
+        private List<T> m_collection;
 
-        /// <summary>
-        /// Collection of tail queue items to check for.
-        /// <br>This array is in reverse, the last element is the first element on the tail.</br>
-        /// </summary>
-        private List<T> m_tailCollection;
-        /// <summary>
-        /// Collection of head queue items to check for.
-        /// </summary>
-        private List<T> m_headCollection;
-
-        /// <summary>
-        /// Ensures array capacities.
-        /// </summary>
-        private void EnsureArraysCapacity(int capacity)
-        {
-            // Capacity is evenly split
-            m_tailCollection.Capacity = (capacity / 2) + 1;
-            m_headCollection.Capacity = (capacity / 2) + 1;
-        }
-        /// <inheritdoc cref="Capacity"/>
-        private int m_capacity = 0;
         /// <summary>
         /// Capacity of this deque.
         /// <br> <see langword="get"/> : </br>
         /// <br> Gets the capacity (noexcept)</br>
         /// <br> <see langword="set"/> : </br>
-        /// <br> Sets the given capacity.</br>
+        /// <br> Sets the given capacity. Capacity cannot go lower than the <see cref="Count"/>.</br>
         /// <br> <see cref="ArgumentException"/> : Occurs when the assigned capacity is less than 0.</br>
         /// </summary>
         /// <exception cref="ArgumentException"/>
         public int Capacity
         {
-            get
-            {
-                return m_capacity;
-            }
-            set
-            {
-                if (m_capacity < 0)
-                {
-                    throw new ArgumentException("[Deque::(set)Capacity] Given capacity is negative and lower than zero.", nameof(value));
-                }
+            get => m_collection.Capacity;
+            set => m_collection.Capacity = value;
+        }
 
-                m_capacity = Math.Max(Count, value);
-                EnsureArraysCapacity(m_capacity);
-            }
+        /// <summary>
+        /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
+        /// </summary>
+        private static int WrapClamp(int value, int min, int max)
+        {
+            // People before math existed : 
+            //if (value < min)
+            //{
+            //    int valueDelta = Math.Abs(min) - Math.Abs(value);
+            //    return max - valueDelta;
+            //}
+            //if (value > max)
+            //{
+            //    int valueDelta = Math.Abs(max) - Math.Abs(value);
+            //    return min + valueDelta;
+            //}
+
+            int maxMinDelta = max - min;
+            value = maxMinDelta * (int)Math.Floor((double)(value / maxMinDelta));
+            return value;
         }
 
         /// <summary>
@@ -109,7 +68,7 @@ namespace BXFW.Collections
         /// <summary>
         /// Size of this queue.
         /// </summary>
-        public int Count => m_headIndex + m_tailIndex;
+        public int Count => m_headIndex - m_tailIndex;
 
         /// <summary>
         /// Always returns <see langword="false"/>.
@@ -139,19 +98,17 @@ namespace BXFW.Collections
         /// <param name="item">Item to add.</param>
         public void AddFirst(T item)
         {
-            if (m_headIndex < 0)
+            if (m_tailIndex == m_headIndex)
             {
-                // !! TODO : Ensure that the 'm_tailIndex' and 'm_headIndex' is correct.
-                // always add 1 while getting the other index as 0 would be ignored if we directly negated the value
-                // but the first -1 should specify 0 in this case to not skip 0.
-                m_tailCollection[-(m_headIndex + 1)] = item;
+                m_collection.Insert(m_headIndex, item);
+                m_tailIndex = WrapClamp(m_tailIndex + 1, 0, m_collection.Count - 1);
             }
             else
             {
-                m_headCollection.Add(item);
+                m_collection.Add(item);
             }
 
-            m_headIndex++;
+            m_headIndex = WrapClamp(m_headIndex + 1, 0, m_collection.Count - 1);
         }
         /// <summary>
         /// Enqueues an element to the start (tail), which in traditional queueing setups this is just <see cref="Queue{T}.Enqueue(T)"/>.
@@ -159,16 +116,18 @@ namespace BXFW.Collections
         /// <param name="item">Item to add.</param>
         public void AddLast(T item)
         {
-            if (m_tailIndex < 0)
+            if (m_tailIndex == m_headIndex)
             {
-                m_headCollection[-(m_tailIndex + 1)] = item;
+                // Reserve size for the queue?
+                m_collection.Insert(m_tailIndex, item);
+                m_headIndex = WrapClamp(m_headIndex - 1, 0, m_collection.Count - 1);
             }
             else
             {
-                m_tailCollection.Add(item);
+                m_collection[m_tailIndex] = item;
             }
 
-            m_tailIndex++;
+            m_tailIndex = WrapClamp(m_tailIndex - 1, 0, m_collection.Count - 1);
         }
         /// <summary>
         /// Peeks the first element to be <see cref="Queue{T}.Dequeue"/>'d.
@@ -180,13 +139,7 @@ namespace BXFW.Collections
                 throw new InvalidOperationException("[Deque::PeekFirst] PeekFirst called on Deque that does not contain any elements.");
             }
 
-            if (m_headIndex < 0)
-            {
-                return m_tailCollection[-(m_headIndex + 1)];
-            }
-
-            // Non-negative, can directly peek first
-            return m_headCollection[m_headIndex];
+            return m_collection[m_headIndex];
         }
         /// <summary>
         /// Peeks the last element, that would have been traditionally added last on a normal <see cref="Queue{T}"/> setup.
@@ -198,14 +151,7 @@ namespace BXFW.Collections
                 throw new InvalidOperationException("[Deque::PeekLast] PeekLast called on Deque that does not contain any elements.");
             }
 
-            if (m_tailIndex < 0)
-            {
-                // Get the negated position
-                return m_headCollection[-(m_tailIndex + 1)];
-            }
-
-            // Non-negative, can directly peek last
-            return m_tailCollection[m_tailIndex];
+            return m_collection[m_headIndex];
         }
         /// <summary>
         /// Pops the first element to be <see cref="Queue{T}.Dequeue"/>'d.
@@ -220,27 +166,8 @@ namespace BXFW.Collections
                 throw new InvalidOperationException("[Deque::PopFirst] PopFirst called on Deque that does not contain any elements.");
             }
 
-            T element;
-            int removalIndex = m_headIndex;
-            // RemoveAt reshuffles the list so it's still O(N)
-            // Yeah this is what happens when you no leetcode, DSA and just sit on your lazy bum
-            // (note 2 : the only author of BXFW talking to himself)
-            if (m_headIndex < 0)
-            {
-                removalIndex = -(m_headIndex + 1);
-                element = m_tailCollection[removalIndex];
-                m_tailCollection.RemoveAt(removalIndex);
-                m_headIndex--;
-
-                return element;
-            }
-
-            // Non-negative, can directly peek first
-            // But for a case of an element existing in 'm_headCollection', 'm_headIndex' is usually the end
-            // So it can be removed on O(1)
-            element = m_headCollection[removalIndex];
-            m_headCollection.RemoveAt(removalIndex);
-            m_headIndex--;
+            T element = m_collection[m_headIndex];
+            m_headIndex = WrapClamp(m_headIndex - 1, 0, m_collection.Count - 1);
             return element;
         }
         /// <summary>
@@ -256,21 +183,8 @@ namespace BXFW.Collections
                 throw new InvalidOperationException("[Deque::PeekLast] PeekLast called on Deque that does not contain any elements.");
             }
 
-            T element;
-            int removalIndex = m_tailIndex;
-            if (m_tailIndex < 0)
-            {
-                // Get the negated position
-                element = m_headCollection[-(m_tailIndex + 1)];
-                m_headCollection.RemoveAt(removalIndex);
-                m_tailIndex--;
-                return element;
-            }
-
-            // Non-negative, can directly peek last
-            element = m_tailCollection[removalIndex];
-            m_tailCollection.RemoveAt(removalIndex);
-            m_tailIndex--;
+            T element = m_collection[m_tailIndex];
+            m_tailIndex = WrapClamp(m_tailIndex + 1, 0, m_collection.Count - 1);
             return element;
         }
         /// <summary>
@@ -278,11 +192,8 @@ namespace BXFW.Collections
         /// </summary>
         public void Reverse()
         {
+            m_collection.Reverse();
             (m_tailIndex, m_headIndex) = (m_headIndex, m_tailIndex);
-
-            m_tailCollection.Reverse();
-            m_headCollection.Reverse();
-            (m_tailCollection, m_headCollection) = (m_headCollection, m_tailCollection);
         }
 
         /// <summary>
@@ -364,8 +275,9 @@ namespace BXFW.Collections
         /// </summary>
         public void Clear()
         {
-            m_tailCollection.Clear();
-            m_headCollection.Clear();
+            m_tailIndex = 0;
+            m_headIndex = 0;
+            m_collection.Clear();
         }
         /// <summary>
         /// Returns whether if the deque contains <paramref name="item"/>.
@@ -384,9 +296,9 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(comparer), "[Deque::Contains] Given 'comparer' is null.");
             }
 
-            for (int i = m_tailIndex; i < m_headIndex; i++)
+            for (int i = m_tailIndex; i <= m_headIndex; i++)
             {
-                if (comparer.Equals(m_tailCollection[i], item))
+                if (comparer.Equals(m_collection[i], item))
                 {
                     return true;
                 }
@@ -429,8 +341,7 @@ namespace BXFW.Collections
         {
             // TODO : A proper impl for this?
             // For now this just doesn't remove elements from the collections
-            m_tailCollection.TrimExcess();
-            m_headCollection.TrimExcess();
+            m_collection.TrimExcess();
 
             // --
             // Get values with actual size
@@ -443,13 +354,9 @@ namespace BXFW.Collections
 
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = m_tailIndex; i >= 0; i--)
+            for (int i = m_tailIndex; i < m_headIndex; i++)
             {
-                yield return m_tailCollection[i];
-            }
-            for (int i = 0; i < m_headIndex; i++)
-            {
-                yield return m_headCollection[i];
+                yield return m_collection[i];
             }
         }
 
@@ -486,18 +393,9 @@ namespace BXFW.Collections
 
             // Split the tail and values evenly.
             // TODO : Add range until index (IEnumerable iterate until index? (it's just called Take))
-            foreach (KeyValuePair<int, T> indexedValue in collection.Indexed())
+            foreach (T value in collection)
             {
-                bool addIntoHead = indexedValue.Key > (collectionSize / 2);
-
-                if (addIntoHead)
-                {
-                    AddFirst(indexedValue.Value);
-                }
-                else
-                {
-                    AddLast(indexedValue.Value);
-                }
+                AddLast(value);
             }
         }
     }
