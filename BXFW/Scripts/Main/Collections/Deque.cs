@@ -16,7 +16,7 @@ namespace BXFW.Collections
         /// <summary>
         /// The current list collection of the deque.
         /// </summary>
-        private List<T> m_collection;
+        private readonly List<T> m_collection = new List<T>();
 
         /// <summary>
         /// Capacity of this deque.
@@ -151,7 +151,7 @@ namespace BXFW.Collections
                 throw new InvalidOperationException("[Deque::PeekLast] PeekLast called on Deque that does not contain any elements.");
             }
 
-            return m_collection[m_headIndex];
+            return m_collection[m_tailIndex];
         }
         /// <summary>
         /// Pops the first element to be <see cref="Queue{T}.Dequeue"/>'d.

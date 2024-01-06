@@ -8,20 +8,65 @@ namespace BXFW
     /// <summary>
     /// Manages pooling of GameObject's.
     /// </summary>
-    public class ObjectPooler : MonoBehaviour
+    public sealed class ObjectPooler : MonoBehaviour
     {
-        // TODO : Use a HashMap of prefabs (in runtime) for O(1) searching of Prefabs on Despawn methods
-        // However, i want both a List (random removal/dequeueing of arbitary elements), Queue (self-explanatory) and a HashSet (also same) in one.
-        // Hmmmm. Not fun.
-        // --
-        // TODO 2 : Finish (or borrow) the 'Deque' and use that for the 'Pool.m_poolQueue'.
-        // The first two is apparently just a 'Deque', the third one is [unknown if possible?]
+        /// <summary>
+        /// A queue element used to search gameobjects faster on removal, etc.
+        /// </summary>
+        internal sealed class PoolQueueElement : IEquatable<PoolQueueElement>
+        {
+            /// <summary>
+            /// Instance ID assigned to this object.
+            /// </summary>
+            public readonly int instanceID;
+            /// <summary>
+            /// The gameobject corresponding to this queue element.
+            /// </summary>
+            public readonly GameObject gameObject;
+
+            /// <summary>
+            /// Creates a QueueElement.
+            /// </summary>
+            /// <param name="obj">Object to create from. This can't be null.</param>
+            /// <exception cref="ArgumentNullException"/>
+            public PoolQueueElement(GameObject obj)
+            {
+                if (obj == null)
+                {
+                    throw new ArgumentNullException(nameof(obj), "[ObjectPooler::QueueElement::ctor] Given object is null.");
+                }
+
+                gameObject = obj;
+                instanceID = obj.GetInstanceID();
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as PoolQueueElement);
+            }
+
+            public override int GetHashCode()
+            {
+                // This is how the 'UnityEngine.Object' implements this.
+                return instanceID;
+            }
+
+            public bool Equals(PoolQueueElement other)
+            {
+                if (other is null)
+                {
+                    return false;
+                }
+
+                return instanceID == other.instanceID;
+            }
+        }
 
         /// <summary>
         /// Defines a pooling prefab, to create a pooled object collection.
         /// </summary>
         [Serializable]
-        public class Pool
+        public sealed class Pool
         {
             /// <summary>
             /// Tag of this pool.
@@ -66,7 +111,7 @@ namespace BXFW
             /// <br>This is not meant to be directly manipulated.</br>
             /// </summary>
             [NonSerialized]
-            internal List<GameObject> m_poolQueue = new List<GameObject>();
+            internal List<PoolQueueElement> m_poolQueue = new List<PoolQueueElement>();
 
             /// <summary>
             /// Creates a blank pool.
@@ -184,13 +229,13 @@ namespace BXFW
                     instObj.AddComponent<PoolObjectDestroyInterceptor>().Initialize();
                 }
 #endif
-                pool.m_poolQueue.Add(instObj);
+                pool.m_poolQueue.Add(new PoolQueueElement(instObj));
             }
             // Removal loop
             while (pool.m_poolQueue.Count > pool.Count)
             {
                 // There's no unpooling callback, that is called the 'OnDestroy'
-                GameObject removeObj = pool.m_poolQueue[0];
+                GameObject removeObj = pool.m_poolQueue[0].gameObject;
                 pool.m_poolQueue.RemoveAt(0);
 #if UNITY_EDITOR
                 if (attachDestroyInterceptor)
@@ -213,8 +258,9 @@ namespace BXFW
         private void ClearPoolObjects(Pool pool)
         {
             // There's no unpooling callback, that is called the 'OnDestroy'
-            foreach (GameObject removeObj in pool.m_poolQueue)
+            foreach (PoolQueueElement element in pool.m_poolQueue)
             {
+                GameObject removeObj = element.gameObject;
 #if UNITY_EDITOR
                 if (attachDestroyInterceptor)
                 {
@@ -262,11 +308,12 @@ namespace BXFW
                 return null;
             }
 
+            PoolQueueElement objectComparableElement = new PoolQueueElement(gameObject);
             for (int i = 0; i < m_instance.m_pools.Count; i++)
             {
                 Pool pool = m_instance.m_pools[i];
 
-                if (pool.Prefab == gameObject || pool.m_poolQueue.Contains(gameObject))
+                if (pool.Prefab == gameObject || pool.m_poolQueue.Contains(objectComparableElement))
                 {
                     tag = pool.tag;
                     return pool;
@@ -543,11 +590,11 @@ namespace BXFW
             }
 
             // Get + Dequeue
-            GameObject objToSpawn = targetPool.m_poolQueue[0];
+            PoolQueueElement objToSpawn = targetPool.m_poolQueue[0];
             // Security checks
             if (clearPoolQueueIfNullExist && objToSpawn == null)
             {
-                int removedNullCount = targetPool.m_poolQueue.RemoveAll(obj => obj == null);
+                int removedNullCount = targetPool.m_poolQueue.RemoveAll(obj => obj.gameObject == null);
                 Debug.LogWarning($"[ObjectPooler::SpawnFromPool] Pool with tag ({tag}) has null enqueued objects. Cleared every null object (count:{removedNullCount}) and generating new objects.", this);
 
                 // Regenerate objects
@@ -557,15 +604,15 @@ namespace BXFW
 
             targetPool.m_poolQueue.RemoveAt(0);
 
-            objToSpawn.SetActive(true);
-            objToSpawn.transform.SetParent(parent);
-            objToSpawn.transform.SetPositionAndRotation(position, rotation);
+            objToSpawn.gameObject.SetActive(true);
+            objToSpawn.gameObject.transform.SetParent(parent);
+            objToSpawn.gameObject.transform.SetPositionAndRotation(position, rotation);
 
             // apparently 'ListPool' + 'CollectionPool' is a thing
             // LET'S GOO SINGLETON TIME epic W play of the game!!1!!
             using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
             {
-                objToSpawn.GetComponents(pooledBehaviours);
+                objToSpawn.gameObject.GetComponents(pooledBehaviours);
 
                 foreach (IPooledBehaviour behaviour in pooledBehaviours)
                 {
@@ -582,7 +629,7 @@ namespace BXFW
             // (Only do this if the object's pooled prefabs are reusable)
             targetPool.m_poolQueue.Add(objToSpawn);
 
-            return objToSpawn;
+            return objToSpawn.gameObject;
         }
         /// <summary>
         /// Spawns an object from the pool.
@@ -617,7 +664,8 @@ namespace BXFW
 
             // TODO : This removal sucks in terms of performance
             // Maybe store the index in the pool element / GameObject itself (hashset)?
-            bool removalResult = targetPool.m_poolQueue.Remove(obj);
+            PoolQueueElement objectElement = new PoolQueueElement(obj);
+            bool removalResult = targetPool.m_poolQueue.Remove(objectElement);
 
             if (!removalResult)
             {
@@ -647,7 +695,7 @@ namespace BXFW
                 }
             }
 
-            targetPool.m_poolQueue.Add(obj);
+            targetPool.m_poolQueue.Add(objectElement);
             return true;
         }
         private bool InternalDespawnPoolObject(GameObject obj)
@@ -696,12 +744,13 @@ namespace BXFW
             }
 
             // Do checks
+            PoolQueueElement objectElement = new PoolQueueElement(obj);
             Pool targetPool = PoolWithTag(tag);
             if (targetPool == null)
             {
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pooler does not contain a pool with tag ({tag}).", nameof(tag));
             }
-            if (!targetPool.m_poolQueue.Contains(obj))
+            if (!targetPool.m_poolQueue.Contains(objectElement))
             {
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pool ({targetPool}) does not contain object named ({obj.name}).", nameof(tag));
             }
@@ -745,7 +794,7 @@ namespace BXFW
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pooler does not contain a pool with tag ({tag}).", nameof(tag));
             }
             // This will cause the poolQueue to be checked twice.
-            if (!targetPool.m_poolQueue.Contains(obj))
+            if (!targetPool.m_poolQueue.Contains(new PoolQueueElement(obj)))
             {
                 throw new ArgumentException($"[ObjectPooler::DespawnPoolObject] Pool ({targetPool}) does not contain object named ({obj.name}).", nameof(tag));
             }
