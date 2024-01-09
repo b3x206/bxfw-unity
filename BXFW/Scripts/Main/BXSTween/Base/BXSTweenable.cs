@@ -778,7 +778,7 @@ namespace BXFW.Tweening
             // This is the best way i could think of, because the stupid unity objects are fake null
             // (but other c# objects are fine, so can use null coalesence for this)
             // Maybe add a IBXSTweenRunner.IsNullObject method instead of this
-            string idObjToString = UnitySafeEqualityComparer.Default.Equals(m_IDObject, null) ? "<null>" : m_IDObject.ToString();
+            string idObjToString = UnitySafeObjectComparer.Default.Equals(m_IDObject, null) ? "<null>" : m_IDObject.ToString();
 
             if (simpleString)
             {

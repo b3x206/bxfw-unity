@@ -68,6 +68,37 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
+        /// </summary>
+        public static int Wrap(int value, int min, int max)
+        {
+            // People before math existed : 
+            //if (value < min)
+            //{
+            //    int valueDelta = Math.Abs(min) - Math.Abs(value);
+            //    return max - valueDelta;
+            //}
+            //if (value > max)
+            //{
+            //    int valueDelta = Math.Abs(max) - Math.Abs(value);
+            //    return min + valueDelta;
+            //}
+
+            int maxMinDelta = max - min;
+            value = maxMinDelta * (int)Math.Floor((double)(value / maxMinDelta));
+            return value;
+        }
+        /// <summary>
+        /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
+        /// </summary>
+        public static float Wrap(float value, float min, float max)
+        {
+            float maxMinDelta = max - min;
+            value = maxMinDelta * (float)Math.Floor(value / maxMinDelta);
+            return value;
+        }
+
+        /// <summary>
         /// Moves towards a value with a <paramref name="maxDelta"/> constraint.
         /// <br>This version uses double precision floats.</br>
         /// </summary>

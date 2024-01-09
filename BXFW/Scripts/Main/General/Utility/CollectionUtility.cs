@@ -317,7 +317,7 @@ namespace BXFW
             {
                 foreach (T elem in collection)
                 {
-                    if (UnitySafeEqualityComparer.Default.Equals(elem, null))
+                    if (UnitySafeObjectComparer.Default.Equals(elem, null))
                     {
                         continue;
                     }
@@ -351,7 +351,7 @@ namespace BXFW
             {
                 foreach (T elem in collection)
                 {
-                    if (UnitySafeEqualityComparer.Default.Equals(elem, null))
+                    if (UnitySafeObjectComparer.Default.Equals(elem, null))
                     {
                         continue;
                     }
@@ -572,6 +572,129 @@ namespace BXFW
             }
 
             return arrayReturn;
+        }
+
+        private sealed class GenericReadOnlyCollectionWrapper<T> : IReadOnlyCollection<T>
+        {
+            private readonly ICollection<T> _collection;
+
+            public GenericReadOnlyCollectionWrapper(ICollection<T> collection)
+            {
+                if (collection == null)
+                {
+                    throw new ArgumentNullException(nameof(collection));
+                }
+
+                _collection = collection;
+            }
+
+            public int Count
+            {
+                get
+                {
+                    return _collection.Count;
+                }
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                foreach (T item in _collection)
+                {
+                    yield return item;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return _collection.GetEnumerator();
+            }
+        }
+        private sealed class NonGenericReadOnlyCollectionWrapper<T> : IReadOnlyCollection<T>
+        {
+            private readonly ICollection _collection;
+
+            public NonGenericReadOnlyCollectionWrapper(ICollection collection)
+            {
+                if (collection == null)
+                {
+                    throw new ArgumentNullException(nameof(collection));
+                }
+
+                _collection = collection;
+            }
+
+            public int Count
+            {
+                get
+                {
+                    return _collection.Count;
+                }
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                foreach (T item in _collection)
+                {
+                    yield return item;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return _collection.GetEnumerator();
+            }
+        }
+
+        /// <summary>
+        /// Creates a collection from given <paramref name="enumerable"/> value.
+        /// <br>Creates an abstractly existing but still <see cref="ICollection{T}"/> class if the given <paramref name="enumerable"/> is not a <see cref="ICollection{T}"/>.</br>
+        /// </summary>
+        /// <typeparam name="T">Type of the elements.</typeparam>
+        /// <param name="enumerable">Collection value. This can't be <see langword="null"/>.</param>
+        /// <returns>The created collection.</returns>
+        public static ICollection<T> ToCollection<T>(this IEnumerable<T> enumerable)
+        {
+            if (UnitySafeObjectComparer.Default.Equals(enumerable, null))
+            {
+                throw new ArgumentNullException(nameof(enumerable), "[CollectionUtility::ToCollection] Given argument was null.");
+            }
+
+            if (enumerable is ICollection<T> collection1)
+            {
+                return collection1;
+            }
+
+            return new List<T>(enumerable);
+        }
+
+        /// <summary>
+        /// Creates a collection from given <paramref name="enumerable"/> value.
+        /// <br>Creates an abstractly existing but still <see cref="IReadOnlyCollection{T}"/> class if the given <paramref name="enumerable"/> is not a <see cref="IReadOnlyCollection{T}"/>.</br>
+        /// </summary>
+        /// <typeparam name="T">Type of the elements.</typeparam>
+        /// <param name="enumerable">Collection value. This can't be <see langword="null"/>.</param>
+        /// <returns>The created collection.</returns>
+        public static IReadOnlyCollection<T> ToReadOnlyCollection<T>(this IEnumerable<T> enumerable)
+        {
+            if (UnitySafeObjectComparer.Default.Equals(enumerable, null))
+            {
+                throw new ArgumentNullException(nameof(enumerable), "[CollectionUtility::ToCollection] Given argument was null.");
+            }
+
+            if (enumerable is IReadOnlyCollection<T> collection1)
+            {
+                return collection1;
+            }
+            if (enumerable is ICollection<T> collection2)
+            {
+                return new GenericReadOnlyCollectionWrapper<T>(collection2);
+            }
+            if (enumerable is ICollection collection3)
+            {
+                return new NonGenericReadOnlyCollectionWrapper<T>(collection3);
+            }
+
+            return new List<T>(enumerable);
         }
     }
 }

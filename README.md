@@ -22,4 +22,5 @@ The code is &lt;summary/&gt; ified, basically what the code does is in the code 
 ## Other Stuff / Licenses : 
 * Portions of the project have been copied from https://github.com/nothke/unity-utils and is owned by Ivan Notaroš under the terms of the MIT license. See https://github.com/nothke/unity-utils/blob/9ba0ae06674f4a6be67ddbbfcc876f72ee6eb2b1/Runtime/RTUtils.cs for the exact file copied.
 * Portions of the project have been copied from https://github.com/gkjohnson/unity-dithered-transparency-shader and is owned by Garrett Johnson under the terms of the MIT license.
+* Portions of the project have been copied from https://github.com/StephenCleary/Deque/tree/main and is owned by Stephen Cleary under the terms of the MIT license.
 * These need to be attributed inside some portion of your game, whether if it be credits or not. If these files are completely removed or not included with compiled builds of your game it may not be needed, but i am not a lawyer.

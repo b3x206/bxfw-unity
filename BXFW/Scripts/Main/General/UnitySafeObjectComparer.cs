@@ -6,17 +6,17 @@ namespace BXFW
     /// Allows for safely comparing <see cref="UnityEngine.Object"/>'s to anything.
     /// <br>Also works as a default <see cref="object"/> comparer. (for non-typesafe boxed objects)</br>
     /// </summary>
-    public class UnitySafeEqualityComparer : IEqualityComparer<object>
+    public class UnitySafeObjectComparer : IEqualityComparer<object>
     {
-        private static UnitySafeEqualityComparer m_Default = new UnitySafeEqualityComparer();
+        private static UnitySafeObjectComparer m_Default = new UnitySafeObjectComparer();
         /// <summary>
         /// Default comparer. This is just a static instance with assurance that it will never be null.
         /// </summary>
-        public static UnitySafeEqualityComparer Default
+        public static UnitySafeObjectComparer Default
         {
             get
             {
-                m_Default ??= new UnitySafeEqualityComparer();
+                m_Default ??= new UnitySafeObjectComparer();
                 return m_Default;
             }
         }

@@ -1,402 +1,853 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 
 namespace BXFW.Collections
 {
     /// <summary>
-    /// A implementation of a double-ended queue.
-    /// <br>The 'First' prefixed methods will act as the saying, 'FIFO', which means that it will be the first element to be dequeue'd or be inserted.</br>
-    /// <br><b>Warning : </b> This class is currently untested, please use with caution.</br>
+    /// A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized O(1) insertions to the front and back, and O(N) insertions and removals anywhere else (with the operations getting slower as the index approaches the middle).
     /// </summary>
-    /// <typeparam name="T">Type of the children contained.</typeparam>
-    public class Deque<T> : ICollection<T>
+    /// <typeparam name="T">The type of elements contained in the deque.</typeparam>
+    /// * Stolen from : https://github.com/StephenCleary/Deque/blob/main/src/Nito.Collections.Deque/Deque.cs
+    [DebuggerDisplay("Count = {Count}, Capacity = {Capacity}")]
+    public sealed class Deque<T> : IList<T>, IReadOnlyList<T>, IList
     {
         /// <summary>
-        /// The current list collection of the deque.
+        /// The default capacity.
         /// </summary>
-        private readonly List<T> m_collection = new List<T>();
+        private const int DefaultCapacity = 8;
 
         /// <summary>
-        /// Capacity of this deque.
-        /// <br> <see langword="get"/> : </br>
-        /// <br> Gets the capacity (noexcept)</br>
-        /// <br> <see langword="set"/> : </br>
-        /// <br> Sets the given capacity. Capacity cannot go lower than the <see cref="Count"/>.</br>
-        /// <br> <see cref="ArgumentException"/> : Occurs when the assigned capacity is less than 0.</br>
+        /// The circular _buffer that holds the view.
         /// </summary>
-        /// <exception cref="ArgumentException"/>
-        public int Capacity
+        private T[] _buffer;
+
+        /// <summary>
+        /// The offset into <see cref="_buffer"/> where the view begins.
+        /// </summary>
+        private int _offset;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class with the specified capacity.
+        /// </summary>
+        /// <param name="capacity">The initial capacity. Must be greater than <c>0</c>.</param>
+        public Deque(int capacity)
         {
-            get => m_collection.Capacity;
-            set => m_collection.Capacity = value;
+            if (capacity < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity may not be negative.");
+            }
+
+            _buffer = new T[capacity];
         }
 
         /// <summary>
-        /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
+        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class with the elements from the specified collection.
         /// </summary>
-        private static int WrapClamp(int value, int min, int max)
+        /// <param name="collection">The collection. May not be <c>null</c>.</param>
+        public Deque(IEnumerable<T> collection)
         {
-            // People before math existed : 
-            //if (value < min)
-            //{
-            //    int valueDelta = Math.Abs(min) - Math.Abs(value);
-            //    return max - valueDelta;
-            //}
-            //if (value > max)
-            //{
-            //    int valueDelta = Math.Abs(max) - Math.Abs(value);
-            //    return min + valueDelta;
-            //}
+            if (collection == null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
 
-            int maxMinDelta = max - min;
-            value = maxMinDelta * (int)Math.Floor((double)(value / maxMinDelta));
-            return value;
+            // Linq.Count already does something similar, but 'DoInsertRange' requires a IReadOnlyCollection
+            IReadOnlyCollection<T> source = collection.ToReadOnlyCollection();
+            int count = source.Count;
+            if (count > 0)
+            {
+                _buffer = new T[count];
+                DoInsertRange(0, source);
+            }
+            else
+            {
+                _buffer = new T[DefaultCapacity];
+            }
         }
 
         /// <summary>
-        /// Index of the tail.
-        /// <br>This value can be negative or positive. If this value is in the negative then the tail is inside <see cref="m_tailCollection"/>.</br>
+        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class.
         /// </summary>
-        private int m_tailIndex = 0;
-        /// <summary>
-        /// Index of the head.
-        /// </summary>
-        private int m_headIndex = 0;
+        public Deque() : this(DefaultCapacity)
+        {
+        }
 
+        #region GenericListImplementations
         /// <summary>
-        /// Size of this queue.
+        /// Gets a value indicating whether this list is read-only. This implementation always returns <c>false</c>.
         /// </summary>
-        public int Count => m_headIndex - m_tailIndex;
+        /// <returns>true if this list is read-only; otherwise, false.</returns>
+        bool ICollection<T>.IsReadOnly => false;
 
-        /// <summary>
-        /// Always returns <see langword="false"/>.
-        /// </summary>
-        public bool IsReadOnly => false;
+        /// <inheritdoc cref="IList{T}.this" />
+        public T this[int index]
+        {
+            get
+            {
+                CheckExistingIndexArgument(Count, index);
+                return DoGetItem(index);
+            }
 
-        /// <summary>
-        /// Enqueues an element to the Deque.
-        /// <br>This is not meant to be used explicitly.</br>
-        /// </summary>
+            set
+            {
+                CheckExistingIndexArgument(Count, index);
+                DoSetItem(index, value);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Insert(int index, T item)
+        {
+            CheckNewIndexArgument(Count, index);
+            DoInsert(index, item);
+        }
+
+        /// <inheritdoc cref="IList{T}.RemoveAt" />
+        public void RemoveAt(int index)
+        {
+            CheckExistingIndexArgument(Count, index);
+            DoRemoveAt(index);
+        }
+
+        /// <inheritdoc/>
+        public int IndexOf(T item)
+        {
+            IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
+            int ret = 0;
+            foreach (T sourceItem in this)
+            {
+                if (comparer.Equals(item, sourceItem))
+                {
+                    return ret;
+                }
+
+                ++ret;
+            }
+
+            return -1;
+        }
+
+        /// <inheritdoc/>
         void ICollection<T>.Add(T item)
         {
-            AddLast(item);
-        }
-        /// <summary>
-        /// Just throws <see cref="NotImplementedException"/> with an error of "you should actually use the 'Pop' methods".
-        /// </summary>
-        /// <exception cref="NotImplementedException"/>
-        bool ICollection<T>.Remove(T item)
-        {
-            throw new NotImplementedException("[Deque::Remove] Use PopFirst or PopLast.");
+            DoInsert(Count, item);
         }
 
-        /// <summary>
-        /// Enqueues an element to the end (head), which in queueing setups this is inserting to the first-last element, making it the first element to be dequeued.
-        /// </summary>
-        /// <param name="item">Item to add.</param>
-        public void AddFirst(T item)
+        /// <inheritdoc/>
+        bool ICollection<T>.Contains(T item)
         {
-            if (m_tailIndex == m_headIndex)
+            var comparer = EqualityComparer<T>.Default;
+            foreach (var entry in this)
             {
-                m_collection.Insert(m_headIndex, item);
-                m_tailIndex = WrapClamp(m_tailIndex + 1, 0, m_collection.Count - 1);
-            }
-            else
-            {
-                m_collection.Add(item);
-            }
-
-            m_headIndex = WrapClamp(m_headIndex + 1, 0, m_collection.Count - 1);
-        }
-        /// <summary>
-        /// Enqueues an element to the start (tail), which in traditional queueing setups this is just <see cref="Queue{T}.Enqueue(T)"/>.
-        /// </summary>
-        /// <param name="item">Item to add.</param>
-        public void AddLast(T item)
-        {
-            if (m_tailIndex == m_headIndex)
-            {
-                // Reserve size for the queue?
-                m_collection.Insert(m_tailIndex, item);
-                m_headIndex = WrapClamp(m_headIndex - 1, 0, m_collection.Count - 1);
-            }
-            else
-            {
-                m_collection[m_tailIndex] = item;
-            }
-
-            m_tailIndex = WrapClamp(m_tailIndex - 1, 0, m_collection.Count - 1);
-        }
-        /// <summary>
-        /// Peeks the first element to be <see cref="Queue{T}.Dequeue"/>'d.
-        /// </summary>
-        public T PeekFirst()
-        {
-            if (Count <= 0)
-            {
-                throw new InvalidOperationException("[Deque::PeekFirst] PeekFirst called on Deque that does not contain any elements.");
-            }
-
-            return m_collection[m_headIndex];
-        }
-        /// <summary>
-        /// Peeks the last element, that would have been traditionally added last on a normal <see cref="Queue{T}"/> setup.
-        /// </summary>
-        public T PeekLast()
-        {
-            if (Count <= 0)
-            {
-                throw new InvalidOperationException("[Deque::PeekLast] PeekLast called on Deque that does not contain any elements.");
-            }
-
-            return m_collection[m_tailIndex];
-        }
-        /// <summary>
-        /// Pops the first element to be <see cref="Queue{T}.Dequeue"/>'d.
-        /// <br><see cref="InvalidOperationException"/> : Thrown when the queue has no elements.</br>
-        /// </summary>
-        /// <returns>The popped result.</returns>
-        /// <exception cref="InvalidOperationException"/>
-        public T PopFirst()
-        {
-            if (Count <= 0)
-            {
-                throw new InvalidOperationException("[Deque::PopFirst] PopFirst called on Deque that does not contain any elements.");
-            }
-
-            T element = m_collection[m_headIndex];
-            m_headIndex = WrapClamp(m_headIndex - 1, 0, m_collection.Count - 1);
-            return element;
-        }
-        /// <summary>
-        /// Pops the last element enqueued.
-        /// <br><see cref="InvalidOperationException"/> : Thrown when the queue has no elements.</br>
-        /// </summary>
-        /// <returns>The popped result.</returns>
-        /// <exception cref="InvalidOperationException"/>
-        public T PopLast()
-        {
-            if (Count <= 0)
-            {
-                throw new InvalidOperationException("[Deque::PeekLast] PeekLast called on Deque that does not contain any elements.");
-            }
-
-            T element = m_collection[m_tailIndex];
-            m_tailIndex = WrapClamp(m_tailIndex + 1, 0, m_collection.Count - 1);
-            return element;
-        }
-        /// <summary>
-        /// Reverses this double-ended queue.
-        /// </summary>
-        public void Reverse()
-        {
-            m_collection.Reverse();
-            (m_tailIndex, m_headIndex) = (m_headIndex, m_tailIndex);
-        }
-
-        /// <summary>
-        /// Tries peeking the first element to be <see cref="Queue{T}.Dequeue"/>'d.
-        /// </summary>
-        /// <param name="value">Value to peek.</param>
-        /// <returns>Whether if peeking was successful and value is non-<see langword="null"/>.</returns>
-        public bool TryPeekFirst(out T value)
-        {
-            value = default;
-
-            if (Count <= 0)
-            {
-                return false;
-            }
-
-            // Now, this is bad coding B) 
-            // Use a potentially exception throwing thing? YEES.
-            value = PeekFirst();
-            return true;
-        }
-        /// <summary>
-        /// Tries peeking the last element, that would have been traditionally added last on a normal <see cref="Queue{T}"/> setup.
-        /// </summary>
-        /// <param name="value">Value to peek.</param>
-        /// <returns>Whether if peeking was successful and value is non-<see langword="null"/>.</returns>
-        public bool TryPeekLast(out T value)
-        {
-            value = default;
-
-            if (Count <= 0)
-            {
-                return false;
-            }
-
-            value = PeekLast();
-            return true;
-        }
-
-        /// <summary>
-        /// Tries popping the first element (basically <see cref="Queue{T}.TryDequeue(out T)"/>)'d.
-        /// </summary>
-        /// <param name="value">Value to pop.</param>
-        /// <returns>Whether if popping was successful and value is non-<see langword="null"/>.</returns>
-        public bool TryPopFirst(out T value)
-        {
-            value = default;
-
-            if (Count <= 0)
-            {
-                return false;
-            }
-
-            // Now, this is bad coding B) 
-            // Use a potentially exception throwing thing? YEES.
-            value = PopFirst();
-            return true;
-        }
-        /// <summary>
-        /// Tries popping the last element, that would have been traditionally added last on a normal <see cref="Queue{T}"/> setup.
-        /// </summary>
-        /// <param name="value">Value to pop.</param>
-        /// <returns>Whether if popping was successful and value is non-<see langword="null"/>.</returns>
-        public bool TryPopLast(out T value)
-        {
-            value = default;
-
-            if (Count <= 0)
-            {
-                return false;
-            }
-
-            value = PopLast();
-            return true;
-        }
-
-        /// <summary>
-        /// Clears the collection.
-        /// </summary>
-        public void Clear()
-        {
-            m_tailIndex = 0;
-            m_headIndex = 0;
-            m_collection.Clear();
-        }
-        /// <summary>
-        /// Returns whether if the deque contains <paramref name="item"/>.
-        /// </summary>
-        /// <param name="item">Item to check whether if it's contained.</param>
-        public bool Contains(T item)
-        {
-            return Contains(item, EqualityComparer<T>.Default);
-        }
-        /// <inheritdoc cref="Contains(T)"/>
-        /// <exception cref="ArgumentNullException"/>
-        public bool Contains(T item, IEqualityComparer<T> comparer)
-        {
-            if (comparer == null)
-            {
-                throw new ArgumentNullException(nameof(comparer), "[Deque::Contains] Given 'comparer' is null.");
-            }
-
-            for (int i = m_tailIndex; i <= m_headIndex; i++)
-            {
-                if (comparer.Equals(m_collection[i], item))
+                if (comparer.Equals(item, entry))
                 {
                     return true;
                 }
             }
-
             return false;
         }
-        /// <summary>
-        /// Copies collection to <paramref name="array"/>.
-        /// </summary>
-        /// <param name="array">Array to copy into. This cannot be null.</param>
-        /// <param name="arrayIndex">Index of array to start copying from.</param>
-        /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
-        public void CopyTo(T[] array, int arrayIndex)
+
+        /// <inheritdoc/>
+        void ICollection<T>.CopyTo(T[] array, int arrayIndex)
         {
             if (array == null)
             {
-                throw new ArgumentNullException(nameof(array), "[Deque::CopyTo] Argument was null.");
+                throw new ArgumentNullException(nameof(array));
             }
-
-            if (array.Length < arrayIndex + Count)
-            {
-                throw new ArgumentException("[Deque::CopyTo] Failed to copy into given array. Array length is smaller than dictionary or index is out of bounds", nameof(array));
-            }
-
-            // do the copy slow way because proper iteration is not very fun.
-            int i = arrayIndex;
-            foreach (T element in this)
-            {
-                array[i] = element;
-                i++;
-            }
+            int count = Count;
+            CheckRangeArguments(array.Length, arrayIndex, count);
+            CopyToArray(array, arrayIndex);
         }
 
         /// <summary>
-        /// Trims the excess memory allocated.
+        /// Copies the deque elements into an array. The resulting array always has all the deque elements contiguously.
         /// </summary>
-        public void TrimExcess()
+        /// <param name="array">The destination array.</param>
+        /// <param name="arrayIndex">The optional index in the destination array at which to begin writing.</param>
+        private void CopyToArray(Array array, int arrayIndex = 0)
         {
-            // TODO : A proper impl for this?
-            // For now this just doesn't remove elements from the collections
-            m_collection.TrimExcess();
-
-            // --
-            // Get values with actual size
-            // T[] values = new T[Count];
-            // Copy into values
-            // Array.Copy(m_tailCollection, m_tailIndex, values, 0, values.Length);
-            // Set (and let 'm_collection' be GC collected) m_collection
-            // m_tailCollection = values;
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            for (int i = m_tailIndex; i < m_headIndex; i++)
+            if (array == null)
             {
-                yield return m_collection[i];
+                throw new ArgumentNullException(nameof(array));
+            }
+
+            if (IsSplit)
+            {
+                // The existing buffer is split, so we have to copy it in parts
+                int length = Capacity - _offset;
+                Array.Copy(_buffer, _offset, array, arrayIndex, length);
+                Array.Copy(_buffer, 0, array, arrayIndex + length, Count - length);
+            }
+            else
+            {
+                // The existing buffer is whole
+                Array.Copy(_buffer, _offset, array, arrayIndex, Count);
             }
         }
 
+        /// <inheritdoc/>
+        public bool Remove(T item)
+        {
+            int index = IndexOf(item);
+            if (index == -1)
+            {
+                return false;
+            }
+
+            DoRemoveAt(index);
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public IEnumerator<T> GetEnumerator()
+        {
+            int count = Count;
+            for (int i = 0; i != count; ++i)
+            {
+                yield return DoGetItem(i);
+            }
+        }
+
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
 
-        /// <summary>
-        /// Creates an empty Deque.
-        /// </summary>
-        public Deque()
-        { }
-        /// <summary>
-        /// Creates a Deque with capacity reserved.
-        /// </summary>
-        public Deque(int capacity)
+        #endregion
+        #region ObjectListImplementations
+
+        private static bool IsT(object value)
         {
-            Capacity = capacity;
-        }
-        /// <summary>
-        /// Creates a Deque from a collection.
-        /// </summary>
-        public Deque(IEnumerable<T> collection)
-        {
-            if (collection == null)
+            if (value is T)
             {
-                throw new ArgumentNullException(nameof(collection), "[Deque::ctor] Given argument was null.");
+                return true;
             }
 
-            // Copy values to the pairs
-            int collectionSize = collection.Count();
-            Capacity = collectionSize;
-
-            // Split the tail and values evenly.
-            // TODO : Add range until index (IEnumerable iterate until index? (it's just called Take))
-            foreach (T value in collection)
+            if (value != null)
             {
-                AddLast(value);
+                return false;
+            }
+
+            return default(T) == null;
+        }
+
+        int IList.Add(object value)
+        {
+            if (value == null && default(T) != null)
+            {
+                throw new ArgumentNullException(nameof(value), "Value cannot be null.");
+            }
+
+            if (!IsT(value))
+            {
+                throw new ArgumentException("Value is of incorrect type.", nameof(value));
+            }
+
+            AddToBack((T)value!);
+            return Count - 1;
+        }
+
+        bool IList.Contains(object value)
+        {
+            return IsT(value) ? ((ICollection<T>)this).Contains((T)value!) : false;
+        }
+
+        int IList.IndexOf(object value)
+        {
+            return IsT(value) ? IndexOf((T)value!) : -1;
+        }
+
+        void IList.Insert(int index, object value)
+        {
+            if (value == null && default(T) != null)
+            {
+                throw new ArgumentNullException(nameof(value), "Value cannot be null.");
+            }
+
+            if (!IsT(value))
+            {
+                throw new ArgumentException("Value is of incorrect type.", nameof(value));
+            }
+
+            Insert(index, (T)value!);
+        }
+
+        bool IList.IsFixedSize
+        {
+            get { return false; }
+        }
+
+        bool IList.IsReadOnly
+        {
+            get { return false; }
+        }
+
+        void IList.Remove(object value)
+        {
+            if (IsT(value))
+            {
+                Remove((T)value!);
             }
         }
-    }
+
+        object IList.this[int index]
+        {
+            get
+            {
+                return this[index];
+            }
+
+            set
+            {
+                if (value == null && default(T) != null)
+                {
+                    throw new ArgumentNullException(nameof(value), "Value cannot be null.");
+                }
+
+                if (!IsT(value))
+                {
+                    throw new ArgumentException("Value is of incorrect type.", nameof(value));
+                }
+
+                this[index] = (T)value!;
+            }
+        }
+
+        void ICollection.CopyTo(Array array, int index)
+        {
+            if (array == null)
+            {
+                throw new ArgumentNullException(nameof(array), "Destination array cannot be null.");
+            }
+
+            CheckRangeArguments(array.Length, index, Count);
+
+            try
+            {
+                CopyToArray(array, index);
+            }
+            catch (ArrayTypeMismatchException ex)
+            {
+                throw new ArgumentException("Destination array is of incorrect type.", nameof(array), ex);
+            }
+            catch (RankException ex)
+            {
+                throw new ArgumentException("Destination array must be single dimensional.", nameof(array), ex);
+            }
+        }
+
+        bool ICollection.IsSynchronized
+        {
+            get { return false; }
+        }
+
+        object ICollection.SyncRoot
+        {
+            get { return this; }
+        }
+
+        #endregion
+        #region GenericListHelpers
+
+        /// <summary>
+        /// Checks the <paramref name="index"/> argument to see if it refers to a valid insertion point in a source of a given length.
+        /// </summary>
+        /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
+        /// <param name="index">The index into the source.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an insertion point for the source.</exception>
+        private static void CheckNewIndexArgument(int sourceLength, int index)
+        {
+            if (index < 0 || index > sourceLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Invalid new index " + index + " for source length " + sourceLength);
+            }
+        }
+
+        /// <summary>
+        /// Checks the <paramref name="index"/> argument to see if it refers to an existing element in a source of a given length.
+        /// </summary>
+        /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
+        /// <param name="index">The index into the source.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an existing element for the source.</exception>
+        private static void CheckExistingIndexArgument(int sourceLength, int index)
+        {
+            if (index < 0 || index >= sourceLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Invalid existing index " + index + " for source length " + sourceLength);
+            }
+        }
+
+        /// <summary>
+        /// Checks the <paramref name="offset"/> and <paramref name="count"/> arguments for validity when applied to a source of a given length. Allows 0-element ranges, including a 0-element range at the end of the source.
+        /// </summary>
+        /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
+        /// <param name="offset">The index into source at which the range begins.</param>
+        /// <param name="count">The number of elements in the range.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Either <paramref name="offset"/> or <paramref name="count"/> is less than 0.</exception>
+        /// <exception cref="ArgumentException">The range [offset, offset + count) is not within the range [0, sourceLength).</exception>
+        private static void CheckRangeArguments(int sourceLength, int offset, int count)
+        {
+            if (offset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid offset " + offset);
+            }
+
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Invalid count " + count);
+            }
+
+            if (sourceLength - offset < count)
+            {
+                throw new ArgumentException("Invalid offset (" + offset + ") or count + (" + count + ") for source length " + sourceLength);
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Gets a value indicating whether this instance is empty.
+        /// </summary>
+        private bool IsEmpty
+        {
+            get { return Count == 0; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this instance is at full capacity.
+        /// </summary>
+        private bool IsFull
+        {
+            get { return Count == Capacity; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the buffer is "split" (meaning the beginning of the view is at a later index in <see cref="_buffer"/> than the end).
+        /// </summary>
+        private bool IsSplit
+        {
+            get
+            {
+                // Overflow-safe version of "(offset + Count) > Capacity"
+                return _offset > (Capacity - Count);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the capacity for this deque. This value must always be greater than zero, and this property cannot be set to a value less than <see cref="Count"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"><c>Capacity</c> cannot be set to a value less than <see cref="Count"/>.</exception>
+        public int Capacity
+        {
+            get
+            {
+                return _buffer.Length;
+            }
+
+            set
+            {
+                if (value < Count)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Capacity cannot be set to a value less than Count");
+                }
+
+                if (value == _buffer.Length)
+                {
+                    return;
+                }
+
+                // Create the new _buffer and copy our existing range.
+                T[] newBuffer = new T[value];
+                CopyToArray(newBuffer);
+
+                // Set up to use the new _buffer.
+                _buffer = newBuffer;
+                _offset = 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of elements contained in this deque.
+        /// </summary>
+        /// <returns>The number of elements contained in this deque.</returns>
+        public int Count { get; private set; }
+
+        /// <summary>
+        /// Applies the offset to <paramref name="index"/>, resulting in a buffer index.
+        /// </summary>
+        /// <param name="index">The deque index.</param>
+        /// <returns>The buffer index.</returns>
+        private int DequeIndexToBufferIndex(int index)
+        {
+            return (index + _offset) % Capacity;
+        }
+
+        /// <summary>
+        /// Gets an element at the specified view index.
+        /// </summary>
+        /// <param name="index">The zero-based view index of the element to get. This index is guaranteed to be valid.</param>
+        /// <returns>The element at the specified index.</returns>
+        private T DoGetItem(int index)
+        {
+            return _buffer[DequeIndexToBufferIndex(index)];
+        }
+
+        /// <summary>
+        /// Sets an element at the specified view index.
+        /// </summary>
+        /// <param name="index">The zero-based view index of the element to get. This index is guaranteed to be valid.</param>
+        /// <param name="item">The element to store in the list.</param>
+        private void DoSetItem(int index, T item)
+        {
+            _buffer[DequeIndexToBufferIndex(index)] = item;
+        }
+
+        /// <summary>
+        /// Inserts an element at the specified view index.
+        /// </summary>
+        /// <param name="index">The zero-based view index at which the element should be inserted. This index is guaranteed to be valid.</param>
+        /// <param name="item">The element to store in the list.</param>
+        private void DoInsert(int index, T item)
+        {
+            EnsureCapacityForOneElement();
+
+            if (index == 0)
+            {
+                DoAddToFront(item);
+                return;
+            }
+            else if (index == Count)
+            {
+                DoAddToBack(item);
+                return;
+            }
+
+            DoInsertRange(index, new[] { item });
+        }
+
+        /// <summary>
+        /// Removes an element at the specified view index.
+        /// </summary>
+        /// <param name="index">The zero-based view index of the element to remove. This index is guaranteed to be valid.</param>
+        private void DoRemoveAt(int index)
+        {
+            if (index == 0)
+            {
+                DoRemoveFromFront();
+                return;
+            }
+            else if (index == Count - 1)
+            {
+                DoRemoveFromBack();
+                return;
+            }
+
+            DoRemoveRange(index, 1);
+        }
+
+        /// <summary>
+        /// Increments <see cref="_offset"/> by <paramref name="value"/> using modulo-<see cref="Capacity"/> arithmetic.
+        /// </summary>
+        /// <param name="value">The value by which to increase <see cref="_offset"/>. May not be negative.</param>
+        /// <returns>The value of <see cref="_offset"/> after it was incremented.</returns>
+        private int PostIncrement(int value)
+        {
+            int ret = _offset;
+            _offset += value;
+            _offset %= Capacity;
+
+            return ret;
+        }
+
+        /// <summary>
+        /// Decrements <see cref="_offset"/> by <paramref name="value"/> using modulo-<see cref="Capacity"/> arithmetic.
+        /// </summary>
+        /// <param name="value">The value by which to reduce <see cref="_offset"/>. May not be negative or greater than <see cref="Capacity"/>.</param>
+        /// <returns>The value of <see cref="_offset"/> before it was decremented.</returns>
+        private int PreDecrement(int value)
+        {
+            _offset -= value;
+            if (_offset < 0)
+            {
+                _offset += Capacity;
+            }
+
+            return _offset;
+        }
+
+        /// <summary>
+        /// Inserts a single element to the back of the view. <see cref="IsFull"/> must be false when this method is called.
+        /// </summary>
+        /// <param name="value">The element to insert.</param>
+        private void DoAddToBack(T value)
+        {
+            _buffer[DequeIndexToBufferIndex(Count)] = value;
+            ++Count;
+        }
+
+        /// <summary>
+        /// Inserts a single element to the front of the view. <see cref="IsFull"/> must be false when this method is called.
+        /// </summary>
+        /// <param name="value">The element to insert.</param>
+        private void DoAddToFront(T value)
+        {
+            _buffer[PreDecrement(1)] = value;
+            ++Count;
+        }
+
+        /// <summary>
+        /// Removes and returns the last element in the view. <see cref="IsEmpty"/> must be false when this method is called.
+        /// </summary>
+        /// <returns>The former last element.</returns>
+        private T DoRemoveFromBack()
+        {
+            T ret = _buffer[DequeIndexToBufferIndex(Count - 1)];
+            --Count;
+            return ret;
+        }
+
+        /// <summary>
+        /// Removes and returns the first element in the view. <see cref="IsEmpty"/> must be false when this method is called.
+        /// </summary>
+        /// <returns>The former first element.</returns>
+        private T DoRemoveFromFront()
+        {
+            --Count;
+            return _buffer[PostIncrement(1)];
+        }
+
+        /// <summary>
+        /// Inserts a range of elements into the view.
+        /// </summary>
+        /// <param name="index">The index into the view at which the elements are to be inserted.</param>
+        /// <param name="collection">The elements to insert. The sum of <c>collection.Count</c> and <see cref="Count"/> must be less than or equal to <see cref="Capacity"/>.</param>
+        private void DoInsertRange(int index, IReadOnlyCollection<T> collection)
+        {
+            int collectionCount = collection.Count;
+            
+            // Make room in the existing list
+            if (index < (Count / 2))
+            {
+                // Inserting into the first half of the list
+
+                // Move lower items down: [0, index) -> [Capacity - collectionCount, Capacity - collectionCount + index)
+                // This clears out the low "index" number of items, moving them "collectionCount" places down;
+                //   after rotation, there will be a "collectionCount"-sized hole at "index".
+                int copyCount = index;
+                int writeIndex = Capacity - collectionCount;
+                for (int j = 0; j != copyCount; ++j)
+                {
+                    _buffer[DequeIndexToBufferIndex(writeIndex + j)] = _buffer[DequeIndexToBufferIndex(j)];
+                }
+
+                // Rotate to the new view
+                PreDecrement(collectionCount);
+            }
+            else
+            {
+                // Inserting into the second half of the list
+
+                // Move higher items up: [index, count) -> [index + collectionCount, collectionCount + count)
+                int copyCount = Count - index;
+                int writeIndex = index + collectionCount;
+                for (int j = copyCount - 1; j != -1; --j)
+                {
+                    _buffer[DequeIndexToBufferIndex(writeIndex + j)] = _buffer[DequeIndexToBufferIndex(index + j)];
+                }
+            }
+
+            // Copy new items into place
+            int i = index;
+            foreach (T item in collection)
+            {
+                _buffer[DequeIndexToBufferIndex(i)] = item;
+                ++i;
+            }
+
+            // Adjust valid count
+            Count += collectionCount;
+        }
+
+        /// <summary>
+        /// Removes a range of elements from the view.
+        /// </summary>
+        /// <param name="index">The index into the view at which the range begins.</param>
+        /// <param name="collectionCount">The number of elements in the range. This must be greater than 0 and less than or equal to <see cref="Count"/>.</param>
+        private void DoRemoveRange(int index, int collectionCount)
+        {
+            if (index == 0)
+            {
+                // Removing from the beginning: rotate to the new view
+                PostIncrement(collectionCount);
+                Count -= collectionCount;
+                return;
+            }
+            else if (index == Count - collectionCount)
+            {
+                // Removing from the ending: trim the existing view
+                Count -= collectionCount;
+                return;
+            }
+
+            if ((index + (collectionCount / 2)) < Count / 2)
+            {
+                // Removing from first half of list
+
+                // Move lower items up: [0, index) -> [collectionCount, collectionCount + index)
+                int copyCount = index;
+                int writeIndex = collectionCount;
+                for (int j = copyCount - 1; j != -1; --j)
+                {
+                    _buffer[DequeIndexToBufferIndex(writeIndex + j)] = _buffer[DequeIndexToBufferIndex(j)];
+                }
+
+                // Rotate to new view
+                PostIncrement(collectionCount);
+            }
+            else
+            {
+                // Removing from second half of list
+
+                // Move higher items down: [index + collectionCount, count) -> [index, count - collectionCount)
+                int copyCount = Count - collectionCount - index;
+                int readIndex = index + collectionCount;
+                for (int j = 0; j != copyCount; ++j)
+                {
+                    _buffer[DequeIndexToBufferIndex(index + j)] = _buffer[DequeIndexToBufferIndex(readIndex + j)];
+                }
+            }
+
+            // Adjust valid count
+            Count -= collectionCount;
+        }
+
+        /// <summary>
+        /// Doubles the capacity if necessary to make room for one more element. When this method returns, <see cref="IsFull"/> is false.
+        /// </summary>
+        private void EnsureCapacityForOneElement()
+        {
+            if (IsFull)
+            {
+                Capacity = (Capacity == 0) ? 1 : Capacity * 2;
+            }
+        }
+
+        /// <summary>
+        /// Inserts a single element at the back of this deque.
+        /// </summary>
+        /// <param name="value">The element to insert.</param>
+        public void AddToBack(T value)
+        {
+            EnsureCapacityForOneElement();
+            DoAddToBack(value);
+        }
+
+        /// <summary>
+        /// Inserts a single element at the front of this deque.
+        /// </summary>
+        /// <param name="value">The element to insert.</param>
+        public void AddToFront(T value)
+        {
+            EnsureCapacityForOneElement();
+            DoAddToFront(value);
+        }
+
+        /// <summary>
+        /// Inserts a collection of elements into this deque.
+        /// </summary>
+        /// <param name="index">The index at which the collection is inserted.</param>
+        /// <param name="collection">The collection of elements to insert.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an insertion point for the source.</exception>
+        public void InsertRange(int index, IEnumerable<T> collection)
+        {
+            CheckNewIndexArgument(Count, index);
+            IReadOnlyCollection<T> source = collection.ToReadOnlyCollection();
+            int collectionCount = source.Count;
+
+            // Overflow-safe check for "Count + collectionCount > Capacity"
+            if (collectionCount > Capacity - Count)
+            {
+                Capacity = checked(Count + collectionCount);
+            }
+
+            if (collectionCount == 0)
+            {
+                return;
+            }
+
+            DoInsertRange(index, source);
+        }
+
+        /// <summary>
+        /// Removes a range of elements from this deque.
+        /// </summary>
+        /// <param name="offset">The index into the deque at which the range begins.</param>
+        /// <param name="count">The number of elements to remove.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Either <paramref name="offset"/> or <paramref name="count"/> is less than 0.</exception>
+        /// <exception cref="ArgumentException">The range [<paramref name="offset"/>, <paramref name="offset"/> + <paramref name="count"/>) is not within the range [0, <see cref="Count"/>).</exception>
+        public void RemoveRange(int offset, int count)
+        {
+            CheckRangeArguments(Count, offset, count);
+
+            if (count == 0)
+            {
+                return;
+            }
+
+            DoRemoveRange(offset, count);
+        }
+
+        /// <summary>
+        /// Removes and returns the last element of this deque.
+        /// </summary>
+        /// <returns>The former last element.</returns>
+        /// <exception cref="InvalidOperationException">The deque is empty.</exception>
+        public T RemoveFromBack()
+        {
+            if (IsEmpty)
+            {
+                throw new InvalidOperationException("The deque is empty.");
+            }
+
+            return DoRemoveFromBack();
+        }
+
+        /// <summary>
+        /// Removes and returns the first element of this deque.
+        /// </summary>
+        /// <returns>The former first element.</returns>
+        /// <exception cref="InvalidOperationException">The deque is empty.</exception>
+        public T RemoveFromFront()
+        {
+            if (IsEmpty)
+            {
+                throw new InvalidOperationException("The deque is empty.");
+            }
+
+            return DoRemoveFromFront();
+        }
+
+        /// <summary>
+        /// Removes all items from this deque.
+        /// </summary>
+        public void Clear()
+        {
+            _offset = 0;
+            Count = 0;
+        }
+
+        /// <summary>
+        /// Creates and returns a new array containing the elements in this deque.
+        /// </summary>
+        public T[] ToArray()
+        {
+            T[] result = new T[Count];
+            ((ICollection<T>)this).CopyTo(result, 0);
+
+            return result;
+        }
+    } 
 }

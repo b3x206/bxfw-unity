@@ -69,13 +69,13 @@ namespace BXFW
             /// <summary>
             /// Returns whether if the caller actually exists and is alive.
             /// </summary>
-            public bool CallerExists => (caller?.IsAlive ?? false) && !UnitySafeEqualityComparer.Default.Equals(caller.Target, null);
+            public bool CallerExists => (caller?.IsAlive ?? false) && !UnitySafeObjectComparer.Default.Equals(caller.Target, null);
 
             public ScheduledAction(Action target, float timer, object caller, TickType tickType, bool ignoreTimeScale)
             {
                 targetAction = target;
                 this.timer = timer;
-                if (!UnitySafeEqualityComparer.Default.Equals(caller, null))
+                if (!UnitySafeObjectComparer.Default.Equals(caller, null))
                 {
                     this.caller = new WeakReference(caller);
                 }
@@ -88,7 +88,7 @@ namespace BXFW
             {
                 targetAction = target;
                 this.waitFrames = waitFrames;
-                if (!UnitySafeEqualityComparer.Default.Equals(caller, null))
+                if (!UnitySafeObjectComparer.Default.Equals(caller, null))
                 {
                     this.caller = new WeakReference(caller);
                 }
@@ -109,7 +109,7 @@ namespace BXFW
             }
             public bool Equals(Action action, object caller)
             {
-                return GetHashCode() == HashCode.Combine(action, !UnitySafeEqualityComparer.Default.Equals(caller, null) ? caller.GetHashCode() : 0);
+                return GetHashCode() == HashCode.Combine(action, !UnitySafeObjectComparer.Default.Equals(caller, null) ? caller.GetHashCode() : 0);
             }
 
             public override int GetHashCode()
