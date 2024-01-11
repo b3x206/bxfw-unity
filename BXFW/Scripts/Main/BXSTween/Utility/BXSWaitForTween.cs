@@ -23,8 +23,7 @@ namespace BXFW.Tweening
 
             tweenable = target;
         }
-        public BXSWaitForTween(BXSTweenable target, bool waitWhilePausing)
-            : this(target)
+        public BXSWaitForTween(BXSTweenable target, bool waitWhilePausing) : this(target)
         {
             this.waitWhilePausing = waitWhilePausing;
         }

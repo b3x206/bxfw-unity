@@ -11,7 +11,7 @@ namespace BXFW.Collections
     /// </summary>
     /// <typeparam name="T">The type of elements contained in the deque.</typeparam>
     /// * Stolen from : https://github.com/StephenCleary/Deque/blob/main/src/Nito.Collections.Deque/Deque.cs
-    /// * Slightly modified to work on unity 2021 or greater
+    /// * Slightly modified to work on unity
     [DebuggerDisplay("Count = {Count}, Capacity = {Capacity}")]
     public sealed class Deque<T> : IList<T>, IReadOnlyList<T>, IList
     {

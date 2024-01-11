@@ -774,10 +774,6 @@ namespace BXFW.Tweening
         /// <param name="propertySep">The property seperator character for values.</param>
         public virtual string ToString(bool simpleString, char propertySep = ',')
         {
-            // To make this method noexcept, get m_IDObject string reprensation as this
-            // This is the best way i could think of, because the stupid unity objects are fake null
-            // (but other c# objects are fine, so can use null coalesence for this)
-            // Maybe add a IBXSTweenRunner.IsNullObject method instead of this
             string idObjToString = UnitySafeObjectComparer.Default.Equals(m_IDObject, null) ? "<null>" : m_IDObject.ToString();
 
             if (simpleString)

@@ -651,7 +651,7 @@ namespace BXFW
         /// </summary>
         /// <typeparam name="T">Type of the elements.</typeparam>
         /// <param name="enumerable">Collection value. This can't be <see langword="null"/>.</param>
-        /// <returns>The created collection.</returns>
+        /// <returns>The created collection. Note that this collection may be just a wrapper class of the <paramref name="enumerable"/> (like <see cref="List{T}"/>).</returns>
         public static ICollection<T> ToCollection<T>(this IEnumerable<T> enumerable)
         {
             if (UnitySafeObjectComparer.Default.Equals(enumerable, null))

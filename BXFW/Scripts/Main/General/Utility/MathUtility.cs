@@ -72,18 +72,6 @@ namespace BXFW
         /// </summary>
         public static int Wrap(int value, int min, int max)
         {
-            // People before math existed : 
-            //if (value < min)
-            //{
-            //    int valueDelta = Math.Abs(min) - Math.Abs(value);
-            //    return max - valueDelta;
-            //}
-            //if (value > max)
-            //{
-            //    int valueDelta = Math.Abs(max) - Math.Abs(value);
-            //    return min + valueDelta;
-            //}
-
             int maxMinDelta = max - min;
             value = maxMinDelta * (int)Math.Floor((double)(value / maxMinDelta));
             return value;

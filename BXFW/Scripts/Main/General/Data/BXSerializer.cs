@@ -172,7 +172,7 @@ namespace BXFW.Data
 
             if (m_readBytes.Length < m_primaryFileStream.Length)
             {
-                m_readBytes = new byte[m_primaryFileStream.Length];
+                m_readBytes = new byte[m_primaryFileStream.Length + 1];
             }
 
             m_primaryFileStream.Read(m_readBytes, 0, (int)m_primaryFileStream.Length);
