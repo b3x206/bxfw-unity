@@ -30,6 +30,13 @@ namespace BXFW
         {
             get
             {
+#if UNITY_EDITOR
+                // Don't create an object if we aren't playing.
+                if (!Application.isPlaying)
+                {
+                    return m_Instance;
+                }
+#endif
                 // Create object if the reference is null.
                 if (m_Instance == null)
                 {

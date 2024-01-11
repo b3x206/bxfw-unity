@@ -6,10 +6,12 @@ using System.Diagnostics;
 namespace BXFW.Collections
 {
     /// <summary>
-    /// A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized O(1) insertions to the front and back, and O(N) insertions and removals anywhere else (with the operations getting slower as the index approaches the middle).
+    /// A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized O(1) insertions to the front and back, 
+    /// and O(N) insertions and removals anywhere else (with the operations getting slower as the index approaches the middle).
     /// </summary>
     /// <typeparam name="T">The type of elements contained in the deque.</typeparam>
     /// * Stolen from : https://github.com/StephenCleary/Deque/blob/main/src/Nito.Collections.Deque/Deque.cs
+    /// * Slightly modified to work on unity 2021 or greater
     [DebuggerDisplay("Count = {Count}, Capacity = {Capacity}")]
     public sealed class Deque<T> : IList<T>, IReadOnlyList<T>, IList
     {
@@ -53,7 +55,7 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(collection));
             }
 
-            // Linq.Count already does something similar, but 'DoInsertRange' requires a IReadOnlyCollection
+            // 'DoInsertRange' requires a IReadOnlyCollection
             IReadOnlyCollection<T> source = collection.ToReadOnlyCollection();
             int count = source.Count;
             if (count > 0)
@@ -71,8 +73,7 @@ namespace BXFW.Collections
         /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class.
         /// </summary>
         public Deque() : this(DefaultCapacity)
-        {
-        }
+        { }
 
         #region GenericListImplementations
         /// <summary>
@@ -138,14 +139,15 @@ namespace BXFW.Collections
         /// <inheritdoc/>
         bool ICollection<T>.Contains(T item)
         {
-            var comparer = EqualityComparer<T>.Default;
-            foreach (var entry in this)
+            IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
+            foreach (T entry in this)
             {
                 if (comparer.Equals(item, entry))
                 {
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -156,6 +158,7 @@ namespace BXFW.Collections
             {
                 throw new ArgumentNullException(nameof(array));
             }
+
             int count = Count;
             CheckRangeArguments(array.Length, arrayIndex, count);
             CopyToArray(array, arrayIndex);
@@ -219,7 +222,7 @@ namespace BXFW.Collections
         #endregion
         #region ObjectListImplementations
 
-        private static bool IsT(object value)
+        private static bool IsTObject(object value)
         {
             if (value is T)
             {
@@ -241,7 +244,7 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(value), "Value cannot be null.");
             }
 
-            if (!IsT(value))
+            if (!IsTObject(value))
             {
                 throw new ArgumentException("Value is of incorrect type.", nameof(value));
             }
@@ -252,12 +255,12 @@ namespace BXFW.Collections
 
         bool IList.Contains(object value)
         {
-            return IsT(value) ? ((ICollection<T>)this).Contains((T)value!) : false;
+            return IsTObject(value) && ((ICollection<T>)this).Contains((T)value!);
         }
 
         int IList.IndexOf(object value)
         {
-            return IsT(value) ? IndexOf((T)value!) : -1;
+            return IsTObject(value) ? IndexOf((T)value!) : -1;
         }
 
         void IList.Insert(int index, object value)
@@ -267,7 +270,7 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(value), "Value cannot be null.");
             }
 
-            if (!IsT(value))
+            if (!IsTObject(value))
             {
                 throw new ArgumentException("Value is of incorrect type.", nameof(value));
             }
@@ -287,7 +290,7 @@ namespace BXFW.Collections
 
         void IList.Remove(object value)
         {
-            if (IsT(value))
+            if (IsTObject(value))
             {
                 Remove((T)value!);
             }
@@ -307,7 +310,7 @@ namespace BXFW.Collections
                     throw new ArgumentNullException(nameof(value), "Value cannot be null.");
                 }
 
-                if (!IsT(value))
+                if (!IsTObject(value))
                 {
                     throw new ArgumentException("Value is of incorrect type.", nameof(value));
                 }
