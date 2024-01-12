@@ -132,6 +132,20 @@ namespace BXFW.UI
                 m_CurrentUISubMenus.RemoveAt(i);
             }
         }
+        /// <summary>
+        /// Returns whether if the given <see cref="UISubMenu"/> <paramref name="menu"/> is open.
+        /// </summary>
+        /// <param name="menu">Menu to check it's openness state. This cannot be null.</param>
+        /// <exception cref="System.ArgumentNullException"/>
+        public bool IsOpenSubMenu(UISubMenu menu)
+        {
+            if (menu == null)
+            {
+                throw new System.ArgumentNullException(nameof(menu), "[UIMenuManager::IsOpenSubMenu] Given menu was null. Cannot check null's state.");
+            }
+
+            return m_CurrentUISubMenus.Contains(menu);
+        }
         #endregion
     }
 }

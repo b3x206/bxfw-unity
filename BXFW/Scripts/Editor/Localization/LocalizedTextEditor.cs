@@ -192,10 +192,18 @@ namespace BXFW.ScriptEditor
                 { nameof(LocalizedText.spoofLocale), new KeyValuePair<MatchGUIActionOrder, Action>(
                     MatchGUIActionOrder.OmitAndInvoke, () =>
                     {
+                        // Checks etc.
+                        string spoofLocale = string.IsNullOrWhiteSpace(firstTarget.spoofLocale) ? string.Format("None ({0})", LocalizedTextData.CurrentISOLocaleName) : firstTarget.spoofLocale;
+                        bool localeDataIsNull = targets.Any(t => t.LocaleData == null);
+                        using EditorGUI.DisabledScope scope = new EditorGUI.DisabledScope(localeDataIsNull);
+
+                        if (localeDataIsNull)
+                        {
+                            GUILayout.Space(EditorGUIUtility.singleLineHeight);
+                        }
+
                         // Create a dropdowned spoof locale button
                         GUILayout.BeginHorizontal();
-
-                        string spoofLocale = string.IsNullOrWhiteSpace(firstTarget.spoofLocale) ? string.Format("None ({0})", LocalizedTextData.CurrentISOLocaleName) : firstTarget.spoofLocale;
 
                         bool valuesAreMixed = targets.Any(t => t.spoofLocale != firstTarget.spoofLocale);
                         GUILayout.Label("Spoof Locale", GUILayout.Width(150));

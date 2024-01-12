@@ -64,7 +64,7 @@ namespace BXFW
         /// The currently selected data.
         /// <br>Depending on the <see cref="textID"/>, this selects something.</br>
         /// </summary>
-        public LocalizedTextData CurrentSelectedData => LocaleData.FirstOrDefault(data => data.TextID == textID);
+        public LocalizedTextData CurrentSelectedData => LocaleData != null ? LocaleData.FirstOrDefault(data => data.TextID == textID) : null;
 
         /// <summary>
         /// Locale file pragma definition to replace tmp chars that doesn't exist.
