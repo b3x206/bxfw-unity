@@ -30,4 +30,4 @@ The code is &lt;summary/&gt; ified, basically what the code does is in the code 
 * These need to be attributed inside some portion of your game, whether if it be credits or not. If these files are completely removed or not included with compiled builds of your game it may not be needed, but i am not a lawyer.
 
 ## Warning :
-* `bxfw-legacy` branch will remove some shaders/scripts that could be problematic to be licensed/or very deprecated stuff that don't work normally in newer versions of unity (like unity 4 old shaders, yeah).
+* `bxfw-legacy` branch will remove some shaders/scripts that could be problematic to be licensed/or very deprecated stuff that don't work normally in newer versions of unity (like unity 4 old shaders, yeah)

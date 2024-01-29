@@ -197,6 +197,10 @@ namespace BXFW.Tweening
         private IEnumerator _CurrentIteratorCoroutine;                         // Current running iterator
 
         #region Variable Setter
+        public void ClearEndingEvents()
+        {
+            OnEndAction = null;
+        }
         /// <summary>
         /// Sets an event to be occured in end.
         /// </summary>
@@ -217,9 +221,9 @@ namespace BXFW.Tweening
 
             return this;
         }
-        public void ClearEndingEvents()
+        public void ClearStartingEvents()
         {
-            OnEndAction = null;
+            OnStartAction = null;
         }
         /// <summary>
         /// Sets an event to be called in start.
@@ -241,10 +245,6 @@ namespace BXFW.Tweening
             }
 
             return this;
-        }
-        public void ClearStartingEvents()
-        {
-            OnEndAction = null;
         }
         public BXTweenCTX<T> SetInvokeEventsOnStop(bool value)
         {
@@ -517,7 +517,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// The main constructor.
         /// </summary>
-        public BXTweenCTX(T startingValue, T endingValue, UnityEngine.Object targetObject, float duration, BXTweenSetMethod<T> setterFunction, Func<BXTweenCTX<T>, IEnumerator> GetTweenIterFn)
+        public BXTweenCTX(T startingValue, T endingValue, UnityEngine.Object targetObject, float duration, BXTweenSetMethod<T> setterFunction, Func<BXTweenCTX<T>, IEnumerator> tweenIterFnGetter)
         {
             try
             {
@@ -531,7 +531,7 @@ namespace BXFW.Tweening
 
                 // Private
                 _TargetObject = targetObject;
-                _GetTweenIteratorFn = GetTweenIterFn;
+                _GetTweenIteratorFn = tweenIterFnGetter;
 
                 // Functions to update (like ease)
                 SetEase(Easing);

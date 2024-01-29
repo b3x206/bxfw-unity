@@ -50,11 +50,10 @@ namespace BXFW
         /// </summary>
         /// <param name="relativeDir">Relative directory to the file. NOTE : Starts from /Resources, no need to pass '/Resources'.</param>
         /// <param name="fileName">Name of the file to create.</param>
-        // we cannot fix the 'Scriptable Object size not same !!!11!'
-        // but the load also works fine, wtf? this seems to be some sort of bug that i can't solve because i don't know what's going on
-        // The built game and it's data structures look completely fine (checked using AssetRipper)
-        // And also throw compiler errors while compiling so that we don't have to rely on runtime exceptions solely
-        [MethodImpl(MethodImplOptions.NoOptimization)]
+        // I can't fix the 'Scriptable Object size not same !!!11!', but i can work around it.
+        // If you have the same issue just stop using 'ScriptableObjectSingleton', but you usually shouldn't have this issue
+        // This is most likely a unity serialization loading issue that i cannot solve realistically.
+        [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.PreserveSig)]
 #if UNITY_EDITOR
         public
 #else
