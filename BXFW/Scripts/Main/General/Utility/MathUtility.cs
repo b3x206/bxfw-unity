@@ -73,7 +73,7 @@ namespace BXFW
         public static int Wrap(int value, int min, int max)
         {
             int maxMinDelta = max - min;
-            value = maxMinDelta * (int)Math.Floor((double)(value / maxMinDelta));
+            value = maxMinDelta * (value % maxMinDelta);
             return value;
         }
         /// <summary>
@@ -82,7 +82,7 @@ namespace BXFW
         public static float Wrap(float value, float min, float max)
         {
             float maxMinDelta = max - min;
-            value = maxMinDelta * (float)Math.Floor(value / maxMinDelta);
+            value = maxMinDelta * (value % maxMinDelta);
             return value;
         }
 

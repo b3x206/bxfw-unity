@@ -11,7 +11,6 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValue))]
     public class MinMaxValueEditor : PropertyDrawer
     {
-        private readonly List<PropertyTargetInfo> targetPropertyFields = new List<PropertyTargetInfo>();
         private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -68,7 +67,6 @@ namespace BXFW.ScriptEditor
     [CustomPropertyDrawer(typeof(MinMaxValueInt))]
     public class MinMaxValueIntEditor : PropertyDrawer
     {
-        private readonly List<PropertyTargetInfo> targetPropertyFields = new List<PropertyTargetInfo>();
         private const float Padding = 2f;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -93,10 +91,11 @@ namespace BXFW.ScriptEditor
 
             if (EditorGUI.EndChangeCheck())
             {
-                property.GetTargetsNoAlloc(targetPropertyFields);
+                // note to self : Multi editing only happens with the same types, which in that case would have the same attribute on the same object.
+                FieldInfo targetPropertyFieldInfo = property.GetTarget().fieldInfo;
 
                 // Check supported attributes (for the first object)
-                ClampAttribute clamp = targetPropertyFields[0].fieldInfo.GetCustomAttribute<ClampAttribute>();
+                ClampAttribute clamp = targetPropertyFieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
                 {
                     setValue = new Vector2Int(
