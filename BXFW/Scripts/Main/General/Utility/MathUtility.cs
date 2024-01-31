@@ -67,23 +67,40 @@ namespace BXFW
             return from + ((to - from) * ((value - valueFrom) / (valueTo - valueFrom)));
         }
 
+        // Well, not blaming myself for being unable to figure out 'wrap' as it is unintuitive.
+        // Or maybe i am just stupid.
         /// <summary>
         /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
         /// </summary>
         public static int Wrap(int value, int min, int max)
         {
-            int maxMinDelta = max - min;
-            value = maxMinDelta * (value % maxMinDelta);
-            return value;
+            int minMaxRange = max - min;
+            if (minMaxRange == 0)
+            {
+                return min;
+            }
+
+            // lisp be like
+            return min + ((((value - min) % minMaxRange) + minMaxRange) % minMaxRange);
         }
         /// <summary>
         /// Clamps with <paramref name="value"/> rollback between <paramref name="min"/> and <paramref name="max"/>.
         /// </summary>
         public static float Wrap(float value, float min, float max)
         {
-            float maxMinDelta = max - min;
-            value = maxMinDelta * (value % maxMinDelta);
-            return value;
+            float minMaxRange = max - min;
+            if (Mathf.Approximately(minMaxRange, 0f))
+            {
+                return min;
+            }
+
+            float result = value - (minMaxRange * (float)Math.Floor((value - min) / minMaxRange));
+            if (Mathf.Approximately(result, max))
+            {
+                return min;
+            }
+
+            return result;
         }
 
         /// <summary>
