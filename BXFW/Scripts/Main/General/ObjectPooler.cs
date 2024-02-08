@@ -12,6 +12,8 @@ namespace BXFW
     {
         /// <summary>
         /// A queue element used to search gameobjects faster on removal, etc.
+        /// <br>This uses the <see cref="UnityEngine.Object.GetInstanceID"/> (which is exactly what the <see cref="UnityEngine.Object.GetHashCode"/> does) to search for objects in queue.</br>
+        /// <br>This works fine because it's way faster to compare 300 ints as compared to 300 <see cref="UnityEngine.Object"/>s.</br>
         /// </summary>
         internal sealed class PoolQueueElement : IEquatable<PoolQueueElement>
         {

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 namespace BXFW.Tools.Editor
 {
@@ -113,12 +114,12 @@ namespace BXFW.Tools.Editor
         {
             if (propertyRootParent == null)
             {
-                throw new ArgumentNullException(nameof(propertyRootParent), "[EditorAdditionals::GetTarget] Given argument was null.");
+                throw new ArgumentNullException(nameof(propertyRootParent), "[SerializedPropertyUtility::GetTarget] Given argument was null.");
             }
 
             if (string.IsNullOrWhiteSpace(propertyPath))
             {
-                throw new ArgumentNullException(nameof(propertyPath), "[EditorAdditionals::GetTarget] Given argument was null.");
+                throw new ArgumentNullException(nameof(propertyPath), "[SerializedPropertyUtility::GetTarget] Given argument was null.");
             }
 
             // State
@@ -203,7 +204,7 @@ namespace BXFW.Tools.Editor
 
                     if (!(target is IEnumerable targetAsArray))
                     {
-                        throw new InvalidCastException(string.Format(@"[EditorAdditionals::GetTarget] Error while casting targetAsArray.
+                        throw new InvalidCastException(string.Format(@"[SerializedPropertyUtility::GetTarget] Error while casting targetAsArray.
 -> Invalid cast : Tried to cast type {0} as IEnumerable. Current property is {1}.", target.GetType().Name, propName));
                     }
 
@@ -242,7 +243,7 @@ namespace BXFW.Tools.Editor
                     // Element doesn't exist in the array
                     if (!isSuccess)
                     {
-                        throw new Exception(string.Format("[EditorAdditionals::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'. This may occur due to out of bounds indexing of the array or just the property path not existing.", propertyPath, targetAsArray));
+                        throw new Exception(string.Format("[SerializedPropertyUtility::GetTarget] Couldn't find SerializedProperty '{0}' in array '{1}'. This may occur due to out of bounds indexing of the array or just the property path not existing.", propertyPath, targetAsArray));
                     }
                 }
                 else
@@ -284,12 +285,12 @@ namespace BXFW.Tools.Editor
         {
             if (prop == null)
             {
-                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTargets] Parameter 'prop' is null.");
+                throw new ArgumentNullException(nameof(prop), "[SerializedPropertyUtility::GetTargets] Parameter 'prop' is null.");
             }
 
             if (targetInfos == null)
             {
-                throw new ArgumentNullException(nameof(targetInfos), "[EditorAdditionals::GetTargets] Array Parameter 'targetPairs' is null.");
+                throw new ArgumentNullException(nameof(targetInfos), "[SerializedPropertyUtility::GetTargets] Array Parameter 'targetPairs' is null.");
             }
 
             targetInfos.Clear();
@@ -335,12 +336,12 @@ namespace BXFW.Tools.Editor
         {
             if (prop == null)
             {
-                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetParentsOfTargetsNoAlloc] Parameter 'prop' is null.");
+                throw new ArgumentNullException(nameof(prop), "[SerializedPropertyUtility::GetParentsOfTargetsNoAlloc] Parameter 'prop' is null.");
             }
 
             if (targetInfos == null)
             {
-                throw new ArgumentNullException(nameof(targetInfos), "[EditorAdditionals::GetParentsOfTargetsNoAlloc] Array Parameter 'targetPairs' is null.");
+                throw new ArgumentNullException(nameof(targetInfos), "[SerializedPropertyUtility::GetParentsOfTargetsNoAlloc] Array Parameter 'targetPairs' is null.");
             }
 
             targetInfos.Clear();
@@ -386,7 +387,7 @@ namespace BXFW.Tools.Editor
         {
             if (prop == null)
             {
-                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::GetTarget] Given argument 'prop' is null!");
+                throw new ArgumentNullException(nameof(prop), "[SerializedPropertyUtility::GetTarget] Given argument 'prop' is null!");
             }
 
             return GetTarget(prop.serializedObject.targetObject, prop.propertyPath);
@@ -461,12 +462,12 @@ namespace BXFW.Tools.Editor
         {
             if (target == null)
             {
-                throw new ArgumentNullException(nameof(target), "[EditorAdditionals::GetField] Error while getting field : Null 'target' object.");
+                throw new ArgumentNullException(nameof(target), "[SerializedPropertyUtility::GetField] Error while getting field : Null 'target' object.");
             }
 
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentNullException(nameof(name), string.Format("[EditorAdditionals::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
+                throw new ArgumentNullException(nameof(name), string.Format("[SerializedPropertyUtility::GetField] Error while getting field : Null 'name' field. (target: '{0}', targetType: '{1}')", target, targetType));
             }
 
             if (targetType == null)
@@ -490,7 +491,7 @@ namespace BXFW.Tools.Editor
                 return GetField(target, name, targetType.BaseType);
             }
 
-            throw new NullReferenceException(string.Format("[EditorAdditionals::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
+            throw new NullReferenceException(string.Format("[SerializedPropertyUtility::GetField] Error while getting field : Could not find '{0}' on '{1}' and it's children.", name, target));
         }
 
         private static readonly FieldInfo NativePropertyPtrField = typeof(SerializedProperty).GetField("m_NativePropertyPtr", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -501,7 +502,7 @@ namespace BXFW.Tools.Editor
         {
             if (obj == null)
             {
-                throw new ArgumentNullException(nameof(obj), "[EditorAdditionals::IsDisposed] Target was null.");
+                throw new ArgumentNullException(nameof(obj), "[SerializedPropertyUtility::IsDisposed] Target was null.");
             }
 
             return (IntPtr)NativePropertyPtrField.GetValue(obj) == IntPtr.Zero;
@@ -514,7 +515,7 @@ namespace BXFW.Tools.Editor
         {
             if (prop == null)
             {
-                throw new ArgumentNullException(nameof(prop), "[EditorAdditionals::IsEndOfData] Target was null.");
+                throw new ArgumentNullException(nameof(prop), "[SerializedPropertyUtility::IsEndOfData] Target was null.");
             }
 
             return (bool)IsEndOfDataMethod.Invoke(prop, null);
@@ -608,6 +609,31 @@ namespace BXFW.Tools.Editor
                 }
                 while (currentProperty.NextVisible(false));
             }
+        }
+
+        /// <inheritdoc cref="GetLabelContent(SerializedProperty, bool)"/>
+        public static GUIContent GetLabelContent(this SerializedProperty property)
+        {
+            return GetLabelContent(property, true);
+        }
+        /// <summary>
+        /// Uses the <see cref="SerializedProperty.displayName"/> and <see cref="SerializedProperty.tooltip"/> to create a <see cref="GUIContent"/>.
+        /// <br>This may be used with the <see cref="EditorGUI.GetPropertyHeight(SerializedProperty, GUIContent, bool)"/>.</br>
+        /// </summary>
+        /// <param name="property">Property to create it's <see cref="GUIContent"/>.</param>
+        /// <param name="useDisplayName">
+        /// Whether to use the '<see cref="SerializedProperty.displayName"/>' name for the <paramref name="property"/>.
+        /// <br>Setting this <see langword="false"/> will instead use the <see cref="SerializedProperty.name"/> which could be faster.</br>
+        /// </param>
+        /// <exception cref="ArgumentNullException"/> 
+        public static GUIContent GetLabelContent(this SerializedProperty property, bool useDisplayName)
+        {
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property), "[SerializedPropertyUtility::GetLabelContent] Given argument 'property' is null!");
+            }
+
+            return new GUIContent(useDisplayName ? property.displayName : property.name, property.tooltip);
         }
     }
 }

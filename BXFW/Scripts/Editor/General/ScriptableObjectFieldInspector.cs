@@ -40,6 +40,28 @@ namespace BXFW
     }
 
     /// <summary>
+    /// Data type that contains a draw command, <b>without</b> <see cref="MatchGUIActionOrder"/>ing.
+    /// </summary>
+    public struct DrawGUICommandOrderless<T>
+        where T : ScriptableObject
+    {
+        /// <summary>
+        /// Return the given GUI height. Similar to <see cref="PropertyDrawer.GetPropertyHeight(SerializedProperty, GUIContent)"/>.
+        /// <br><c>Param1 [In]  : </c> Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br><c>Return [out] : </c> Intended GUI height.</br>
+        /// <br/>
+        /// <br>If this method is left blank, it is to be ignored and height is assumed as 0.</br>
+        /// </summary>
+        public Func<T, float> GetGUIHeight;
+        /// <summary>
+        /// Create the GUI in this delegate.
+        /// <br><c>Param 1 [In] : </c> Target <see cref="ScriptableObject"/> of <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
+        /// <br><c>Param 2 [In] : </c> Allocated rectangle for the given GUI.</br>
+        /// </summary>
+        public Action<T, Rect> DrawGUI;
+    }
+
+    /// <summary>
     /// Creates a ScriptableObject inspector.
     /// <br>Derive from this class and use the <see cref="CustomPropertyDrawer"/> attribute with same type as <typeparamref name="T"/>.</br>
     /// </summary>
@@ -47,9 +69,8 @@ namespace BXFW
         where T : ScriptableObject
     {
         // TODO (bit higher but still low priority) :
-        // 1. Allow the scripts to change the collapsed interface (DrawGUICommand for the collapsed interface)
-        // 2. Refactor the script to make it much neater (note : This script is actually simple, just a lot of boilerplate for things that should be simple to do)
-        // 3. Completely fix the IMGUI layouting injection hack (because it's terrible), but first fix the bugs of it.
+        // 1. Refactor the script to make it much neater (note : This script is actually simple, just a lot of boilerplate for things that should be simple to do)
+        // 2. Completely fix the IMGUI layouting injection hack (because it's terrible), but first fix the bugs of it.
         // TODO (low priority) :
         // 1. Add support for GUIElements on custom inspector overrides (only the legacy OnInspectorGUI is taken to count)
 
@@ -63,13 +84,13 @@ namespace BXFW
         /// <br/>
         /// <br>See class : <see cref="GenericInspector"/>. Only override this 'string' field if the name was changed or this '&lt;see&gt;' directs to nowhere.</br>
         /// </summary>
-        protected virtual string DefalutInspectorTypeName => "GenericInspector";
+        protected virtual string DefaultInspectorTypeName => "GenericInspector";
         /// <summary>
         /// Returns whether if <see cref="currentCustomInspector"/> isn't null.
         /// <br>Only valid if there's a target object in the target property.</br>
         /// <br>Override to disable/enable this function, as it's <b>experimental</b>.</br>
         /// </summary>
-        public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DefalutInspectorTypeName;
+        public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DefaultInspectorTypeName;
         /// <summary>
         /// Custom commands for the default inspector.
         /// <br>Use this in cases where the default way of creating an editor (<see cref="UnityEditor.Editor"/> &amp; <see cref="CustomEditor"/>) 
@@ -79,6 +100,10 @@ namespace BXFW
         /// but it's drawbacks are mainly being only exclusive to the <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
         /// </summary>
         public virtual Dictionary<string, DrawGUICommand<T>> DefaultInspectorCustomCommands => null;
+        /// <summary>
+        /// Custom commands for GUI drawing while the FieldInspector is in a collapsed state.
+        /// </summary>
+        public virtual DrawGUICommandOrderless<T> CollapsedInspectorCustomCommands => default;
         /// <summary>
         /// The target SerializedObject.
         /// <br>This is assigned as the target object on <see langword="base"/>.<see cref="GetPropertyHeight(SerializedProperty, GUIContent)"/>.</br>
@@ -380,7 +405,13 @@ namespace BXFW
             // If null, don't 
             if (target == null || !property.isExpanded)
             {
-                return EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+                float collapsedHeight = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
+                if (CollapsedInspectorCustomCommands.GetGUIHeight != null)
+                {
+                    collapsedHeight += CollapsedInspectorCustomCommands.GetGUIHeight(target) + mainCtx.Padding;
+                }
+
+                return collapsedHeight;
             }
 
             // Total height calculated
@@ -977,6 +1008,17 @@ namespace BXFW
 
                     EditorGUI.indentLevel -= 1;
                 }
+            }
+            // -- CollapsedInspectorCustomCommands
+            else
+            {
+                // The 'CollapsedInspectorCustomCommands' may also use the 'SerializedObject'
+                TargetSerializedObject ??= new SerializedObject(target);
+                TargetSerializedObject.UpdateIfRequiredOrScript();
+
+                CollapsedInspectorCustomCommands.DrawGUI?.Invoke(target, mainCtx.GetPropertyRect(position, CollapsedInspectorCustomCommands.GetGUIHeight(target)));
+
+                TargetSerializedObject.ApplyModifiedProperties();
             }
 
             EditorGUI.EndProperty();
