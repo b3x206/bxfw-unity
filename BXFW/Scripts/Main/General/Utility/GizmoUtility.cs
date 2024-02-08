@@ -55,10 +55,10 @@ namespace BXFW
         /// </summary>
         public static void DrawArrow(Vector3 pos, Vector3 direction, Color color, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
-            var gColor = Gizmos.color;
+            Color prevColor = Gizmos.color;
             Gizmos.color = color;
             DrawArrow(pos, direction, arrowHeadLength, arrowHeadAngle);
-            Gizmos.color = gColor;
+            Gizmos.color = prevColor;
         }
 
         /// <summary>
@@ -104,10 +104,10 @@ namespace BXFW
         /// </summary>
         public static void DrawWireCircle(Vector3 pos, float radius, Vector3 direction, Color color)
         {
-            var gColor = Gizmos.color;
+            Color prevColor = Gizmos.color;
             Gizmos.color = color;
             DrawWireCircle(pos, radius, direction);
-            Gizmos.color = gColor;
+            Gizmos.color = prevColor;
         }
 
         /// <summary>

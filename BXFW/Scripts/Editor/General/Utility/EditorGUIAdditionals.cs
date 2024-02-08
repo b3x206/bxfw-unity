@@ -42,13 +42,19 @@ namespace BXFW.Tools.Editor
             MakeDragDropArea(onDragAcceptAction, customRect);
         }
         /// <summary>
-        /// Make gui area drag and drop.
+        /// Make gui area drag and drop. This method makes the given <paramref name="customRect"/> area / 
+        /// or the <see cref="GUILayoutUtility.GetRect(float, float, float, float)"/> area accept the drag always.
         /// <br>This method always accepts drops.</br>
         /// <br>Usage : <see cref="DragAndDrop.objectReferences"/> is all you need.</br>
         /// </summary>
         public static void MakeDragDropArea(Action onDragAcceptAction, Rect? customRect = null)
         {
             Event evt = Event.current;
+            if (evt == null)
+            {
+                throw new InvalidOperationException("[EditorGUIAdditionals::MakeDragDropArea] Called 'MakeDragDropArea' while 'Event.current' is null. This may happen if this was not called from OnGUI.");
+            }
+
             switch (evt.type)
             {
                 case EventType.DragUpdated:
@@ -225,13 +231,14 @@ namespace BXFW.Tools.Editor
                 vectorValues[currentDrawableArrayIndex] = value.z;
             }
 
-            // The 'MultiFloatField' puts it's content label and other things in seperate columns
+            // The 'MultiFloatField' puts it's content label and other things in seperate columns, which looks ugly
             // Use 'GUIStyle.CalcWidth' and dynamically scale the label and the multi float field
             // There's no 'CalcWidth' but we can do 'CalcMinMaxWidth'
             Rect multiFloatRect = position;
             if (content != GUIContent.none)
             {
                 GUI.skin.label.CalcMinMaxWidth(content, out float minLabelWidth, out float _);
+
                 Rect labelRect = new Rect(position.x, position.y, minLabelWidth, position.height);
                 GUI.Label(labelRect, content);
                 multiFloatRect = new Rect(position.x + minLabelWidth, position.y, position.width - minLabelWidth, position.height);

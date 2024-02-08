@@ -248,11 +248,15 @@ namespace BXFW.Collections
             }
         }
 
+        /// <summary>
+        /// List of the pairs contained inside this dictionary.
+        /// </summary>
         [SerializeField]
         private List<Pair> m_Pairs = new List<Pair>();
 
         /// <summary>
         /// A pair that contains a dummy value.
+        /// <br>This value, while only used in the editor, has to be serialized to avoid errors on built players.</br>
         /// </summary>
         [SerializeField]
         private Pair m_DummyPair;

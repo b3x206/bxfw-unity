@@ -72,6 +72,11 @@ namespace BXFW
         public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DefalutInspectorTypeName;
         /// <summary>
         /// Custom commands for the default inspector.
+        /// <br>Use this in cases where the default way of creating an editor (<see cref="UnityEditor.Editor"/> &amp; <see cref="CustomEditor"/>) 
+        /// for a <see cref="ScriptableObject"/> doesn't work with the FieldInspector embed.</br>
+        /// <br/>
+        /// <br>This method of creating custom GUI is more reliable and does not rely on a terrible GUILayoutEntry hack,
+        /// but it's drawbacks are mainly being only exclusive to the <see cref="ScriptableObjectFieldInspector{T}"/>.</br>
         /// </summary>
         public virtual Dictionary<string, DrawGUICommand<T>> DefaultInspectorCustomCommands => null;
         /// <summary>
@@ -766,7 +771,7 @@ namespace BXFW
 
                 string tName = EditorGUI.TextField(new Rect(propertyFoldoutOptsRect), target.name, tNameFieldStyle);
 
-                // Object name is only mutable through the 'Project' window changing file name if the target has an asset path
+                // UnityEngine.Object.name is only mutable through the 'Project' window changing file name if the target has an asset path
                 if (!targetHasAssetPath)
                 {
                     // Enforcing non-null
@@ -967,7 +972,7 @@ namespace BXFW
                     // For some reason GUI.BeginArea and GUI.EndArea seems to shift the rect position by some value (huh i wonder why)
                     // And GUI.BeginClip only renders one UI with 'areaRect'
                     // GUI.BeginClip for some reason offsets the UI rendering/clipping as well
-                    // Have to check the current clip stack positioning methods? Which i don't want to do now, it's ok to not have a clip for now.
+                    // Have to check the current clip stack positioning methods? Which i don't want to do now, it's ok to not have a GUI clip for now.
                     // GUILayout.EndArea();
 
                     EditorGUI.indentLevel -= 1;
