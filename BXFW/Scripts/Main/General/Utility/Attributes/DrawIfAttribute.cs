@@ -6,7 +6,7 @@ namespace BXFW
     /// <summary>
     /// Attribute to draw a field conditionally.
     /// <br>Only expects absolute bool field names! (but properties that take things and are safe to call in editor should work too)</br>
-    /// <br>If you want a 'NoDraw' attribute, try using <see cref="HideInInspector"/> attribute.</br>
+    /// <br>If you want a 'NoDraw' attribute, try using <see cref="UnityEngine.HideInInspector"/> attribute.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public sealed class DrawIfAttribute : ConditionalDrawAttribute

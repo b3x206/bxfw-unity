@@ -88,7 +88,8 @@ namespace BXFW
         /// <summary>
         /// Returns whether if <see cref="currentCustomInspector"/> isn't null.
         /// <br>Only valid if there's a target object in the target property.</br>
-        /// <br>Override to disable/enable this function, as it's <b>experimental</b>.</br>
+        /// <br>Override to disable/enable this function, it is no longer experimental but some SerializedObject inspectors 
+        /// may break if you have overriden the default Editor that unity lays out for with a stub one.</br>
         /// </summary>
         public virtual bool UseCustomInspector => currentCustomInspector != null && currentCustomInspector.GetType().Name != DefaultInspectorTypeName;
         /// <summary>
@@ -866,6 +867,7 @@ namespace BXFW
 
                     // Draw fields
                     EditorGUI.indentLevel += 1;
+                    EditorGUI.BeginChangeCheck();
 
                     SerializedProperty prop = TargetSerializedObject.GetIterator();
                     bool expanded = true;
@@ -903,9 +905,19 @@ namespace BXFW
 
                         expanded = false;
                     }
+                    bool editorChanged = EditorGUI.EndChangeCheck();
                     EditorGUI.indentLevel -= 1;
 
                     TargetSerializedObject.ApplyModifiedProperties();
+                    // If the object has an asset path, it is not dirtied properly as i, the genius, decided to give direct access to the asset.
+                    // So if the 'target' is dirty (which we will assume that it is always dirty, this will lower performance..) we have to do AssetDatabase
+                    // Note : The dirtying works fine without an asset path though? Well this is weird, but this made it work..
+                    if (targetHasAssetPath && editorChanged)
+                    {
+                        // Always assume that if the editor changed, (GUI.changed would be worse)
+                        EditorUtility.SetDirty(target);
+                        // No need to do the 'AssetDatabase', pressing 'ctrl+s' saves it which if you have it as a muscle memory it works fine enough.
+                    }
                 }
                 else
                 {
@@ -935,7 +947,7 @@ namespace BXFW
                     // Whoops, ReorderableList is now trying to do it's own things
                     // Time to inject GUILayoutEntry into the current window context while in Repaint. HAHAHAHAHAHAHA
 
-                    // Injection "works", *BUT
+                    // Injection "works**", **BUT
                     // *1 : The 'OnInspectorGUI's layout elements are not taken to the account,
                     // causing the same stupid "cannot make GUI element because EventType.Layout
                     // didn't allocate elements" because the ReorderableList didn't call 'GetHeight' again
