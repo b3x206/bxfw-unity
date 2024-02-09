@@ -62,7 +62,7 @@ namespace BXFW.UI
         {
             for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = m_Elements[i];
+                Image img = m_Elements[i];
                 if (img == null)
                 {
                     CleanupElementsList();
@@ -76,7 +76,7 @@ namespace BXFW.UI
         {
             for (int i = 0; i < m_Elements.Count; i++)
             {
-                var img = m_Elements[i];
+                Image img = m_Elements[i];
                 if (img == null)
                 {
                     CleanupElementsList();
@@ -113,7 +113,7 @@ namespace BXFW.UI
                         }
 
                         // Since prevMenuIndex is changed after this tween is started, it will change the incorrect tweens color.
-                        var prevMenuPersistentIndex = m_prevMenuIndex;
+                        int prevMenuPersistentIndex = m_prevMenuIndex;
                         colorFadeTween.SetSetter((float f) =>
                         {
                             SetAllChildExceptIndex(
@@ -147,7 +147,7 @@ namespace BXFW.UI
             if (referenceElement == null)
             {
                 // Create new child gameobject
-                var cProgressImage = new GameObject();
+                GameObject cProgressImage = new GameObject();
                 createImage = cProgressImage.AddComponent<Image>();
 
                 // -- Hardcoded defaults

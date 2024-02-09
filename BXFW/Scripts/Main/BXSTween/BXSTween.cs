@@ -9,7 +9,7 @@ namespace BXFW.Tweening
     /// A simpler ticking + delta time based tweening engine.
     /// <br>This tweening code aims to make things simpler, but the code is more explicit.</br>
     /// <br/>
-    /// <br>For shortcut methods, use the Window&gt;BXFW&gt;Editor Tasks and then add a <see cref="BXFW.Tweening.Editor.BXSTweenExtensionGeneratorTask"/> there.</br>
+    /// <br>For generating shortcut methods, use the Window&gt;BXFW&gt;Editor Tasks and then add a <see cref="BXFW.Tweening.Editor.BXSTweenExtensionGeneratorTask"/> there.</br>
     /// </summary>
     public static class BXSTween
     {
