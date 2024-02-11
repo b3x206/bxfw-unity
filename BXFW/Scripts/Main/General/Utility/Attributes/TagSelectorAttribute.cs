@@ -26,7 +26,9 @@ namespace BXFW
         /// </param>
         public TagSelectorAttribute(bool showEmptyOption)
         {
+#if UNITY_EDITOR
             this.showEmptyOption = showEmptyOption;
+#endif
         }
     }
 }
