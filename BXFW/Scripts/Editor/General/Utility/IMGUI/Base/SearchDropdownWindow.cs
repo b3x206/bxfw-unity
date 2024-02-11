@@ -356,7 +356,7 @@ namespace BXFW.Tools.Editor
                 return;
             }
 
-            // This idiot (EditorGUI.TextField) uses the global event
+            // This idiot (EditorGUI.TextField) calls 'Use()' the global event
             // So copy it for the 'HandleGlobalGUIEvents'
             beforeDrawEvent = new Event(Event.current);
             if (parentManager.IsSearchable)

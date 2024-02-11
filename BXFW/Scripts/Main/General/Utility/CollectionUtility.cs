@@ -369,7 +369,6 @@ namespace BXFW
 
         /// <summary>
         /// Returns the first value or the given <paramref name="defaultValue"/> if no elements exist.
-        /// <br>Useful for value types which cannot be nullable.</br>
         /// </summary>
         public static T FirstOrDefault<T>(this IEnumerable<T> collection, T defaultValue)
         {
