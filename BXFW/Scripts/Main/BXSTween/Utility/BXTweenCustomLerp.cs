@@ -6,7 +6,6 @@ namespace BXFW.Tweening
     /// <summary>
     /// Old custom linear interpolation methods used by BXTween.
     /// <br>Interpolates other non-mathematical data types.</br>
-    /// <br>This is kept as it's not really a problematical part of BXTween.</br>
     /// </summary>
     public static class BXTweenCustomLerp
     {

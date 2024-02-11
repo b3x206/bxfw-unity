@@ -12,18 +12,40 @@ namespace BXFW.Tweening
     /// </summary>
     public enum LoopType
     {
-        Yoyo, Reset
+        /// <summary>
+        /// Switches the starting and ending tween values on loop point.
+        /// </summary>
+        Yoyo,
+        /// <summary>
+        /// Does nothing on the next loop point, the tween restarts from it's normal values.
+        /// </summary>
+        Reset
     }
     /// <summary>
     /// The suspension type for the <see cref="BXSTweenable.TickConditionAction"/>'s suspendType return.
-    /// <br><see cref="None"/>  = Tween won't suspend and will keep ticking and moving.</br>
-    /// <br><see cref="Tick"/>  = Keeps ticking the tween without elapsing it. This will make the tween keep playing but not move.</br>
+    /// <br><see cref="None"/>  = Tween won't suspend and will keep ticking and tweening.</br>
+    /// <br><see cref="Tick"/>  = Keeps ticking the tween without elapsing it. This will make the tween keep playing but not tween.</br>
     /// <br><see cref="Pause"/> = Pauses the base tween.</br>
     /// <br><see cref="Stop"/>  = Stops the base tween.</br>
     /// </summary>
     public enum TickSuspendType
     {
-        None, Tick, Pause, Stop
+        /// <summary>
+        /// Tween won't suspend and will keep ticking and tweening.
+        /// </summary>
+        None,
+        /// <summary>
+        /// Keeps ticking the tween without elapsing it. This will make the tween keep playing but not tween.
+        /// </summary>
+        Tick,
+        /// <summary>
+        /// Pauses the base tween. This applies only once and the tick suspending is never checked until the tween is played again.
+        /// </summary>
+        Pause,
+        /// <summary>
+        /// Stops the base tween. This applies only once and the tick suspending is never checked until the tween is played again.
+        /// </summary>
+        Stop
     }
 
     /// <summary>
@@ -422,6 +444,10 @@ namespace BXFW.Tweening
         public virtual bool IsValid => true;
         /// <summary>
         /// Whether if this tween runs multiple <see cref="BXSTweenable"/>'s.
+        /// <br>
+        /// This can also be set for custom sequencing tweens,
+        /// however on the debug display only the <see cref="BXSTweenSequence"/>s are counted as sequence.
+        /// </br>
         /// </summary>
         public virtual bool IsSequence => false;
         /// <summary>

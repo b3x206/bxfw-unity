@@ -141,10 +141,10 @@ namespace BXFW
         /// If this is true, the generated pooled objects will have a 'OnDestroy' debug-logger.
         /// <br>
         /// This option only works on development builds and editor,
-        /// as it attaches many MonoBehaviour Cpmponents which may cause performance problems.
+        /// as it attaches many MonoBehaviour Components which may cause performance problems.
         /// </br>
         /// </summary>
-        [Header("Debug")]
+        [Header("Debug"), Tooltip("If this is true, the generated pooled objects will have a 'OnDestroy' debug-logger.\nThis only works in editor and debug builds.")]
         public bool attachDestroyInterceptor = false;
 
         /// <summary>

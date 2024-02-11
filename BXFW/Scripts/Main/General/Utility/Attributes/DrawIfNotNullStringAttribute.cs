@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using System.Collections.Generic;
 
 namespace BXFW
 {
@@ -23,10 +22,10 @@ namespace BXFW
         /// </summary>
         public bool ConsiderWhitespaceNull { get; set; } = false;
 
-        public DrawIfNotNullStringAttribute(string checkNullFieldName)
+        public DrawIfNotNullStringAttribute(string targetStringFieldName)
         {
 #if UNITY_EDITOR
-            nullableFieldName = checkNullFieldName;
+            nullableFieldName = targetStringFieldName;
 #endif
         }
 
@@ -65,7 +64,7 @@ namespace BXFW
             }
 
             // Both property + value failed
-            errorString = "Attribute has incorrect named target";
+            errorString = "Attribute has incorrect named target field/property";
 #endif
             return DrawCondition.Error;
         }

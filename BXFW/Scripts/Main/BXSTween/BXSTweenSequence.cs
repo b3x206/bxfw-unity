@@ -130,6 +130,10 @@ namespace BXFW.Tweening
             }
         }
 
+        /// <summary>
+        /// Returns whether if this sequence has any tweens appended to it.
+        /// <br>Without any tweens to run in a sequence, calling <see cref="Play"/> will throw an exception.</br>
+        /// </summary>
         public override bool IsValid => m_RunnableTweens.Count > 0;
         public override bool IsSequence => true;
 
@@ -137,12 +141,13 @@ namespace BXFW.Tweening
         /// Starts running the sequence.
         /// <br>Restarts running if the <see cref="IsRunning"/> is true.</br>
         /// </summary>
+        /// <exception cref="InvalidOperationException"/>
         public override void Play()
         {
             // No play if no tween
             if (m_RunnableTweens.Count <= 0)
             {
-                throw new NullReferenceException("[BXSTweenSequence::Run] The sequence has no runnable tweens!");
+                throw new InvalidOperationException("[BXSTweenSequence::Run] The sequence has no runnable tweens!");
             }
 
             // Always set
