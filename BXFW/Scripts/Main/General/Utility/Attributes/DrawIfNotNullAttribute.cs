@@ -25,27 +25,6 @@ namespace BXFW
 #endif
         }
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// An utility method used to get the typed <see cref="EqualityComparer{T}.Default"/>.
-        /// </summary>
-        /// <param name="t">
-        /// Type of the both <paramref name="x"/> and <paramref name="y"/>.
-        /// An <see cref="ArgumentException"/> will be thrown (by the reflection utility) on invocation if the types mismatch.
-        /// </param>
-        /// <param name="x">First object to compare. This method returns whether if this value is equal to <paramref name="y"/>.</param>
-        /// <param name="y">Other way around. Method returns if this is equal to <paramref name="x"/>.</param>
-        private bool GetTypedEqualityComparerResult(Type t, object x, object y)
-        {
-            // Because apparently there's no typeless EqualityComparer?
-            // EqualityComparer is used because of the IEquatable check and other things
-            // ----- No Typeless EqualityComparer? -----
-            Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(t);
-            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
-            MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { t, t });
-            return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { x, y });
-        }
-#endif
         protected override DrawCondition DoGetDrawCondition(FieldInfo targetField, object parentValue, out string errorString)
         {
             errorString = string.Empty;
@@ -54,7 +33,7 @@ namespace BXFW
             FieldInfo targetFieldInfo = targetField.DeclaringType.GetField(nullableFieldName, TargetFlags);
             if (targetFieldInfo != null)
             {
-                bool nullComparisonResult = GetTypedEqualityComparerResult(targetFieldInfo.FieldType, targetFieldInfo.GetValue(parentValue), null);
+                bool nullComparisonResult = TypeUtility.TypedEqualityComparerResult(targetFieldInfo.FieldType, targetFieldInfo.GetValue(parentValue), null);
                 return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
             }
 
@@ -62,7 +41,7 @@ namespace BXFW
             PropertyInfo targetPropertyInfo = targetField.DeclaringType.GetProperty(nullableFieldName, TargetFlags);
             if (targetPropertyInfo != null && targetPropertyInfo.CanRead)
             {
-                bool nullComparisonResult = GetTypedEqualityComparerResult(targetPropertyInfo.PropertyType, targetPropertyInfo.GetValue(parentValue), null);
+                bool nullComparisonResult = TypeUtility.TypedEqualityComparerResult(targetPropertyInfo.PropertyType, targetPropertyInfo.GetValue(parentValue), null);
                 return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
             }
 

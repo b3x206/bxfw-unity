@@ -128,7 +128,7 @@ namespace BXFW
                 {
                     if (i != typeGenericArgs.Length - 1)
                     {
-                        // (all GenericArguments are likely open, so no space needed)
+                        // (all GenericArguments are likely open if one of them is open too, so no space needed)
                         typeNameSb.Append(',');
                     }
                     continue;
@@ -380,6 +380,26 @@ namespace BXFW
             return Assembly.GetAssembly(typeof(T))
                 .GetTypes()
                 .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
+        }
+
+        /// <summary>
+        /// An utility method used to get the typed <see cref="EqualityComparer{T}.Default"/>'s comparison result with the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">
+        /// Type of the both <paramref name="lhs"/> and <paramref name="rhs"/>.
+        /// An <see cref="ArgumentException"/> will be thrown (by the reflection utility) on invocation if the types mismatch.
+        /// </param>
+        /// <param name="lhs">First object to compare. This method returns whether if this value is equal to <paramref name="rhs"/>.</param>
+        /// <param name="rhs">Other way around. Method returns if this is equal to <paramref name="lhs"/>.</param>
+        public static bool TypedEqualityComparerResult(Type type, object lhs, object rhs)
+        {
+            // Because apparently there's no typeless EqualityComparer?
+            // EqualityComparer is used because of the IEquatable check and other things
+            // ----- No Typeless EqualityComparer? -----
+            Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
+            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+            MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
+            return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { lhs, rhs });
         }
     }
 }
