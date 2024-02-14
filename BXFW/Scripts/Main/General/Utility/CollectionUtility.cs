@@ -245,7 +245,7 @@ namespace BXFW
 #if UNITY_5_3_OR_NEWER
             int randValue = UnityEngine.Random.Range(0, values.Count);
 #else
-            var rand = new System.Random(unchecked((int)DateTime.Now.Ticks));
+            System.Random rand = new System.Random(unchecked((int)DateTime.Now.Ticks));
             int randValue = rand.Next(0, values.Count);
 #endif
             return values[randValue];
@@ -257,7 +257,7 @@ namespace BXFW
         {
             // Create a filtered List?
             // .. this will GC.Alloc ..
-            // I take 'GetEnumerator' over 'new List' with undefined size.
+            // I take 'GetEnumerator' GC.Alloc over 'new List' with undefined size, which may allocate much more depending on the value type.
             return GetRandom((IEnumerable<T>)values, predicate);
         }
 

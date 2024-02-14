@@ -154,6 +154,9 @@ namespace BXFW
         [Header("Settings")]
         [Tooltip("Sets this object pooler as DontDestroyOnLoad, which makes it persistent between scenes.")]
         public bool isDontDestroyOnLoad = false;
+        [Tooltip("This object pooler calls 'IPooledBehaviour's callbacks recursively (on all children GameObject attached to the pooled root object).\nThis may slow down the ObjectPooler.")]
+        public bool recursivePooledBehaviourCallback = false;
+        [Tooltip("Removes null objects from the spawn Queue if a null object exists. This may happen if a GameObject of the pool was destroyed.")]
         public bool clearPoolQueueIfNullExist = true;
         [InspectorLine(LineColor.Gray), SerializeField]
         private List<Pool> m_pools = new List<Pool>();
@@ -174,6 +177,11 @@ namespace BXFW
 
                 if (isDontDestroyOnLoad)
                 {
+                    if (transform.parent != null)
+                    {
+                        transform.SetParent(null);
+                    }
+
                     DontDestroyOnLoad(gameObject);
                 }
             }
@@ -581,6 +589,86 @@ namespace BXFW
         // This causes more than 1 times access to the m_PooledBehavioursCache in the same loop.
         // Or you know, finally acknowledge that Singletons are a bad idea because of situations like this.
 
+        /// <summary>
+        /// Does a callback on the <see cref="IPooledBehaviour"/>s on the given <paramref name="poolBehaviourObj"/>.
+        /// </summary>
+        /// <param name="poolBehaviourObj">Object to get it's components and do the <see cref="IPooledBehaviour"/> callbacks on the components of it.</param>
+        /// <exception cref="ArgumentNullException"/>
+        /// <remarks>
+        /// Maybe do this with a simple boolean flag instead of a whole delegate?
+        /// Nah, I will definitely add stuff to the <see cref="IPooledBehaviour"/>, definitely (he's not going to).
+        /// </remarks>
+        private static void DoCallbackOnPooledBehaviours(GameObject poolBehaviourObj, Action<IPooledBehaviour> callbackAction)
+        {
+            if (poolBehaviourObj == null)
+            {
+                throw new ArgumentNullException(nameof(poolBehaviourObj), "[ObjectPooler::DoCallbackOnPooledBehaviours] Given argument 'poolBehaviourObj' was null.");
+            }
+            if (callbackAction == null)
+            {
+                throw new ArgumentNullException(nameof(callbackAction), "[ObjectPooler::DoCallbackOnPooledBehaviours] Given argument 'callbackAction' was null.");
+            }
+
+            // apparently 'ListPool' + 'CollectionPool' is a thing, it doesn't exactly solve the problems of 'local static List<>' but it's more 'Callback'/Multithreading friendly
+            // sorry freya for sharing an incorrect information and trying to teach somebody who's double.MaxValue times more knowledgable in unity and c# and everything really..
+            using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
+            {
+                poolBehaviourObj.GetComponents(pooledBehaviours);
+
+                foreach (IPooledBehaviour behaviour in pooledBehaviours)
+                {
+                    if (behaviour == null)
+                    {
+                        continue;
+                    }
+
+                    callbackAction(behaviour);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recurses the entire child tree of a transform.
+        /// </summary>
+        /// <param name="transform">Transform to recurse.</param>
+        /// <param name="recurseAction">
+        /// The delegate to call on the recursed children.
+        /// The tree position is not presented and the first encountered <see cref="Transform"/>s children will be given.
+        /// <br>This event is <b>never</b> called for <paramref name="transform"/>, you will have to call your own action on that transform instead..</br>
+        /// </param>
+        /// <exception cref="ArgumentNullException"/>
+        private static void RecurseTransformChildren(Transform transform, Action<Transform> recurseAction)
+        {
+            if (transform == null)
+            {
+                throw new ArgumentNullException(nameof(transform), "[ObjectPooler::DoCallbackOnPooledBehaviours] Given argument 'transform' was null.");
+            }
+            if (recurseAction == null)
+            {
+                throw new ArgumentNullException(nameof(recurseAction), "[ObjectPooler::DoCallbackOnPooledBehaviours] Given argument 'recurseAction' was null.");
+            }
+
+            // The thing with recursion in here is that it will implicitly create 1289312 for loops nested,
+            // which is nice, something i want to get and not manually manage with List<> or Span<>'s
+            // -- 
+            // The 'Transform' IEnumerable only enumerates the 1st layer of the children, i want to go all in and enumerate the entire tree.
+            // And the integers are going to the stack with recursion instead of my 'List<>' based solution allocating in the heap, nice.
+            // --
+            // Or maybe i am dumb and the recursion is abstracting away something that i cannot think of because i am stupid.
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                recurseAction(child);
+
+                if (child.childCount > 0)
+                {
+                    // Call the same stuff and wait for recursing of the children
+                    RecurseTransformChildren(child, recurseAction);
+                    // .. and that's it.
+                }
+            }
+        }
+
         /// <inheritdoc cref="SpawnFromPool(string, Vector3, Quaternion, Transform)"/>
         private GameObject SpawnFromPoolInternal(string tag, Vector3 position, Quaternion rotation, Transform parent)
         {
@@ -610,21 +698,21 @@ namespace BXFW
             objToSpawn.gameObject.transform.SetParent(parent);
             objToSpawn.gameObject.transform.SetPositionAndRotation(position, rotation);
 
-            // apparently 'ListPool' + 'CollectionPool' is a thing
-            // LET'S GOO SINGLETON TIME epic W play of the game!!1!!
-            using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
+            DoCallbackOnPooledBehaviours(objToSpawn.gameObject, (b) => b.OnPoolSpawn());
+
+            if (recursivePooledBehaviourCallback)
             {
-                objToSpawn.gameObject.GetComponents(pooledBehaviours);
-
-                foreach (IPooledBehaviour behaviour in pooledBehaviours)
-                {
-                    if (behaviour == null)
-                    {
-                        continue;
-                    }
-
-                    behaviour.OnPoolSpawn();
-                }
+                // Callback order is as following
+                // > RootPooledObject   | 1st
+                // >> ChildPooled1      | 2nd
+                // >>> ChildOfChild2    | 3rd
+                // >> ChildPooled2      | 4th
+                // --
+                // Time to kill the CPU with weird memory accesses :)
+                RecurseTransformChildren(
+                    objToSpawn.gameObject.transform,
+                    (Transform callbackTransform) => DoCallbackOnPooledBehaviours(callbackTransform.gameObject, (b) => b.OnPoolSpawn())
+                );
             }
 
             // Re-enqueue the object to the last spawn place
@@ -682,19 +770,14 @@ namespace BXFW
                 obj.transform.SetParent(transform);
             }
 
-            using (PooledObject<List<IPooledBehaviour>> poolObject = ListPool<IPooledBehaviour>.Get(out List<IPooledBehaviour> pooledBehaviours))
+            DoCallbackOnPooledBehaviours(obj, (b) => b.OnPoolDespawn());
+
+            if (recursivePooledBehaviourCallback)
             {
-                obj.GetComponents(pooledBehaviours);
-
-                foreach (IPooledBehaviour behaviour in pooledBehaviours)
-                {
-                    if (behaviour == null)
-                    {
-                        continue;
-                    }
-
-                    behaviour.OnPoolDespawn();
-                }
+                RecurseTransformChildren(
+                    obj.transform,
+                    (Transform callbackTransform) => DoCallbackOnPooledBehaviours(callbackTransform.gameObject, (b) => b.OnPoolDespawn())
+                );
             }
 
             targetPool.m_poolQueue.Add(objectElement);

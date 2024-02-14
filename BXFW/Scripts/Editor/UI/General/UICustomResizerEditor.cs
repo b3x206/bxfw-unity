@@ -114,31 +114,46 @@ namespace BXFW.ScriptEditor
             }
         }
 
+        private readonly Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> m_drawDict = new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>(16);
+        /// <summary>
+        /// Whether if the custom Inspector dictionary needs to be regathered. Setting this flag <see langword="true"/> 
+        /// will make the <see cref="GetCustomInspectorDictionary(in Dictionary{string, KeyValuePair{MatchGUIActionOrder, Action}}, UICustomResizer)"/> be called.
+        /// </summary>
+        protected bool DictionaryNeedsRefresh = true;
+
+        protected virtual void GetCustomInspectorDictionary(in Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>> dict, UICustomResizer target)
+        {
+            m_drawDict.Add(nameof(UICustomResizer.alignPivot), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
+            {
+                int scriptPivot = (int)target.alignPivot;
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Align Pivot");
+
+                int currentSelectedPivot = GUILayout.Toolbar(scriptPivot, texPreviews, GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.5f), GUILayout.MaxWidth(410f));
+                GUILayout.EndHorizontal();
+
+                if (currentSelectedPivot != scriptPivot)
+                {
+                    Undo.RecordObject(target, "Inspector");
+                    target.alignPivot = (TextAnchor)currentSelectedPivot;
+                }
+            }));
+        }
+
         public override void OnInspectorGUI()
         {
             var target = base.target as UICustomResizer;
 
-            serializedObject.DrawCustomDefaultInspector(new Dictionary<string, KeyValuePair<MatchGUIActionOrder, Action>>
+            // Dirty the dict only when needed, for the custom resizer editor there is no need to dirty constantly.
+            if (DictionaryNeedsRefresh)
             {
-                { 
-                    nameof(UICustomResizer.alignPivot), new KeyValuePair<MatchGUIActionOrder, Action>(MatchGUIActionOrder.OmitAndInvoke, () =>
-                    {
-                        int scriptPivot = (int)target.alignPivot;
+                m_drawDict.Clear();
+                GetCustomInspectorDictionary(m_drawDict, target);
+                DictionaryNeedsRefresh = false;
+            }
 
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Label("Align Pivot");
-                        
-                        int currentSelectedPivot = GUILayout.Toolbar(scriptPivot, texPreviews, GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.5f), GUILayout.MaxWidth(410f));
-                        GUILayout.EndHorizontal();
-
-                        if (currentSelectedPivot != scriptPivot)
-                        {
-                            Undo.RecordObject(target, "Inspector");
-                            target.alignPivot = (TextAnchor)currentSelectedPivot;
-                        }
-                    })
-                }
-            });
+            serializedObject.DrawCustomDefaultInspector(m_drawDict);
         }
     }
 }

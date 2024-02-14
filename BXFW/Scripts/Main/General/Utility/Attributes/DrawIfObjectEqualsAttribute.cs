@@ -7,7 +7,7 @@ namespace BXFW
     /// Attribute to draw a field conditionally on whether the given field's value equal other value given.
     /// <br>Expects object field names that is in the same class/data container. (but properties that take things and are safe to call in editor should work too)</br>
     /// <br/>
-    /// <br>Can be used with <see cref="Enum"/>s and other objects that can be embed as metadata.</br>
+    /// <br>Can be used with <see cref="Enum"/>s and other objects that can be embed as attribute metadata.</br>
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public sealed class DrawIfObjectEqualsAttribute : ConditionalDrawAttribute
@@ -36,9 +36,8 @@ namespace BXFW
 #if UNITY_EDITOR
             this.objectFieldName = objectFieldName;
 
+            // Note : Attributes are metadata, so throwing an exception is mostly pointless.
             objectType = objectValue?.GetType();
-            // Note though : Attributes are metadata, so throwing an exception is mostly pointless.
-            // eh whatever if someone tries to make the attribute by hand it's gonna do for now.
             this.objectValue = objectValue;
 #endif
         }

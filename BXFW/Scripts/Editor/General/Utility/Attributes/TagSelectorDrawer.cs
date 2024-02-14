@@ -175,7 +175,7 @@ namespace BXFW.ScriptEditor
             // If the field's string value isn't untagged (default), set the value
             if (!Attribute.showEmptyOption && string.IsNullOrWhiteSpace(property.stringValue))
             {
-                property.stringValue = InternalEditorUtility.tags.FirstOrDefault(DefaultSelectedTag); ;
+                property.stringValue = InternalEditorUtility.tags.FirstOrDefault(DefaultSelectedTag);
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
             }
 

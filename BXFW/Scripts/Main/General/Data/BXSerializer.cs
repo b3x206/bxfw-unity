@@ -11,18 +11,28 @@ namespace BXFW.Data
     /// A simple serializer that is roughly made but should work better at serializing other types (with less GC).
     /// <br/>
     /// <br>Still WIP, stuff may not work or is subject to change.</br>
+    /// <br>TODO 1 : Test this, may be neat or worse. Current state is mostly a prototype and will most certainly corrupt it's data / have lots of bugs.</br>
+    /// <br>
+    /// TODO 2 : Make the serialization writing asynchronous. 
+    /// This will have a lotsa <see cref="System.Threading.CancellationToken"/>s/<see cref="System.Threading.Tasks.Task"/>s and other async programming crap.
+    /// </br>
     /// </summary>
+    /// async stuff : Save polling (the timer basically) will be done on the main thread (this is because incrementing a floating point number in the main thread is not slow).
+    /// While file is being saved, a lock handle to the variable will be used and access to the values may be controlled from something like 'IsCurrentlySaving'.
+    /// If the file is being saved, trying to save will throw <see cref="InvalidOperationException"/>..
     public static class BXSerializer
     {
         // BXSerializer : 
         // Serialize using either custom plain text data or just parse JSON?
         // Option 1 : Custom plain text =>
         //     This will allow the most control, but since c# is just GC collected language it may end up having more GC compared to PlayerPrefsUtility
-        //     It has to be programmed in a careful way, but with c#, GCless strings are very hard or something. (and c# is UTF-16 by default which also sucks again)
+        //     It has to be programmed in a careful way, but with c#, GCless strings are very hard or something. (and c# is UTF-16 by default which also sucks again, why not UTF-8)
         //     Except for the control benefit this doesn't seem to be any better or something?
         // Option 2 : RapidJSON wrapper of Unity 'JSONUtility' =>
-        //     This has the least control and the least amount of GC allocated.
-        //     But it has very low amount of control (just serialize+deserialize functions), we may need to manage multiple files (which would suck on something like NTFS)
+        //     This has the least control and (most likely, perhaps c# may win if i used Span<> and didn't use System.String) the least amount of GC allocated.
+        //     But it has very low amount of control (just serialize+deserialize functions), we may need to manage multiple files
+        //     (which would suck on something like NTFS unless we have a file handle kept alive, but file api's are very finicky thanks to unix trolling all of us with "posix"
+        //     [i am speaking like i could have done better.. hah i can't even do a simple game and yap/whine a lot..])
         //     And it's not the most efficient way of serializing things
         // --
         // -- So yeah, idk what to choose. Both have their drawbacks and advantages.
@@ -40,6 +50,10 @@ namespace BXFW.Data
 
         /// <summary>
         /// Contains the internal data to be serialized.
+        /// <br>
+        /// This class gets serialized as JSON/anything, maybe even as binary(?) and gets loaded.
+        /// This contains a generic data-set and can save byte arrays if you really want raw data..
+        /// </br>
         /// </summary>
         [Serializable]
         private sealed class DataSerializationContainer
@@ -107,7 +121,7 @@ namespace BXFW.Data
             }
         }
 
-        private static readonly string DefaultSaveName = "bxs-data";
+        private const string DefaultSaveName = "bxs-data";
         /// <summary>
         /// Name of the file to save as.
         /// </summary>
@@ -119,6 +133,8 @@ namespace BXFW.Data
         public static float AutoSaveInterval { get; set; } = 30f;
         /// <summary>
         /// Minimum acceptable auto-saving interval.
+        /// <br>This is done to not make your game powered by unreal engine stutters, but this minimum value is still too small.</br>
+        /// <br>This is because save-data writing is not async.</br>
         /// </summary>
         public const float MinimumAutoSaveInterval = 0.2f;
 
@@ -144,9 +160,14 @@ namespace BXFW.Data
 
         private static void OnTick(ITickRunner runner)
         {
+            if (!IsDirty)
+            {
+                return;
+            }
+
             if (m_currentAutoSaveTimer > AutoSaveInterval)
             {
-                m_currentAutoSaveTimer = 0;
+                m_currentAutoSaveTimer = 0f;
                 Save();
                 return;
             }
@@ -172,6 +193,8 @@ namespace BXFW.Data
 
             if (m_readBytes.Length < m_primaryFileStream.Length)
             {
+                // Resizing is malloc + memset + memcpy, this is just malloc + memset
+                // Basically the old data can be discarded..
                 m_readBytes = new byte[m_primaryFileStream.Length + 1];
             }
 
@@ -285,6 +308,5 @@ namespace BXFW.Data
             m_dataSerializationContainer.longValues.Add(key, value);
             MarkDirty();
         }
-
     }
 }
