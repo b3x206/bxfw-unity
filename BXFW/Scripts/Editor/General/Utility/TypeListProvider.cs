@@ -200,7 +200,10 @@ namespace BXFW.Tools.Editor
         /// <br>These results are cached according to the given <paramref name="predicate"/>'s results and returned faster afterwards.</br>
         /// </summary>
         /// <param name="predicate">Function delegate to match by.</param>
-        /// <param name="noHashCheck">Whether to always iterate the <see cref="DomainTypesList"/>.</param>
+        /// <param name="noHashCheck">
+        /// Whether to always iterate the <see cref="DomainTypesList"/>. You really should set this to <see langword="true"/> 
+        /// if you have captures (that can be changed or is a reference) in the <paramref name="predicate"/> lambda/method.
+        /// </param>
         /// <returns>
         /// The type list <see cref="HashedTypeResultsPair"/> filtered.
         /// The results are cached with the same predicate until domain reset.

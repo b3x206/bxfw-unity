@@ -531,25 +531,115 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Converts <see cref="Vector2"/> to positive values.
+        /// Creates a <see cref="Vector2"/> with positive values from given vector <paramref name="v"/>.
         /// </summary>
         public static Vector2 Abs(this Vector2 v)
         {
             return new Vector2(Math.Abs(v.x), Math.Abs(v.y));
         }
         /// <summary>
-        /// Converts <see cref="Vector3"/> to positive values.
+        /// Creates a <see cref="Vector3"/> with positive values from given vector <paramref name="v"/>.
         /// </summary>
         public static Vector3 Abs(this Vector3 v)
         {
             return new Vector3(Math.Abs(v.x), Math.Abs(v.y), Math.Abs(v.z));
         }
         /// <summary>
-        /// Converts <see cref="Vector4"/> to positive values.
+        /// Creates a <see cref="Vector4"/> with positive values from given vector <paramref name="v"/>.
         /// </summary>
         public static Vector4 Abs(this Vector4 v)
         {
             return new Vector4(Math.Abs(v.x), Math.Abs(v.y), Math.Abs(v.z), Math.Abs(v.w));
+        }
+
+        /// <summary>
+        /// Rounds the indiviual components of the given vector <paramref name="v"/>.
+        /// <br>The resulting vector is the rounded vector, this method does not mutate the given vector
+        /// (like the rest of the Mathf shorthands for Vectors)</br>
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Rounded axis Vector2.</returns>
+        public static Vector2 RoundAxis(this Vector2 v)
+        {
+            return new Vector2(Mathf.Round(v.x), Mathf.Round(v.y));
+        }
+        /// <summary>
+        /// Rounds the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Rounded axis Vector3.</returns>
+        public static Vector3 RoundAxis(this Vector3 v)
+        {
+            return new Vector3(Mathf.Round(v.x), Mathf.Round(v.y), Mathf.Round(v.z));
+        }
+        /// <summary>
+        /// Rounds the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Rounded axis Vector4.</returns>
+        public static Vector4 RoundAxis(this Vector4 v)
+        {
+            return new Vector4(Mathf.Round(v.x), Mathf.Round(v.y), Mathf.Round(v.z), Mathf.Round(v.w));
+        }
+
+        /// <summary>
+        /// Floors the indiviual components of the given vector <paramref name="v"/>.
+        /// <br>The resulting vector is the floored vector, this method does not mutate the given vector
+        /// (like the rest of the Mathf shorthands for Vectors)</br>
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Floored axis Vector2.</returns>
+        public static Vector2 FloorAxis(this Vector2 v)
+        {
+            return new Vector2(Mathf.Floor(v.x), Mathf.Floor(v.y));
+        }
+        /// <summary>
+        /// Floors the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Floored axis Vector3.</returns>
+        public static Vector3 FloorAxis(this Vector3 v)
+        {
+            return new Vector3(Mathf.Floor(v.x), Mathf.Floor(v.y), Mathf.Floor(v.z));
+        }
+        /// <summary>
+        /// Floors the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to round it's axis.</param>
+        /// <returns>Floored axis Vector4.</returns>
+        public static Vector4 FloorAxis(this Vector4 v)
+        {
+            return new Vector4(Mathf.Floor(v.x), Mathf.Floor(v.y), Mathf.Floor(v.z), Mathf.Floor(v.w));
+        }
+
+        /// <summary>
+        /// Ceils the indiviual components of the given vector <paramref name="v"/>.
+        /// <br>The resulting vector is the ceiled vector, this method does not mutate the given vector
+        /// (like the rest of the Mathf shorthands for Vectors)</br>
+        /// </summary>
+        /// <param name="v">Vector to ceil it's axis.</param>
+        /// <returns>Ceiled axis Vector2.</returns>
+        public static Vector2 CeilAxis(this Vector2 v)
+        {
+            return new Vector2(Mathf.Ceil(v.x), Mathf.Ceil(v.y));
+        }
+        /// <summary>
+        /// Ceils the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to ceil it's axis.</param>
+        /// <returns>Ceiled axis Vector3.</returns>
+        public static Vector3 CeilAxis(this Vector3 v)
+        {
+            return new Vector3(Mathf.Ceil(v.x), Mathf.Ceil(v.y), Mathf.Ceil(v.z));
+        }
+        /// <summary>
+        /// Ceils the indiviual components of the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">Vector to ceil it's axis.</param>
+        /// <returns>Ceiled axis Vector4.</returns>
+        public static Vector4 CeilAxis(this Vector4 v)
+        {
+            return new Vector4(Mathf.Ceil(v.x), Mathf.Ceil(v.y), Mathf.Ceil(v.z), Mathf.Ceil(v.w));
         }
 
         /// <summary>

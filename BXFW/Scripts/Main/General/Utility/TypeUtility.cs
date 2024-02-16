@@ -202,6 +202,7 @@ namespace BXFW
                 throw new ArgumentNullException(nameof(t), "[SerializableDictionary::TypeIsNullable] Given argument was null.");
             }
 
+            // Just value type checking may fail if the type is an annotated nullable value type (like int?)
             return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
         }
         /// <summary>
@@ -254,7 +255,7 @@ namespace BXFW
         /// use the <see cref="Type.MakeGenericType(Type[])"/> method in a <c>try {} catch</c> block instead of using this method.</br>
         /// </summary>
         /// <param name="genericArg">The generic argument to check against. This cannot be null and must be a <see cref="Type.IsGenericType"/>.</param>
-        /// <param name="checkType">The type to check against. This cannot be null.</param>
+        /// <param name="checkType">The type to check whether if it's allowed on <paramref name="genericArg"/> generic parameter. This cannot be null.</param>
         /// <returns>The result of whether if the <paramref name="checkType"/> is assignable to the <paramref name="genericArg"/>'s constraints.</returns>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
@@ -393,12 +394,20 @@ namespace BXFW
         /// <param name="rhs">Other way around. Method returns if this is equal to <paramref name="lhs"/>.</param>
         public static bool TypedEqualityComparerResult(Type type, object lhs, object rhs)
         {
+            // Note + TODO : It may be faster to just type test the lhs and rhs to be the same type + both having IEquatable + accounting for rhs being null
+            // but who gonna do that when you can just abuse reflection B)
+            // If i ever do this, don't remove this method for API compat reasons + it works
+            // --
             // Because apparently there's no typeless EqualityComparer?
             // EqualityComparer is used because of the IEquatable check and other things
             // ----- No Typeless EqualityComparer? -----
+
             Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
+            // EqualityComparer<type>.Default
             object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+            // EqualityComparer<type>.Default.Equals(lhs, rhs)
             MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
+
             return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { lhs, rhs });
         }
     }
