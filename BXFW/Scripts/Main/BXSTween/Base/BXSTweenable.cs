@@ -119,7 +119,8 @@ namespace BXFW.Tweening
 
         /// <summary>
         /// Whether if the 'EaseCurve' should be used.
-        /// <br>Setting this will not touch the internal <see cref="m_EaseCurve"/> value.</br>
+        /// <br>Setting this will touch the internal <see cref="m_EaseCurve"/>
+        /// value only if the current ease curve is <see langword="null"/>.</br>
         /// </summary>
         public bool UseEaseCurve
         {
@@ -137,10 +138,11 @@ namespace BXFW.Tweening
             }
         }
         /// <summary>
-        /// <inheritdoc cref="UseEaseCurve"/>
+        /// Whether if the 'EaseCurve' should be used.
+        /// <br>This is the internal value that does not check the <see cref="m_EaseCurve"/> value.</br>
         /// </summary>
         [SerializeField]
-        private bool m_UseEaseCurve;
+        protected bool m_UseEaseCurve;
         /// <summary>
         /// Type of the easing for this tweenable.
         /// <br>By default, this is set to <see cref="EaseType.QuadInOut"/>.</br>

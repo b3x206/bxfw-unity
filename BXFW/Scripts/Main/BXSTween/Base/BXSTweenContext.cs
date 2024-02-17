@@ -292,17 +292,16 @@ namespace BXFW.Tweening
         }
         /// <summary>
         /// Sets the easing curve.
-        /// <br>Setting this null will disable <see cref="BXSTweenable.UseEaseCurve"/>.</br>
+        /// <br>
+        /// Setting this null will disable <see cref="BXSTweenable.UseEaseCurve"/>, 
+        /// setting it any non-null value will enable <see cref="BXSTweenable.UseEaseCurve"/>.
+        /// </br>
         /// </summary>
         /// <param name="curve">The animation curve to set.</param>
         public BXSTweenContext<TValue> SetEaseCurve(AnimationCurve curve)
         {
             m_EaseCurve = curve;
-
-            if (m_EaseCurve == null)
-            {
-                UseEaseCurve = false;
-            }
+            m_UseEaseCurve = m_EaseCurve != null;
 
             return this;
         }
