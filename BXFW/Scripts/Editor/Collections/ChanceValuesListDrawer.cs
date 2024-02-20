@@ -24,6 +24,8 @@ namespace BXFW.Collections.ScriptEditor
     // |   Data [O sampleData3 ] |
     // ---------------------------
 
+    // TODO : ReorderableList implementation, this way of just cheating with the 'SerializedProperty' is usually bad
+
     /// <summary>
     /// Creates an property drawer editor for <see cref="ChanceValuesListBase"/>, 
     /// where changing the chance value of a variable will change other values as well. (which looks cool)

@@ -55,6 +55,11 @@ namespace BXFW.Tools.Editor
         public bool TargetIsEnumerable => typeof(IEnumerable).IsAssignableFrom(fieldInfo.FieldType);
 
         /// <summary>
+        /// Whether if the property is an <see cref="IList{T}"/>, with any type that corresponds for it's generic parameter.
+        /// </summary>
+        public bool TargetIsIList => fieldInfo.FieldType.IsGenericType && typeof(IList<>).IsAssignableFromOpenGeneric(fieldInfo.FieldType.GetGenericTypeDefinition());
+
+        /// <summary>
         /// Creates a PropertyTargetInfo with a setup.
         /// </summary>
         /// <param name="fInfo">Field info to give to this 'PropertyTargetInfo'. This value cannot be null.</param>

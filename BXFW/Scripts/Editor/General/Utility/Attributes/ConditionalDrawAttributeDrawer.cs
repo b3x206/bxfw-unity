@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using BXFW.Tools.Editor;
+using System;
 
 namespace BXFW.ScriptEditor
 {
@@ -24,7 +25,8 @@ namespace BXFW.ScriptEditor
         /// Error details string resulting from the given attribute's <see cref="ConditionalDrawAttribute.DrawCondition.Error"/>.
         /// </summary>
         private string errorString;
-        private const float WarningBoxHeight = 32f;
+        private const float MinWarningBoxHeight = 36f;
+        private float WarningBoxHeight = MinWarningBoxHeight;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -32,8 +34,31 @@ namespace BXFW.ScriptEditor
             // This also resets 'drawField'
             var parentPair = property.GetParentOfTargetField();
 
-            // A no fail condition
-            currentCondition = Attribute.GetDrawCondition(fieldInfo, parentPair.value, out errorString);
+            // Always reset this for the next 'WarningBox'
+            WarningBoxHeight = MinWarningBoxHeight;
+
+            try
+            {
+                // This throws exceptions if the target field that the 'DrawIf' is applied to is IEnumerable.
+                currentCondition = Attribute.GetDrawCondition(fieldInfo, parentPair.value, out errorString);
+            }
+            catch (Exception e)
+            {
+                currentCondition = ConditionalDrawAttribute.DrawCondition.Error;
+                errorString = $"An exception occured | {e.Message}\n{e.StackTrace}";
+            }
+
+            // Note : If the parent object is an list, override everything and cause an error
+            // This is because Array's have the PropertyDrawer attribute applied to their children instead of the array itself
+            if (parentPair.TargetIsIList)
+            {
+                errorString = "Cannot use 'ConditionalDrawAttribute' on 'IEnumerable' targets : This is caused by unity applying the PropertyDrawer attribute to the children, which causes issues.";
+                currentCondition = ConditionalDrawAttribute.DrawCondition.Error;
+            }
+
+            // Edit : This doesn't calculate the height incorrectly, it's just that ReorderableList incorrectly caches the height of the element, this is worse, thanks.
+            WarningBoxHeight = EditorStyles.helpBox.CalcHeight(new GUIContent(errorString), EditorGUIUtility.currentViewWidth);
+
             switch (currentCondition)
             {
                 case ConditionalDrawAttribute.DrawCondition.False:

@@ -206,10 +206,10 @@ namespace BXFW
             return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
         }
         /// <summary>
-        /// Returns whether if the given type is assignable from generic type <paramref name="openGenericType"/>.
+        /// Returns whether if the given <paramref name="target"/> is assignable from generic type <paramref name="openGenericType"/>.
         /// <br>Can be used/tested against <b>open generic</b> types and <paramref name="target"/>'s base types are checked recursively.</br>
         /// </summary>
-        /// <param name="target">The target type to test to whether if it's assignable from <paramref name="openGenericType"/>. This cannot be <see langword="null"/>.</param>
+        /// <param name="target">The target type to test to whether if it's assignable from a typeof <paramref name="openGenericType"/>. This cannot be <see langword="null"/>.</param>
         /// <exception cref="ArgumentNullException"/>
         public static bool IsAssignableFromOpenGeneric(this Type target, Type openGenericType)
         {
@@ -226,17 +226,17 @@ namespace BXFW
             // genericType => Generic<> (open type)
 
             // Can be assigned using interface (can be checked only once, GetInterfaces returns all interfaces)
-            if (target.GetInterfaces().Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == openGenericType))
+            if (openGenericType.GetInterfaces().Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == target))
             {
                 return true;
             }
 
             // Can be assigned using BaseType inheritance (class inheritance)
-            Type iterTarget = target;
+            Type iterTarget = openGenericType;
             do
             {
                 // Can be assigned directly (with open type)
-                if (iterTarget.IsGenericType && iterTarget.GetGenericTypeDefinition() == openGenericType)
+                if (iterTarget.IsGenericType && iterTarget.GetGenericTypeDefinition() == target)
                 {
                     return true;
                 }
