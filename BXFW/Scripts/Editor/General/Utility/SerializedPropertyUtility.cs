@@ -55,9 +55,20 @@ namespace BXFW.Tools.Editor
         public bool TargetIsEnumerable => typeof(IEnumerable).IsAssignableFrom(fieldInfo.FieldType);
 
         /// <summary>
-        /// Whether if the property is an <see cref="IList{T}"/>, with any type that corresponds for it's generic parameter.
+        /// Whether if the property is assignable from an <see cref="IList{T}"/>, with any type that corresponds for it's generic parameter.
+        /// <br>This will only work on classes that have generic parameters.</br>
         /// </summary>
         public bool TargetIsIList => fieldInfo.FieldType.IsGenericType && typeof(IList<>).IsAssignableFromOpenGeneric(fieldInfo.FieldType.GetGenericTypeDefinition());
+
+        /// <summary>
+        /// Whether if the property is inside an unity serialized list.
+        /// <br>As an example, typed arrays (like <c><see cref="float"/>[]</c> or <c><see cref="SerializableType"/>[]</c>) 
+        /// and anything that is a <see cref="List{T}"/> is considered a SerializedList.
+        /// This is useful on whether if you want to apply / draw your <see cref="PropertyDrawer"/> 
+        /// that is targeting a <see cref="PropertyAttribute"/> - unity applies the <see cref="PropertyAttribute"/> 
+        /// of the lists to the children inspectors instead of the array itself.</br>
+        /// </summary>
+        public bool TargetIsSerializedList => fieldInfo.FieldType.BaseType == typeof(Array) || (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>));
 
         /// <summary>
         /// Creates a PropertyTargetInfo with a setup.

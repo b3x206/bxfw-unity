@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-using Codice.CM.Common;
+
 #if UNITY_5_3_OR_NEWER
 using UnityEngine;
 #endif

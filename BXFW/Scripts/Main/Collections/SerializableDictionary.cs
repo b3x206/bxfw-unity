@@ -44,6 +44,11 @@ namespace BXFW.Collections
     /// in this dictionary (by unity). Wrap them with array container class because double lists don't get serialized unless you trick the serializer.</br>
     /// <br>NOTE 2 : If this dictionary's values were changed from the Debug inspector menu, this dictionary MAY contain duplicate keys.</br>
     /// </summary>
+    /// <remarks>
+    /// * Unlike the <see cref="Dictionary{TKey, TValue}"/>, this does not use hashsets.
+    /// (because of this it is slower than an usual dictionary, you should only use this if serialization is required)
+    /// <br>* Ordering of the elements is ordered in the same order of elements that are added. It is not undefined behaviour.</br>
+    /// </remarks>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
     {
