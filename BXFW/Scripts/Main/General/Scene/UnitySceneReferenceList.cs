@@ -10,7 +10,7 @@ namespace BXFW.SceneManagement
     public sealed class SceneEntry : IEquatable<string>
     {
         /// <summary>
-        /// GUID of the scene in the editor.
+        /// GUID of the scene in the editor (as string).
         /// </summary>
         public string editorGUID;
         /// <summary>

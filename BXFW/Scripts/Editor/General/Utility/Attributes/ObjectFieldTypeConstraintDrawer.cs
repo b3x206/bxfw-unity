@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -128,6 +129,29 @@ namespace BXFW.ScriptEditor
                 else if (typeof(IList<>).IsAssignableFromOpenGeneric(objectFieldType.GetGenericTypeDefinition()))
                 {
                     objectFieldType = objectFieldType.GetGenericArguments().First();
+                }
+
+                if (string.IsNullOrEmpty(label.tooltip))
+                {
+                    label.tooltip = "[ObjectFieldTypeConstraint]";
+
+                    // Add the type constraints as tooltip(s)
+                    if (Attribute.constraintType1 != null)
+                    {
+                        label.tooltip += $"\n{Attribute.constraintType1.GetTypeDefinitionString(true)}";
+                    }
+                    if (Attribute.constraintType2 != null)
+                    {
+                        label.tooltip += $"\n{Attribute.constraintType2.GetTypeDefinitionString(true)}";
+                    }
+                    if (Attribute.constraintType3 != null)
+                    {
+                        label.tooltip += $"\n{Attribute.constraintType3.GetTypeDefinitionString(true)}";
+                    }
+                    if (Attribute.constraintType4 != null)
+                    {
+                        label.tooltip += $"\n{Attribute.constraintType4.GetTypeDefinitionString(true)}";
+                    }
                 }
 
                 var objectValue = EditorGUI.ObjectField(position, label, property.objectReferenceValue, objectFieldType, true);

@@ -76,7 +76,6 @@ namespace BXFW
 #else
             mesh = GetComponent<MeshFilter>().mesh;
 #endif
-
             return mesh;
         }
         #endregion
