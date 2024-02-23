@@ -77,10 +77,7 @@ namespace BXFW.Tools.Editor
         /// <summary>
         /// An indiced access operator for this element.
         /// </summary>
-        public SearchDropdownElement this[int index]
-        {
-            get => m_Children[index];
-        }
+        public SearchDropdownElement this[int index] => m_Children[index];
 
         /// <inheritdoc cref="SearchDropdownElement(GUIContent)"/>
         public SearchDropdownElement(string label)
@@ -316,8 +313,8 @@ namespace BXFW.Tools.Editor
             }
 
             // Strip 'content.text' from rich text if parent allows rich text?
-            // TODO : Either determine that using more references (yay) or allow the user to manually override this
-            // For the time being just do normal comparisons.
+            // TODO : Either determine that using more references (yay, more code and bloat) or allow the user to manually override this
+            // For the time being just do normal comparisons as if the rich texted stuff is colored similarly the comparison shouldn't be hurt much.
             return content.text.CompareTo(other.content.text);
         }
 

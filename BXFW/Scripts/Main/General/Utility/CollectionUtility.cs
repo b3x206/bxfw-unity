@@ -258,62 +258,10 @@ namespace BXFW
         }
         /// <summary>
         /// Returns a random value from an array matching the <paramref name="predicate"/>.
-        /// <br>This operation is o(N) due to the predicate filtering, but if the <paramref name="predicate"/> does not allocate garbage it should be allocless.</br>
         /// </summary>
         public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate)
         {
-            if (values == null)
-            {
-                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
-            }
-
-            if (predicate == null)
-            {
-                throw new ArgumentNullException(nameof(predicate), "[CollectionUtility::GetRandom] 'predicate' is null.");
-            }
-
-            // Or you know, just exclude according to the given predicate,
-            // increment the selected random index if the indices match but the predicate doesn't want it..
-#if UNITY_5_3_OR_NEWER
-            int randValue = UnityEngine.Random.Range(0, values.Count);
-#else
-            System.Random rand = new System.Random(unchecked((int)DateTime.Now.Ticks));
-            int randValue = rand.Next(0, values.Count);
-#endif
-            // Filter according to the predicate
-            bool predicateResult = false; // last predicate result done by the loop.
-            for (int i = 0; i < values.Count; i++)
-            {
-                bool randValueEqualsIndex = randValue == i;
-                predicateResult = predicate(values[i]);
-
-                if (!predicateResult)
-                {
-                    // Go for the next value to select
-                    // This makes sense because if the 'randValue' was '0' and if '0'th index was ignored the new 0'th index will be 1.
-                    if (randValueEqualsIndex)
-                    {
-                        randValue++;
-                    }
-
-                    continue;
-                }
-
-                // Selected value, pushed from the randValue
-                if (randValueEqualsIndex)
-                {
-                    return values[i];
-                }
-            }
-
-            // Last value matched the predicate but the for loop couldn't select it.
-            if (randValue >= values.Count && predicateResult)
-            {
-                return values[values.Count - 1];
-            }
-
-            // Nothing matched the predicate (most likely)
-            return default;
+            return GetRandom((IEnumerable<T>)values, predicate);
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace BXFW.Tools.Editor
 {
     /// <summary>
     /// Editor window that handles the dropdown.
-    /// <br>This dropdown does async searching and recycled scroll rects.</br>
+    /// <br>This dropdown does async searching and recycled scroll rects, and is more optimized than the <see cref="UnityEditor.IMGUI.Controls.AdvancedDropdownGUI"/>.</br>
     /// </summary>
     public sealed class SearchDropdownWindow : EditorWindow
     {
@@ -699,7 +699,7 @@ namespace BXFW.Tools.Editor
                 for (int i = firstVisibleElementIndex; i <= highlightedElementIndex; i++)
                 {
                     // Check the current scroll rect position, if it cannot accomodate the 'nextElement' scroll as much as 'targetElementHeight'.
-                    SearchDropdownElement visibleNextElement = lastElement[i];
+                    SearchDropdownElement visibleNextElement = lastElement[Mathf.Clamp(i, 0, lastElement.Count - 1)];
                     visibleUntilHighlightedHeight += visibleNextElement.GetHeight(ElementsViewWidth);
                 }
 
@@ -824,6 +824,7 @@ namespace BXFW.Tools.Editor
                                 break;
                             }
                             goto case KeyCode.Return;
+                        // Proceed with selection / search query
                         case KeyCode.Return:
                         case KeyCode.KeypadEnter:
                             // Stop editing text

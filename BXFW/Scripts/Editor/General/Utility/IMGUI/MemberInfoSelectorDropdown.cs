@@ -86,6 +86,29 @@ namespace BXFW.Tools.Editor
         {
             if (info is PropertyInfo propertyInfo)
             {
+                MethodInfo[] propertyAccessorInfos = propertyInfo.GetAccessors();
+                for (int i = 0; i < propertyAccessorInfos.Length; i++)
+                {
+                    MethodInfo methodInfo = propertyAccessorInfos[i];
+
+                    // Setter
+                    if (methodInfo.ReturnType == typeof(void))
+                    {
+                        accessModifierName += methodInfo.IsPublic ? "public set" : "private set";
+                    }
+                    // Getter
+                    else
+                    {
+                        accessModifierName += methodInfo.IsPublic ? "public get" : "private get";
+                    }
+
+                    // add space + comma between to make the name neat
+                    if (i != propertyAccessorInfos.Length - 1)
+                    {
+                        accessModifierName += ", ";
+                    }
+                }
+
                 accessModifierName = propertyInfo.GetAccessors().First().IsPublic ? "public" : "private/protected";
                 typeName = propertyInfo.PropertyType.GetTypeDefinitionString();
 

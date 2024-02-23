@@ -10,20 +10,20 @@ using UnityEngine;
 namespace BXFW.Tools.Editor
 {
     /// <summary>
-    /// Save format for the terrain.
-    /// </summary>
-    public enum SaveFormat { Triangles, Quads }
-    /// <summary>
-    /// Resolution for saving the terrain data.
-    /// <br>Higher resolutions mean more detailed '.obj' terrain meshes at the cost of performance and export speed.</br>
-    /// </summary>
-    public enum SaveResolution { Full, Half, Quarter, Eighth, Sixteenth }
-
-    /// <summary>
     /// A <see cref="EditorTask"/> for exporting a unity <see cref="Terrain"/>'s data into a standard mesh with '.obj' format.
     /// </summary>
-    public class ExportTerrainToObjMeshTask : EditorTask
+    public class ExportTerrainToObjTask : EditorTask
     {
+        /// <summary>
+        /// Save format for the terrain.
+        /// </summary>
+        public enum SaveFormat { Triangles, Quads }
+        /// <summary>
+        /// Resolution for saving the terrain data.
+        /// <br>Higher resolutions mean more detailed '.obj' terrain meshes at the cost of performance and export speed.</br>
+        /// </summary>
+        public enum SaveResolution { Full, Half, Quarter, Eighth, Sixteenth }
+
         public SaveFormat saveFormat = SaveFormat.Triangles;
         public SaveResolution saveResolution = SaveResolution.Half;
         public TerrainData targetTerrain;
@@ -34,7 +34,12 @@ namespace BXFW.Tools.Editor
         private int elapsedCount;    // Elapsed count
         private int totalCount;      // Total mesh quad/tri count
         private int progressCounter; // Counts the progress
-        private const int PROGRESS_COUNT_INTERVAL = 8192; // progress count interval
+        /// <summary>
+        /// Amount of the <see cref="UpdateProgress"/> that is needed to be called before 
+        /// it actually updates the progress shown using <see cref="EditorUtility.DisplayProgressBar(string, string, float)"/>.
+        /// <br>This usually is used with the mesh writing loops.</br>
+        /// </summary>
+        private const int ProgressCountInterval = 8192;
 
         /// <summary>
         /// Assigns <see cref="targetTerrain"/> if it's <see langword="null"/>.
@@ -168,7 +173,7 @@ namespace BXFW.Tools.Editor
                 // Write vertices
                 Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
                 progressCounter = elapsedCount = 0;
-                totalCount = ((tVertices.Length * 2) + (saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / PROGRESS_COUNT_INTERVAL;
+                totalCount = ((tVertices.Length * 2) + (saveFormat == SaveFormat.Triangles ? tPolys.Length / 3 : tPolys.Length / 4)) / ProgressCountInterval;
                 for (var i = 0; i < tVertices.Length; i++)
                 {
                     UpdateProgress();
@@ -232,7 +237,10 @@ namespace BXFW.Tools.Editor
         }
         private void UpdateProgress()
         {
-            if (progressCounter++ != PROGRESS_COUNT_INTERVAL)
+            int previousProgressCounter = progressCounter;
+            progressCounter++;
+
+            if (previousProgressCounter != ProgressCountInterval)
             {
                 return;
             }

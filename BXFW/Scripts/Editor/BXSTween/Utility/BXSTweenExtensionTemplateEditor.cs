@@ -133,7 +133,7 @@ namespace BXFW.Tweening.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
-                currentArrayProperty.arraySize = propertyArraySize;
+                currentArrayProperty.arraySize = Mathf.Max(0, propertyArraySize);
                 property.SetLong(ChildListExpandedKey, childListExpanded ? 1 : 0);
             }
 

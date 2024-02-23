@@ -68,7 +68,7 @@ namespace BXFW.Tools.Editor
         /// that is targeting a <see cref="PropertyAttribute"/> - unity applies the <see cref="PropertyAttribute"/> 
         /// of the lists to the children inspectors instead of the array itself.</br>
         /// </summary>
-        public bool TargetIsSerializedList => fieldInfo.FieldType.BaseType == typeof(Array) || (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>));
+        public bool TargetIsSerializedList => fieldInfo.FieldType.IsArray || (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>));
 
         /// <summary>
         /// Creates a PropertyTargetInfo with a setup.
