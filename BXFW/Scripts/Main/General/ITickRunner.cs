@@ -50,7 +50,7 @@ namespace BXFW
         /// <summary>
         /// A tick method, should be invoked every tick regardless of time scaling.
         /// This method should tick regardless of support and should be ticked usually from the main thread.
-        /// <br>Hook into Update/FixedUpdate if unsure.</br>
+        /// <br>Hook into Update/FixedUpdate or '_Process/_PhysicsProcess' if unsure.</br>
         /// </summary>
         public event Action<ITickRunner> OnTick;
         /// <summary>
@@ -60,7 +60,7 @@ namespace BXFW
         public event Action<ITickRunner> OnFixedTick;
         /// <summary>
         /// Should be invoked when the runner is closed/destroyed/disposed.
-        /// <br>Hook into OnApplicationQuit+<see cref="Kill"/> if unsure.</br>
+        /// <br>Hook into OnApplicationQuit/<see cref="Kill"/> if unsure.</br>
         /// </summary>
         public event ExitAction OnExit;
 

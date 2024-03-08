@@ -80,7 +80,6 @@ namespace BXFW
                 return min;
             }
 
-            // lisp be like
             return min + ((((value - min) % minMaxRange) + minMaxRange) % minMaxRange);
         }
         /// <summary>
@@ -89,13 +88,13 @@ namespace BXFW
         public static float Wrap(float value, float min, float max)
         {
             float minMaxRange = max - min;
-            if (Mathf.Approximately(minMaxRange, 0f))
+            if (Approximately(minMaxRange, 0f))
             {
                 return min;
             }
 
             float result = value - (minMaxRange * (float)Math.Floor((value - min) / minMaxRange));
-            if (Mathf.Approximately(result, max))
+            if (Approximately(result, max))
             {
                 return min;
             }
@@ -112,13 +111,28 @@ namespace BXFW
         /// <param name="maxDelta">Maximum change in <paramref name="current"/> to <paramref name="target"/> allowed.</param>
         public static double MoveTowards(double current, double target, double maxDelta)
         {
-            // Delta is smaller than the max delta
+            // Delta (between values to move) is smaller than the max delta
             if (Math.Abs(target - current) <= maxDelta)
             {
                 return target;
             }
 
             return current + (Math.Sign(target - current) * maxDelta);
+        }
+
+        /// <summary>
+        /// Checks whether if given <paramref name="x"/> is close to given <paramref name="y"/>.
+        /// </summary>
+        public static bool Approximately(float x, float y)
+        {
+            return Math.Abs(y - x) < Math.Max(1E-06f * Math.Max(Math.Abs(x), Math.Abs(y)), float.Epsilon * 8f);
+        }
+        /// <summary>
+        /// Checks whether if given <paramref name="x"/> is close to given <paramref name="y"/>.
+        /// </summary>
+        public static bool Approximately(double x, double y)
+        {
+            return Math.Abs(y - x) < Math.Max(1E-06d * Math.Max(Math.Abs(x), Math.Abs(y)), double.Epsilon * 8d);
         }
 
         // ------------------
@@ -330,31 +344,26 @@ namespace BXFW
 
         /// <summary>
         /// Returns the given <see cref="Vector3"/> direction value from <paramref name="axis"/>.
+        /// <br>The returned <see cref="Vector3"/> is not normalized, use <see cref="Vector3.normalized"/> to normalize it.</br>
         /// </summary>
         public static Vector3 GetDirection(this TransformAxis axis)
         {
-            switch (axis)
+            Vector3 directionAxis = Vector3.zero;
+
+            if ((axis & TransformAxis.XAxis) == TransformAxis.XAxis)
             {
-                case TransformAxis.None:
-                    return Vector3.zero;
-                case TransformAxis.XAxis:
-                    return Vector3.right;
-                case TransformAxis.YAxis:
-                    return Vector3.up;
-                case TransformAxis.ZAxis:
-                    return Vector3.forward;
-
-                case TransformAxis.XAxis | TransformAxis.YAxis:
-                    return Vector3.right + Vector3.up;
-                case TransformAxis.YAxis | TransformAxis.ZAxis:
-                    return Vector3.up + Vector3.forward;
-                case TransformAxis.XAxis | TransformAxis.ZAxis:
-                    return Vector3.right + Vector3.forward;
-
-                default:
-                case TransformAxis.XYZAxis:
-                    return Vector3.one;
+                directionAxis += Vector3.right;
             }
+            if ((axis & TransformAxis.YAxis) == TransformAxis.YAxis)
+            {
+                directionAxis += Vector3.up;
+            }
+            if ((axis & TransformAxis.ZAxis) == TransformAxis.ZAxis)
+            {
+                directionAxis += Vector3.forward;
+            }
+
+            return directionAxis;
         }
         /// <summary>
         /// Returns the given <see cref="Vector2"/> direction value from <paramref name="axis"/>.
@@ -381,37 +390,19 @@ namespace BXFW
         /// </summary>
         public static Vector3 AxisVector(this Vector3 target, TransformAxis axisConstraint)
         {
-            Vector3 v = target;
-            switch (axisConstraint)
+            Vector3 v = Vector3.zero;
+
+            if ((axisConstraint & TransformAxis.XAxis) == TransformAxis.XAxis)
             {
-                case TransformAxis.None:
-                    return Vector3.zero;
-
-                case TransformAxis.XAxis:
-                    v.y = 0f;
-                    v.z = 0f;
-                    break;
-                case TransformAxis.YAxis:
-                    v.x = 0f;
-                    v.z = 0f;
-                    break;
-                case TransformAxis.ZAxis:
-                    v.x = 0f;
-                    v.y = 0f;
-                    break;
-                case TransformAxis.YAxis | TransformAxis.ZAxis:
-                    v.x = 0f;
-                    break;
-                case TransformAxis.XAxis | TransformAxis.ZAxis:
-                    v.y = 0f;
-                    break;
-                case TransformAxis.XAxis | TransformAxis.YAxis:
-                    v.z = 0f;
-                    break;
-
-                default:
-                case TransformAxis.XYZAxis:
-                    return v;
+                v.x = target.x;
+            }
+            if ((axisConstraint & TransformAxis.YAxis) == TransformAxis.YAxis)
+            {
+                v.y = target.y;
+            }
+            if ((axisConstraint & TransformAxis.ZAxis) == TransformAxis.ZAxis)
+            {
+                v.z = target.z;
             }
 
             return v;
@@ -422,41 +413,23 @@ namespace BXFW
         public static Vector3 SettedAxisVector(this Vector3 target, TransformAxis axisConstraint, Vector3 valueSet)
         {
             Vector3 v = target;
-            switch (axisConstraint)
+
+            if ((axisConstraint & TransformAxis.XAxis) == TransformAxis.XAxis)
             {
-                case TransformAxis.None:
-                    return Vector3.zero;
-
-                case TransformAxis.XAxis:
-                    v.x = valueSet.x;
-                    break;
-                case TransformAxis.YAxis:
-                    v.y = valueSet.y;
-                    break;
-                case TransformAxis.ZAxis:
-                    v.z = valueSet.z;
-                    break;
-                case TransformAxis.XAxis | TransformAxis.YAxis:
-                    v.x = valueSet.x;
-                    v.y = valueSet.y;
-                    break;
-                case TransformAxis.YAxis | TransformAxis.ZAxis:
-                    v.y = valueSet.y;
-                    v.z = valueSet.z;
-                    break;
-                case TransformAxis.XAxis | TransformAxis.ZAxis:
-                    v.x = valueSet.x;
-                    v.z = valueSet.z;
-                    break;
-
-                default:
-                case TransformAxis.XYZAxis:
-                    return valueSet;
+                v.x = valueSet.x;
+            }
+            if ((axisConstraint & TransformAxis.YAxis) == TransformAxis.YAxis)
+            {
+                v.y = valueSet.y;
+            }
+            if ((axisConstraint & TransformAxis.ZAxis) == TransformAxis.ZAxis)
+            {
+                v.z = valueSet.z;
             }
 
             return v;
         }
- 
+
         /// <summary>
         /// Get the <see cref="Vector2"/> values according to <paramref name="axisConstraint"/>.
         /// </summary>
@@ -466,10 +439,8 @@ namespace BXFW
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
-                    return Vector2.zero;
-
-                default:
-                case TransformAxis2D.XYAxis:
+                    v.x = 0f;
+                    v.y = 0f;
                     break;
 
                 case TransformAxis2D.XAxis:
@@ -477,6 +448,10 @@ namespace BXFW
                     break;
                 case TransformAxis2D.YAxis:
                     v.x = 0f;
+                    break;
+
+                default:
+                case TransformAxis2D.XYAxis:
                     break;
             }
 
@@ -491,7 +466,9 @@ namespace BXFW
             switch (axisConstraint)
             {
                 case TransformAxis2D.None:
-                    return Vector2.zero;
+                    v.x = 0f;
+                    v.y = 0f;
+                    break;
 
                 case TransformAxis2D.XAxis:
                     v.x = valueSet.x;
@@ -499,6 +476,7 @@ namespace BXFW
                 case TransformAxis2D.YAxis:
                     v.y = valueSet.y;
                     break;
+
                 default:
                 case TransformAxis2D.XYAxis:
                     v.x = valueSet.x;
@@ -665,6 +643,38 @@ namespace BXFW
             return Quaternion.Euler(quaternion.eulerAngles.AxisVector(axisConstraint));
         }
 
+        /// <summary>
+        /// Gives a random position inside given bounds.
+        /// </summary>
+        /// <param name="bounds">The bounds to get a random position inside.</param>
+        /// <param name="axis">
+        /// The bound extent axis to consider.
+        /// This controls which components contain a position in the returned <see cref="Vector3"/>.
+        /// </param>
+        public static Vector3 RandomInside(this Bounds bounds, TransformAxis axis)
+        {
+            Vector3 result = Vector3.zero;
+            if ((axis & TransformAxis.XAxis) == TransformAxis.XAxis)
+            {
+                result.x = bounds.center.x + UnityEngine.Random.Range(-bounds.extents.x, bounds.extents.x);
+            }
+            if ((axis & TransformAxis.YAxis) == TransformAxis.YAxis)
+            {
+                result.y = bounds.center.y + UnityEngine.Random.Range(-bounds.extents.y, bounds.extents.y);
+            }
+            if ((axis & TransformAxis.ZAxis) == TransformAxis.ZAxis)
+            {
+                result.z = bounds.center.z + UnityEngine.Random.Range(-bounds.extents.z, bounds.extents.z);
+            }
+
+            return result;
+        }
+        /// <inheritdoc cref="RandomInside(Bounds, TransformAxis)"/>
+        public static Vector3 RandomInside(this Bounds bounds)
+        {
+            return RandomInside(bounds, TransformAxis.XYZAxis);
+        }
+
         // ------------------
         // - Matrix Utility -
         // ------------------
@@ -753,7 +763,7 @@ namespace BXFW
                     transform.localScale = scale;
                     break;
                 default:
-                    throw new ArgumentException(string.Format("[Additionals::SetMatrix] Failed setting matrix : Parameter 'space={0}' is invalid.", space));
+                    throw new ArgumentException(string.Format("[Additionals::SetMatrix] Failed setting matrix : Argument 'space={0}' is invalid.", space), nameof(space));
             }
         }
 

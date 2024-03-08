@@ -63,7 +63,7 @@ namespace BXFW
                     return DrawCondition.Error;
                 }
 
-                return TypeUtility.TypedEqualityComparerResult(objectType, targetEnumFieldInfo.GetValue(parentValue), objectValue) ? DrawCondition.True : DrawCondition.False;
+                return TypeUtility.GetEqualityComparerResult(objectType, targetEnumFieldInfo.GetValue(parentValue), objectValue) ? DrawCondition.True : DrawCondition.False;
             }
 
             // Try getting the PropertyInfo
@@ -77,7 +77,7 @@ namespace BXFW
                     return DrawCondition.Error;
                 }
 
-                return TypeUtility.TypedEqualityComparerResult(objectType, targetEnumPropertyInfo.GetValue(parentValue), objectValue) ? DrawCondition.True : DrawCondition.False;
+                return TypeUtility.GetEqualityComparerResult(objectType, targetEnumPropertyInfo.GetValue(parentValue), objectValue) ? DrawCondition.True : DrawCondition.False;
             }
 
             // Both property + value failed

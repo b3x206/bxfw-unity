@@ -13,6 +13,9 @@ namespace BXFW.Tweening
     /// </summary>
     public static class BXSTween
     {
+        // TODO : Add tween pooled gathering for inline BXSTweenContext creations
+        // This will lower the heap garbage allocated.
+
         // -- Constants
         /// <summary>
         /// A <see cref="BXSTweenable.ID"/> for no id.
@@ -188,7 +191,7 @@ namespace BXFW.Tweening
         /// is higher than the <see cref="RunningTweens"/>'s capacity.
         /// </summary>
         /// <param name="capacity">Capacity to reserve.</param>
-        public static void ReserveTweenCapacity(int capacity)
+        public static void ReserveRunningTweensCapacity(int capacity)
         {
             if (RunningTweens.Capacity < capacity)
             {

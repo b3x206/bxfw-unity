@@ -32,7 +32,7 @@ namespace BXFW
             FieldInfo targetFieldInfo = targetField.DeclaringType.GetField(nullableFieldName, TargetFlags);
             if (targetFieldInfo != null)
             {
-                bool nullComparisonResult = TypeUtility.TypedEqualityComparerResult(targetFieldInfo.FieldType, targetFieldInfo.GetValue(parentValue), null);
+                bool nullComparisonResult = TypeUtility.GetEqualityComparerResult(targetFieldInfo.FieldType, targetFieldInfo.GetValue(parentValue), null);
                 return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
             }
 
@@ -40,7 +40,7 @@ namespace BXFW
             PropertyInfo targetPropertyInfo = targetField.DeclaringType.GetProperty(nullableFieldName, TargetFlags);
             if (targetPropertyInfo != null && targetPropertyInfo.CanRead)
             {
-                bool nullComparisonResult = TypeUtility.TypedEqualityComparerResult(targetPropertyInfo.PropertyType, targetPropertyInfo.GetValue(parentValue), null);
+                bool nullComparisonResult = TypeUtility.GetEqualityComparerResult(targetPropertyInfo.PropertyType, targetPropertyInfo.GetValue(parentValue), null);
                 return nullComparisonResult ? DrawCondition.False : DrawCondition.True;
             }
 

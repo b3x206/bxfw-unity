@@ -1,10 +1,11 @@
+using System;
 using System.Collections.Generic;
 
 namespace BXFW
 {
     /// <summary>
     /// Allows for safely comparing <see cref="UnityEngine.Object"/>'s to anything.
-    /// <br>Also works as a default <see cref="object"/> comparer. (for non-typesafe boxed objects)</br>
+    /// <br>Also works as a typed <see cref="object"/> comparer. (using <see cref="TypeUtility.GetEqualityComparerResult(Type, object, object)"/>)</br>
     /// </summary>
     public class UnitySafeObjectComparer : IEqualityComparer<object>
     {
@@ -42,10 +43,17 @@ namespace BXFW
                 return lhsUnityObject == rhsUnityObject;
             }
 #endif
-            // Use the default object comparison
-            // This, if the Equals implementing class object instance, is type testing the equal object, should work fine.
-            return EqualityComparer<object>.Default.Equals(x, y);
-            // return object.Equals(x, y);
+            // 'is' test it several times more because i feel like it
+            // this is advanced gitub copilot code, the pinnacle of engineering
+            bool xIsNull = x is null;
+            if (xIsNull)
+            {
+                return y is null;
+            }
+
+            // Use the typed object comparison, this should work fine but will allocate garbaj for first times
+            Type objectType = x.GetType();
+            return TypeUtility.GetEqualityComparerResult(objectType, x, y);
         }
 
         public int GetHashCode(object obj)

@@ -37,7 +37,8 @@ namespace BXFW
         [Header("Input Settings")]
         public bool lookRawInput = true;
         public float lookSensitivity = 10f;
-        public bool InputAdjustMoveSpeedMouseWheel = false;
+        public bool mouseWheelAdjustSpeed = false;
+        [InspectorLine(LineColor.Gray)]
         public CustomInputEvent inputMoveForward = new KeyCode[] { KeyCode.W, KeyCode.UpArrow };
         public CustomInputEvent inputMoveBackward = new KeyCode[] { KeyCode.S, KeyCode.DownArrow };
         public CustomInputEvent inputMoveLeft = new KeyCode[] { KeyCode.A, KeyCode.LeftArrow };
@@ -82,15 +83,20 @@ namespace BXFW
             return lookRawInput ? Input.GetAxisRaw(axisName) : Input.GetAxis(axisName);
         }
 
+        /// <summary>
+        /// Whether if this class was the one that toggled the cursor state.
+        /// </summary>
+        private bool toggledCursorLockState = false;
         protected float CurrentRotationX = 0f, CurrentRotationY = 0f;
         protected virtual void Update()
         {
             if (Input.GetMouseButton(1))
             {
-                if (Cursor.lockState != CursorLockMode.Confined && Cursor.visible)
+                if (Cursor.lockState != CursorLockMode.Confined && Cursor.visible && !toggledCursorLockState)
                 {
                     Cursor.lockState = CursorLockMode.Confined;
                     Cursor.visible = false;
+                    toggledCursorLockState = true;
                 }
 
                 // Rotate camera
@@ -149,7 +155,7 @@ namespace BXFW
                 }
 
                 // Adjust Move Speed
-                if (InputAdjustMoveSpeedMouseWheel)
+                if (mouseWheelAdjustSpeed)
                 {
                     if (Input.mouseScrollDelta != Vector2.zero)
                     {
@@ -159,13 +165,15 @@ namespace BXFW
 
                 TargetTransform.Translate(MoveTranslate);
             }
-            else
+            else if (toggledCursorLockState)
             {
                 if (Cursor.lockState == CursorLockMode.Confined || !Cursor.visible)
                 {
                     Cursor.lockState = CursorLockMode.None;
                     Cursor.visible = true;
                 }
+
+                toggledCursorLockState = false;
             }
         }
 
@@ -183,14 +191,14 @@ namespace BXFW
         }
         private void OnDisable()
         {
-            foreach (var comp in disableComponentsOnEnable)
+            foreach (Behaviour behaviour in disableComponentsOnEnable)
             {
-                if (comp == null)
+                if (behaviour == null)
                 {
                     continue;
                 }
 
-                comp.enabled = true;
+                behaviour.enabled = true;
             }
         }
     }

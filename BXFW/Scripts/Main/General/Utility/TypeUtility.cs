@@ -16,9 +16,15 @@ namespace BXFW
         /// Returns whether if the <paramref name="typeName"/> has an integral name.
         /// <br>Useful to compare <see cref="UnityEditor.SerializedProperty.type"/> to check.</br>
         /// </summary>
+        /// <param name="typeName">The name of the type to compare. This can be a <see cref="UnityEditor.SerializedProperty.type"/> or a <see cref="MemberInfo.Name"/>.</param>
         public static bool IsTypeNameInteger(string typeName)
         {
-            return typeName == typeof(byte).Name ||
+            // compare the 'SerializedProperty' names
+            return // SerializedProperty.type
+                typeName == "int" ||
+                typeName == "long" ||
+                // System
+                typeName == typeof(byte).Name ||
                 typeName == typeof(sbyte).Name ||
                 typeName == typeof(short).Name ||
                 typeName == typeof(ushort).Name ||
@@ -27,23 +33,22 @@ namespace BXFW
                 typeName == typeof(long).Name ||
                 typeName == typeof(ulong).Name ||
                 typeName == typeof(IntPtr).Name ||
-                typeName == typeof(UIntPtr).Name ||
-                // SerializedProperty.type
-                typeName == "int" ||
-                typeName == "long";
+                typeName == typeof(UIntPtr).Name;
         }
         /// <summary>
         /// Returns whether if the type name is a floating point number type.
         /// <br>Compares <paramref name="typeName"/> to <see cref="float"/>, <see cref="double"/> or <see cref="decimal"/>.</br>
         /// </summary>
+        /// <param name="typeName">The name of the type to compare. This can be a <see cref="UnityEditor.SerializedProperty.type"/> or a <see cref="MemberInfo.Name"/>.</param>
         public static bool IsTypeNameFloat(string typeName)
         {
-            return typeName == typeof(float).Name ||
-                typeName == typeof(double).Name ||
-                typeName == typeof(decimal).Name ||
-                // SerializedProperty.type
+            return // SerializedProperty.type
                 typeName == "float" ||
-                typeName == "double";
+                typeName == "double" ||
+                // System
+                typeName == typeof(float).Name ||
+                typeName == typeof(double).Name ||
+                typeName == typeof(decimal).Name;
         }
         /// <summary>
         /// Returns whether if the <paramref name="typeName"/> has a numerical name.
@@ -134,6 +139,7 @@ namespace BXFW
                     continue;
                 }
 
+                // Add type strings recursively
                 typeNameSb.Append(GetTypeDefinitionString(genericArg, includeNamespace, usePredefinedTypeAliases));
                 if (i != typeGenericArgs.Length - 1)
                 {
@@ -151,7 +157,16 @@ namespace BXFW
         /// </summary>
         public static bool IsTypeInteger(Type type)
         {
-            return IsTypeNameInteger(type.Name);
+            return type == typeof(sbyte) ||
+                type == typeof(byte) ||
+                type == typeof(short) ||
+                type == typeof(ushort) ||
+                type == typeof(int) ||
+                type == typeof(uint) ||
+                type == typeof(long) ||
+                type == typeof(ulong) ||
+                type == typeof(IntPtr) ||
+                type == typeof(UIntPtr);
         }
         /// <summary>
         /// Returns whether if <typeparamref name="T"/> is a built-in c# integer type.
@@ -165,7 +180,8 @@ namespace BXFW
         /// </summary>
         public static bool IsTypeFloat(Type type)
         {
-            return IsTypeNameFloat(type.Name);
+            // decimal is also a floating point, it's just 128-bit and tries it's hardest not to lose precision
+            return type == typeof(float) || type == typeof(double) || type == typeof(decimal);
         }
         /// <summary>
         /// Returns whether if <typeparamref name="T"/> is a built-in c# floating point number type.
@@ -180,7 +196,7 @@ namespace BXFW
         /// </summary>
         public static bool IsTypeNumerical(Type type)
         {
-            return IsTypeNameNumerical(type.Name);
+            return IsTypeFloat(type) || IsTypeInteger(type);
         }
         /// <summary>
         /// Returns whether if <typeparamref name="T"/> is an numerical type.
@@ -340,7 +356,7 @@ namespace BXFW
 
         /// <summary>
         /// Get an iterator of the base types + interfaces implemented of <paramref name="type"/>.
-        /// <br>Returns a blank iterator if no base type + interfaces.</br>
+        /// <br>Returns a blank IEnumerable if no base type + interfaces. (no foreach basically)</br>
         /// </summary>
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
@@ -384,6 +400,10 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Used to cache the created <see cref="EqualityComparer{T}"/>s of <see cref="GetEqualityComparerResult(Type, object, object)"/>.
+        /// </summary>
+        private static Dictionary<Type, (object, MethodInfo)> m_typedEqualityComparers = new Dictionary<Type, (object, MethodInfo)>(128);
+        /// <summary>
         /// An utility method used to get the typed <see cref="EqualityComparer{T}.Default"/>'s comparison result with the given <paramref name="type"/>.
         /// </summary>
         /// <param name="type">
@@ -392,23 +412,46 @@ namespace BXFW
         /// </param>
         /// <param name="lhs">First object to compare. This method returns whether if this value is equal to <paramref name="rhs"/>.</param>
         /// <param name="rhs">Other way around. Method returns if this is equal to <paramref name="lhs"/>.</param>
-        public static bool TypedEqualityComparerResult(Type type, object lhs, object rhs)
+        public static bool GetEqualityComparerResult(Type type, object lhs, object rhs)
         {
-            // Note + TODO : It may be faster to just type test the lhs and rhs to be the same type + both having IEquatable + accounting for rhs being null
-            // but who gonna do that when you can just abuse reflection B)
-            // If i ever do this, don't remove this method for API compat reasons + it works
+            // Note : It may be faster to just type test the lhs and rhs to be the same type + both having IEquatable + accounting for rhs being null
+            // --
+            // This is what exactly EqualityComparer<T> does, but better with more checks, there's no need to roll my own impl, caching with a Dictionary is better.
             // --
             // Because apparently there's no typeless EqualityComparer?
             // EqualityComparer is used because of the IEquatable check and other things
             // ----- No Typeless EqualityComparer? -----
+            (object typedComparer, MethodInfo typedComparerEqualsMethod) tuple;
+            // normal dictionaries does not support concurrency in read/write operations, have to use ConcurrentDictionary
+            lock (m_typedEqualityComparers)
+            {
+                if (!m_typedEqualityComparers.TryGetValue(type, out tuple))
+                {
+                    Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
+                    // EqualityComparer<type>.Default
+                    tuple.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                    // EqualityComparer<type>.Default.Equals(lhs, rhs)
+                    tuple.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
 
-            Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
-            // EqualityComparer<type>.Default
-            object typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
-            // EqualityComparer<type>.Default.Equals(lhs, rhs)
-            MethodInfo typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
+                    // add dict value
+                    m_typedEqualityComparers.Add(type, tuple);
+                }
+                else if (tuple.typedComparer is null || tuple.typedComparerEqualsMethod is null)
+                {
+                    // typedComparer is null, have to fix the dict value
+                    Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
+                    // EqualityComparer<type>.Default
+                    tuple.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                    // EqualityComparer<type>.Default.Equals(lhs, rhs)
+                    tuple.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
 
-            return (bool)typedComparerEqualsMethod.Invoke(typedComparer, new object[] { lhs, rhs });
+                    // set dict value to fixed tuple
+                    m_typedEqualityComparers[type] = tuple;
+                }
+            }
+
+            // While invocation may allocate garbage, this is better than just constantly creating an object.
+            return (bool)tuple.typedComparerEqualsMethod.Invoke(tuple.typedComparer, new object[] { lhs, rhs });
         }
     }
 }

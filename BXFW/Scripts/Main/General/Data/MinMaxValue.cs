@@ -147,7 +147,7 @@ namespace BXFW
 
             // mul twice to force flip sign to positive
             // epsilon is multiplied by 4 for possible 4x epsilons difference
-            return (diffMin * diffMin) + (diffMax * diffMax) < float.Epsilon * 4f;
+            return (diffMin * diffMin) + (diffMax * diffMax) < (float.Epsilon * 4f);
         }
         public static bool operator !=(MinMaxValue lhs, MinMaxValue rhs)
         {
@@ -186,6 +186,10 @@ namespace BXFW
         public override string ToString()
         {
             return string.Format("min={0:G}, max={1:G}", Min, Max);
+        }
+        public string ToString(IFormatProvider valueFormatProvider)
+        {
+            return string.Format(valueFormatProvider, "min={0}, max={1}", Min, Max);
         }
     }
 
@@ -372,6 +376,10 @@ namespace BXFW
         public override string ToString()
         {
             return string.Format("min={0}, max={1}", Min, Max);
+        }
+        public string ToString(IFormatProvider valueFormatProvider)
+        {
+            return string.Format(valueFormatProvider, "min={0}, max={1}", Min, Max);
         }
     }
 }

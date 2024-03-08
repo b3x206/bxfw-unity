@@ -35,7 +35,7 @@ namespace BXFW.Collections.ScriptEditor
             
             Rect foldoutLabelRect = new Rect(position) { y = position.y + 1f, height = EditorGUIUtility.singleLineHeight };
             SerializedProperty listProperty = property.FindPropertyRelative("m_list");
-
+            // List type cannot be serialized.
             if (listProperty == null)
             {
                 EditorGUI.LabelField(new Rect(foldoutLabelRect)
@@ -50,7 +50,7 @@ namespace BXFW.Collections.ScriptEditor
                     y = position.y + EditorGUIUtility.singleLineHeight + 2f,
                     height = WarningBoxHeight,
                     width = foldoutLabelRect.width - 12f
-                }, $"[SortedList] Type could not be serialized for field '{label.text}'! Ensure that the type is serialized.", MessageType.Warning);
+                }, $"[SortedList] Type could not be serialized for field '{label.text}'! Ensure that the type is serialized.\nIf you don't want the type serializable use [HideInInspector]", MessageType.Warning);
 
                 EditorGUI.EndProperty();
                 return;

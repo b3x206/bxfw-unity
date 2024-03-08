@@ -10,6 +10,77 @@ namespace BXFW
     public static class MeshUtility
     {
         /// <summary>
+        /// List of quads for given positional offsets.
+        /// </summary>
+        private static readonly Dictionary<Vector3, Mesh> m_Quads = new Dictionary<Vector3, Mesh>(2);
+        /// <summary>
+        /// Returns a 1x1 square Quad mesh.
+        /// <br>
+        /// The created mesh is cached so subsequent calls to this method is slightly faster
+        /// (but mutating the Mesh will have permanent effects until domain reset)
+        /// </br>
+        /// </summary>
+        public static Mesh GetQuad(Vector3 offset = default)
+        {
+            if (m_Quads.TryGetValue(offset, out Mesh mesh))
+            {
+                return mesh;
+            }
+
+            mesh = new Mesh();
+
+            float width = 1;
+            float height = 1;
+
+            Vector3[] vertices = new Vector3[4]
+            {
+                new Vector3(0, 0, 0) + offset,
+                new Vector3(width, 0, 0) + offset,
+                new Vector3(0, height, 0) + offset,
+                new Vector3(width, height, 0) + offset
+            };
+            mesh.vertices = vertices;
+
+            int[] tris = new int[6]
+            {
+                // lower left triangle
+                0, 2, 1,
+                // upper right triangle
+                2, 3, 1
+            };
+            mesh.triangles = tris;
+
+            Vector3[] normals = new Vector3[4]
+            {
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward
+            };
+            mesh.normals = normals;
+
+            Vector2[] uv = new Vector2[4]
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(0, 1),
+                new Vector2(1, 1)
+            };
+            mesh.uv = uv;
+
+            m_Quads.Add(offset, mesh);
+            return mesh;
+        }
+
+        /// <summary>
+        /// Returns a 1x1 square Quad mesh that is centered by it's vertices.
+        /// </summary>
+        public static Mesh GetCenteredQuad()
+        {
+            return GetQuad(new Vector3(-0.5f, -0.5f, 0f));
+        }
+
+        /// <summary>
         /// Converts the vertices of <paramref name="mesh"/> into world space using <paramref name="matrixSpace"/>.
         /// <br>Values are assigned into the 'vertsArray', the 'vertsArray' will be overwritten by <see cref="Mesh.GetVertices(List{Vector3})"/>.</br>
         /// </summary>

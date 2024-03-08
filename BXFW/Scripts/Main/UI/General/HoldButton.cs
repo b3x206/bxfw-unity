@@ -21,13 +21,24 @@ namespace BXFW.UI
         [Tooltip("Whether if the holding should ignore Time.timeScale. (Use Time.unscaledDeltaTime)")]
         public bool ignoreTimeScale = false;
 
+        /// <summary>
+        /// Called when the button was clicked fully (OnPointerUp usually).
+        /// </summary>
         [Header(":: Events")]
-        public ButtonEvent OnClickEvent;
-        public ButtonEvent OnHoldEvent;
+        [DrawIf(nameof(clickable))] public ButtonEvent OnClickEvent;
+        /// <summary>
+        /// Called when the pointer is pressed down.
+        /// <br>Useful for determining when the button was interacted with.</br>
+        /// </summary>
+        [DrawIf(nameof(clickable))] public ButtonEvent OnPressDownEvent;
+        /// <summary>
+        /// Called when the button was held for <see cref="holdTime"/>.
+        /// </summary>
+        [DrawIf(nameof(holdable))] public ButtonEvent OnHoldEvent;
 
-        private float holdTimer = 0f;       // Timer for hold.
-        private bool isPointerDown = false; // Status variable for whether if holding.
-        private bool isHoldEvent = false;   // Status variable for not invoking click event on hold event.
+        private float currentHoldTimer = 0f; // Timer for hold.
+        private bool isPointerDown = false;  // Status variable for whether if holding.
+        private bool isHoldEvent = false;    // Status variable for not invoking click event on hold event.
 
         public override void OnPointerDown(PointerEventData eventData)
         {
@@ -37,6 +48,11 @@ namespace BXFW.UI
             }
 
             base.OnPointerDown(eventData);
+
+            if (clickable)
+            {
+                OnPressDownEvent?.Invoke();
+            }
 
             isPointerDown = true;
         }
@@ -75,12 +91,12 @@ namespace BXFW.UI
             // Hold update
             if (!isPointerDown)
             {
-                holdTimer = 0f;
+                currentHoldTimer = 0f;
                 return;
             }
 
-            holdTimer += ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
-            if (holdTimer >= holdTime)
+            currentHoldTimer += ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
+            if (currentHoldTimer >= holdTime)
             {
                 OnHoldEvent?.Invoke();
 
