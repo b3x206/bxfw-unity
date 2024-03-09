@@ -139,6 +139,20 @@ namespace BXFW
         // - Vector Utility -
         // ------------------
         /// <summary>
+        /// An AABB collision check.
+        /// <br>If the rects are colliding this will return true.</br>
+        /// </summary>
+        /// <param name="lhs">First rect to check</param>
+        /// <param name="rhs">Second rect to check</param>
+        public static bool RectsCollide(Rect lhs, Rect rhs)
+        {
+            return lhs.x < (rhs.x + rhs.width) &&
+                (lhs.x + lhs.width) > rhs.x &&
+                lhs.y < (rhs.y + rhs.height) &&
+                (lhs.y + lhs.height) > rhs.y;
+        }
+
+        /// <summary>
         /// Returns the center of an virtual circle, between the <paramref name="cPoint0"/>, <paramref name="cPoint1"/> and <paramref name="cPoint2"/>.
         /// <br>Normal of the circle is <paramref name="cPointNormal"/>.</br>
         /// </summary>

@@ -931,7 +931,7 @@ namespace BXFW
             Matrix4x4 matrixCam = Matrix4x4.Ortho(-0.5f, 0.5f, -0.5f, 0.5f, .01f, 1024f);
 
             // Draw mesh manually
-            tempRT.BlitMesh(matrixMesh, matrixCam, RenderTextureUtility.GetQuad(), matTarget);
+            tempRT.BlitMesh(matrixMesh, matrixCam, MeshUtility.GetQuad(), matTarget);
 
             return tempRT;
         }
@@ -959,9 +959,9 @@ namespace BXFW
         /// <summary>
         /// Draws a texture with material.
         /// </summary>
-        /// <param name="guiRect"></param>
-        /// <param name="texTarget"></param>
-        /// <param name="matTarget"></param>
+        /// <param name="guiRect">Rect to draw the texture.</param>
+        /// <param name="texTarget">Texture targeted to draw.</param>
+        /// <param name="matTarget">Material targeted to draw.</param>
         public static void DrawMaterialTexture(Rect guiRect, Texture2D texTarget, Material matTarget)
         {
             matTarget.mainTexture = texTarget;

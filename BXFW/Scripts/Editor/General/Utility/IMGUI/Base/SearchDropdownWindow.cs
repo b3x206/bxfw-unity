@@ -334,19 +334,6 @@ namespace BXFW.Tools.Editor
         }
 
         // The optimized version is still TODO.
-        /// <summary>
-        /// An AABB collision check.
-        /// <br>If the rects are colliding this will return true.</br>
-        /// </summary>
-        /// <param name="lhs">First rect to check</param>
-        /// <param name="rhs">Second rect to check</param>
-        private bool AreRectsColliding(Rect lhs, Rect rhs)
-        {
-            return lhs.x < (rhs.x + rhs.width) &&
-                (lhs.x + lhs.width) > rhs.x &&
-                lhs.y < (rhs.y + rhs.height) &&
-                (lhs.y + lhs.height) > rhs.y;
-        }
 
         private void OnGUI()
         {
@@ -542,7 +529,7 @@ namespace BXFW.Tools.Editor
                 Rect reservedRect = GUILayoutUtility.GetRect(0f, child.GetHeight(ElementsViewWidth));
 
                 // Check if the rect is visible in any way
-                if (!AreRectsColliding(localWindowAreaPosition, reservedRect))
+                if (!MathUtility.RectsCollide(localWindowAreaPosition, reservedRect))
                 {
                     continue;
                 }
@@ -772,10 +759,10 @@ namespace BXFW.Tools.Editor
                             // Iteratively select until the last valid interactable element
                             do
                             {
-                                highlightedElementIndex = Mathf.Max(highlightedElementIndex - 1, 0);
+                                highlightedElementIndex = Mathf.Clamp(highlightedElementIndex - 1, 0, lastElement.Count - 1);
 
                                 // Cannot select last element
-                                if (highlightedElementIndex == 0 && !lastElement[highlightedElementIndex].Interactable)
+                                if (highlightedElementIndex <= 0 && !lastElement[highlightedElementIndex].Interactable)
                                 {
                                     highlightedElementIndex = previousHighlightedIndex;
                                     break;
@@ -792,7 +779,7 @@ namespace BXFW.Tools.Editor
                             // Iteratively select until the last valid interactable element
                             do
                             {
-                                highlightedElementIndex = Mathf.Min(highlightedElementIndex + 1, lastElement.Count - 1);
+                                highlightedElementIndex = Mathf.Clamp(highlightedElementIndex + 1, 0, lastElement.Count - 1);
 
                                 // Cannot select last element
                                 if (highlightedElementIndex == lastElement.Count - 1 && !lastElement[highlightedElementIndex].Interactable)

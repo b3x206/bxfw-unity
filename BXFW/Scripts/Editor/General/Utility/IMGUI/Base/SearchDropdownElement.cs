@@ -33,6 +33,8 @@ namespace BXFW.Tools.Editor
         public GUIContent content = GUIContent.none;
         /// <summary>
         /// Whether if this element is selected.
+        /// <br/>
+        /// <br>Setting this will effect the GUI on the default <see cref="OnGUI(Rect, ElementGUIDrawingState)"/>.</br>
         /// </summary>
         public bool Selected { get; set; } = false;
         /// <summary>
@@ -122,7 +124,7 @@ namespace BXFW.Tools.Editor
         /// <br>The default height is <see cref="EditorGUIUtility.singleLineHeight"/> + <see cref="drawingContext"/>.Padding</br>
         /// <br/>
         /// <br>
-        /// <b>Warning</b> : This method affects performance vastly (for the time being). Use it carefully 
+        /// <b>Warning</b> : This method affects performance vastly (for the time being). Override it carefully, ensure that this is not intensive. 
         /// (this method will be slow until the heights of non-visible is cached).
         /// </br>
         /// </summary>

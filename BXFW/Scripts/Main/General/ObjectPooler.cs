@@ -6,7 +6,8 @@ using UnityEngine.Pool;
 namespace BXFW
 {
     /// <summary>
-    /// Manages pooling of GameObject's.
+    /// Manages pooling of <see cref="GameObject"/>'s.
+    /// <br>For other, more general purpose object pools use unity's <see cref="ObjectPool{T}"/>.</br>
     /// </summary>
     public sealed class ObjectPooler : MonoBehaviour
     {

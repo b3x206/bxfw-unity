@@ -9,6 +9,7 @@ namespace BXFW
     ///   * Renamed class from RTUtils -> RenderTextureUtility
     ///   * removed some pointless methods (such as DrawTextureGUI without rect input)
     ///   * (some) Methods can now take camera matrices
+    ///   * Quad creation is now done by <see cref="MeshUtility"/>.
     /// 
     /// Notes :
     ///   * I have no idea what the 'Draw' methods do (the blit methods atleast do something)
@@ -46,67 +47,6 @@ namespace BXFW
     /// ============================================================================
     public static class RenderTextureUtility
     {
-        #region Quad creation
-        private static Mesh quad;
-        /// <summary>
-        /// Returns a Quad mesh.
-        /// <br>
-        /// The created mesh is cached so subsequent calls to this method is slightly faster
-        /// (but mutating the Mesh will have permanent effects until domain reset)
-        /// </br>
-        /// </summary>
-        public static Mesh GetQuad()
-        {
-            if (quad != null)
-            {
-                return quad;
-            }
-
-            Mesh mesh = new Mesh();
-
-            float width = 1;
-            float height = 1;
-
-            Vector3[] vertices = new Vector3[4]
-            {
-                new Vector3(0, 0, 0),
-                new Vector3(width, 0, 0),
-                new Vector3(0, height, 0),
-                new Vector3(width, height, 0)
-            };
-            mesh.vertices = vertices;
-
-            int[] tris = new int[6]
-            {
-                // lower left triangle
-                0, 2, 1,
-                // upper right triangle
-                2, 3, 1
-            };
-            mesh.triangles = tris;
-
-            Vector3[] normals = new Vector3[4]
-            {
-                -Vector3.forward,
-                -Vector3.forward,
-                -Vector3.forward,
-                -Vector3.forward
-            };
-            mesh.normals = normals;
-
-            Vector2[] uv = new Vector2[4]
-            {
-                new Vector2(0, 0),
-                new Vector2(1, 0),
-                new Vector2(0, 1),
-                new Vector2(1, 1)
-            };
-            mesh.uv = uv;
-
-            quad = mesh;
-            return quad;
-        }
-
         private static Shader blitShader;
         private const string BLIT_SHADER_NAME = "Sprites/Default";
         /// <summary>
@@ -143,7 +83,6 @@ namespace BXFW
 
             return blitMaterial;
         }
-        #endregion
 
         private static RenderTexture prevRT;
 
@@ -349,7 +288,7 @@ namespace BXFW
             Matrix4x4 objectMatrix = Matrix4x4.TRS(
                 rect.position, Quaternion.identity, rect.size);
 
-            rt.DrawMesh(GetQuad(), material, objectMatrix);
+            rt.DrawMesh(MeshUtility.GetQuad(), material, objectMatrix);
         }
 
         public static void DrawSprite(this RenderTexture rt, Texture texture, in Rect rect)
@@ -362,12 +301,25 @@ namespace BXFW
         #endregion
 
         #region Utils
+        /// <summary>
+        /// The aspect ratio of given <paramref name="rt"/>.
+        /// </summary>
         public static float Aspect(this Texture rt) => (float)rt.width / rt.height;
 
-        public static Texture2D ConvertToTexture2D(this RenderTexture rt,
-            TextureFormat format = TextureFormat.RGB24,
-            FilterMode filterMode = FilterMode.Bilinear)
+        /// <summary>
+        /// Converts given <paramref name="rt"/> to a <see cref="Texture2D"/> (CPU Texture).
+        /// </summary>
+        /// <param name="rt">Target texture to convert.</param>
+        /// <param name="format">Format of conversion.</param>
+        /// <param name="filterMode">Filtering mode of the resulting <see cref="Texture2D"/>.</param>
+        /// <returns>The converted texture.</returns>
+        public static Texture2D ConvertToTexture2D(this RenderTexture rt, TextureFormat format = TextureFormat.RGB24, FilterMode filterMode = FilterMode.Bilinear)
         {
+            if (rt == null)
+            {
+                throw new ArgumentNullException(nameof(rt), "[RenderTextureUtility::ConvertToTexture2D] Given texture is null.");
+            }
+
             Texture2D tex = new Texture2D(rt.width, rt.height, format, false)
             {
                 filterMode = filterMode
