@@ -294,70 +294,55 @@ namespace BXFW.Tools.Editor
                 // Disable if 'm_Script' field that unity adds automatically is being drawn.
                 using (new EditorGUI.DisabledScope(property.propertyPath == "m_Script"))
                 {
-                    // -- Check if there is a match
-                    if (onStringMatchEvent != null)
+                    // -- If there's a match of events, use the event.
+                    // Once the scope enters here, the upcoming 'EditorGUILayout.PropertyField' is not invoked.
+                    if (onStringMatchEvent != null && onStringMatchEvent.TryGetValue(property.name, out KeyValuePair<MatchGUIActionOrder, Action> pair))
                     {
-                        string MatchingKey = null;
-                        foreach (string s in onStringMatchEvent.Keys)
+                        bool hasInvokedCustomCommand = false; // Prevent the command from invoking twice, as this is now enum flags.
+
+                        if ((pair.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before && !hasInvokedCustomCommand)
                         {
-                            if (s.Equals(property.name))
+                            hasInvokedCustomCommand = true;
+
+                            if (pair.Value != null)
                             {
-                                MatchingKey = s;
-                                break;
+                                try
+                                {
+                                    pair.Value();
+                                }
+                                catch (ExitGUIException)
+                                {
+                                    return true;
+                                }
                             }
                         }
 
-                        // -- If there's a match of events, use the event.
-                        // Once the scope enters here, the upcoming 'EditorGUILayout.PropertyField' is not invoked.
-                        if (!string.IsNullOrEmpty(MatchingKey))
+                        if ((pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
                         {
-                            var Pair = onStringMatchEvent[MatchingKey];
-                            bool hasInvokedCustomCommand = false; // Prevent the command from invoking twice, as this is now enum flags.
-
-                            if ((Pair.Key & MatchGUIActionOrder.Before) == MatchGUIActionOrder.Before && !hasInvokedCustomCommand)
-                            {
-                                hasInvokedCustomCommand = true;
-
-                                if (Pair.Value != null)
-                                {
-                                    try
-                                    {
-                                        Pair.Value();
-                                    }
-                                    catch (ExitGUIException)
-                                    {
-                                        return true;
-                                    }
-                                }
-                            }
-
-                            if ((Pair.Key & MatchGUIActionOrder.Omit) != MatchGUIActionOrder.Omit)
-                            {
-                                EditorGUILayout.PropertyField(property, true);
-                            }
-
-                            if ((Pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
-                            {
-                                hasInvokedCustomCommand = true;
-
-                                if (Pair.Value != null)
-                                {
-                                    try
-                                    {
-                                        Pair.Value();
-                                    }
-                                    // Stop drawing GUI if this was thrown
-                                    // This is how the unity does flow control to it's interface, amazing really.
-                                    catch (ExitGUIException)
-                                    {
-                                        return true;
-                                    }
-                                }
-                            }
-
-                            expanded = false;
-                            continue;
+                            EditorGUILayout.PropertyField(property, true);
                         }
+
+                        if ((pair.Key & MatchGUIActionOrder.After) == MatchGUIActionOrder.After && !hasInvokedCustomCommand)
+                        {
+                            hasInvokedCustomCommand = true;
+
+                            if (pair.Value != null)
+                            {
+                                try
+                                {
+                                    pair.Value();
+                                }
+                                // Stop drawing GUI if this was thrown
+                                // This is how the unity does flow control to it's interface, amazing really.
+                                catch (ExitGUIException)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+
+                        expanded = false;
+                        continue;
                     }
 
                     EditorGUILayout.PropertyField(property, true);

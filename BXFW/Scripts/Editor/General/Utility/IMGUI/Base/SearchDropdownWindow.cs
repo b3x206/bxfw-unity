@@ -158,10 +158,11 @@ namespace BXFW.Tools.Editor
         /// State of whether if the searching task reached limit.
         /// </summary>
         private bool reachedSearchLimit = false;
+
         /// <summary>
         /// Whether if this window is closing with a selection intent.
         /// </summary>
-        public bool IsClosingWithSelectionIntent { get; private set; } = true;
+        public bool IsClosingWithSelectionIntent { get; private set; } = false;
         /// <summary>
         /// The used element's size on the last <see cref="EventType.Layout"/> on the <see cref="OnGUI"/> call.
         /// <br>This is used in the <see cref="EventType.Repaint"/> event.</br>
@@ -293,7 +294,10 @@ namespace BXFW.Tools.Editor
             SearchDropdownWindow window = CreateInstance<SearchDropdownWindow>();
             window.parentManager = parentManager;
             window.wantsMouseMove = true;
-            window.IsClosingWithSelectionIntent = !window.parentManager.AllowSelectionOfElementsWithChild;
+            // First element shown is always the root (which is not selectable) you dumb dumb, don't modify this value.
+            // Or there may be some other reason, but it could be also wrong too. It worked until now by pure luck.
+            // Oh yes, unity has bugged out and any dropdown spawned dies in 2 seconds. This persists after a restart too. (or maybe something gets invoked by somewhere)
+            // window.IsClosingWithSelectionIntent = !window.parentManager.AllowSelectionOfElementsWithChild;
 
             // Show with size constraints.
             // - Calculate the height (for the time being use this, can use 'GetElementsHeight'
@@ -334,7 +338,6 @@ namespace BXFW.Tools.Editor
         }
 
         // The optimized version is still TODO.
-
         private void OnGUI()
         {
             if (parentManager == null)

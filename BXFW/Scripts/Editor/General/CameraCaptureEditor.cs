@@ -115,14 +115,18 @@ namespace BXFW.ScriptEditor
                             Type gameViewType = typeof(Editor).Assembly.GetType("UnityEditor.GameView", false);
                             if (gameViewType != null)
                             {
-                                EditorWindow gameViewObject = EditorWindow.GetWindow(gameViewType);
-                                
-                                // internal Rect targetRenderSize { get; }
-                                PropertyInfo targetRenderSizeProperty = gameViewType.GetProperty("targetRenderSize", BindingFlags.NonPublic | BindingFlags.Instance);
-                                Vector2 targetRenderSizeRect = (Vector2)targetRenderSizeProperty.GetValue(gameViewObject);
+                                // THE 'EditorWindow.GetWindow' FOCUSES ON THE WINDOW
+                                // Thanks unity for making my popup disappear... EditorWindow.GetWindow definitely isn't a footgun..
+                                EditorWindow gameViewObject = Resources.FindObjectsOfTypeAll(gameViewType).FirstOrDefault() as EditorWindow;
+                                if (gameViewObject != null)
+                                {
+                                    // internal Rect targetRenderSize { get; }
+                                    PropertyInfo targetRenderSizeProperty = gameViewType.GetProperty("targetRenderSize", BindingFlags.NonPublic | BindingFlags.Instance);
+                                    Vector2 targetRenderSizeRect = (Vector2)targetRenderSizeProperty.GetValue(gameViewObject);
 
-                                screenWidth = targetRenderSizeRect.x;
-                                screenHeight = targetRenderSizeRect.y;
+                                    screenWidth = targetRenderSizeRect.x;
+                                    screenHeight = targetRenderSizeRect.y;
+                                }
                             }
 
                             if (GUILayout.Button(new GUIContent($"Screenshot ({screenWidth * target.CaptureSuperSamplingFactor}x{screenHeight * target.CaptureSuperSamplingFactor})", "Takes a screenshot using ScreenCapture.CaptureScreenshot.")))

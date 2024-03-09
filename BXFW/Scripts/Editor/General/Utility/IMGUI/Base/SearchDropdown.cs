@@ -258,6 +258,11 @@ namespace BXFW.Tools.Editor
                     OnElementSelected(selected);
                     OnElementSelectedEvent?.Invoke(selected);
                 }
+                else
+                {
+                    throw new InvalidOperationException("[SearchDropdown::m_Window+OnClosed] Selected is null but the window was closed with selection intent. This must not happen and probably caused by an erroreneous situation.");
+                }
+
                 m_RootElement = null;
             };
 
