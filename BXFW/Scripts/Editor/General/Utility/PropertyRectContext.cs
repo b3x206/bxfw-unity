@@ -47,6 +47,27 @@ namespace BXFW.Tools.Editor
         }
 
         /// <summary>
+        /// Returns the next target rect for <paramref name="property"/> that is going to have it's height pushed.
+        /// <br>This DOES NOT move the <see cref="CurrentY"/> in any way, use <see cref="GetPropertyRect(Rect, float)"/>.</br>
+        /// </summary>
+        public Rect PeekPropertyRect(Rect baseRect, SerializedProperty property)
+        {
+            return PeekPropertyRect(baseRect, EditorGUI.GetPropertyHeight(property));
+        }
+        /// <summary>
+        /// Returns the next target rect that is going to have it's height pushed.
+        /// <br>This DOES NOT move the <see cref="CurrentY"/> in any way, use <see cref="GetPropertyRect(Rect, float)"/>.</br>
+        /// </summary>
+        public Rect PeekPropertyRect(Rect baseRect, float height)
+        {
+            baseRect.height = height;                  // set to target height
+            baseRect.y += m_CurrentY + (Padding / 2f); // offset by Y
+            // don't offset Y as this is a peek.
+
+            return baseRect;
+        }
+
+        /// <summary>
         /// Resets the context's current Y positioning.
         /// <br>Can be used when the context is to be used for reserving new rects.</br>
         /// <br>Always call this before starting new contexts to not have the positions shift forever.</br>

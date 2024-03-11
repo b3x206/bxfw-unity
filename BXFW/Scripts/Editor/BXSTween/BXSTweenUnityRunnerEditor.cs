@@ -171,7 +171,7 @@ namespace BXFW.Tweening.Editor
                     // Show more information about the tween
                     // Assume that this type is BXSTweenable, but the type details otherwise is runtime defined
                     // Interfaces always return concrete type : So GetType is used.
-                    foreach (var v in tween.GetType().GetProperties())
+                    foreach (PropertyInfo v in tween.GetType().GetProperties())
                     {
                         // Unsupported index parameters, can be triggered by 'this[int idx]' expressions
                         if (v.GetIndexParameters().Length > 0)
@@ -181,7 +181,7 @@ namespace BXFW.Tweening.Editor
 
                         GUILayout.Label(string.Format("  <color=#f3bd28>[ Property ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.PropertyType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
                     }
-                    foreach (var v in tween.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                    foreach (FieldInfo v in tween.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                     {
                         // Don't draw properties twice
                         if (v.Name.Contains("k__BackingField"))
@@ -190,6 +190,14 @@ namespace BXFW.Tweening.Editor
                         }
 
                         GUILayout.Label(string.Format("  <color=#f3bd28>[ Field    ]</color> <color=#2eb6ae>{0}</color> <color=#dcdcdc>{1}</color> = {2}", v.FieldType.Name, v.Name, v.GetValue(tween)), detailsLabelStyle);
+                    }
+
+                    // Draw options for the tweenable
+                    // .. TODO : Draw more options
+                    if (GUILayout.Button("Stop", GUILayout.Width(EditorGUIUtility.currentViewWidth)))
+                    {
+                        Debug.Log($"[BXSTween | EditorDebug] Stopped tween {tween}");
+                        tween.Stop();
                     }
                 }
             }

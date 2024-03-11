@@ -96,7 +96,7 @@ namespace BXFW
                 f.Write(bytes, 0, bytes.Length);
                 fileName = f.Name;
             }
-            Debug.Log(string.Format("[CameraCapture::TakeScreenshot] Saved image at : <a href=\"file:///{0}\">{0}</a>", fileName), this);
+            Debug.Log(string.Format("<b>[CameraCapture::TakeScreenshot]</b> Saved image at : <a href=\"file:///{0}\">{0}</a>\n<a href=\"file:///{1}\">Open Target Image Directory</a>", fileName, dirString), this);
 
             // Cleanup
             if (Application.isPlaying)
@@ -121,14 +121,15 @@ namespace BXFW
 
             // Path on PC : Directory.GetCurrentDirectory(), Path on Mobiles : Application.persistentDataPath
             string relativePath = Path.Combine(ScreenshotsFolderName, $"ScreenShot{DateTime.Now:yyyy.MM.ddTHH.mm.ss}.png");
-            ScreenCapture.CaptureScreenshot(relativePath, CaptureSuperSamplingFactor);
-            Debug.Log(string.Format("[CameraCapture::TakeScreenShot] Saved image at : <a href=\"file:///{0}\">{0}</a>", Path.Combine(Application.platform switch
+            string absoluteFolderPath = Application.platform switch
             {
                 RuntimePlatform.Android => Application.persistentDataPath,
                 RuntimePlatform.IPhonePlayer => Application.persistentDataPath,
                 RuntimePlatform.WebGLPlayer => Application.persistentDataPath,
                 _ => Directory.GetCurrentDirectory()
-            }, relativePath)), this);
+            };
+            ScreenCapture.CaptureScreenshot(relativePath, CaptureSuperSamplingFactor);
+            Debug.Log(string.Format("<b>[CameraCapture::TakeScreenShot]</b> Saved image at : <a href=\"file:///{0}\">{0}</a>\n<a href=\"file:///{1}\">Open Target Image Directory</a>", Path.Combine(absoluteFolderPath, relativePath), Path.Combine(absoluteFolderPath, ScreenshotsFolderName)), this);
         }
     }
 }

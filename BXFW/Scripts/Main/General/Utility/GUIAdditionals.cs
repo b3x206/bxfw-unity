@@ -181,7 +181,6 @@ namespace BXFW
         /// <param name="style">Style of the layout group. This defines styling (such as a background, etc.)</param>
         /// <param name="content">Content of the layout group to accommodate for.</param>
         /// <param name="createLayoutGroupFunc">Function to create the <see cref="GUILayoutGroup"/>.</param>
-        /// <returns>The boxed <see cref="GUILayoutGroup"/> value. Use reflection to access the values for now.</returns>
         private static InternalGUILayoutGroup BeginLayoutPositionGroupInternal(Vector2 position, float width, GUIStyle style, GUIContent content, Func<GUIStyle, InternalGUILayoutGroup> createLayoutGroupFunc)
         {
             InternalGUILayoutGroup layoutGroupObject = createLayoutGroupFunc(style);

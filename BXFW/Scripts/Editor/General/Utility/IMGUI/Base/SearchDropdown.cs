@@ -242,6 +242,11 @@ namespace BXFW.Tools.Editor
             // The 'AdvancedDropdown' handles all of it's data using a 'DataSource'
             // I will do it the good ole way of suffering
             m_RootElement = BuildRoot();
+            if (m_RootElement == null)
+            {
+                throw new NullReferenceException("[SearchDropdown::Show(BuildRoot phase)] Result of BuildRoot is null. The result should be a SearchDropdownElement that isn't null.");
+            }
+
             m_Window = SearchDropdownWindow.Create(rect, this, MinimumSize, MaximumHeight);
             m_Window.OnClosed += () =>
             {

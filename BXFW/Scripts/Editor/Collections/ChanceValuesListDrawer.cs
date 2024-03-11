@@ -25,6 +25,7 @@ namespace BXFW.Collections.ScriptEditor
     // ---------------------------
 
     // TODO : ReorderableList implementation, this way of just cheating with the 'SerializedProperty' is usually bad
+    // Yes, i have lazily made the UI prettier, but still. If it only wasn't absolute pain to work with ReorderableList...
 
     /// <summary>
     /// Creates an property drawer editor for <see cref="ChanceValuesListBase"/>, 
@@ -50,12 +51,8 @@ namespace BXFW.Collections.ScriptEditor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float height = EditorGUIUtility.singleLineHeight + mainCtx.Padding;
-            // Check the child array property.
-            if (!property.isExpanded)
-            {
-                return height;
-            }
+            float height = 0f;
+
             // Get the list properties heights
             foreach (SerializedProperty p in property.GetVisibleChildren())
             {
@@ -79,9 +76,15 @@ namespace BXFW.Collections.ScriptEditor
         {
             mainCtx.Reset();
 
+            label = EditorGUI.BeginProperty(position, label, property);
             ChanceValuesListBase target = (ChanceValuesListBase)property.GetTarget().value;
-            Rect foldoutPosition = mainCtx.GetPropertyRect(position, EditorGUIUtility.singleLineHeight);
-            property.isExpanded = EditorGUI.Foldout(foldoutPosition, property.isExpanded, label);
+            Rect foldoutFakeLabelPosition = mainCtx.PeekPropertyRect(new Rect(
+                position.x + (EditorStyles.foldoutHeader.border.right - 2),
+                position.y,
+                position.width - (EditorStyles.foldoutHeader.border.right + 52),
+                position.height
+            ), EditorGUIUtility.singleLineHeight);
+
             // The array property used for this GUI call
             using SerializedProperty arrayProperty = property.FindPropertyRelative(ListFieldName);
 
@@ -99,13 +102,7 @@ namespace BXFW.Collections.ScriptEditor
                     .GetGenericArguments()
                     .SingleOrDefault();
 
-                // Only supports by reference serialized stuff's drag/drop
-                // Won't support that dumb attribute, like seriously?
-                if (!targetType.GetBaseTypes().Any(t => t == typeof(UnityEngine.Object)))
-                {
-                    return;
-                }
-
+                // Only supports by reference serialized stuff's drag/drop, the check for that is redundant.
                 // Only equally distribute the chances if there's no elements in the array, otherwise set the chances to 0
                 var objsFiltered = DragAndDrop.objectReferences.Where((obj) =>
                 {
@@ -167,7 +164,7 @@ namespace BXFW.Collections.ScriptEditor
             // Handle right click events
             if (Event.current.type == EventType.MouseDown)
             {
-                if (Event.current.button == 1 && foldoutPosition.Contains(Event.current.mousePosition))
+                if (Event.current.button == 1 && foldoutFakeLabelPosition.Contains(Event.current.mousePosition))
                 {
                     GenericMenu rmbDropdown = new GenericMenu();
 
@@ -189,12 +186,8 @@ namespace BXFW.Collections.ScriptEditor
                     });
 
                     rmbDropdown.ShowAsContext();
+                    Event.current.Use();
                 }
-            }
-
-            if (!property.isExpanded)
-            {
-                return;
             }
 
             // Set a copy of the chance values in here from target
@@ -202,8 +195,7 @@ namespace BXFW.Collections.ScriptEditor
             prevChanceList.Capacity = arrayProperty.arraySize;
             prevChanceList.AddRange(target.ChanceValues.Cast(x => new KeyValuePair<IChanceValue, float>(x, x.Chance)));
 
-            EditorGUI.indentLevel += 1;
-
+            // Draw the rest of the properties with the cool fading
             foreach (SerializedProperty p in property.GetVisibleChildren())
             {
                 EditorGUI.BeginChangeCheck();
@@ -283,7 +275,10 @@ namespace BXFW.Collections.ScriptEditor
                 }
             }
 
-            EditorGUI.indentLevel -= 1;
+            // Draw a fake box for the property background.
+            EditorGUI.DrawRect(foldoutFakeLabelPosition, EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.76f, 0.76f, 0.76f));
+            EditorGUI.LabelField(foldoutFakeLabelPosition, new GUIContent(property.displayName, property.tooltip));
+            EditorGUI.EndProperty();
         }
     }
 }

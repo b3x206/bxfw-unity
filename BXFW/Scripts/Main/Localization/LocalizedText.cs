@@ -88,72 +88,6 @@ namespace BXFW
             Apply();
         }
 
-        /// <summary>
-        /// Utility method to remove diacritics (sans some non-ascii non-diacritic characters) from the string.
-        /// </summary>
-        /// <param name="str">Target string.</param>
-        /// <param name="predMustKeep">
-        /// Return true if the given character parameter 
-        /// should be kept as is (from source string <paramref name="str"/>).
-        /// </param>
-        public string RemoveInvalidChars(string str, Func<char, bool> predMustKeep = null)
-        {
-            StringBuilder sb = new StringBuilder(str.Length);
-            string normalizedStr = str.Normalize(NormalizationForm.FormD);
-
-            for (int i = 0, j = 0; i < normalizedStr.Length; i++, j++)
-            {
-                char cNorm = normalizedStr[i];
-
-                // nonspacing mark : the diacritic itself, just as a seperate char
-                if (CharUnicodeInfo.GetUnicodeCategory(cNorm) != UnicodeCategory.NonSpacingMark)
-                {
-                    // Access 'cDefault' here to avoid IndexOutOfRangeException becuase incrementing-decrementing
-                    // the base string index happens after this if control (basically we need the safe 'j' index)
-                    char cDefault = str[j];
-
-                    // Keep if the predicate is successful
-                    bool? pred = predMustKeep?.Invoke(cDefault);
-                    if (pred ?? false)
-                    {
-                        sb.Append(cDefault);
-                        continue;
-                    }
-                    else if (pred != null)
-                    {
-                        // Predicate failed but exists, convert directly to ascii counterpart of it assuming the character is latin.
-                        // TODO : but how?
-                        switch (cNorm)
-                        {
-                            default:
-                                // This warning is redundant for diacriticified chars that fail the predicate test.
-                                // so just control the cNorm as that is successfully seperated from it's diacritics.
-
-                                // i also decided to not print the warning.
-                                // Debug.LogWarning(string.Format("[LocalizedText::RemoveDiacritics] Failed to convert fail match char '{0}' into ascii. Appending normalized as is.", cDefault));
-                                break;
-
-                            // This is actually diacriticifying (the thing that is called a 'diacritic' is the points on top the letters
-                            // This is more like 'ascii-ifying' the text.
-                            // Only latin case is this. this will do for now.
-                            case 'ı':
-                                cNorm = 'i';
-                                break;
-                        }
-                    }
-
-                    sb.Append(cNorm);
-                }
-                else
-                {
-                    // nonspacing marks doesn't exist on the actual string.
-                    j--;
-                }
-            }
-
-            return sb.ToString();
-        }
-
         private void ApplyInternal(bool setText, bool logErrors, params object[] fmt)
         {
             if (target == null)
@@ -216,7 +150,7 @@ namespace BXFW
 #endif
                 if (replaceInvalidChars)
                 {
-                    setData = RemoveInvalidChars(setData, (char c) => target.font.HasCharacter(c));
+                    setData = Additionals.RemoveInvalidChars(setData, (char c) => target.font.HasCharacter(c));
                 }
 
                 if (fmt.Length > 0)
