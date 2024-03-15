@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Reflection;
 
 namespace BXFW.Tools.Editor
 {
@@ -24,6 +25,27 @@ namespace BXFW.Tools.Editor
                 // This indent value is just 'EditorGUI.indentLevel * 15f'
                 // return (float)typeof(EditorGUI).GetProperty("indent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
                 return EditorGUI.indentLevel * 15f;
+            }
+        }
+
+        private static readonly FieldInfo m_recycledTextEditorField = typeof(EditorGUI).GetField("s_RecycledEditor", BindingFlags.NonPublic | BindingFlags.Static);
+        /// <summary>
+        /// The recycled <see cref="TextEditor"/> used for the <see cref="EditorGUI.TextArea"/>.
+        /// <br/>
+        /// <br>Note : The base type is slightly different (<see cref="EditorGUI.RecycledTextEditor"/>), but it does not contain much that could be important.</br>
+        /// <br/>
+        /// <br>Returns <see langword="null"/> if the target field on the <see cref="EditorGUI"/> does not exist.</br>
+        /// </summary>
+        public static TextEditor CurrentRecycledTextEditor
+        {
+            get
+            {
+                if (m_recycledTextEditorField == null)
+                {
+                    return null;
+                }
+
+                return m_recycledTextEditorField.GetValue(null) as TextEditor;
             }
         }
 

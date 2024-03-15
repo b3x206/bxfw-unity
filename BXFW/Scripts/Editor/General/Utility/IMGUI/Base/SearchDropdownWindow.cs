@@ -219,7 +219,10 @@ namespace BXFW.Tools.Editor
         /// </summary>
         private void SearchResultsRecursive(SearchDropdownElement element)
         {
-            // TODO : Insert and sort according to the 'm_SearchString's IndexOf presence.
+            // TODO   : Insert (binary search) and sort according to the 'm_SearchString's IndexOf presence
+            // (this probably means SearchDropdownElement is getting the current IndexOf search query (in it's content) and getting the length of the search query for text highlighting).
+            // This will vastly improve searching experience but find a way of not making it too slow (even though the searching doesn't hang the main thread).
+            // TODO 2 : Parse and ignore rich text tags if possible, get the raw text as the search element.
             foreach (SearchDropdownElement child in element)
             {
                 // This will set the 'TaskStatus' to 'TaskStatus.RanToCompletion'
@@ -384,6 +387,12 @@ namespace BXFW.Tools.Editor
             Undo.undoRedoPerformed -= HandleUndoRedo;
         }
 
+        // you know you are getting into spaghetti territory if you need 2 events received by DrawSearchBar but you use bools.
+        private bool hasFocusedOnSearchBarInitial = false;
+        private bool nextTextFieldEventIsFocus = false;
+        /// <summary>
+        /// Draws the search bar, if the <see cref="SearchDropdown.IsSearchable"/> is <see langword="true"/>..
+        /// </summary>
         private void DrawSearchBar()
         {
             Rect searchBarRect = GUILayoutUtility.GetRect(position.width, SearchBarHeight);
@@ -400,6 +409,24 @@ namespace BXFW.Tools.Editor
 
             GUI.SetNextControlName(SearchBarControlName);
             SearchString = EditorGUI.TextField(paddedSearchBarRect, SearchString, StyleList.SearchBarStyle);
+
+            // I cannot determine the exact EventType when the EditorGUI.s_RecycledEditor changes (probably there isn't one) so just compare the strings
+            // If the TextEditor's string was updated and 'nextTextFieldEventIsFocus' is true then we need to unselect the selection done by the GUI focus.
+            if (nextTextFieldEventIsFocus && EditorGUIAdditionals.CurrentRecycledTextEditor?.text == SearchString)
+            {
+                // EditorGUIAdditionals.CurrentRecycledTextEditor is only updated during repaint when the previous thing was an event.
+                // TextEditor.SelectNone sets index back to zero and resets cursor to start point, which is not something i want.
+                EditorGUIAdditionals.CurrentRecycledTextEditor.selectIndex = EditorGUIAdditionals.CurrentRecycledTextEditor.text.Length;
+                EditorGUIAdditionals.CurrentRecycledTextEditor.MoveTextEnd();
+                nextTextFieldEventIsFocus = false;
+            }
+            if (!hasFocusedOnSearchBarInitial)
+            {
+                // do this as this is what the AdvancedDropdown probably does, the GUI is initially focused on the TextField.
+                hasFocusedOnSearchBarInitial = true;
+                EditorGUI.FocusTextInControl(SearchBarControlName);
+            }
+
         }
         private void DrawElementNameBar(SearchDropdownElement lastElement)
         {
@@ -758,6 +785,7 @@ namespace BXFW.Tools.Editor
                         // Decrement/Increment highlighted element index
                         case KeyCode.UpArrow:
                             EditorGUIUtility.editingTextField = false;
+                            GUI.FocusControl(null);
 
                             // Iteratively select until the last valid interactable element
                             do
@@ -778,6 +806,7 @@ namespace BXFW.Tools.Editor
                             break;
                         case KeyCode.DownArrow:
                             EditorGUIUtility.editingTextField = false;
+                            GUI.FocusControl(null);
 
                             // Iteratively select until the last valid interactable element
                             do
@@ -819,6 +848,8 @@ namespace BXFW.Tools.Editor
                         case KeyCode.KeypadEnter:
                             // Stop editing text
                             EditorGUIUtility.editingTextField = false;
+                            GUI.FocusControl(null);
+
                             SearchDropdownElement nextElement =
                                 highlightedElementIndex >= 0 && highlightedElementIndex < lastElement.Count
                                 ? lastElement[highlightedElementIndex] : lastElement.FirstOrDefault();
@@ -845,18 +876,18 @@ namespace BXFW.Tools.Editor
                     }
 
                     // If the key is not a special key and is just a letter/number start searching
+                    // Note that this type of handling is done if the arrow keys were used, as now the window appears with the text field selected.
                     if (parentManager.IsSearchable && !EditorGUIUtility.editingTextField)
                     {
-                        // TODO : FocusTextInControl does selection of the previous characters
-                        // If no characters are appended then an input is missed, either way both behaviours are annoying
-                        // This is still not fixed even if we ignore the used event
                         char character = e.character;
                         if (!e.functionKey && !char.IsControl(character))
                         {
                             // Get the last key as nice key
-                            // EditorGUI.FocusTextInControl(SearchBarControlName);
-                            GUI.FocusControl(SearchBarControlName);
+                            EditorGUI.FocusTextInControl(SearchBarControlName);
                             SearchString += character;
+
+                            // Deselect the entire text, because GUI.FocusControl on a EditorGUI.TextField selects the text.
+                            nextTextFieldEventIsFocus = true;
                         }
                     }
                     break;
