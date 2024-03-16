@@ -133,7 +133,7 @@ namespace BXFW.Data
         public static float AutoSaveInterval { get; set; } = 30f;
         /// <summary>
         /// Minimum acceptable auto-saving interval.
-        /// <br>This is done to not make your game powered by unreal engine stutters, but this minimum value is still too small.</br>
+        /// <br>This is done to not make your game powered by unreal engine-esque stutters, but this minimum value is still too small.</br>
         /// <br>This is because save-data writing is not async.</br>
         /// </summary>
         public const float MinimumAutoSaveInterval = 0.2f;
@@ -201,8 +201,15 @@ namespace BXFW.Data
             m_primaryFileStream.Read(m_readBytes, 0, (int)m_primaryFileStream.Length);
             m_primaryFileStream.Position = 0;
 
-            // TODO : This may throw?
-            m_dataSerializationContainer = JsonUtility.FromJson<DataSerializationContainer>(Encoding.UTF8.GetString(m_readBytes));
+            try
+            {
+                m_dataSerializationContainer = JsonUtility.FromJson<DataSerializationContainer>(Encoding.UTF8.GetString(m_readBytes));
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BXSerializer::Load] An exception occured while loading \"{filePath}\". Cannot load existing data.");
+                Debug.LogException(e);
+            }
             // Ensure that the 'm_dataSerializationContainer' is no longer null after calling 'Load'.
             m_dataSerializationContainer ??= new DataSerializationContainer();
         }

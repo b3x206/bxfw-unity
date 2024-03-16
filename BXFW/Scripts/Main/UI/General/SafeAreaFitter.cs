@@ -5,7 +5,6 @@ namespace BXFW.UI
     /// <summary>
     /// Resizes a <see cref="UnityEngine.RectTransform"/> to fit <see cref="Screen.safeArea"/>.
     /// <br>Useful for fitting gui to a phone with notch.</br>
-    /// <br>Portrait only.</br>
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class SafeAreaFitter : MonoBehaviour

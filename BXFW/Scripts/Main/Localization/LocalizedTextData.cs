@@ -96,7 +96,7 @@ namespace BXFW.Data
         /// <summary>
         /// Returns the current locale string. If it doesn't exist it fallbacks to <see cref="DefaultLocale"/>.
         /// <br>If the default locale doesn't also exist, it fallbacks to the first value.</br>
-        /// <br>If no locales were registered, this function just returns null.</br>
+        /// <br>If no locales were registered, this function just returns <see cref="string.Empty"/>.</br>
         /// </summary>
         public string GetCurrentLocaleString()
         {
@@ -106,7 +106,7 @@ namespace BXFW.Data
                 return string.Empty;
             }
 
-            var locale = CurrentISOLocaleName;
+            string locale = CurrentISOLocaleName;
             if (ContainsLocale(locale))
             {
                 return this[locale];
@@ -119,7 +119,7 @@ namespace BXFW.Data
 
             // Return the first in values
             Debug.LogWarning(string.Format("[LocalizedTextData::GetCurrentLocaleString] No fallback locale found with iso code '{0}'. Returning first element.", DefaultLocale));
-            return m_LocaleDatas.Values.First();
+            return m_LocaleDatas.Values.FirstOrDefault(string.Empty);
         }
         /// <summary>
         /// Sets a value for the current locale for this data.

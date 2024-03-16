@@ -12,20 +12,38 @@ namespace BXFW.ScriptEditor
     [CustomEditor(typeof(CameraCapture)), CanEditMultipleObjects]
     public class CameraCaptureEditor : Editor
     {
+        /// <summary>
+        /// Used to call the <see cref="GenericMenu.AddSeparator(string)"/> while adding the <see cref="Presets"/>.
+        /// </summary>
+        protected const string TkSeperator = "<<seperator>>";
+
         // SerializableDictionary ordering is NOT undefined behaviour, so it's the way that the elements are added.
         /// <summary>
         /// Defines a list of capturing presets.
+        /// <br>More presets can't be added for the time being, maybe if you override this class for other CameraCapture's you make.</br>
         /// </summary>
-        private static readonly SerializableDictionary<string, Vector2Int> m_Presets = new SerializableDictionary<string, Vector2Int>
+        public static readonly SerializableDictionary<string, Vector2Int> Presets = new SerializableDictionary<string, Vector2Int>
         {
             { "720p 16:9 Landspace", new Vector2Int(1280, 720) },
             { "720p 16:9 Portrait", new Vector2Int(720, 1280) },
+            { TkSeperator, default },
+
             { "1080p 16:9 Landspace", new Vector2Int(1920, 1080) },
+            { "1080p 18:9 Landspace", new Vector2Int(2160, 1080) },
             { "1080p 16:9 Portrait", new Vector2Int(1080, 1920) },
+            { "1080p 18:9 Portrait", new Vector2Int(1080, 2160) },
+            { $"{TkSeperator}+1", default },
+
             { "1440p 16:9 Landspace", new Vector2Int(2560, 1440) },
+            { "1440p 18:9 Landspace", new Vector2Int(2960, 1440) },
             { "1440p 16:9 Portrait", new Vector2Int(1440, 2560) },
+            { "1440p 18:9 Portrait", new Vector2Int(1440, 2960) },
+            { $"{TkSeperator}+2", default },
+
             { "2160p 16:9 Landspace", new Vector2Int(3840, 2160) },
             { "2160p 16:9 Portrait", new Vector2Int(2160, 3840) },
+            { $"{TkSeperator}+3", default },
+
             { "4320p 16:9 Landspace", new Vector2Int(7680, 4320) },
             { "4320p 16:9 Portrait", new Vector2Int(4320, 7680) },
         };
@@ -49,13 +67,20 @@ namespace BXFW.ScriptEditor
 
                         bool prevShowMixed = EditorGUI.showMixedValue;
                         EditorGUI.showMixedValue = targets.Any(t => t.screenshotResolution != target.screenshotResolution);
-                        KeyValuePair<string, Vector2Int> currentPickedPreset = m_Presets.FirstOrDefault(p => p.Value == target.screenshotResolution);
+                        KeyValuePair<string, Vector2Int> currentPickedPreset = Presets.FirstOrDefault(p => p.Value == target.screenshotResolution);
 
                         if (EditorGUILayout.DropdownButton(new GUIContent(string.IsNullOrEmpty(currentPickedPreset.Key) ? "Custom" : currentPickedPreset.Key), FocusType.Keyboard))
                         {
                             GenericMenu presetsSelectionMenu = new GenericMenu();
-                            foreach (KeyValuePair<string, Vector2Int> preset in m_Presets)
+                            foreach (KeyValuePair<string, Vector2Int> preset in Presets)
                             {
+                                // I love hack fixes instead of using SearchDropdown
+                                if (preset.Key.IndexOf(TkSeperator) >= 0)
+                                {
+                                    presetsSelectionMenu.AddSeparator(string.Empty);
+                                    continue;
+                                }
+
                                 presetsSelectionMenu.AddItem(new GUIContent(preset.Key), !EditorGUI.showMixedValue && preset.Value == currentPickedPreset.Value, () =>
                                 {
                                     Undo.IncrementCurrentGroup();
@@ -97,7 +122,7 @@ namespace BXFW.ScriptEditor
                     {
                         if (targets.Length <= 1)
                         {
-                            if (GUILayout.Button("Capture"))
+                            if (GUILayout.Button(new GUIContent("Capture", "Captures what the camera is seeing, except for the UI and other overlay layer(s).")))
                             {
                                 target.TakeCameraShot();
                             }

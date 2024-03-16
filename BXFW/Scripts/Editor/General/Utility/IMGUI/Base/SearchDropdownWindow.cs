@@ -242,7 +242,7 @@ namespace BXFW.Tools.Editor
                 {
                     SearchResultsRecursive(child);
                 }
-                else if (child.content.text.IndexOf(m_SearchString, parentManager.SearchComparison) != -1)
+                else if (child.content.text.IndexOf(m_SearchString, parentManager.SearchComparison) >= 0)
                 {
                     searchFilteredElements.Add(child);
                 }
