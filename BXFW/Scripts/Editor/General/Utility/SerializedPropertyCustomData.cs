@@ -18,7 +18,8 @@ namespace BXFW.Tools.Editor
     /// This class provides a hack to do this.
     /// --
     /// <summary>
-    /// Manages the ability to bind custom serialized property datas to <see cref="SerializedProperty"/>ies.
+    /// Manages the ability to bind custom serialized property metadatas to <see cref="SerializedProperty"/>ies.
+    /// <br>Kinda similar to the <see cref="SerializedProperty.isExpanded"/>, but allows for any value to be attached to the <see cref="SerializedProperty"/>.</br>
     /// <br>Creates a <see cref="ScriptableObjectSingleton{T}"/> to use on editor.</br>
     /// </summary>
     public static class SerializedPropertyCustomData
@@ -299,7 +300,7 @@ or don't call this if the 'property.serializedObject.isEditingMultipleObjects' i
 
         /// <summary>
         /// Marks the <see cref="MainContainer"/> dirty to apply the saved keys.
-        /// <br>This is <b>not</b> automatically called after a key has been set.</br>
+        /// <br>This is <b>not</b> automatically called after a key has been set as the values are kept in memory until domain reload.</br>
         /// </summary>
         public static void SaveData()
         {

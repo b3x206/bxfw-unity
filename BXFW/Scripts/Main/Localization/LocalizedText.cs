@@ -52,6 +52,9 @@ namespace BXFW
         }
         [SerializeField, DrawIf(nameof(useSingletonLocaleData), ConditionInverted = true)]
         private LocalizedTextListAsset m_LocaleData;
+        /// <summary>
+        /// Current TextID to gather from the assigned <see cref="LocaleData"/>.
+        /// </summary>
         public string textID;
         /// <summary>
         /// Locale to spoof.

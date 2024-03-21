@@ -470,7 +470,7 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(array), "[SerializableDictionary::CopyTo] Argument was null.");
             }
 
-            if (array.Length < arrayIndex + Count)
+            if (array.Length < (arrayIndex + Count))
             {
                 throw new ArgumentException("[SerializableDictionary::CopyTo] Failed to copy into given array. Array length is smaller than dictionary or index is out of bounds", nameof(array));
             }

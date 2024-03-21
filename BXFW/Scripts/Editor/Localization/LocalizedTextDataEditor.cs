@@ -272,7 +272,7 @@ namespace BXFW.ScriptEditor
                 {
                     // Remove from object
                     Undo.RecordObject(property.serializedObject.targetObject, "remove locale");
-                    target.LocaleDatas.Remove(editedLocaleValue);
+                    target.RemoveKey(editedLocaleValue);
                     // Set edited locale value
                     editedLocaleValue = target.LocaleDatas.Keys.First();
                     property.SetString(KeyEditLocale, editedLocaleValue);

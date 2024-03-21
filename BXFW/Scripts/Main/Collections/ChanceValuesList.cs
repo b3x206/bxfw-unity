@@ -174,7 +174,29 @@ namespace BXFW.Collections
         /// <summary>
         /// The equality comparer used with this chance data.
         /// </summary>
-        public IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
+        public IEqualityComparer<T> Comparer
+        {
+            get
+            {
+                m_Comparer ??= EqualityComparer<T>.Default;
+                return m_Comparer;
+            }
+            set => m_Comparer = value ?? EqualityComparer<T>.Default;
+        }
+        private IEqualityComparer<T> m_Comparer = EqualityComparer<T>.Default;
+        /// <summary>
+        /// The RNG used.
+        /// </summary>
+        public IRandomGenerator RNGProvider
+        {
+            get
+            {
+                m_RNGProvider ??= UnityRNG.Default;
+                return m_RNGProvider;
+            }
+            set => m_RNGProvider = value ?? UnityRNG.Default;
+        }
+        private IRandomGenerator m_RNGProvider = UnityRNG.Default;
 
         /// <summary>
         /// A sum of the <paramref name="iterableValues"/> without foreach GC.
@@ -197,7 +219,7 @@ namespace BXFW.Collections
         public T Get()
         {
             // could do 'this' but this probs creates an List copy with ref values?
-            return GetRandomInternal(m_list);
+            return GetRandomInternal(m_list, RNGProvider);
         }
         /// <summary>
         /// A tempoary list for doing no allocations at <see cref="Get(Predicate{T})"/> with predicate.
@@ -235,32 +257,36 @@ namespace BXFW.Collections
             float randUpperLimit = Sum(filterList, (ChanceValue<T> c) => c.Chance);
 
             // Do the same thing as 'GetRand'
-            return GetRandomInternal(filterList, randUpperLimit);
+            return GetRandomInternal(filterList, RNGProvider, randUpperLimit);
         }
 
         /// <summary>
         /// <c>[Internal method]</c> Get random value from a chance list of given <paramref name="list"/>.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when no array elements.</exception>
-        protected static T GetRandomInternal(in List<ChanceValue<T>> list, float randUpperLimit = ChanceUpperLimit)
+        protected static T GetRandomInternal(in List<ChanceValue<T>> list, IRandomGenerator generator, float randUpperLimit = ChanceUpperLimit)
         {
             if (list == null)
             {
-                throw new NullReferenceException("[ChanceDataList::GetRand] Array passed is null.");
+                throw new ArgumentNullException(nameof(list), "[ChanceDataList::GetRand] Array passed is null.");
+            }
+            if (generator == null)
+            {
+                throw new ArgumentNullException(nameof(generator), "[ChanceDataList::GetRand] Random generator passed is null.");
             }
 
             if (list.Count < 1)
             {
                 if (list.Count <= 0)
                 {
-                    throw new InvalidOperationException("[ChanceDataList::GetRand] Array has no elements!");
+                    throw new ArgumentException("[ChanceDataList::GetRand] Array has no elements!");
                 }
 
                 return list[0].Value;  // Always return the first object
             }
 
             // The given random value
-            float randValue = UnityEngine.Random.Range(0f, randUpperLimit);
+            float randValue = generator.NextFloat(0f, randUpperLimit);
             // Current range offset
             float currentValueOffset = 0f;
             for (int i = 0; i < list.Count; i++)
@@ -289,23 +315,37 @@ namespace BXFW.Collections
         /// <summary>
         /// Creates an empty list of chance list.
         /// </summary>
-        public ChanceValuesList() { }
+        public ChanceValuesList()
+        { }
+        /// <summary>
+        /// Creates an empty list with a <see cref="IRandomGenerator"/> assigned.
+        /// </summary>
+        public ChanceValuesList(IRandomGenerator generator)
+        {
+            RNGProvider = generator;
+        }
         /// <summary>
         /// Creates an empty list with a comparer attached.
         /// </summary>
-        public ChanceValuesList(IEqualityComparer<T> comparer)
+        public ChanceValuesList(IEqualityComparer<T> comparer, IRandomGenerator generator)
         {
             if (comparer == null)
             {
                 throw new ArgumentNullException(nameof(comparer), "[ChanceValuesList::ctor] Given argument was null.");
             }
 
-            this.comparer = comparer;
+            m_Comparer = comparer;
+            RNGProvider = generator;
         }
+        /// <summary>
+        /// Creates an empty list with a comparer attached.
+        /// </summary>
+        public ChanceValuesList(IEqualityComparer<T> comparer) : this(comparer, null)
+        { }
         /// <summary>
         /// Creates a chance list equally distributed.
         /// </summary>
-        public ChanceValuesList(IEnumerable<T> collection)
+        public ChanceValuesList(IEnumerable<T> collection, IRandomGenerator generator)
         {
             // For 'Enumerable.Count()' linq is okay
             int collectionSize = collection.Count();
@@ -315,20 +355,32 @@ namespace BXFW.Collections
             {
                 filterList.Add(new ChanceValue<T> { Chance = chancePerElement, Value = elem });
             }
+
+            RNGProvider = generator;
         }
+        /// <summary>
+        /// Creates a chance list equally distributed.
+        /// </summary>
+        public ChanceValuesList(IEnumerable<T> collection) : this(collection, (IRandomGenerator)null)
+        { }
         /// <summary>
         /// Creates a chance list with a custom comparer.
         /// </summary>
-        public ChanceValuesList(IEnumerable<T> collection, IEqualityComparer<T> comparer)
-            : this(collection)
+        public ChanceValuesList(IEnumerable<T> collection, IEqualityComparer<T> comparer, IRandomGenerator generator) : this(collection)
         {
             if (comparer == null)
             {
                 throw new ArgumentNullException(nameof(comparer), "[ChanceValuesList::ctor] Given argument was null.");
             }
 
-            this.comparer = comparer;
+            m_Comparer = comparer;
+            RNGProvider = generator;
         }
+        /// <summary>
+        /// Creates a chance list with a custom comparer.
+        /// </summary>
+        public ChanceValuesList(IEnumerable<T> collection, IEqualityComparer<T> comparer) : this(collection, comparer, null)
+        { }
 
         /// <summary>
         /// Returns the chance as the <see cref="KeyValuePair{TKey, TValue}.Key"/> 
@@ -408,7 +460,7 @@ namespace BXFW.Collections
                 throw new ArgumentNullException(nameof(value), "[ChanceDataList::SetChance] Given argument was null.");
             }
 
-            int indexOfData = m_list.IndexOf((chanceData) => comparer.Equals(chanceData.Value, value));
+            int indexOfData = m_list.IndexOf((chanceData) => Comparer.Equals(chanceData.Value, value));
 
             if (indexOfData == -1)
             {

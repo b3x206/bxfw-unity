@@ -9,15 +9,25 @@ using UnityEngine.Serialization;
 namespace BXFW.Data
 {
     /// <summary>
-    /// Data for the localized text.
-    /// <br/>
-    /// <br>To create new of this class, use the following step:</br>
-    /// <br><c><see langword="new"/> <see cref="LocalizedTextData"/>(localized_text_id, 
-    /// <see langword="new"/> Dictionary&lt;<see cref="string"/>, <see cref="string"/>&gt; { { "language_id", "text content" } })</c></br>
-    /// <br/>
+    /// Data for a localized text. Uses the current system locale and can take multiple locale values.
     /// </summary>
+    /// <remarks>
+    /// <br>New way of creating inline in code :</br>
+    /// <c>
+    /// <br><see langword="new"/> <see cref="LocalizedTextData"/>(localizedTextID)</br>
+    /// <br>{</br>
+    /// <br>&#10240;&#10240;&#10240;&#10240;{ "2char_lang_id", "text content"  }</br>
+    /// <br>}</br>
+    /// </c>
+    /// <br/>
+    /// <br>Old way of creating inline in code :</br>
+    /// <br>To create new of this class, use the following step:</br>
+    /// <br><c><see langword="new"/> <see cref="LocalizedTextData"/>(localizedTextID, 
+    /// <see langword="new"/> Dictionary&lt;<see cref="string"/>, <see cref="string"/>&gt; { { "2char_lang_id", "text content for that id" } })</c></br>
+    /// <br/>
+    /// </remarks>
     [Serializable]
-    public class LocalizedTextData : IEnumerable<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
+    public class LocalizedTextData : ICollection<KeyValuePair<string, string>>, IEquatable<LocalizedTextData>
     {
         /// <summary>
         /// Default locale used for the data.
@@ -34,6 +44,9 @@ namespace BXFW.Data
         /// <summary>
         /// Refreshes the current locale to the current culture value.
         /// <br>Depending on the OS, this may or may not have an effect.</br>
+        /// <br/>
+        /// <br>Note : This does not change the current scene or anything, it just changes a variable.</br>
+        /// <br>To change the current scene's localized texts, you can do <see cref="UnityEngine.Object.FindObjectOfType{T}()"/> with <see cref="LocalizedText"/> and call <see cref="LocalizedText.Apply(bool, bool)"/>.</br>
         /// </summary>
         public static void RefreshCurrentLocaleName()
         {
@@ -72,6 +85,11 @@ namespace BXFW.Data
             }
         }
 
+        /// <summary>
+        /// Get the corresponding value for the given two letter country id <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">Two letter ISO identifier for the country ID.</param>
+        /// <returns>The corresponding locale value. If no locale exists for <paramref name="key"/>, debug value like <c>"{key} (no-locale) | {TextID}"</c> is returned.</returns>
         public string this[string key]
         {
             get
@@ -148,12 +166,94 @@ namespace BXFW.Data
             set { SetCurrentLocaleString(value); }
         }
 
+        /// <summary>
+        /// Count of the current locales.
+        /// </summary>
+        public int Count => m_LocaleDatas.Count;
+
+        public bool IsReadOnly => m_LocaleDatas.IsReadOnly;
+
+        /// <summary>
+        /// Adds a locale value.
+        /// </summary>
+        /// <param name="item">Key + Value to add. This is recommended to have a Key as a valid <see cref="System.Globalization.CultureInfo.TwoLetterISOLanguageName"/>.</param>
+        /// <exception cref="ArgumentException"></exception>
+        public void Add(KeyValuePair<string, string> item)
+        {
+            if (string.IsNullOrWhiteSpace(item.Key))
+            {
+                throw new ArgumentException("[LocalizedTextData::Add] Given 'item.Key' is invalid. 'item.Key' cannot be null or whitespace.", nameof(item.Key));
+            }
+
+            m_LocaleDatas.Add(item);
+        }
+        /// <summary>
+        /// Adds a locale value.
+        /// </summary>
+        /// <param name="localeKey">Key to add. This is recommended to be a valid <see cref="System.Globalization.CultureInfo.TwoLetterISOLanguageName"/>.</param>
+        /// <param name="localeValue">Value to correspond to. This can be anything.</param>
+        /// <exception cref="ArgumentException"></exception>
+        public void Add(string localeKey, string localeValue)
+        {
+            if (string.IsNullOrWhiteSpace(localeKey))
+            {
+                throw new ArgumentException("[LocalizedTextData::Add] Given 'localeKey' is invalid. 'localeKey' cannot be null or whitespace.", nameof(localeKey));
+            }
+
+            m_LocaleDatas.Add(localeKey, localeValue);
+        }
+        /// <summary>
+        /// Clears the localized text data list.
+        /// </summary>
+        public void Clear()
+        {
+            m_LocaleDatas.Clear();
+        }
+        /// <summary>
+        /// Whether if this LocalizedTextData contains the given <paramref name="item"/>.
+        /// <br>This method, while it returns a valid value, is not really meant to be used.</br>
+        /// </summary>
+        bool ICollection<KeyValuePair<string, string>>.Contains(KeyValuePair<string, string> item)
+        {
+            return m_LocaleDatas.Contains(item);
+        }
+        /// <summary>
+        /// Copies the internal dictionary to given <paramref name="array"/>.
+        /// </summary>
+        public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
+        {
+            m_LocaleDatas.CopyTo(array, arrayIndex);
+        }
+        /// <summary>
+        /// Remove an <paramref name="item"/> that matches.
+        /// <br>This method, while it returns a valid value, is not really meant to be used.</br>
+        /// </summary>
+        bool ICollection<KeyValuePair<string, string>>.Remove(KeyValuePair<string, string> item)
+        {
+            return m_LocaleDatas.Remove(item);
+        }
+        /// <summary>
+        /// Removes a locale with <paramref name="key"/> from this data.
+        /// </summary>
+        /// <returns>Whether if the <paramref name="key"/> existed and data was removed.</returns>
+        public bool RemoveKey(string key)
+        {
+            return m_LocaleDatas.Remove(key);
+        }
+
         // -- Operator / Class
         /// <summary>
         /// Creates an completely empty data.
         /// </summary>
         public LocalizedTextData()
         { }
+        /// <summary>
+        /// Creates a <see cref="LocalizedTextData"/> with <see cref="TextID"/> assigned to given <paramref name="textID"/>.
+        /// </summary>
+        public LocalizedTextData(string textID)
+        {
+            TextID = textID;
+        }
         /// <summary>
         /// Creates a LocalizedTextData using a <see cref="IDictionary{TKey, TValue}"/>.
         /// <br>(without id, use for code based locale)</br>
@@ -164,10 +264,10 @@ namespace BXFW.Data
         /// <summary>
         /// Creates the 'LocalizedTextData' with the <see cref="IDictionary{TKey, TValue}"/> type instead of a <see cref="SerializableDictionary{TKey, TValue}"/> type.
         /// </summary>
-        /// <param name="TextID">ID of the text.</param>
+        /// <param name="textID">ID of the text.</param>
         /// <param name="values">Values of the dictionary. (Key=Two letter iso lang, Value=Corresponding string)</param>
-        public LocalizedTextData(string TextID, IDictionary<string, string> values) 
-            : this(TextID, new SerializableDictionary<string, string>(values))
+        public LocalizedTextData(string textID, IDictionary<string, string> values) 
+            : this(textID, new SerializableDictionary<string, string>(values))
         { }
 
         /// <summary>
@@ -221,12 +321,9 @@ namespace BXFW.Data
 
         public static bool operator ==(LocalizedTextData lhs, LocalizedTextData rhs)
         {
-            bool lNull = lhs is null;
-            bool rNull = rhs is null;
-
-            if (lNull)
+            if (lhs is null)
             {
-                return rNull;
+                return rhs is null;
             }
 
             return lhs.Equals(rhs);

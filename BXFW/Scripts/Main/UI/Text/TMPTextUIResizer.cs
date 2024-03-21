@@ -67,6 +67,14 @@ namespace BXFW.UI
 
         protected override Vector2 GetTargetSize()
         {
+#if UNITY_EDITOR
+            // Editor only check, as the UICustomResizer doesn't work on the editor..
+            if (!Application.isPlaying)
+            {
+                lastPreferredValues = target.GetPreferredValues();
+            }
+            else
+#endif
             if (targetTextChanged)
             {
                 // No dirty/caching exists on 'GetPrefferedValues'

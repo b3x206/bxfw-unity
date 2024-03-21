@@ -9,7 +9,7 @@ namespace BXFW.Data
     public abstract class GUIDScriptableObject : ScriptableObject
     {
         /// <summary>
-        /// UUID gathered on the editor, for loading with JSONUtility.
+        /// GUID gathered on the editor, for loading with JSONUtility.
         /// </summary>
         [ReadOnlyView, SerializeField] private string m_GUID;
         /// <inheritdoc cref="m_GUID"/>

@@ -241,8 +241,7 @@ namespace BXFW.UI
                             TweenColorFade(ParentTabSystem.FadeColorTargetDefault, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            if (PrevSprite != null) { BackgroundImage.sprite = ParentTabSystem.DefaultSpriteToSwap; }
-                            else { BackgroundImage.sprite = null; }
+                            BackgroundImage.sprite = PrevSprite != null ? ParentTabSystem.DefaultSpriteToSwap : null;
                             break;
                         case FadeType.CustomUnityEvent:
                             ParentTabSystem.ButtonCustomEventOnReset?.Invoke(BackgroundImage, this);
@@ -284,8 +283,7 @@ namespace BXFW.UI
                             TweenColorFade(ParentTabSystem.FadeColorTargetDisabled, ParentTabSystem.FadeSpeed);
                             break;
                         case FadeType.SpriteSwap:
-                            if (PrevSprite != null) { BackgroundImage.sprite = ParentTabSystem.DisabledSpriteToSwap; }
-                            else { BackgroundImage.sprite = null; }
+                            BackgroundImage.sprite = PrevSprite != null ? ParentTabSystem.DisabledSpriteToSwap : null;
                             break;
                         case FadeType.CustomUnityEvent:
                             ParentTabSystem.ButtonCustomEventOnDisable?.Invoke(BackgroundImage, this);
