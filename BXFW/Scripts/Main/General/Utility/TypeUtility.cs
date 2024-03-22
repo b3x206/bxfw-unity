@@ -238,8 +238,8 @@ namespace BXFW
                 return false;
             }
 
-            // target      => given type
-            // genericType => Generic<> (open type)
+            // target      => 'List<>'
+            // genericType => 'IList<>' ] --> should return true
 
             // Can be assigned using interface (can be checked only once, GetInterfaces returns all interfaces)
             if (openGenericType.GetInterfaces().Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == target))
@@ -421,37 +421,37 @@ namespace BXFW
             // Because apparently there's no typeless EqualityComparer?
             // EqualityComparer is used because of the IEquatable check and other things
             // ----- No Typeless EqualityComparer? -----
-            (object typedComparer, MethodInfo typedComparerEqualsMethod) tuple;
+            (object typedComparer, MethodInfo typedComparerEqualsMethod) values;
             // normal dictionaries does not support concurrency in read/write operations, have to use ConcurrentDictionary
             lock (m_typedEqualityComparers)
             {
-                if (!m_typedEqualityComparers.TryGetValue(type, out tuple))
+                if (!m_typedEqualityComparers.TryGetValue(type, out values))
                 {
                     Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
                     // EqualityComparer<type>.Default
-                    tuple.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                    values.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
                     // EqualityComparer<type>.Default.Equals(lhs, rhs)
-                    tuple.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
+                    values.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
 
                     // add dict value
-                    m_typedEqualityComparers.Add(type, tuple);
+                    m_typedEqualityComparers.Add(type, values);
                 }
-                else if (tuple.typedComparer is null || tuple.typedComparerEqualsMethod is null)
+                else if (values.typedComparer is null || values.typedComparerEqualsMethod is null)
                 {
                     // typedComparer is null, have to fix the dict value
                     Type typedComparerType = typeof(EqualityComparer<>).MakeGenericType(type);
                     // EqualityComparer<type>.Default
-                    tuple.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                    values.typedComparer = typedComparerType.GetProperty(nameof(EqualityComparer<object>.Default), BindingFlags.Public | BindingFlags.Static).GetValue(null);
                     // EqualityComparer<type>.Default.Equals(lhs, rhs)
-                    tuple.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
+                    values.typedComparerEqualsMethod = typedComparerType.GetMethod(nameof(EqualityComparer<object>.Equals), 0, new Type[] { type, type });
 
                     // set dict value to fixed tuple
-                    m_typedEqualityComparers[type] = tuple;
+                    m_typedEqualityComparers[type] = values;
                 }
             }
 
             // While invocation may allocate garbage, this is better than just constantly creating an object.
-            return (bool)tuple.typedComparerEqualsMethod.Invoke(tuple.typedComparer, new object[] { lhs, rhs });
+            return (bool)values.typedComparerEqualsMethod.Invoke(values.typedComparer, new object[] { lhs, rhs });
         }
     }
 }

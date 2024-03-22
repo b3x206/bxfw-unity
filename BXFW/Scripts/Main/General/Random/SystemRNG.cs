@@ -20,7 +20,7 @@ namespace BXFW
         public void SetSeed(int seed)
         {
             // Setting 'System.Random' seed is way more complicated than it needs to be
-            // Creating a new value is more viable.
+            // Creating a new Random is more viable.
             m_rand = new Random(seed);
         }
         public void SetSeed(long seed)

@@ -559,10 +559,12 @@ namespace BXFW
         /// </summary>
         /// <param name="position">Rect positioning to draw the line.</param>
         /// <param name="plotFunction">The plot function that returns rational numbers and is linear. (no self intersections, double values in one value or anything)</param>
+        /// <param name="plotMinValue">The minimum Y value for the plotting. If this is 0 and equal to <paramref name="plotMaxValue"/> then the graph won't draw.</param>
+        /// <param name="plotMaxValue">The maximum Y value for the plotting. If this is 0 and equal to <paramref name="plotMinValue"/> then the graph won't draw.</param>
         /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, float)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float plotMinValue, float plotMaxValue, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
             // Only do this plotting if we are actually drawing and not layouting
             // As this plotter has no interactions and will only paint
@@ -597,35 +599,9 @@ namespace BXFW
             // Here's how to make it less naive
             // A : Make it more efficient
             // B : A better drawing algorithm (perhaps use meshes? stepping is more different? idk.)
-
-            // ----
-            // Get local maximum value in the given range (because Y is calculated by min/max)
-            float localMinimum = float.MaxValue; // Minimum text to draw
-            float localMaximum = float.MinValue; // Maximum text to draw
-            bool allValuesZero = true; // Avoid NaN's (because a NaN explosion happens in that case)
-            for (int i = 0; i < segments; i++)
-            {
-                // i is always 1 less then segments
-                float currentSegmentElapsed = (float)i / (segments - 1);
-                float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
-
-                float plotValue = plotFunction(lerpValue);
-
-                if (!Mathf.Approximately(plotValue, 0f))
-                {
-                    allValuesZero = false;
-                }
-
-                if (plotValue > localMaximum)
-                {
-                    localMaximum = plotValue;
-                }
-
-                if (plotValue < localMinimum)
-                {
-                    localMinimum = plotValue;
-                }
-            }
+            // --
+            // Check this for avoiding NaN explosion, probably a divide by zero happens if all is zero
+            bool allValuesZero = Mathf.Approximately(plotMinValue, plotMaxValue) && Mathf.Approximately(plotMinValue, 0f);
 
             // Labels have a reserved 'PLOT_TEXT_PADDING' width
             Rect plotPosition = position;
@@ -681,7 +657,7 @@ namespace BXFW
                 };
                 GUI.Label(
                     topLabelRect,
-                    localMaximum.ToString("0.0#"), PlotSmallerFontStyle
+                    plotMaxValue.ToString("0.0#"), PlotSmallerFontStyle
                 ); // up
                 Rect bottomLabelRect = new Rect
                 {
@@ -697,7 +673,7 @@ namespace BXFW
                 }
                 GUI.Label(
                     bottomLabelRect,
-                    localMinimum.ToString("0.0#"), PlotSmallerFontStyle
+                    plotMinValue.ToString("0.0#"), PlotSmallerFontStyle
                 ); // down
             }
 
@@ -723,17 +699,17 @@ namespace BXFW
                 DrawLine(new Vector2(yDividerXpos, plotPosition.yMin), new Vector2(yDividerXpos, plotPosition.yMax), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
             }
             // X divider
-            if (localMinimum < 0f && localMaximum > 0f)
+            if (plotMinValue < 0f && plotMaxValue > 0f)
             {
                 // yMax is on the bottom
-                float xDividerYpos = plotPosition.yMax - (plotPosition.height * Mathf.InverseLerp(localMinimum, localMaximum, 0f));
+                float xDividerYpos = plotPosition.yMax - (plotPosition.height * Mathf.InverseLerp(plotMinValue, plotMaxValue, 0f));
                 DrawLine(new Vector2(plotPosition.xMin, xDividerYpos), new Vector2(plotPosition.xMax, xDividerYpos), 2, new Color(0.6f, 0.6f, 0.6f, 0.2f));
             }
 
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
                 // Initial plot position
-                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotFunction(vFrom)))
+                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(plotMaxValue, plotMinValue, plotFunction(vFrom)))
             );
             for (int i = 1; i < segments + 1; i++)
             {
@@ -744,14 +720,45 @@ namespace BXFW
                 float currentX = plotPosition.x + (currentSegmentElapsed * plotPosition.width);
                 // 'y' is inverted in GUI
                 // Closer to maximum, the less should be the added height
-                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(localMaximum, localMinimum, plotValue));
+                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(plotMaxValue, plotMinValue, plotValue));
 
                 DrawLine(previousPosition, new Vector2(currentX, currentY), lineWidth, GUI.color);
 
                 previousPosition = new Vector2(currentX, currentY);
             }
         }
-        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, int)"/>
+
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, float, float, int)"/>
+        public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
+        {
+            // Calculate the min-max from the given 'plotFunction'
+            // ----
+            // Get local maximum value in the given range (because Y is calculated by min/max)
+            float localMin = float.MaxValue; // Minimum text to draw
+            float localMax = float.MinValue; // Maximum text to draw
+            for (int i = 0; i < segments; i++)
+            {
+                // i is always 1 less then segments
+                float currentSegmentElapsed = (float)i / (segments - 1);
+                float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
+
+                float plotValue = plotFunction(lerpValue);
+
+                if (plotValue > localMax)
+                {
+                    localMax = plotValue;
+                }
+
+                if (plotValue < localMin)
+                {
+                    localMin = plotValue;
+                }
+            }
+
+            PlotLine(position, plotFunction, showFromToLabels, showMinMaxLabels, localMin, localMax, vFrom, vTo, lineWidth, segments);
+        }
+        
+        /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, float, float, int)"/>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
             PlotLine(position, plotFunction, true, true, vFrom, vTo, lineWidth, segments);

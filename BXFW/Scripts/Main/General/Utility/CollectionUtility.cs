@@ -547,16 +547,16 @@ namespace BXFW
             Resize(list, sz, default);
         }
 
-        /// <summary>Resets array values to their default values.</summary>
+        /// <summary>Resets array values to their (<typeparamref name="T"/>)<see langword="default"/> values.</summary>
         /// <typeparam name="T">Type of array.</typeparam>
         /// <param name="array">The array to reset it's values.</param>
         public static void ResetArray<T>(this T[] array)
         {
-            T genDefValue = default;
+            T dValue = default;
 
             for (int i = 0; i < array.Length; i++)
             {
-                array[i] = genDefValue;
+                array[i] = dValue;
             }
         }
         /// <summary>
