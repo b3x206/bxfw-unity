@@ -103,6 +103,27 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Does unclamped inverse lerping.
+        /// <see cref="Mathf.InverseLerp(float, float, float)"/>
+        /// </summary>
+        /// <param name="a">Value that the <paramref name="value"/> starts from.</param>
+        /// <param name="b">Value that the <paramref name="value"/> ends on.</param>
+        /// <param name="value">The value that is to be inverted to a standard lerp.</param>
+        /// <returns>
+        /// Value between 0f~1f if the <paramref name="value"/> is between <paramref name="a"/> 
+        /// and <paramref name="b"/>, otherwise lower and higher values are possible.
+        /// </returns>
+        public static float InverseLerpUnclamped(float a, float b, float value)
+        {
+            if (a != b)
+            {
+                return (value - a) / (b - a);
+            }
+
+            return 0f;
+        }
+
+        /// <summary>
         /// Moves towards a value with a <paramref name="maxDelta"/> constraint.
         /// <br>This version uses double precision floats.</br>
         /// </summary>

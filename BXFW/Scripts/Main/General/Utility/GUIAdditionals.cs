@@ -373,7 +373,7 @@ namespace BXFW
                     Event.current.Use();
                 }
             }
-            
+
             if (isDragged && GUIUtility.hotControl == controlID)
             {
                 if (Event.current.type == EventType.MouseDrag)
@@ -538,6 +538,7 @@ namespace BXFW
             GUI.matrix = guiMat;
         }
 
+        // TODO : too many parameters / turn the parameters into a struct? or is it fine as is?
         /// <summary>
         /// Tiny value for <see cref="PlotLine(Rect, Func{float, float}, float, float, float, int)"/>.
         /// </summary>
@@ -548,7 +549,7 @@ namespace BXFW
         private const float PlotTextPaddingX = 24f;
         private const float PlotTextPaddingY = 12f;
         private const int PlotTextFontSize = 9;
-        private static GUIStyle PlotSmallerFontStyle;
+        private static GUIStyle plotSmallerFontStyle;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
         /// <br>The plotting is not accurate and does ignore some of the characteristics of certain functions
@@ -573,7 +574,7 @@ namespace BXFW
                 return;
             }
 
-            PlotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PlotTextFontSize, wordWrap = true };
+            plotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PlotTextFontSize, wordWrap = true };
 
             if (segments < 1)
             {
@@ -599,6 +600,8 @@ namespace BXFW
             // Here's how to make it less naive
             // A : Make it more efficient
             // B : A better drawing algorithm (perhaps use meshes? stepping is more different? idk.)
+            // C : Actually learn about plotting and just, like, do the way it should be done.
+            //     But unity doesn't give too many options on drawing unless you setup the whole rendering context yourself.
             // --
             // Check this for avoiding NaN explosion, probably a divide by zero happens if all is zero
             bool allValuesZero = Mathf.Approximately(plotMinValue, plotMaxValue) && Mathf.Approximately(plotMinValue, 0f);
@@ -611,7 +614,7 @@ namespace BXFW
             {
                 plotPosition.height -= PlotTextPaddingY;
 
-                PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+                plotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
                 Rect leftLabelRect = new Rect
                 {
                     x = position.x,
@@ -625,10 +628,10 @@ namespace BXFW
                 }
                 GUI.Label(
                     leftLabelRect,
-                    vFrom.ToString("0.0#"), PlotSmallerFontStyle
+                    vFrom.ToString("0.0#"), plotSmallerFontStyle
                 ); // left
 
-                PlotSmallerFontStyle.alignment = TextAnchor.UpperRight;
+                plotSmallerFontStyle.alignment = TextAnchor.UpperRight;
                 Rect rightLabelRect = new Rect
                 {
                     x = position.xMax - 32f,
@@ -638,7 +641,7 @@ namespace BXFW
                 };
                 GUI.Label(
                     rightLabelRect,
-                    vTo.ToString("0.0#"), PlotSmallerFontStyle
+                    vTo.ToString("0.0#"), plotSmallerFontStyle
                 ); // right
             }
             if (showMinMaxLabels)
@@ -646,7 +649,7 @@ namespace BXFW
                 plotPosition.x += PlotTextPaddingX;
                 plotPosition.width -= PlotTextPaddingX;
 
-                PlotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
+                plotSmallerFontStyle.alignment = TextAnchor.UpperLeft;
                 // Draw local min/max text (y, positioned left)
                 Rect topLabelRect = new Rect
                 {
@@ -657,7 +660,7 @@ namespace BXFW
                 };
                 GUI.Label(
                     topLabelRect,
-                    plotMaxValue.ToString("0.0#"), PlotSmallerFontStyle
+                    plotMaxValue.ToString("0.0#"), plotSmallerFontStyle
                 ); // up
                 Rect bottomLabelRect = new Rect
                 {
@@ -673,7 +676,7 @@ namespace BXFW
                 }
                 GUI.Label(
                     bottomLabelRect,
-                    plotMinValue.ToString("0.0#"), PlotSmallerFontStyle
+                    plotMinValue.ToString("0.0#"), plotSmallerFontStyle
                 ); // down
             }
 
@@ -709,25 +712,62 @@ namespace BXFW
             Vector2 previousPosition = new Vector2(
                 plotPosition.xMin,
                 // Initial plot position
-                plotPosition.y + (plotPosition.height * Mathf.InverseLerp(plotMaxValue, plotMinValue, plotFunction(vFrom)))
+                plotPosition.y + (plotPosition.height * MathUtility.InverseLerpUnclamped(plotMaxValue, plotMinValue, plotFunction(vFrom)))
             );
+
             for (int i = 1; i < segments + 1; i++)
             {
                 float currentSegmentElapsed = (float)i / segments;
                 float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
                 float plotValue = plotFunction(lerpValue);
+#if UNITY_EDITOR
+                if (float.IsNaN(plotValue))
+                {
+                    Debug.LogError($"[GUIAdditionals::PlotLine] Given 'plotFunction' returns NaN for value '{lerpValue}'. This will cause issues.");
+                    continue;
+                }
+#endif
+                // Get yLerp between the plot values
+                float yLerp = MathUtility.InverseLerpUnclamped(plotMaxValue, plotMinValue, plotValue);
 
                 float currentX = plotPosition.x + (currentSegmentElapsed * plotPosition.width);
                 // 'y' is inverted in GUI
                 // Closer to maximum, the less should be the added height
-                float currentY = plotPosition.y + (plotPosition.height * Mathf.InverseLerp(plotMaxValue, plotMinValue, plotValue));
+                float currentY = plotPosition.y + (plotPosition.height * yLerp);
 
-                DrawLine(previousPosition, new Vector2(currentX, currentY), lineWidth, GUI.color);
+                // Discard not visible at all lines
+                // ---
+                // This doesn't discard the probably visible lines but it also fails :
+                // if ((previousPosition.y < plotPosition.y && yLerp < 0f) || (previousPosition.y > (plotPosition.y + plotPosition.height) && yLerp > 1f))
+                // This discards the "should not visible" lines but it also discards the visible parts of some lines, which seems to be the better compromise.. :
+                if ((previousPosition.y < plotPosition.y || previousPosition.y > (plotPosition.y + plotPosition.height)) || (yLerp < 0f && yLerp > 1f))
+                {
+                    previousPosition = new Vector2(currentX, currentY);
+                    continue;
+                }
 
+                // A line is, linear (duh), so if the currentY is out of bounds, we can subtract the same amount (in the width scale) using the yLerp
+                // This makes the line positioning better. (just ignore that the math is wrong, it works so if i can improve it i will but not feeling it)
+                Vector2 lineToPosition = new Vector2(currentX, currentY);
+                if (yLerp < 0f)
+                {
+                    lineToPosition.y = plotPosition.y;
+                    // move 'currentX' by the given yLerp overshoot (yLerp is negative and less than 0 number)
+                    lineToPosition.x -= (1f / segments) * yLerp;
+                }
+                else if (yLerp > 1f)
+                {
+                    lineToPosition.y = plotPosition.y + plotPosition.height;
+                    // move 'currentX' by the given yLerp overshoot (yLerp is positive and larger than 1 number)
+                    lineToPosition.x += (1f / segments) * (1f - yLerp);
+                }
+
+                DrawLine(previousPosition, lineToPosition, lineWidth, GUI.color);
+
+                //previousPosition = lineToPosition;
                 previousPosition = new Vector2(currentX, currentY);
             }
         }
-
         /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, float, float, int)"/>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
@@ -757,7 +797,6 @@ namespace BXFW
 
             PlotLine(position, plotFunction, showFromToLabels, showMinMaxLabels, localMin, localMax, vFrom, vTo, lineWidth, segments);
         }
-        
         /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, float, float, int)"/>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
@@ -777,7 +816,7 @@ namespace BXFW
         /// <param name="vFrom">The first value to feed the plot function while linearly interpolating.</param>
         /// <param name="vTo">The last value to feed the plot function while linearly interpolating.</param>
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, int)"/> will be called. This should be a value larger than 1</param>
-        public static void PlotLineLayout(Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
+        public static void PlotLineLayout(Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float plotMinValue, float plotMaxValue, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
         {
             // get reserved rect
             Rect reservedRect = GetOptionalGUILayoutRect(PlotLineLayoutedMinWidth, float.MaxValue, PlotLineLayoutedHeight, PlotLineLayoutedHeight, options);
@@ -787,9 +826,26 @@ namespace BXFW
             reservedRect.y += 2f;
             reservedRect.height -= 4f;
 
+            PlotLine(reservedRect, plotFunction, showFromToLabels, showMinMaxLabels, plotMinValue, plotMaxValue, vFrom, vTo, lineWidth, segments);
+        }
+        /// <summary>
+        /// <br>This version auto gathers the min value and the max value of the plot.</br>
+        /// <br/>
+        /// <inheritdoc cref="PlotLineLayout(Func{float, float}, bool, bool, float, float, float, int, GUILayoutOption[])"/>
+        /// </summary>
+        /// <inheritdoc cref="PlotLineLayout(Func{float, float}, bool, bool, float, float, float, int, GUILayoutOption[])"/>
+        public static void PlotLineLayout(Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20, params GUILayoutOption[] options)
+        {
+            // get reserved rect
+            Rect reservedRect = GetOptionalGUILayoutRect(PlotLineLayoutedMinWidth, float.MaxValue, PlotLineLayoutedHeight, PlotLineLayoutedHeight, options);
+            reservedRect.x += 2f;
+            reservedRect.width -= 4f;
+            reservedRect.y += 2f;
+            reservedRect.height -= 4f;
+
+            // auto gather of min/max Y is longer than getting the rect and giving it values.
             PlotLine(reservedRect, plotFunction, showFromToLabels, showMinMaxLabels, vFrom, vTo, lineWidth, segments);
         }
-
         /// <summary>
         /// <br>This version always shows the from-to labels and the min-max labels.</br>
         /// <br/>
