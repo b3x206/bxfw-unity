@@ -125,7 +125,7 @@ namespace BXFW.ScriptEditor
                 {
                     objectFieldType = objectFieldType.GetElementType();
                 }
-                else if (typeof(IList<>).IsAssignableFromOpenGeneric(objectFieldType.GetGenericTypeDefinition()))
+                else if (objectFieldType.IsGenericType && typeof(IList<>).IsAssignableFromOpenGeneric(objectFieldType.GetGenericTypeDefinition()))
                 {
                     objectFieldType = objectFieldType.GetGenericArguments().First();
                 }
