@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using static PlasticGui.LaunchDiffParameters;
 
 namespace BXFW.Tools.Editor
 {
@@ -337,6 +338,28 @@ namespace BXFW.Tools.Editor
             // m_ElementStack should always have 1 element
             window.m_ElementStack.Push(parentManager.RootElement);
 
+            // - Post setup, pre-setup somethings
+            if (parentManager.StartFromFirstSelected)
+            {
+                float heightElapsed = 0f;
+                foreach (SearchDropdownElement child in parentManager.RootElement)
+                {
+                    // This causes a slight flicker for the first repaint event.. But cannot calculate the heights discreetly i suppose..
+                    if (child.Selected)
+                    {
+                        // Y position of the reservedRect is the amount we should move
+                        // (as the scroll view starts a new GUI clipping area, so the topmost GUILayout element is located at (0,0))
+                        if (heightElapsed > 0f)
+                        {
+                            window.scrollRectPosition.y += heightElapsed;
+                        }
+                        break;
+                    }
+
+                    heightElapsed += child.GetHeight(dropdownSize.x);
+                }
+            }
+
             return window;
         }
 
@@ -426,7 +449,6 @@ namespace BXFW.Tools.Editor
                 hasFocusedOnSearchBarInitial = true;
                 EditorGUI.FocusTextInControl(SearchBarControlName);
             }
-
         }
         private void DrawElementNameBar(SearchDropdownElement lastElement)
         {
@@ -483,7 +505,7 @@ namespace BXFW.Tools.Editor
             // * Add keyboard nav                         [ X ]
             // * Add visual interactions                  [ X ]
             // TODO (optimizations) : 
-            // * General optimization to be done (such as accumulating up the rect heights)                                          [   ]
+            // * General optimization to be done (such as accumulating up the rect heights and push only one layout element)         [   ]
             // * Search results can contain elements with children (requires a seperate elements stack/slight restructuring of code) [   ]
 
             Event e = Event.current;

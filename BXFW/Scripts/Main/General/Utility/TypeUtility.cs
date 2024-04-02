@@ -325,10 +325,13 @@ namespace BXFW
             return true;
         }
         /// <summary>
-        /// Returns a list of base generic types inside given <paramref name="type"/>,
+        /// Returns a list of base class' generic types inside given <paramref name="type"/>,
         /// mapped accordingly to the dictionary of it's base inheriting generic types.
         /// <br>The keys of the given dictionary is open generic types and the values are the keys generic arguments.</br>
+        /// <br/>
+        /// <br>Returns an empty dictionary if <paramref name="type"/> has no base types that is generic, always returns a valid dictionary.</br>
         /// </summary>
+        /// <exception cref="ArgumentNullException"></exception>
         public static Dictionary<Type, Type[]> GetBaseGenericTypeArguments(this Type type)
         {
             if (type == null)
@@ -356,7 +359,7 @@ namespace BXFW
 
         /// <summary>
         /// Get an iterator of the base types + interfaces implemented of <paramref name="type"/>.
-        /// <br>Returns a blank IEnumerable if no base type + interfaces. (no foreach basically)</br>
+        /// <br>Returns an empty IEnumerable if no base type + interfaces. (no foreach basically)</br>
         /// </summary>
         public static IEnumerable<Type> GetBaseTypes(this Type type)
         {
@@ -370,16 +373,28 @@ namespace BXFW
                              .Concat(type.GetInterfaces().SelectMany(GetBaseTypes))
                              .Concat(type.BaseType.GetBaseTypes());
         }
-        /// <summary>Get types that has the <paramref name="attributeType"/> attribute from <see cref="Assembly"/> <paramref name="attbAsm"/>.</summary>
+        /// <summary>
+        /// Get types that has the <paramref name="attributeType"/> attribute from <see cref="Assembly"/> <paramref name="attributeAsm"/>.
+        /// <br>This method is slow as it enumerates all types in the <paramref name="attributeAsm"/>.</br>
+        /// </summary>
+        /// <param name="attributeType">The type of the attribute to check for.</param>
+        /// <param name="attributeAsm">The assembly to search for it's types to whether if it has <paramref name="attributeType"/> applied.
+        /// This is optional, if left blank, assigned to the <see cref="Type.Assembly"/> of the given <paramref name="attributeType"/></param>
         /// <returns>The types with the attribute <paramref name="attributeType"/>.</returns>
-        public static IEnumerable<Type> GetTypesWithAttribute(Type attributeType, Assembly attbAsm = null)
+        /// <exception cref="ArgumentNullException"></exception>
+        public static IEnumerable<Type> GetTypesWithAttribute(Type attributeType, Assembly attributeAsm = null)
         {
-            if (attbAsm == null)
+            if (attributeType == null)
             {
-                attbAsm = attributeType.Assembly;
+                throw new ArgumentNullException(nameof(attributeType), "[TypeUtility::GetTypesWithAttribute] Argument was null.");
             }
 
-            foreach (Type type in attbAsm.GetTypes())
+            if (attributeAsm == null)
+            {
+                attributeAsm = attributeType.Assembly;
+            }
+
+            foreach (Type type in attributeAsm.GetTypes())
             {
                 if (type.GetCustomAttributes(attributeType, true).Length > 0)
                 {
@@ -388,21 +403,31 @@ namespace BXFW
             }
         }
         /// <summary>
-        /// Gets types that inherit from 'T'.
-        /// <br>Only uses the assembly of <typeparamref name="T"/>.</br>
-        /// <br>Use the <c>TypeListProvider</c> (editor only) if you need all assemblies.</br>
+        /// Gets types that inherit from 'T'  that is non-abstract.
+        /// <br>Uses the assembly of <typeparamref name="T"/>.</br>
         /// </summary>
         public static IEnumerable<Type> GetInheritingTypes<T>() where T : class
         {
-            return Assembly.GetAssembly(typeof(T))
-                .GetTypes()
-                .Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
+            return GetInheritingTypes<T>(typeof(T).Assembly);
+        }
+        /// <summary>
+        /// Gets types that inherit from '<typeparamref name="T"/>' that is non-abstract.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static IEnumerable<Type> GetInheritingTypes<T>(Assembly assembly) where T : class
+        {
+            if (assembly == null)
+            {
+                throw new ArgumentNullException(nameof(assembly), "[TypeUtility::GetInheritingTypes] Argument was null.");
+            }
+
+            return assembly.GetTypes().Where((Type myType) => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)));
         }
 
         /// <summary>
         /// Used to cache the created <see cref="EqualityComparer{T}"/>s of <see cref="GetEqualityComparerResult(Type, object, object)"/>.
         /// </summary>
-        private static Dictionary<Type, (object, MethodInfo)> m_typedEqualityComparers = new Dictionary<Type, (object, MethodInfo)>(128);
+        private static readonly Dictionary<Type, (object, MethodInfo)> m_typedEqualityComparers = new Dictionary<Type, (object, MethodInfo)>(128);
         /// <summary>
         /// An utility method used to get the typed <see cref="EqualityComparer{T}.Default"/>'s comparison result with the given <paramref name="type"/>.
         /// </summary>

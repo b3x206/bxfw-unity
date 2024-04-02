@@ -27,26 +27,33 @@ namespace BXFW.ScriptEditor
             { "720p 16:9 Landspace", new Vector2Int(1280, 720) },
             { "720p 16:9 Portrait", new Vector2Int(720, 1280) },
             { TkSeperator, default },
-
+            // --
             { "1080p 16:9 Landspace", new Vector2Int(1920, 1080) },
             { "1080p 18:9 Landspace", new Vector2Int(2160, 1080) },
             { "1080p 16:9 Portrait", new Vector2Int(1080, 1920) },
             { "1080p 18:9 Portrait", new Vector2Int(1080, 2160) },
             { $"{TkSeperator}+1", default },
-
+            // --
             { "1440p 16:9 Landspace", new Vector2Int(2560, 1440) },
             { "1440p 18:9 Landspace", new Vector2Int(2960, 1440) },
             { "1440p 16:9 Portrait", new Vector2Int(1440, 2560) },
             { "1440p 18:9 Portrait", new Vector2Int(1440, 2960) },
             { $"{TkSeperator}+2", default },
-
+            // --
             { "2160p 16:9 Landspace", new Vector2Int(3840, 2160) },
             { "2160p 16:9 Portrait", new Vector2Int(2160, 3840) },
             { $"{TkSeperator}+3", default },
-
+            // --
             { "4320p 16:9 Landspace", new Vector2Int(7680, 4320) },
             { "4320p 16:9 Portrait", new Vector2Int(4320, 7680) },
         };
+        public static void AddPresetsSeperator()
+        {
+            string lastSeperator = Presets.LastOrDefault(p => p.Key.Contains(TkSeperator)).Key;
+            int.TryParse(lastSeperator.Substring(lastSeperator.IndexOf('+') + 1), out int lastSeperatorIndex);
+
+            Presets.Add($"{TkSeperator}+{lastSeperatorIndex}", default);
+        }
 
         private Rect lastDropdownRepaintRect = Rect.zero;
         public override void OnInspectorGUI()

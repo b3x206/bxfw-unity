@@ -491,6 +491,7 @@ namespace BXFW.Tweening
         /// <br/>
         /// <br><b>Note : </b> If you are want to play the same tween from this tweens ending action use <see cref="SetStopAction(BXSAction, EventSetMode)"/> instead,
         /// this is due to the <see cref="BXSTweenable.Stop"/> sets <see cref="BXSTweenable.IsPlaying"/> to false immediately after this event.</br>
+        /// <br>Or use <see cref="BXSTweenable.DelayedPlay"/> to delay the playback by one frame.</br>
         /// <br>Or use <see cref="BXSTweenSequence"/> in conjuction with <see cref="BXSTweenable.AsCopy{T}"/>.</br>
         /// </summary>
         public BXSTweenContext<TValue> SetEndAction(BXSAction action, EventSetMode setMode = EventSetMode.Equals)

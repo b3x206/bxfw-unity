@@ -2,7 +2,7 @@ namespace BXFW
 {
     /// <summary>
     /// An interface that random generators implement.
-    /// <br>Pre-implemented versions exist for unity <see cref="UnityEngine.Random"/> (<see cref="UnityRNG"/>) and mscorlib <see cref="System.Random"/> ().</br>
+    /// <br>Pre-implemented versions exist for unity <see cref="UnityEngine.Random"/> (<see cref="UnityRNG"/>) and mscorlib <see cref="System.Random"/> (<see cref="SystemRNG"/>).</br>
     /// </summary>
     public interface IRandomGenerator
     {

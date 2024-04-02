@@ -383,6 +383,33 @@ namespace BXFW.Collections
         { }
 
         /// <summary>
+        /// Used to copy a ChanceValuesList from another.
+        /// </summary>
+        /// <param name="chances">List of the chances. The chance sum does not have to accumulate up t</param>
+        public ChanceValuesList(IEnumerable<ChanceValue<T>> chances)
+        {
+            // Chance factor to divide the chances while adding to this ChanceValuesList.
+            float chanceFactor = chances.Sum(c => c.Chance) * ChanceUpperLimit;
+            int chancesCount = chances.Count();
+
+            foreach (var chancePair in chances)
+            {
+                float addChance = 0f;
+                // avoid 0 division errors
+                if (!MathUtility.Approximately(chanceFactor, 0f))
+                {
+                    addChance = chancePair.Chance / chanceFactor;
+                }
+                else
+                {
+                    addChance = ChanceUpperLimit / chancesCount;
+                }
+
+                m_list.Add(new ChanceValue<T>(addChance, chancePair.Value));
+            }
+        }
+
+        /// <summary>
         /// Returns the chance as the <see cref="KeyValuePair{TKey, TValue}.Key"/> 
         /// and the data as <see cref="KeyValuePair{TKey, TValue}.Value"/>.
         /// <br>This is a read-only reprensation.</br>
@@ -486,6 +513,17 @@ namespace BXFW.Collections
             m_list.Add(item);
             FillMissingChanceSum();
         }
+        /// <summary>
+        /// Adds an item with the chance of it being 0.
+        /// <br>Use <see cref="SetChance(T, float)"/> to set it's chance.</br>
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns>The added item's index. Which is <see cref="Count"/> - 1.</returns>
+        public int Add(T item)
+        {
+            m_list.Add(new ChanceValue<T>(0f, item));
+            return Count - 1;
+        }
         public void Clear()
         {
             m_list.Clear();
@@ -523,6 +561,39 @@ namespace BXFW.Collections
 
             return result;
         }
+        /// <inheritdoc cref="Remove(T, out float)"/>
+        public bool Remove(T item)
+        {
+            return Remove(item, out float _);
+        }
+        /// <summary>
+        /// Removes an item equalivent to <paramref name="item"/>.
+        /// <br>The given chances are filled accordingly to the removed item's sum.</br>
+        /// </summary>
+        /// <param name="item">The item to remove.</param>
+        /// <param name="chance">Chance of the removed item. <see langword="out"/>puts &lt; 0 if the item doesn't exist.</param>
+        /// <returns>Whether if the <paramref name="item"/> was removed.</returns>
+        public bool Remove(T item, out float chance)
+        {
+            chance = -1f;
+
+            for (int i = 0; i < m_list.Count; i++)
+            {
+                ChanceValue<T> element = m_list[i];
+
+                if (Comparer.Equals(element.Value, item))
+                {
+                    chance = element.Chance;
+                    m_list.RemoveAt(i);
+
+                    FillMissingChanceSum();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public override void Add(IChanceValue element)
         {
             Add(element as ChanceValue<T>);

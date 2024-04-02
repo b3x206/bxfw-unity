@@ -108,7 +108,7 @@ namespace BXFW.Tools.Editor
     ///         // that you know the rect to you can use that rect instead.
     ///         // ..
     ///         // This is not a problem with BXFW, it's a problem of the IMGUI system invoking 'Show' in Layout with wrong rect
-    ///         // (maybe it can be prevented, but idk. this workaround works)
+    ///         // (or perhaps it's BXFW's problem, maybe it can be prevented, but idk. this workaround works and don't want to drop inputs..)
     ///         if (Event.current.type == EventType.Repaint)
     ///         {
     ///             lastRepaintDropdownParentRect = GUILayoutUtility.GetLastRect();
@@ -195,6 +195,14 @@ namespace BXFW.Tools.Editor
         /// <br>By default, this value is <see langword="true"/>.</br>
         /// </summary>
         protected internal virtual bool DisplayCurrentElementsCount => true;
+        /// <summary>
+        /// Whether to start from the first <see cref="SearchDropdownElement"/> that is selected.
+        /// (i.e the scroll position will view the first <see cref="SearchDropdownElement"/> 
+        /// that has it's <see cref="SearchDropdownElement.Selected"/> as <see langword="true"/>)
+        /// <br>You should set this <see langword="true"/> only if you are planning to set a single <see cref="SearchDropdownElement"/> as enabled.</br>
+        /// </summary>
+        protected internal virtual bool StartFromFirstSelected => false;
+
         /// <summary>
         /// Whether to close the 'SearchDropdown' in an event of an undo or a redo.
         /// <br>Setting this <see langword="false"/> does not break anything, it is just added for nicer experience.</br>

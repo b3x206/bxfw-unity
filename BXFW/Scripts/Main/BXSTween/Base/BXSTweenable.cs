@@ -429,10 +429,15 @@ namespace BXFW.Tweening
         /// </br>
         /// </summary>
         public int LoopsElapsed { get; protected internal set; } = 0;
+
         /// <summary>
         /// Whether if the tween has started.
         /// </summary>
-        public bool IsPlaying { get; protected set; }
+        public bool IsPlaying
+        {
+            get;
+            protected set;
+        }
         /// <summary>
         /// Whether if the tween is paused.
         /// <br>This depends on several factors, such as whether if the tween was elasped at all and if it is running currently or not.</br>
@@ -604,7 +609,12 @@ namespace BXFW.Tweening
             }
 
             IsPlaying = true;
-            BXSTween.RunningTweens.Add(this);
+            // Maybe I should use HashSet's..
+            // Tween gets pushed twice to the 'RunningTweens' if 'Play' is called twice on the same frame.
+            if (!BXSTween.RunningTweens.Contains(this))
+            {
+                BXSTween.RunningTweens.Add(this);
+            }
 
             if (!HasPlayedOnce)
             {
@@ -690,7 +700,21 @@ namespace BXFW.Tweening
             }
 
             IsPlaying = false;
-            BXSTween.RunningTweens.Remove(this);
+            bool removeResult = BXSTween.RunningTweens.Remove(this);
+
+            if (BXSTween.EnsureTweenRemovalOnStop)
+            {
+                const int MaxRemovalIters = 500;
+                for (int i = 0; i < MaxRemovalIters && removeResult; i++)
+                {
+                    removeResult = BXSTween.RunningTweens.Remove(this);
+
+                    if (!removeResult && i >= (MaxRemovalIters - 1))
+                    {
+                        BXSTween.MainLogger.LogWarning($"[BXSTweenable::Stop] This tweenable '{ToString()}' cannot be removed | it is always present on the RunningTweens array.");
+                    }
+                }
+            }
 
             try
             {
@@ -781,7 +805,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// Stops all of the <c>DelayedX</c> calls.
         /// </summary>
-        protected void CancelDelayedActions()
+        public void CancelDelayedActions()
         {
             TaskTimer.StopAllScheduledTasks(this);
         }

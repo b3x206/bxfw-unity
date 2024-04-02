@@ -155,6 +155,7 @@ namespace BXFW.Tweening.Editor
 
             public readonly EaseType selectedEase = EaseType.Linear;
             protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
+            protected internal override bool StartFromFirstSelected => true;
 
             protected override SearchDropdownElement BuildRoot()
             {

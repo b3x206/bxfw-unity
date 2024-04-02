@@ -16,7 +16,7 @@ namespace BXFW
         /// <summary>
         /// Defines whether if this object is interactable with.
         /// <br/>
-        /// <br>Warning : Don't set this from <see cref="MultiUIManagerBase.UpdateElementsAppearance"/>, 
+        /// <br>Warning : Don't set this from <see cref="OnInteractableStateChanged"/>, 
         /// it will cause a infinite recursion if there's no break condition.</br>
         /// </summary>
         public bool Interactable

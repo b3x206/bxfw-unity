@@ -97,6 +97,11 @@ namespace BXFW.Tweening
         /// <br>Can use the <see cref="BXSTweenable"/> methods on tweens here.</br>
         /// </summary>
         public static readonly List<BXSTweenable> RunningTweens = new List<BXSTweenable>(50);
+        /// <summary>
+        /// Whether to ensure the tweens to be removed from the <see cref="RunningTweens"/> list on <see cref="BXSTweenable.Stop"/>.
+        /// <br>Use this if you get warnings like 'Non playing tween "..." tried to be run' like errors.</br>
+        /// </summary>
+        public static bool EnsureTweenRemovalOnStop = false;
 
         /// <summary>
         /// Sets a logger.
@@ -203,7 +208,7 @@ namespace BXFW.Tweening
         /// </summary>
         public static void StopAllTweens()
         {
-            for (int i = 0; i < RunningTweens.Count; i++)
+            for (int i = RunningTweens.Count - 1; i >= 0; i--)
             {
                 BXSTweenable tween = RunningTweens[i];
                 if (tween == null)
@@ -211,6 +216,7 @@ namespace BXFW.Tweening
                     continue;
                 }
 
+                // This is technically a 'RemoveAt' call.
                 tween.Stop();
             }
 
@@ -238,14 +244,14 @@ namespace BXFW.Tweening
             if (!tween.IsValid)
             {
                 RunningTweens.Remove(tween);
-                MainLogger.LogError($"[BXSTweenable::RunTweenable] Invalid tween '{tween}', stopping and removing it.");
+                MainLogger.LogError($"[BXSTweenable::RunTweenable] Invalid tween '{tween}' tried to be run, stopping and removing it.");
                 tween.Stop();
                 return;
             }
             if (!tween.IsPlaying)
             {
                 RunningTweens.Remove(tween);
-                MainLogger.LogWarning($"[BXSTweenable::RunTweenable] Non playing tween '{tween}' tried to be run.");
+                MainLogger.LogWarning($"[BXSTweenable::RunTweenable] Non playing tween '{tween}' tried to be run. This is most likely a BXSTween sided issue.");
                 return;
             }
 

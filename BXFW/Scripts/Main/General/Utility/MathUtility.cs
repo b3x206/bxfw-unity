@@ -160,11 +160,11 @@ namespace BXFW
         // - Vector Utility -
         // ------------------
         /// <summary>
-        /// An AABB collision check.
-        /// <br>If the rects are colliding this will return true.</br>
+        /// A 2D AABB/Rect collision check.
+        /// <br>If the rects are colliding this will return <see langword="true"/>.</br>
         /// </summary>
-        /// <param name="lhs">First rect to check</param>
-        /// <param name="rhs">Second rect to check</param>
+        /// <param name="lhs">First rect to check.</param>
+        /// <param name="rhs">Second rect to check.</param>
         public static bool RectsCollide(Rect lhs, Rect rhs)
         {
             return lhs.x < (rhs.x + rhs.width) &&

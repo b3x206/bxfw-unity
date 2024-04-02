@@ -83,9 +83,17 @@ namespace BXFW
         {
             return new Vector2(value.Min, value.Max);
         }
+        public static explicit operator Vector2Int(MinMaxValue value)
+        {
+            return new Vector2Int((int)value.Min, (int)value.Max);
+        }
         public static implicit operator MinMaxValue(Vector2 value)
         {
             return new MinMaxValue(value.x, value.y);
+        }
+        public static explicit operator MinMaxValueInt(MinMaxValue value)
+        {
+            return new MinMaxValueInt((int)value.Min, (int)value.Max);
         }
 
         /// <summary>
@@ -267,11 +275,11 @@ namespace BXFW
         }
 
         // - Operators
-        public static implicit operator Vector2(MinMaxValueInt value)
+        public static implicit operator Vector2Int(MinMaxValueInt value)
         {
             return new Vector2Int(value.Min, value.Max);
         }
-        public static implicit operator Vector2Int(MinMaxValueInt value)
+        public static explicit operator Vector2(MinMaxValueInt value)
         {
             return new Vector2Int(value.Min, value.Max);
         }
