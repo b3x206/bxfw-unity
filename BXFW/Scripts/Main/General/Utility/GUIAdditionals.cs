@@ -549,7 +549,14 @@ namespace BXFW
         private const float PlotTextPaddingX = 24f;
         private const float PlotTextPaddingY = 12f;
         private const int PlotTextFontSize = 9;
-        private static GUIStyle plotSmallerFontStyle;
+        /// <summary>
+        /// Used with the <see cref="PlotLine"/> functions.
+        /// </summary>
+        public static GUIStyle plotSmallerFontStyle;
+        /// <summary>
+        /// Used with the <see cref="PlotLine"/> functions.
+        /// </summary>
+        public static GUIStyle plotSmallerCenteredFontStyle;
         /// <summary>
         /// Plots the <paramref name="plotFunction"/> to the <see cref="GUI"/>.
         /// <br>The plotting is not accurate and does ignore some of the characteristics of certain functions
@@ -567,14 +574,24 @@ namespace BXFW
         /// <param name="segments">Amount of times that the <see cref="DrawLine(Vector2, Vector2, float)"/> will be called. This should be a value larger than 1</param>
         public static void PlotLine(Rect position, Func<float, float> plotFunction, bool showFromToLabels, bool showMinMaxLabels, float plotMinValue, float plotMaxValue, float vFrom = 0f, float vTo = 1f, float lineWidth = 2.5f, int segments = 20)
         {
+            Event e = Event.current;
+
             // Only do this plotting if we are actually drawing and not layouting
-            // As this plotter has no interactions and will only paint
-            if (Event.current.type != EventType.Repaint)
+            // TODO : Determine how to handle the plot hover tooltip on runtime,
+            // as it will just require constant repaint regardless of mouse event.
+            if (e == null || (e.type != EventType.Repaint && e.type != EventType.MouseMove))
+            {
+                return;
+            }
+            // Invalid size (will cause drawing errors / DivideByZero)
+            if (position.width <= 0f || position.height <= 0f)
             {
                 return;
             }
 
+            Color guiPrevColor = GUI.color;
             plotSmallerFontStyle ??= new GUIStyle(GUI.skin.label) { fontSize = PlotTextFontSize, wordWrap = true };
+            plotSmallerCenteredFontStyle ??= new GUIStyle(plotSmallerFontStyle) { alignment = TextAnchor.MiddleCenter };
 
             if (segments < 1)
             {
@@ -587,7 +604,6 @@ namespace BXFW
             }
 
             // Draw dark box behind
-            var guiPrevColor = GUI.color;
             GUI.color = new Color(.4f, .4f, .4f, .2f);
             GUI.DrawTexture(
                 position,
@@ -720,13 +736,13 @@ namespace BXFW
                 float currentSegmentElapsed = (float)i / segments;
                 float lerpValue = Mathf.Lerp(vFrom, vTo, currentSegmentElapsed);
                 float plotValue = plotFunction(lerpValue);
-#if UNITY_EDITOR
+
                 if (float.IsNaN(plotValue))
                 {
                     Debug.LogError($"[GUIAdditionals::PlotLine] Given 'plotFunction' returns NaN for value '{lerpValue}'. This will cause issues.");
                     continue;
                 }
-#endif
+
                 // Get yLerp between the plot values
                 float yLerp = MathUtility.InverseLerpUnclamped(plotMaxValue, plotMinValue, plotValue);
 
@@ -764,8 +780,46 @@ namespace BXFW
 
                 DrawLine(previousPosition, lineToPosition, lineWidth, GUI.color);
 
-                //previousPosition = lineToPosition;
                 previousPosition = new Vector2(currentX, currentY);
+            }
+
+            // Note : This tooltip shows only while Repaint()'ing constantly.
+            // Show a tooltip on top of the cursor if we are on top of the value
+            // The value tolerance will be scaled relatively with the lineWidth and the plotMinValue and plotMaxValue
+            if (plotPosition.Contains(e.mousePosition))
+            {
+                float cursorXLerp = Mathf.Lerp(vFrom, vTo, (e.mousePosition.x - plotPosition.x) / plotPosition.width);
+                float cursorPlotValue = Mathf.Lerp(plotMaxValue, plotMinValue, (e.mousePosition.y - plotPosition.y) / plotPosition.height);
+                float cursorTolerance = Mathf.Abs(plotMaxValue - plotMinValue) *
+                    // how to make mathe formula legit tutorial 2014
+                    Mathf.MoveTowards(
+                        0.33f, 0.06f,
+                        (Mathf.Min(300f, plotPosition.width) / 600f) + (Mathf.Min(300f, plotPosition.height) / 600f)
+                    );
+
+                float cursorToPlot = plotFunction(cursorXLerp);
+                // Inbetween the given tolerance values (do math ops only if the cursorToPlot is normal)
+                if (float.IsNormal(cursorToPlot) && cursorPlotValue > (cursorToPlot - cursorTolerance) && cursorPlotValue < (cursorToPlot + cursorTolerance))
+                {
+                    int guiPrevDepth = GUI.depth;
+                    GUI.depth++;
+
+                    float drawRectWidth = 60f;
+                    float drawRectXOffset = 0f;
+#if UNITY_EDITOR
+                    if ((e.mousePosition.x + drawRectWidth) > UnityEditor.EditorGUIUtility.currentViewWidth)
+                    {
+                        drawRectXOffset -= drawRectWidth;
+                    }
+#endif
+                    Rect tooltipDrawRect = new Rect(e.mousePosition.x + drawRectXOffset, e.mousePosition.y - 35f, drawRectWidth, 30f);
+                    GUI.color = new Color(0f, 0f, 0f, 0.5f);
+                    GUI.DrawTexture(tooltipDrawRect, Texture2D.whiteTexture);
+                    GUI.color = guiPrevColor;
+                    GUI.Label(tooltipDrawRect, $"X:{cursorXLerp:0.0##}\nY:{cursorToPlot:0.0##}", plotSmallerCenteredFontStyle);
+
+                    GUI.depth = guiPrevDepth;
+                }
             }
         }
         /// <inheritdoc cref="PlotLine(Rect, Func{float, float}, bool, bool, float, float, float, float, float, int)"/>
