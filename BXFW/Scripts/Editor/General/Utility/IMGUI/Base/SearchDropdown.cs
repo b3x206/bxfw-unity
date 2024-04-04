@@ -199,7 +199,9 @@ namespace BXFW.Tools.Editor
         /// Whether to start from the first <see cref="SearchDropdownElement"/> that is selected.
         /// (i.e the scroll position will view the first <see cref="SearchDropdownElement"/> 
         /// that has it's <see cref="SearchDropdownElement.Selected"/> as <see langword="true"/>)
-        /// <br>You should set this <see langword="true"/> only if you are planning to set a single <see cref="SearchDropdownElement"/> as enabled.</br>
+        /// <br>You should set this <see langword="true"/> only if you are planning to set a single <see cref="SearchDropdownElement"/> 
+        /// as <see cref="SearchDropdownElement.Selected"/> as other elements may not be viewed (only the first occurance is taken to account)</br>
+        /// <br>If none of the elements are selected, nothing will be done.</br>
         /// </summary>
         protected internal virtual bool StartFromFirstSelected => false;
 

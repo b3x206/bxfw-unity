@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using static PlasticGui.LaunchDiffParameters;
 
 namespace BXFW.Tools.Editor
 {
@@ -286,7 +285,7 @@ namespace BXFW.Tools.Editor
         {
             if (parentManager == null)
             {
-                throw new ArgumentNullException(nameof(parentManager), "[OptimizedSearchDropdownWindow::Create] Given argument was null");
+                throw new ArgumentNullException(nameof(parentManager), "[SearchDropdownWindow::Create] Given argument was null.");
             }
 
             // Convert parent rect to screen space
@@ -298,9 +297,10 @@ namespace BXFW.Tools.Editor
             SearchDropdownWindow window = CreateInstance<SearchDropdownWindow>();
             window.parentManager = parentManager;
             window.wantsMouseMove = true;
+
             // First element shown is always the root (which is not selectable) you dumb dumb, don't modify this value.
-            // Or there may be some other reason, but it could be also wrong too. It worked until now by pure luck.
-            // Oh yes, unity has bugged out and any dropdown spawned dies in 2 seconds. This persists after a restart too. (or maybe something gets invoked by somewhere)
+            // Note : The intent was being set incorrectly + calling 'EditorWindow.GetWindow' closes the dropdown,
+            // i meant to call 'Resources.FindObjectsOfType<T>()' to get the editor window.
             // window.IsClosingWithSelectionIntent = !window.parentManager.AllowSelectionOfElementsWithChild;
 
             // Show with size constraints.
@@ -356,7 +356,7 @@ namespace BXFW.Tools.Editor
                         break;
                     }
 
-                    heightElapsed += child.GetHeight(dropdownSize.x);
+                    heightElapsed += child.GetHeight(window.ElementsViewWidth);
                 }
             }
 

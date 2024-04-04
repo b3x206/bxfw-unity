@@ -20,6 +20,7 @@ namespace BXFW.ScriptEditor
         public class TextIDSelector : SearchDropdown
         {
             protected internal override StringComparison SearchComparison => StringComparison.OrdinalIgnoreCase;
+            protected internal override bool StartFromFirstSelected => true;
 
             public class Item : SearchDropdownElement
             {

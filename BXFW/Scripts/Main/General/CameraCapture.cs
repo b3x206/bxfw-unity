@@ -96,7 +96,7 @@ namespace BXFW
                 f.Write(bytes, 0, bytes.Length);
                 fileName = f.Name;
             }
-            Debug.Log(string.Format("<b>[CameraCapture::TakeScreenshot]</b> Saved image at : <a href=\"file:///{0}\">{0}</a>\n<a href=\"file:///{1}\">Open Target Image Directory</a>", fileName, dirString), this);
+            Debug.Log(string.Format("<b>[CameraCapture::TakeCameraShot]</b> Saved image at : <a href=\"file:///{0}\">{0}</a>\n<a href=\"file:///{1}\">Open Target Image Directory</a>", fileName, dirString), this);
 
             // Cleanup
             if (Application.isPlaying)
