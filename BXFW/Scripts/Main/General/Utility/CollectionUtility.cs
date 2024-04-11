@@ -132,8 +132,13 @@ namespace BXFW
         /// </summary>
         /// <param name="moveNextSize">Maximum times that the <see cref="IEnumerator.MoveNext"/> can be called. (array size basically)</param>
         /// <param name="enumerator">The iterable enumerator itself.</param>
-        private static T GetRandomEnumeratorInternal<T>(int moveNextSize, IEnumerator<T> enumerator)
+        private static T GetRandomEnumeratorInternal<T>(int moveNextSize, IEnumerator<T> enumerator, IRandomGenerator rng)
         {
+            if (rng == null)
+            {
+                throw new ArgumentNullException(nameof(rng), "[CollectionUtility::GetRandom] Given random generator is null.");
+            }
+
             // Get size + check            
             if (moveNextSize <= 0)
             {
@@ -157,12 +162,7 @@ namespace BXFW
             }
 
             // Get rng value (according to size)
-#if UNITY_5_3_OR_NEWER
-            int rngValue = UnityEngine.Random.Range(0, moveNextSize);
-#else
-            var rand = new System.Random(unchecked((int)DateTime.Now.Ticks));
-            int rngValue = rand.Next(0, moveNextSize);
-#endif
+            int rngValue = rng.NextInt(moveNextSize);
             int current = 0;
 
             // Move the iterator manually
@@ -180,9 +180,38 @@ namespace BXFW
         }
         /// <summary>
         /// Returns a random value from an IEnumerable.
+        /// </summary>
+        public static T GetRandom<T>(this IEnumerable<T> values, IRandomGenerator rng)
+        {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
+            }
+
+            // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
+            int valuesSize = -1;
+
+            if (values is ICollection<T> collection)
+            {
+                valuesSize = collection.Count;
+            }
+
+            if (values is ICollection collection1)
+            {
+                valuesSize = collection1.Count;
+            }
+
+            // Get size + check
+            using (IEnumerator<T> enumerator = values.GetEnumerator())
+            {
+                return GetRandomEnumeratorInternal(valuesSize, enumerator, rng);
+            }
+        }
+        /// <summary>
+        /// Returns a random value from an IEnumerable.
         /// <br>Also allows filtering using a predicate.</br>
         /// </summary>
-        public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
+        public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate, IRandomGenerator rng)
         {
             if (values == null)
             {
@@ -207,61 +236,67 @@ namespace BXFW
                 }
             }
 
-            return GetRandom(GetValuesFiltered());
+            return GetRandom(GetValuesFiltered(), rng);
         }
-        /// <summary>
-        /// Returns a random value from an IEnumerable.
-        /// </summary>
+        public static T GetRandom<T>(this IEnumerable<T> values, Predicate<T> predicate)
+        {
+            IRandomGenerator useGenerator;
+#if UNITY_5_3_OR_NEWER
+            useGenerator = UnityRNG.Default;
+#else
+            useGenerator = SystemRNG.Default;
+#endif
+            return GetRandom(values, predicate, useGenerator);
+        }
+        /// <inheritdoc cref="GetRandom{T}(IList{T}, IRandomGenerator)"/>
         public static T GetRandom<T>(this IEnumerable<T> values)
         {
-            if (values == null)
-            {
-                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
-            }
-
-            // Won't use the 'Linq Enumerable.Count' for saving 1 GetEnumerator creation+disposal (when the size is undefined).
-            int valuesSize = -1;
-
-            if (values is ICollection<T> collection)
-            {
-                valuesSize = collection.Count;
-            }
-
-            if (values is ICollection collection1)
-            {
-                valuesSize = collection1.Count;
-            }
-
-            // Get size + check
-            using (IEnumerator<T> enumerator = values.GetEnumerator())
-            {
-                return GetRandomEnumeratorInternal(valuesSize, enumerator);
-            }
-        }
-        /// <summary>
-        /// Returns a random value from an array. (faster)
-        /// </summary>
-        public static T GetRandom<T>(this IList<T> values)
-        {
-            if (values == null)
-            {
-                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
-            }
-
+            IRandomGenerator useGenerator;
 #if UNITY_5_3_OR_NEWER
-            int randValue = UnityEngine.Random.Range(0, values.Count);
+            useGenerator = UnityRNG.Default;
 #else
-            System.Random rand = new System.Random(unchecked((int)DateTime.Now.Ticks));
-            int randValue = rand.Next(0, values.Count);
+            useGenerator = SystemRNG.Default;
 #endif
-            return values[randValue];
+            return GetRandom(values, useGenerator);
         }
         /// <summary>
         /// Returns a random value from an array matching the <paramref name="predicate"/>.
         /// </summary>
+        public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate, IRandomGenerator rng)
+        {
+            return GetRandom((IEnumerable<T>)values, predicate, rng);
+        }
+        /// <inheritdoc cref="GetRandom{T}(IList{T}, Predicate{T}, IRandomGenerator)"/>
         public static T GetRandom<T>(this IList<T> values, Predicate<T> predicate)
         {
             return GetRandom((IEnumerable<T>)values, predicate);
+        }
+        /// <summary>
+        /// Returns a random value from an array. (faster)
+        /// </summary>
+        public static T GetRandom<T>(this IList<T> values, IRandomGenerator rng)
+        {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values), "[CollectionUtility::GetRandom] 'values' is null.");
+            }
+            if (rng == null)
+            {
+                throw new ArgumentNullException(nameof(rng), "[CollectionUtility::GetRandom] Given random generator is null.");
+            }
+
+            return values[rng.NextInt(values.Count)];
+        }
+        /// <inheritdoc cref="GetRandom{T}(IList{T}, IRandomGenerator)"/>
+        public static T GetRandom<T>(this IList<T> values)
+        {
+            IRandomGenerator useGenerator;
+#if UNITY_5_3_OR_NEWER
+            useGenerator = UnityRNG.Default;
+#else
+            useGenerator = SystemRNG.Default;
+#endif
+            return GetRandom(values, useGenerator);
         }
 
         /// <summary>

@@ -112,7 +112,7 @@ namespace BXFW
             /// <br>The given <paramref name="seconds"/> takes note of the currently remaining <see cref="timer"/> if it's running.
             /// Basically this means that the timing is calculated from the current timer, so that each given <see cref="timer"/> is divisible by <paramref name="seconds"/>.</br>
             /// <br/>
-            /// <br>If the elapsing type is set to <see cref="UseWaitFrames"/> as <see langword="true"/>, the time elapsed is still measured as seconds.</br>
+            /// <br>Even if <see cref="UseWaitFrames"/> as <see langword="true"/>, the time elapsed is still measured as seconds.</br>
             /// <br/>
             /// <br>If the framerate is too low (<see cref="ITickRunner.UnscaledDeltaTime"/> is too high) this won't tick or invoke accurately.</br>
             /// </summary>
@@ -431,7 +431,7 @@ namespace BXFW
         }
         /// <summary>
         /// Stops all of the tasks.
-        /// <br>Use with caution.</br>
+        /// <br>Use with caution, as this will stop all of the scheduled things.</br>
         /// </summary>
         public static void StopAllScheduledTasks()
         {

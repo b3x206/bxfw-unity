@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.ProjectWindowCallback;
+using UnityEditorInternal;
 
 namespace BXFW.Tools.Editor
 {
@@ -171,6 +172,141 @@ namespace BXFW.Tools.Editor
 
             return true;
         }
+
+        // TODO : Add multi edit 'ReorderableList' support for these methods.
+        /// <summary>
+        /// Current reorderable list drawing list.
+        /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise
+        /// it doesn't work if you create the same ReorderableList constantly.</br>
+        /// </summary>
+        private static readonly Dictionary<string, ReorderableList> m_reorderableListCache = new Dictionary<string, ReorderableList>();
+        /// <summary>
+        /// Limit size for the amount of allocated <see cref="ReorderableList"/>s inside <see cref="m_reorderableListCache"/>.
+        /// </summary>
+        private const int ListsDictionaryLimit = 64;
+        /// <summary>
+        /// Returns the <see cref="ReorderableList"/> for the given <paramref name="property"/> with checks on the resulting <see cref="ReorderableList"/>.
+        /// <br>If the containing <see cref="ReorderableList"/> registry for <paramref name="property"/> is invalid or disposed a new list will be created.</br>
+        /// <br>The returned result is cached, this is crucial for the functionality of the '<see cref="ReorderableList"/>'.</br>
+        /// <br/>
+        /// <br>
+        /// This is necessary in such cases where an <see cref="PropertyDrawer"/> is being used to draw a <see cref="ReorderableList"/>,
+        /// as <see cref="PropertyDrawer"/>s has limited control and knowledge on which <see cref="SerializedProperty"/>ies that it's being drawn.
+        /// </br>
+        /// </summary>
+        /// <param name="serializedObject">The <see cref="SerializedObject"/> that contains this property.</param>
+        /// <param name="property">The property to get / create it's <see cref="ReorderableList"/> for. This property has to be an array of some kind.</param>
+        /// <param name="draggable">Whether if the <see cref="ReorderableList"/> is draggable. This is an constructor setting.</param>
+        /// <param name="displayHeader">Whether if the <see cref="ReorderableList"/> will display header. This is an constructor setting.</param>
+        /// <param name="displayAddButton">Whether if the <see cref="ReorderableList"/> will feature an add button on bottom right. This is an constructor setting.</param>
+        /// <param name="displayRemoveButton">Whether if the <see cref="ReorderableList"/> will feature a remove button on bottom right. This is an constructor setting.</param>
+        /// <returns>The created or the allocated <see cref="ReorderableList"/>.</returns>
+        /// <example>
+        /// <![CDATA[
+        /// // ---
+        /// private SerializedProperty listTargetProperty; // is a class variable that is used in the ReorderableList callbacks
+        /// // ---
+        /// // Assume this is an 'PropertyDrawer.GetPropertyHeight(SerializedProperty property, GUIContent label)' call
+        ///     ReorderableList list = EditorAdditionals.GetListForProperty(property.FindPropertyRelative(ListFieldName));
+        ///     // Set it's callbacks after receiving the 'list', this is required.
+        ///     list.drawHeaderCallback = DrawListHeader;
+        ///     list.elementHeightCallback = GetListElementHeight;
+        ///     list.drawElementCallback = DrawListElements;
+        ///     
+        ///     // Set this before calling anything in 'list'
+        ///     listTargetProperty = property;
+        ///     height += list.GetHeight();
+        /// // ---
+        /// // Assume this is an 'PropertyDrawer.OnGUI(Rect position, SerializedProperty property, GUIContent label)' call
+        ///     ReorderableList list = EditorAdditionals.GetListForProperty(property.FindPropertyRelative(ListFieldName));
+        ///     // Set it's callbacks again..
+        ///     list.drawHeaderCallback = DrawListHeader;
+        ///     list.elementHeightCallback = GetListElementHeight;
+        ///     list.drawElementCallback = DrawListElements;
+        ///     
+        ///     // Draw reorderable
+        ///     listTargetProperty = property;
+        ///     float height = list.GetHeight();
+        ///     list.DoList(mainCtx.GetPropertyRect(position, height));
+        ///     property.serializedObject.ApplyModifiedProperties(); // do this, very required and fun
+        /// // ---
+        /// // And that's how you mostly handle ReorderableLists inside PropertyDrawers, this was annoying to figure out at first..
+        /// ]]>
+        /// </example>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        public static ReorderableList GetListForProperty(SerializedObject serializedObject, SerializedProperty property, bool draggable, bool displayHeader, bool displayAddButton, bool displayRemoveButton)
+        {
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property), "[EditorAdditionals::GetListForProperty] Given argument was null.");
+            }
+            if (!property.isArray)
+            {
+                throw new ArgumentException("[EditorAdditionals::GetListForProperty] Given argument 'property' is not an list.", nameof(property));
+            }
+
+            // Add a ReorderableList to this SerializeableDictionaryDrawer
+            // Yes, this is not a very nice way of doing this, but it will do for now.
+            // Because the 'ReorderableList' is not quite draggable if this is not done.
+            string sPropId = property.GetIDString();
+            // Check if the 'ReorderableList's SerializedObject is disposed
+            FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool hasList = m_reorderableListCache.TryGetValue(sPropId, out ReorderableList list);
+            bool listSerializedObjectDisposed = hasList && ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed();
+            if (!hasList || listSerializedObjectDisposed)
+            {
+                list = new ReorderableList(serializedObject, property.Copy(), draggable, displayHeader, displayAddButton, displayRemoveButton);
+
+                if (!hasList)
+                {
+                    m_reorderableListCache.Add(sPropId, list);
+                }
+                else
+                {
+                    m_reorderableListCache[sPropId] = list;
+                }
+
+                // 'Dictionary.Add's ordering is undefined behaviour (i love hashmaps)
+                if (m_reorderableListCache.Count > ListsDictionaryLimit)
+                {
+                    m_reorderableListCache.Remove(m_reorderableListCache.Keys.First(k => k != sPropId));
+                }
+            }
+
+            return list;
+        }
+        /// <inheritdoc cref="GetListForProperty(SerializedObject, SerializedProperty, bool, bool, bool, bool)"/>
+        public static ReorderableList GetListForProperty(SerializedObject serializedObject, SerializedProperty property)
+        {
+            return GetListForProperty(serializedObject, property, true, true, true, true);
+        }
+        /// <inheritdoc cref="GetListForProperty(SerializedObject, SerializedProperty, bool, bool, bool, bool)"/>
+        public static ReorderableList GetListForProperty(SerializedProperty property, bool draggable, bool displayHeader, bool displayAddButton, bool displayRemoveButton)
+        {
+            return GetListForProperty(property.serializedObject, property, draggable, displayHeader, displayAddButton, displayRemoveButton);
+        }
+        /// <inheritdoc cref="GetListForProperty(SerializedObject, SerializedProperty, bool, bool, bool, bool)"/>
+        public static ReorderableList GetListForProperty(SerializedProperty property)
+        {
+            return GetListForProperty(property.serializedObject, property);
+        }
+        /// <summary>
+        /// Removes the corresponding <see cref="GetListForProperty(SerializedProperty)"/> <see cref="ReorderableList"/> for <paramref name="property"/>.
+        /// <br>This can be wanted if you say, wanted to change the constructor settings of the <see cref="ReorderableList"/>.</br>
+        /// </summary>
+        /// <returns>Whether if an corresponding list was removed for <paramref name="property"/>.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool RemoveListForProperty(SerializedProperty property)
+        {
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property), "[EditorAdditionals::RemoveListForProperty] Given argument was null.");
+            }
+
+            return m_reorderableListCache.Remove(property.GetIDString());
+        }
+
         // - Generic
         /// <inheritdoc cref="GetPropertyDrawerFromType(Type)"/>
         public static PropertyDrawer GetPropertyDrawerFromType<T>()

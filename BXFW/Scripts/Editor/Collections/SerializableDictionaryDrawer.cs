@@ -26,63 +26,6 @@ namespace BXFW.Collections.ScriptEditor
         /// </summary>
         protected const float AddElementButtonHeight = 30;
 
-        /// <summary>
-        /// Current reorderable list drawing list.
-        /// <br>This is done to be able to make the 'ReorderableList' be draggable otherwise
-        /// it doesn't work if you create the same ReorderableList constantly. Basically unique persistent ReorderableList storage</br>
-        /// </summary>
-        private static readonly Dictionary<string, ReorderableList> idDrawList = new Dictionary<string, ReorderableList>();
-        private const int IdDrawListDictSizeLimit = 64;
-
-        /// <summary>
-        /// Returns the <see cref="ReorderableList"/> for the given <paramref name="property"/> with checks on the given <see cref="ReorderableList"/>.
-        /// <br>If the containing <see cref="ReorderableList"/> registry for <paramref name="property"/> is invalid or disposed a new list will be created.</br>
-        /// </summary>
-        /// <param name="property">The property to get / create it's <see cref="ReorderableList"/> for.</param>
-        /// <exception cref="ArgumentNullException"/>
-        protected ReorderableList GetListForProperty(SerializedProperty property)
-        {
-            if (property == null)
-            {
-                throw new ArgumentNullException(nameof(property), "[SerializableDictionaryDrawer::GetReorderableListForProperty] Given argument was null.");
-            }
-
-            // Add a ReorderableList to this SerializeableDictionaryDrawer
-            // Yes, this is not a very nice way of doing this, but it will do for now.
-            // Because the 'ReorderableList' is not quite draggable if this is not done.
-            string sPropId = property.GetIDString();
-            // Check if the 'ReorderableList's SerializedObject is disposed
-            FieldInfo reorderableListSerializedObjectField = typeof(ReorderableList).GetField("m_SerializedObject", BindingFlags.NonPublic | BindingFlags.Instance);
-            bool hasList = idDrawList.TryGetValue(sPropId, out ReorderableList list);
-            bool listSerializedObjectDisposed = hasList && ((SerializedObject)reorderableListSerializedObjectField.GetValue(list)).IsDisposed();
-            if (!hasList || listSerializedObjectDisposed)
-            {
-                list = new ReorderableList(property.serializedObject, property.FindPropertyRelative("m_Pairs").Copy(), true, true, false, true)
-                {
-                    drawHeaderCallback = DrawListHeader,
-                    elementHeightCallback = GetElementHeight,
-                    drawElementCallback = DrawListElements,
-                };
-
-                if (!hasList)
-                {
-                    idDrawList.Add(sPropId, list);
-                }
-                else
-                {
-                    idDrawList[sPropId] = list;
-                }
-
-                // 'Dictionary.Add's ordering is undefined behaviour (i love hashmaps)
-                if (idDrawList.Count > IdDrawListDictSizeLimit)
-                {
-                    idDrawList.Remove(idDrawList.Keys.First(k => k != sPropId));
-                }
-            }
-
-            return list;
-        }
-
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property.serializedObject.isEditingMultipleObjects)
@@ -97,7 +40,7 @@ namespace BXFW.Collections.ScriptEditor
                 return height;
             }
 
-            ReorderableList list = GetListForProperty(property);
+            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, true, false);
 
             // Sanity check thing
             SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
@@ -123,7 +66,7 @@ namespace BXFW.Collections.ScriptEditor
         {
             GUI.Label(r, "Keys & Values");
         }
-        protected virtual float GetElementHeight(int index)
+        protected virtual float GetListElementHeight(int index)
         {
             float height = 0f;
 
@@ -278,7 +221,10 @@ namespace BXFW.Collections.ScriptEditor
             }
 
             // Get identity of 'SerializedDictionary'
-            ReorderableList list = GetListForProperty(property);
+            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, true, false);
+            list.drawHeaderCallback = DrawListHeader;
+            list.elementHeightCallback = GetListElementHeight;
+            list.drawElementCallback = DrawListElements;
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);

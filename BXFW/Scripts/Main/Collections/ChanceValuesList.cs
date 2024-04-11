@@ -25,6 +25,7 @@ namespace BXFW.Collections
     {
         /// <summary>
         /// The upper limit of all chances to use.
+        /// <br>This should be a positive float.</br>
         /// </summary>
         public const float ChanceUpperLimit = 1f;
 
@@ -514,10 +515,28 @@ namespace BXFW.Collections
             FillMissingChanceSum();
         }
         /// <summary>
+        /// Adds an item with the chance of it being the given <paramref name="chance"/>.
+        /// </summary>
+        /// <param name="item">The item to add. This can be anything of type <typeparamref name="T"/>.</param>
+        /// <param name="chance">
+        /// Chance of the item to add. It's chance is set in a passive way, where the chance is not set beyond 
+        /// the upper limit and this <paramref name="item"/>'s chance is lessened instead of letting the other elements lower it's chances.
+        /// <br/>
+        /// <br>Because of this, the lowest possible limit is 0 and highest possible one is 1.</br>
+        /// </param>
+        /// <returns>The added item's index. Which is <see cref="Count"/> - 1.</returns>
+        public int Add(T item, float chance)
+        {
+            // Ensure 'chance' is within limits
+            chance -= ChanceUpperLimit - (Sum(m_list, (data) => data.Chance) + chance);
+
+            m_list.Add(new ChanceValue<T>(Math.Clamp(chance, 0f, 1f), item));
+            return Count - 1;
+        }
+        /// <summary>
         /// Adds an item with the chance of it being 0.
         /// <br>Use <see cref="SetChance(T, float)"/> to set it's chance.</br>
         /// </summary>
-        /// <param name="item"></param>
         /// <returns>The added item's index. Which is <see cref="Count"/> - 1.</returns>
         public int Add(T item)
         {
