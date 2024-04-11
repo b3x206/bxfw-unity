@@ -72,6 +72,7 @@ namespace BXFW.Collections.ScriptEditor
             height += EditorGUI.GetPropertyHeight(valueProperty) + listCtx.Padding; // value
             return height;
         }
+        // TODO : Add chance fixing feature (use the padlock icon + button, only effect the unlocked element indices)
         protected virtual void DrawListElements(Rect rect, int index, bool isActive, bool isFocused)
         {
             // Reset this per every call, as the rect is local.
@@ -87,7 +88,7 @@ namespace BXFW.Collections.ScriptEditor
             EditorGUI.BeginChangeCheck();
             float currentChance = EditorGUI.Slider(
                 listCtx.GetPropertyRect(rect, EditorGUIUtility.singleLineHeight),
-                chanceProperty.displayName,
+                new GUIContent(chanceProperty.displayName, chanceProperty.floatValue.ToString("0.#####")),
                 chanceProperty.floatValue,
                 0f,
                 ChanceValuesListBase.ChanceUpperLimit
@@ -100,15 +101,29 @@ namespace BXFW.Collections.ScriptEditor
             {
                 // If the chance is changed, change the others by it's delta and register all to undo
                 float chanceDelta = (currentChance - chanceProperty.floatValue) / (chanceValueListProperty.arraySize - 1);
+                float currentSum = 0f;
+                // Also balance the sum to be 1 again, this is because if the slider changes too fast the sum of the values are over 'ChanceUpperLimit'
+                // This is a very funny joke from Unity themselves on how to make an IMGUI + Event system, but i would definitely do a worse IMGUI thing
+                // Like, please, rework the things that work, they should have done the serializer stuff in like unity 2017 or smth, idk man..
+                // --
+                // Or maybe the bug is getting caused because you aren't really supposed to do cool stuff in the editor without suffering, in any case, this will do.
+                for (int i = 0; i < chanceValueListProperty.arraySize; i++)
+                {
+                    using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
+                    currentSum += chanceAtIndexProperty.floatValue;
+                }
+
                 // woo i love iterating SerializedProperties, but this is WAY simpler than fiddling around with weird SerializedProperty interception
                 for (int i = 0; i < chanceValueListProperty.arraySize; i++)
                 {
+                    using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
+                    chanceAtIndexProperty.floatValue += ChanceValuesListBase.ChanceUpperLimit - currentSum;
+                    
                     if (i == index)
                     {
                         continue;
                     }
 
-                    using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
                     chanceAtIndexProperty.floatValue = Mathf.Clamp(chanceAtIndexProperty.floatValue - chanceDelta, 0f, ChanceValuesListBase.ChanceUpperLimit);
                 }
 
@@ -125,6 +140,35 @@ namespace BXFW.Collections.ScriptEditor
 
             // Apply changes
             chanceValueProperty.serializedObject.ApplyModifiedProperties();
+        }
+        protected virtual void OnRemoveListElement(ReorderableList list)
+        {
+            using SerializedProperty chanceValueListProperty = listTargetProperty.FindPropertyRelative(ListFieldName);
+            int removeChanceValueIndex = list.selectedIndices.FirstOrDefault(chanceValueListProperty.arraySize - 1);
+            float removeChancePropertyValue = chanceValueListProperty.GetArrayElementAtIndex(removeChanceValueIndex).FindPropertyRelative(ChanceFieldName).floatValue;
+            chanceValueListProperty.DeleteArrayElementAtIndex(removeChanceValueIndex);
+
+            // Fix the chances, evenly distribute the 'currentSum' from the removed element
+            for (int i = 0; i < chanceValueListProperty.arraySize; i++)
+            {
+                using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
+                chanceAtIndexProperty.floatValue = Mathf.Clamp(
+                    chanceAtIndexProperty.floatValue + (removeChancePropertyValue / chanceValueListProperty.arraySize),
+                    0f,
+                    ChanceValuesListBase.ChanceUpperLimit
+                );
+            }
+        }
+        protected virtual void OnAddListElement(ReorderableList list)
+        {
+            using SerializedProperty chanceValueListProperty = listTargetProperty.FindPropertyRelative(ListFieldName);
+
+            // could be list.selectedIndices.FirstOrDefault(chanceValueListProperty.arraySize); but acts weird so this will do
+            int addChanceValueIndex = chanceValueListProperty.arraySize;
+
+            // Set the lastly added element's chance float value as 0 after insertion
+            chanceValueListProperty.InsertArrayElementAtIndex(addChanceValueIndex);
+            chanceValueListProperty.GetArrayElementAtIndex(addChanceValueIndex).FindPropertyRelative(ChanceFieldName).floatValue = 0f;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -146,6 +190,8 @@ namespace BXFW.Collections.ScriptEditor
             list.drawHeaderCallback = DrawListHeader;
             list.elementHeightCallback = GetListElementHeight;
             list.drawElementCallback = DrawListElements;
+            list.onRemoveCallback = OnRemoveListElement;
+            list.onAddCallback = OnAddListElement;
 
             // Set this before calling anything in 'list'
             listTargetProperty = property;
@@ -285,6 +331,8 @@ namespace BXFW.Collections.ScriptEditor
             list.drawHeaderCallback = DrawListHeader;
             list.elementHeightCallback = GetListElementHeight;
             list.drawElementCallback = DrawListElements;
+            list.onRemoveCallback = OnRemoveListElement;
+            list.onAddCallback = OnAddListElement;
 
             EditorGUI.indentLevel++;
             Rect indentedPosition = EditorGUI.IndentedRect(position);

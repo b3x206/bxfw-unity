@@ -46,7 +46,8 @@ namespace BXFW.Collections
     /// </summary>
     /// <remarks>
     /// * Unlike the <see cref="Dictionary{TKey, TValue}"/>, this does not use hashsets.
-    /// (because of this it is slower than an usual dictionary, you should only use this if serialization is required)
+    /// (because of this it is slower than an usual dictionary, you should only use this if serialization is required or 
+    /// cast back to <see cref="Dictionary{TKey, TValue}"/> if performance and editor serializability is required)
     /// <br>* Ordering of the elements is ordered in the same order of elements that are added. It is not undefined behaviour.</br>
     /// </remarks>
     [Serializable]
@@ -488,17 +489,28 @@ namespace BXFW.Collections
 
         public bool Remove(KeyValuePair<TKey, TValue> item, IEqualityComparer<TValue> comparer)
         {
-            if (!TryGetValue(item.Key, out TValue value))
+            int indexOfKey = -1;
+            for (int i = 0; i < m_Pairs.Count; i++)
+            {
+                if (Comparer.Equals(item.Key, m_Pairs[i].key))
+                {
+                    indexOfKey = i;
+                    break;
+                }
+            }
+
+            if (indexOfKey < 0)
             {
                 return false;
             }
 
-            if (!comparer.Equals(item.Value, value))
+            if (!comparer.Equals(item.Value, m_Pairs[indexOfKey].value))
             {
                 return false;
             }
 
-            return Remove(item.Key);
+            m_Pairs.RemoveAt(indexOfKey);
+            return true;
         }
 
         public void TrimExcess()
@@ -535,18 +547,25 @@ namespace BXFW.Collections
         /// <summary>
         /// Creates a dictionary from another dictionary.
         /// </summary>
-        public SerializableDictionary(IDictionary<TKey, TValue> dict)
+        public SerializableDictionary(IDictionary<TKey, TValue> dict, IEqualityComparer<TKey> comparer)
         {
+            // assignation of a different comparer means that you most likely want a check according to 'comparer'
+            // so only accept 'IDictionary'ies for this case.
             if (dict == null)
             {
                 throw new ArgumentNullException(nameof(dict), "[SerializableDictionary::ctor] Given argument was null.");
+            }
+            // Assign optionally
+            if (comparer != null)
+            {
+                m_Comparer = comparer;
             }
 
             // Copy values to the pairs
             m_Pairs.Capacity = dict.Count;
 
             // Initial keys add loop
-            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity);
+            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity, Comparer);
             foreach (TKey dictKey in dict.Keys)
             {
                 // o(n^2) moment
@@ -563,24 +582,44 @@ namespace BXFW.Collections
                 m_Pairs[indexedValuePair.Key].value = indexedValuePair.Value;
             }
         }
-        public SerializableDictionary(IDictionary<TKey, TValue> dict, IEqualityComparer<TKey> comparer)
-            : this(dict)
+        public SerializableDictionary(IDictionary<TKey, TValue> dict) : this(dict, null)
+        { }
+        /// <summary>
+        /// Creates a dictionary from another dictionary (without any checks on <paramref name="dict"/>).
+        /// <br>If you want the <paramref name="dict"/> to have it's keys checked anyways, cast it to <see cref="IDictionary{TKey, TValue}"/>.</br>
+        /// </summary>
+        public SerializableDictionary(Dictionary<TKey, TValue> dict)
         {
-            m_Comparer = comparer;
+            if (dict == null)
+            {
+                throw new ArgumentNullException(nameof(dict), "[SerializableDictionary::ctor] Given argument was null.");
+            }
+
+            m_Pairs.Capacity = dict.Count;
+
+            // Since the 'dict' should be a complete class that enforces that all keys are different, just create without checking.
+            foreach (KeyValuePair<TKey, TValue> pair in dict)
+            {
+                m_Pairs.Add(new Pair(pair.Key, pair.Value));
+            }
         }
         /// <summary>
         /// Creates a dictionary from a collection.
         /// </summary>
-        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values)
+        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer)
         {
             if (values == null)
             {
                 throw new ArgumentNullException(nameof(values), "[SerializableDictionary::ctor] Given argument was null.");
             }
+            if (comparer != null)
+            {
+                m_Comparer = comparer;
+            }
 
             m_Pairs.Capacity = values.Count();
 
-            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity);
+            HashSet<TKey> keysSet = new HashSet<TKey>(m_Pairs.Capacity, Comparer);
             foreach (KeyValuePair<TKey, TValue> pair in values)
             {
                 if (!keysSet.Add(pair.Key))
@@ -594,10 +633,7 @@ namespace BXFW.Collections
         /// <summary>
         /// Creates a dictionary from a collection.
         /// </summary>
-        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values, IEqualityComparer<TKey> comparer)
-            : this(values)
-        {
-            m_Comparer = comparer;
-        }
+        public SerializableDictionary(IEnumerable<KeyValuePair<TKey, TValue>> values) : this(values, null)
+        { }
     }
 }

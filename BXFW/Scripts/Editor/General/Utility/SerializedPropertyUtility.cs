@@ -651,5 +651,7 @@ namespace BXFW.Tools.Editor
 
             return new GUIContent(useDisplayName ? property.displayName : property.name, property.tooltip);
         }
+
+        // TODO : Maybe do something similar to LINQ for SerializedProperty.isArray properties?
     }
 }
