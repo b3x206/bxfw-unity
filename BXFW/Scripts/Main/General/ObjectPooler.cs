@@ -76,7 +76,7 @@ namespace BXFW
             /// </summary>
             public string tag;
 
-            [SerializeField]
+            [SerializeField, Tooltip("Prefab contained in a pool. This prefab will be spawned if the value isn't empty.")]
             private GameObject m_Prefab;
             /// <summary>
             /// (Read Only) Prefab item contained in this pool.

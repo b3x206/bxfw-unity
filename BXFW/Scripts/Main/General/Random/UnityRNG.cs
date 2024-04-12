@@ -5,7 +5,7 @@ namespace BXFW
     /// <summary>
     /// An <see cref="IRandomGenerator"/> that uses unity's <see cref="Random"/>.
     /// </summary>
-    public class UnityRNG : IRandomGenerator
+    public sealed class UnityRNG : IRandomGenerator
     {
         /// <summary>
         /// The default UnityRNG.

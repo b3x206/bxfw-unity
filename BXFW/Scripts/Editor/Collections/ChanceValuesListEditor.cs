@@ -101,23 +101,11 @@ namespace BXFW.Collections.ScriptEditor
             {
                 // If the chance is changed, change the others by it's delta and register all to undo
                 float chanceDelta = (currentChance - chanceProperty.floatValue) / (chanceValueListProperty.arraySize - 1);
-                float currentSum = 0f;
-                // Also balance the sum to be 1 again, this is because if the slider changes too fast the sum of the values are over 'ChanceUpperLimit'
-                // This is a very funny joke from Unity themselves on how to make an IMGUI + Event system, but i would definitely do a worse IMGUI thing
-                // Like, please, rework the things that work, they should have done the serializer stuff in like unity 2017 or smth, idk man..
-                // --
-                // Or maybe the bug is getting caused because you aren't really supposed to do cool stuff in the editor without suffering, in any case, this will do.
-                for (int i = 0; i < chanceValueListProperty.arraySize; i++)
-                {
-                    using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
-                    currentSum += chanceAtIndexProperty.floatValue;
-                }
 
                 // woo i love iterating SerializedProperties, but this is WAY simpler than fiddling around with weird SerializedProperty interception
                 for (int i = 0; i < chanceValueListProperty.arraySize; i++)
                 {
                     using SerializedProperty chanceAtIndexProperty = chanceValueListProperty.GetArrayElementAtIndex(i).FindPropertyRelative(ChanceFieldName);
-                    chanceAtIndexProperty.floatValue += ChanceValuesListBase.ChanceUpperLimit - currentSum;
                     
                     if (i == index)
                     {

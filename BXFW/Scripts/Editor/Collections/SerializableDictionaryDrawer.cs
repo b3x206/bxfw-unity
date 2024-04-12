@@ -1,11 +1,7 @@
 using UnityEngine;
 using UnityEditor;
-using System.Linq;
 using BXFW.Tools.Editor;
 using UnityEditorInternal;
-using System.Collections.Generic;
-using System.Reflection;
-using System;
 
 namespace BXFW.Collections.ScriptEditor
 {
@@ -40,7 +36,7 @@ namespace BXFW.Collections.ScriptEditor
                 return height;
             }
 
-            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, true, false);
+            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, false, true);
 
             // Sanity check thing
             SerializableDictionaryBase dict = ((SerializableDictionaryBase)property.GetTarget().value);
@@ -207,7 +203,7 @@ namespace BXFW.Collections.ScriptEditor
 
             if (property.serializedObject.isEditingMultipleObjects)
             {
-                EditorGUI.HelpBox(mainGUIContext.GetPropertyRect(position, DictionaryWarningHeight), "Cannot edit multiple 'SerializedDictionary'ies at the same time.", MessageType.Warning);
+                EditorGUI.HelpBox(mainGUIContext.GetPropertyRect(position, DictionaryWarningHeight), "Cannot edit multiple 'SerializedDictionary'ies at the same time.", MessageType.Info);
                 EditorGUI.EndProperty();
                 return;
             }
@@ -221,7 +217,7 @@ namespace BXFW.Collections.ScriptEditor
             }
 
             // Get identity of 'SerializedDictionary'
-            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, true, false);
+            ReorderableList list = EditorAdditionals.GetListForProperty(property.serializedObject, property.FindPropertyRelative("m_Pairs"), true, true, false, true);
             list.drawHeaderCallback = DrawListHeader;
             list.elementHeightCallback = GetListElementHeight;
             list.drawElementCallback = DrawListElements;

@@ -8,7 +8,7 @@ namespace BXFW
     /// <br>The internal random is initialized with the current <see cref="DateTime.Now"/>'s <see cref="DateTime.Ticks"/>.</br>
     /// <br>The seed can be set using any of the <see cref="SetSeed"/> methods.</br>
     /// </summary>
-    public class SystemRNG : IRandomGenerator
+    public sealed class SystemRNG : IRandomGenerator
     {
         /// <summary>
         /// The default SystemRNG.

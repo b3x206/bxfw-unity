@@ -111,6 +111,73 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Draws a hemisphere circle to the scene using <see cref="Gizmos"/>.
+        /// </summary>
+        /// <param name="pos">Position of the circle.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        public static void DrawWireHemiSphere(Vector3 pos, float radius)
+        {
+            int segsSphere = 32 - 1; // + 1 segment for ending
+            Vector3 prevX = default,
+                prevY = default,
+                prevZ = default;
+            for (int i = 0; i < segsSphere + 1; i++)
+            {
+                float fL = i / (float)segsSphere; // current lerp
+                // 'H' prefixes half
+                float cH = Mathf.Cos(fL * (float)Math.PI), c = Mathf.Cos(fL * (float)(Math.PI * 2.0));
+                float sH = Mathf.Sin(fL * (float)Math.PI), s = Mathf.Sin(fL * (float)(Math.PI * 2.0));
+
+                if (i == 0)
+                {
+                    // x = new Vector3(c, s, 0);
+                    // y = new Vector3(0, c, s);
+                    // z = new Vector3(s, 0, c);
+                    // --
+                    // the 'Y' axis formula has been slightly altered to be rotated towards Vector3.up
+                    prevX = pos + (radius * new Vector3(cH, sH, 0f));     // X
+                    prevY = pos + (radius * new Vector3(0f, sH, cH));     // Y
+                    prevZ = pos + (radius * new Vector3(s, 0f, c));       // Z
+                    continue;
+                }
+
+                // Draw
+                Vector3 currentX = pos + (radius * new Vector3(cH, sH, 0f)),
+                    currentY = pos + (radius * new Vector3(0f, sH, cH)),
+                    currentZ = pos + (radius * new Vector3(s, 0f, c));
+
+                Gizmos.DrawLine(prevX, currentX);
+                Gizmos.DrawLine(prevY, currentY);
+                Gizmos.DrawLine(prevZ, currentZ);
+
+                prevX = pos + (radius * new Vector3(cH, sH, 0f));
+                prevY = pos + (radius * new Vector3(0f, sH, cH));
+                prevZ = pos + (radius * new Vector3(s, 0f, c));
+
+                // Rotate using 'direction'.
+                // if (direction != Vector3.zero)
+                // {
+                //     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
+                // }
+            }
+        }
+
+        /// <summary>
+        /// Draws a hemisphere circle to the scene using <see cref="Gizmos"/>.
+        /// </summary>
+        /// <param name="pos">Position of the circle.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        /// <param name="color">The color of the drawn gizmo.</param>
+        public static void DrawWireHemiSphere(Vector3 pos, float radius, Color color)
+        {
+            Color prevColor = Gizmos.color;
+            Gizmos.color = color;
+            // this method should be noexcept?
+            DrawWireHemiSphere(pos, radius);
+            Gizmos.color = prevColor;
+        }
+
+        /// <summary>
         /// Draws an arc.
         /// </summary>
         /// <param name="origin">World point origin point of the arc.</param>
@@ -122,7 +189,7 @@ namespace BXFW
         {
             // rotate direction by that so it actually looks towards
             // The center of the arc is the (direction * origin) * distance), but it's not needed.
-            
+
             // this number should be even, but an odd number of segments are drawn
             // because i am still stuck in how to do for loops
             int segments = 48;
@@ -163,7 +230,7 @@ namespace BXFW
             // Draw normal + origin line for the last time
             Gizmos.DrawLine(prevPosition, lastPosition);
             if (drawLinesFromOrigin)
-            { 
+            {
                 Gizmos.DrawLine(origin, lastPosition);
             }
         }
@@ -204,7 +271,7 @@ namespace BXFW
             {
                 if (screenPos.y < 0 || screenPos.y > Screen.height ||
                     screenPos.x < 0 || screenPos.x > Screen.width ||
-                    screenPos.z < 0 || 
+                    screenPos.z < 0 ||
                     (textStyle != null && textStyle.fontSize <= 0))
                 {
                     GUI.color = restoreColor;
