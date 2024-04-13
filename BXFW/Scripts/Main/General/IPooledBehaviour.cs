@@ -2,7 +2,8 @@ namespace BXFW
 {
     /// <summary>
     /// Callbacks for a script that happens to be in an object pooler root object.
-    /// <br>This <b>ONLY</b> gets called for <b>root objects</b>, children objects of pooled objects don't get this callback.</br>
+    /// <br>This, by default, <b>ONLY</b> gets called for <b>root objects</b>, children objects of pooled objects
+    /// don't get the callbacks unless the <see cref="ObjectPooler"/> is set to call recursively.</br>
     /// </summary>
     public interface IPooledBehaviour
     {

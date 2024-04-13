@@ -111,7 +111,8 @@ namespace BXFW
         }
 
         /// <summary>
-        /// Draws a hemisphere circle to the scene using <see cref="Gizmos"/>.
+        /// Draws a hemisphere to the scene using <see cref="Gizmos"/>.
+        /// <br>Use the <see cref="Gizmos.matrix"/> to rotate this hemisphere.</br>
         /// </summary>
         /// <param name="pos">Position of the circle.</param>
         /// <param name="radius">Radius of the circle.</param>
@@ -135,9 +136,9 @@ namespace BXFW
                     // z = new Vector3(s, 0, c);
                     // --
                     // the 'Y' axis formula has been slightly altered to be rotated towards Vector3.up
-                    prevX = pos + (radius * new Vector3(cH, sH, 0f));     // X
-                    prevY = pos + (radius * new Vector3(0f, sH, cH));     // Y
-                    prevZ = pos + (radius * new Vector3(s, 0f, c));       // Z
+                    prevX = pos + (radius * new Vector3(cH, sH, 0f)); // X
+                    prevY = pos + (radius * new Vector3(0f, sH, cH)); // Y
+                    prevZ = pos + (radius * new Vector3(s, 0f, c));   // Z
                     continue;
                 }
 
@@ -153,17 +154,10 @@ namespace BXFW
                 prevX = pos + (radius * new Vector3(cH, sH, 0f));
                 prevY = pos + (radius * new Vector3(0f, sH, cH));
                 prevZ = pos + (radius * new Vector3(s, 0f, c));
-
-                // Rotate using 'direction'.
-                // if (direction != Vector3.zero)
-                // {
-                //     setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
-                // }
             }
         }
-
         /// <summary>
-        /// Draws a hemisphere circle to the scene using <see cref="Gizmos"/>.
+        /// Draws a hemisphere to the scene using <see cref="Gizmos"/>.
         /// </summary>
         /// <param name="pos">Position of the circle.</param>
         /// <param name="radius">Radius of the circle.</param>

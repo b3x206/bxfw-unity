@@ -38,7 +38,7 @@ namespace BXFW
 
             // Try getting the PropertyInfo
             PropertyInfo targetBoolPropertyInfo = targetField.DeclaringType.GetProperty(boolFieldName, TargetFlags);
-            if (targetBoolPropertyInfo != null && targetBoolPropertyInfo.CanRead)
+            if (targetBoolPropertyInfo != null && targetBoolPropertyInfo.CanRead && targetBoolPropertyInfo.GetIndexParameters().Length <= 0)
             {
                 return (bool)targetBoolPropertyInfo.GetValue(parentValue) ? DrawCondition.True : DrawCondition.False;
             }
