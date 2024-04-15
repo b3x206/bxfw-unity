@@ -48,7 +48,7 @@ namespace BXFW
                 m_LocaleData = value;
             }
         }
-        [SerializeField, DrawIf(nameof(useSingletonLocaleData), ConditionInverted = true)]
+        [SerializeField, DrawIf(nameof(useSingletonLocaleData), Invert = true)]
         private LocalizedTextListAsset m_LocaleData;
         /// <summary>
         /// Current TextID to gather from the assigned <see cref="LocaleData"/>.

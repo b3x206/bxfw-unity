@@ -469,7 +469,8 @@ namespace BXFW.Tools.Editor
                                     pair.Value();
                                 }
                                 // Stop drawing GUI if this was thrown
-                                // This is how the unity does flow control to it's interface, amazing really.
+                                // This is how the unity does control to it's IMGUI, amazing really.
+                                // love throwing exceptions, if it's uncaught in your custom method it will print 9481492 gazillion errors.
                                 catch (ExitGUIException)
                                 {
                                     return true;
@@ -498,6 +499,7 @@ namespace BXFW.Tools.Editor
 
         /// <summary>
         /// Returns whether if this 'SerializedObject' is disposed.
+        /// <br>Use this to handle errors or even better, generate a new <see cref="SerializedObject"/>.</br>
         /// </summary>
         public static bool IsDisposed(this SerializedObject obj)
         {

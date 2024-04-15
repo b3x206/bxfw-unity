@@ -32,14 +32,19 @@ namespace BXFW.ScriptEditor
         {
             // First called method before OnGUI
             // This also resets 'drawField'
-            var parentPair = property.GetParentOfTargetField();
+            var parentPair = property.GetParentOfTargetField(); // this incorrectly gets the array?
 
             // Always reset this for the next 'WarningBox'
             WarningBoxHeight = MinWarningBoxHeight;
 
+            // This incorrectly assumes that stuff inside a class/struct that is shown as if it was a value type by unity on an array is faulty
+            // The 'ValueIsGenericObjectCell' will do for now, only time it will fail is when the 'parentPair.value' is null,
+            // but that shouldn't be the case for, say, c# typed arrays (as unity serializes that differently) or structs,
+            // which are the cases that we don't want this ConditionalDrawAttribute to draw the GUI
+            // ---
             // Note : If the parent object is an list, override everything and cause an error
             // This is because Array's have the PropertyDrawer attribute applied to their children instead of the array itself
-            if (parentPair.TargetIsSerializedList)
+            if (parentPair.FieldIsSerializedList && !parentPair.ValueIsGenericObjectCell)
             {
                 errorString = "Cannot use 'ConditionalDrawAttribute' on 'Array' targets : This is caused by unity applying the PropertyDrawer attribute to the children, which causes issues.";
                 currentCondition = ConditionalDrawAttribute.DrawCondition.Error;

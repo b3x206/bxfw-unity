@@ -15,7 +15,7 @@ namespace BXFW.ScriptEditor
     /// <typeparam name="TMinMax">Type of the primary MinMaxValue class/struct.</typeparam>
     /// <typeparam name="TMinMaxField">The value type adjusted in the <typeparamref name="TMinMax"/>.</typeparam>
     public abstract class MinMaxEditor<TMinMax, TMinMaxField> : PropertyDrawer
-        where TMinMaxField : struct, IComparable<TMinMaxField>
+        where TMinMaxField : struct, IComparable<TMinMaxField>, IEquatable<TMinMaxField>
     {
         protected const float Padding = 2f;
 
@@ -74,16 +74,17 @@ namespace BXFW.ScriptEditor
             using SerializedProperty minProperty = property.FindPropertyRelative(MinPropertyName);
             using SerializedProperty maxProperty = property.FindPropertyRelative(MaxPropertyName);
 
-            // Vector2 setValue = EditorGUI.Vector2Field(position, label, new Vector2(minProperty.floatValue, maxProperty.floatValue));
+            EditorGUI.BeginChangeCheck();
+
             TMinMax setValue = ValueFieldDrawer(position, label, CreateMinMax(GetPropertyValue(minProperty), GetPropertyValue(maxProperty)));
+            GetValues(setValue, out TMinMaxField min, out TMinMaxField max);
 
             if (EditorGUI.EndChangeCheck())
             {
-                GetValues(setValue, out TMinMaxField min, out TMinMaxField max);
-
                 // note to self : Multi editing only happens with the same types, which in that case would have the same attribute on the same object.
                 FieldInfo targetPropertyFieldInfo = property.GetTarget().fieldInfo;
 
+                // TODO : Figure out a way to ensure that the object is clamped correctly for the initial clamp.
                 // Check supported attributes (for the first object)
                 ClampAttribute clamp = targetPropertyFieldInfo.GetCustomAttribute<ClampAttribute>();
                 if (clamp != null)
@@ -105,6 +106,7 @@ namespace BXFW.ScriptEditor
                 SetPropertyValue(minProperty, min);
                 SetPropertyValue(maxProperty, max);
             }
+
             EditorGUI.showMixedValue = showMixed;
             EditorGUI.EndProperty();
         }

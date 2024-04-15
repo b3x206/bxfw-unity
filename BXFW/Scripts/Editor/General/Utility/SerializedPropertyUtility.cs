@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using System.Linq;
 
 namespace BXFW.Tools.Editor
 {
@@ -27,6 +28,29 @@ namespace BXFW.Tools.Editor
         public readonly object parent;
 
         /// <summary>
+        /// The value type regardless of where the value is located at, which with the <see cref="fieldInfo"/> in a case of an array is always the array type.
+        /// <br>This value is basically always the underlying type, but does not determine if the target field type is array or not.</br>
+        /// </summary>
+        public Type ValueType
+        {
+            get
+            {
+                if (fieldInfo.FieldType.IsArray)
+                {
+                    return fieldInfo.FieldType.GetElementType();
+                }
+                else if (TargetIsIList)
+                {
+                    return fieldInfo.FieldType.GetInterfaces()
+                        .First(i => i.IsGenericType && i.GetGenericTypeDefinition().IsAssignableFromOpenGeneric(typeof(IList<>)))
+                        .GetGenericArguments().Single();
+                }
+
+                return fieldInfo.FieldType;
+            }
+        }
+
+        /// <summary>
         /// Tries to cast <see cref="value"/> to <typeparamref name="T"/>.
         /// </summary>
         /// <returns>Whether if the casting was successful. Returns <see langword="false"/> if it was <b>NOT</b> successful.</returns>
@@ -41,10 +65,10 @@ namespace BXFW.Tools.Editor
         /// Tries to cast <see cref="parent"/> to <typeparamref name="T"/>.
         /// </summary>
         /// <returns>Whether if the casting was successful. Returns <see langword="false"/> if it was <b>NOT</b> successful.</returns>
-        public bool TryCastParent<T>(out T value)
+        public bool TryCastParent<T>(out T parent)
         {
-            bool success = parent is T;
-            value = success ? (T)parent : default;
+            bool success = this.parent is T;
+            parent = success ? (T)this.parent : default;
 
             return success;
         }
@@ -67,8 +91,35 @@ namespace BXFW.Tools.Editor
         /// This is useful on whether if you want to apply / draw your <see cref="PropertyDrawer"/> 
         /// that is targeting a <see cref="PropertyAttribute"/> - unity applies the <see cref="PropertyAttribute"/> 
         /// of the lists to the children inspectors instead of the array itself.</br>
+        /// <br/>
+        /// <br>Note : You should not solely rely on this, also use the <see cref="ValueIsGenericObjectCell"/> to check if the field is still serializable.</br>
         /// </summary>
-        public bool TargetIsSerializedList => fieldInfo.FieldType.IsArray || (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>));
+        public bool FieldIsSerializedList => fieldInfo.FieldType.IsArray || (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>));
+        /// <summary>
+        /// Returns whether if the <see cref="value"/> is the value-esque serialized of an array cell and the <see cref="FieldIsSerializedList"/> is true.
+        /// <br>Does not return true if the target IS the array cell type. (for unity)</br>
+        /// </summary>
+        public bool ValueIsGenericObjectCell
+        {
+            get
+            {
+                // Assume that the generic types are indeed something serialized as container (basically requires extra values so it's not embed to the array)
+                // Taking the 'ValueType' no longer depends on an existance of the 'value' object.. yippie
+                Type valueType = ValueType;
+                if (!UnitySafeObjectComparer.Default.Equals(value, null))
+                {
+                    // Having a value, we can infer whether if the value is actually an array or not
+                    Type checkType = value.GetType();
+                    if (valueType != checkType)
+                    {
+                        // This is the more correct version, now we can determine if 'value' is actually an array object or not..
+                        valueType = checkType;
+                    }
+                }
+
+                return FieldIsSerializedList && valueType != fieldInfo.FieldType;
+            }
+        }
 
         /// <summary>
         /// Creates a PropertyTargetInfo with a setup.
@@ -87,6 +138,13 @@ namespace BXFW.Tools.Editor
             fieldInfo = fInfo;
             value = target;
             this.parent = parent;
+        }
+
+        public override string ToString()
+        {
+            bool valueNull = UnitySafeObjectComparer.Default.Equals(value, null);
+            bool parentNull = UnitySafeObjectComparer.Default.Equals(parent, null);
+            return $"FieldInfo:{fieldInfo}, Value:{(valueNull ? "<null>" : value.ToString())}, Parent:{(parentNull ? "<null>" : parent.ToString())}";
         }
     }
 
@@ -451,6 +509,153 @@ namespace BXFW.Tools.Editor
             }
 
             return info.fieldInfo.FieldType;
+        }
+        /// <summary>
+        /// Converts a .NET <see cref="Type"/> into the much more limited <see cref="SerializedPropertyType"/>
+        /// <br>Can be useful to determine the primitive serialization type for the <paramref name="type"/>.</br>
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        public static SerializedPropertyType ToSerializedPropertyType(this Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type), "[SerializedPropertyUtility::ToSerializedPropertyType] Argument was null.");
+            }
+
+            /* 
+             * List of the types :
+             - Generic = -1,
+             - Integer,
+             - Boolean,
+             - Float,
+             - String,
+             - Color,
+             - ObjectReference,
+             - LayerMask,
+             - Enum,
+             - Vector2,
+             - Vector3,
+             - Vector4,
+             - Rect,
+             * - UNUSED - ArraySize,
+             - Character,
+             - AnimationCurve,
+             - Bounds,
+             - Gradient,
+             - Quaternion,
+             * - UNUSED - ExposedReference,
+             * - UNUSED - FixedBufferSize,
+             - Vector2Int,
+             - Vector3Int,
+             - RectInt,
+             - BoundsInt,
+             * - UNUSED - ManagedReference,
+             - Hash128
+             */
+
+            // commence the 'if {} else if {}' chain, drink the chalice
+            // this is tedious.. but it will do. if only unity's serializer was more robust
+            if (type.IsValueType)
+            {
+                if (type.IsEnum)
+                {
+                    return SerializedPropertyType.Enum;
+                }
+                else if (type == typeof(sbyte) || type == typeof(byte) ||
+                    type == typeof(short) || type == typeof(ushort) ||
+                    type == typeof(int) || type == typeof(uint) ||
+                    type == typeof(long) || type == typeof(ulong))
+                {
+                    return SerializedPropertyType.Integer;
+                }
+                else if (type == typeof(float) || type == typeof(double))
+                {
+                    return SerializedPropertyType.Float;
+                }
+                else if (type == typeof(char))
+                {
+                    return SerializedPropertyType.Character;
+                }
+                else if (type == typeof(bool))
+                {
+                    return SerializedPropertyType.Boolean;
+                }
+                else if (type == typeof(Color))
+                {
+                    return SerializedPropertyType.Color;
+                }
+                else if (type == typeof(LayerMask))
+                {
+                    return SerializedPropertyType.LayerMask;
+                }
+                else if (type == typeof(Vector2))
+                {
+                    return SerializedPropertyType.Vector2;
+                }
+                else if (type == typeof(Vector3))
+                {
+                    return SerializedPropertyType.Vector3;
+                }
+                else if (type == typeof(Vector4))
+                {
+                    return SerializedPropertyType.Vector4;
+                }
+                else if (type == typeof(Rect))
+                {
+                    return SerializedPropertyType.Rect;
+                }
+                else if (type == typeof(RectInt))
+                {
+                    return SerializedPropertyType.RectInt;
+                }
+                else if (type == typeof(Vector2Int))
+                {
+                    return SerializedPropertyType.Vector2Int;
+                }
+                else if (type == typeof(Vector3Int))
+                {
+                    return SerializedPropertyType.Vector3Int;
+                }
+                else if (type == typeof(Bounds))
+                {
+                    return SerializedPropertyType.Bounds;
+                }
+                else if (type == typeof(BoundsInt))
+                {
+                    return SerializedPropertyType.BoundsInt;
+                }
+                else if (type == typeof(Quaternion))
+                {
+                    return SerializedPropertyType.Quaternion;
+                }
+                else if (type == typeof(Hash128))
+                {
+                    return SerializedPropertyType.Hash128;
+                }
+            }
+            else // is class
+            {
+                if (type == typeof(string))
+                {
+                    return SerializedPropertyType.String;
+                }
+                else if (type == typeof(AnimationCurve))
+                {
+                    return SerializedPropertyType.AnimationCurve;
+                }
+                else if (type == typeof(Gradient))
+                {
+                    return SerializedPropertyType.Gradient;
+                }
+                // !! Always compare this last, as SerializedProperty most likely has exceptions for classes that inherit UE.Object
+                else if (type.GetBaseTypes().Any(t => t == typeof(UnityEngine.Object)))
+                {
+                    return SerializedPropertyType.ObjectReference;
+                }
+            }
+
+            // Classify anything else as this
+            return SerializedPropertyType.Generic;
         }
         /// <summary>
         /// Returns the (last array) index of this property in the array.

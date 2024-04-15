@@ -77,7 +77,7 @@ namespace BXFW
         /// <summary>
         /// This method returns the generic long as two <see cref="PlayerPrefs.GetInt(string)"/> serialized integers bitshifted to it's proper values.
         /// </summary>
-        private static long GetLongInternal(string key, string savePrefix)
+        private static long GetLongInternal(string key, string savePrefix, long defaultValue = 0)
         {
             if (string.IsNullOrEmpty(key))
             {
@@ -85,9 +85,16 @@ namespace BXFW
                 return 0;
             }
 
-            uint lower32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_l32{1}", key, savePrefix)), upper32 = (uint)PlayerPrefs.GetInt(string.Format("{0}_u32{1}", key, savePrefix));
-            long result = lower32 | ((long)upper32 << 32);
-            return result;
+            string l32Key = string.Format("{0}_l32{1}", key, savePrefix), u32Key = string.Format("{0}_l32{1}", key, savePrefix);
+            if (PlayerPrefs.HasKey(l32Key) && PlayerPrefs.HasKey(u32Key))
+            {
+                uint lower32 = (uint)PlayerPrefs.GetInt(l32Key), upper32 = (uint)PlayerPrefs.GetInt(u32Key);
+                long result = lower32 | ((long)upper32 << 32);
+
+                return result;
+            }
+
+            return defaultValue;
         }
         /// <summary>
         /// Sets a long integer to the PlayerPrefs.
@@ -101,12 +108,7 @@ namespace BXFW
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
         public static long GetLong(string key, long defaultValue)
         {
-            if (!HasKey<long>(key))
-            {
-                return defaultValue;
-            }
-
-            return GetLong(key);
+            return GetLongInternal(key, "Long", defaultValue);
         }
         /// <summary>
         /// Returns the long value set by the <see cref="SetLong(string, long)"/>.
@@ -135,12 +137,7 @@ namespace BXFW
         /// <param name="defaultValue">The default value to fallback into if the given <paramref name="key"/> doesn't exist in PlayerPrefs.</param>
         public static double GetDouble(string key, double defaultValue)
         {
-            if (!HasKey<double>(key))
-            {
-                return defaultValue;
-            }
-
-            return GetDouble(key);
+            return BitConverter.Int64BitsToDouble(GetLongInternal(key, "Double", BitConverter.DoubleToInt64Bits(defaultValue)));
         }
 
         /// <summary>

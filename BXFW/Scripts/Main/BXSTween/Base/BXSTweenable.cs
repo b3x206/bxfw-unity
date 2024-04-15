@@ -161,7 +161,7 @@ namespace BXFW.Tweening
         /// <summary>
         /// <inheritdoc cref="Ease"/> <br/><c>[Tweenable Internal, Serialized]</c>
         /// </summary>
-        [SerializeField, DrawIf(nameof(UseEaseCurve), ConditionInverted = true)]
+        [SerializeField, DrawIf(nameof(UseEaseCurve), Invert = true)]
         private EaseType m_Ease = EaseType.QuadInOut;
 
         /// <summary>

@@ -17,9 +17,17 @@ namespace BXFW
         protected const BindingFlags TargetFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
         /// <summary>
-        /// A bool to whether to invert the draw condition field or not.
+        /// A bool to whether invert the draw condition.
+        /// <br>Use <see cref="Invert"/> instead.</br>
         /// </summary>
-        public bool ConditionInverted { get; set; } = false;
+        [Obsolete("Use ConditionalDrawAttribute.Invert instead.", false)]
+        public bool ConditionInverted { get => Invert; set => Invert = value; }
+
+        /// <summary>
+        /// A bool to whether to invert the draw condition field or not.
+        /// <br>By <b>default</b>, the condition is not inverted so default value is <see langword="false"/>.</br>
+        /// </summary>
+        public bool Invert { get; set; } = false;
 
         /// <summary>
         /// State defined for drawing.
@@ -44,7 +52,7 @@ namespace BXFW
         {
             DrawCondition result = DoGetDrawCondition(targetField, parentValue, out errorString);
 
-            if (ConditionInverted)
+            if (Invert)
             {
                 switch (result)
                 {

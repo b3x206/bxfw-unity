@@ -24,8 +24,9 @@ namespace BXFW
         Gray, Magenta, Yellow, Cyan,
     }
 
+    // Maybe rename this to 'SeperatorLineAttribute' or 'PropertyHeadingLineAttribute'?
     /// <summary>
-    /// Attribute to draw a line using <see cref="EditorAdditionals.DrawUILine(Color, int, int)"/>.
+    /// Attribute to draw a line to a property using a property decorator.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class InspectorLineAttribute : PropertyAttribute
@@ -35,6 +36,33 @@ namespace BXFW
         public int LineThickness { get; private set; }
         public int LinePadding { get; private set; }
 #endif
+        /// <summary>
+        /// Creates a gray line with default padding and thickness.
+        /// </summary>
+        public InspectorLineAttribute()
+        {
+#if UNITY_EDITOR
+            // unity is stupid so we cannot access any function from the constructors of a monobehaviour
+            // TODO : either read the EditorPrefs key of the pro skin or set it to a static boolean
+            // Color = UnityEditor.EditorGUIUtility.isProSkin ? Color.gray : new Color(0.3f, 0.3f, 0.3f);
+            Color = Color.gray;
+            LineThickness = 2;
+            LinePadding = 3;
+#endif
+        }
+
+        /// <summary>
+        /// Creates a gray line with given padding and thickness.
+        /// </summary>
+        public InspectorLineAttribute(int thickness, int padding)
+        {
+#if UNITY_EDITOR
+            Color = Color.gray;
+            LineThickness = thickness;
+            LinePadding = padding;
+#endif
+        }
+
         public InspectorLineAttribute(LineColor color, int thickness = 2, int padding = 3)
         {
 #if UNITY_EDITOR
