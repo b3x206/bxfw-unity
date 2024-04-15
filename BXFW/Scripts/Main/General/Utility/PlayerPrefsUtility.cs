@@ -85,11 +85,11 @@ namespace BXFW
                 return 0;
             }
 
-            string l32Key = string.Format("{0}_l32{1}", key, savePrefix), u32Key = string.Format("{0}_l32{1}", key, savePrefix);
+            string l32Key = string.Format("{0}_l32{1}", key, savePrefix), u32Key = string.Format("{0}_u32{1}", key, savePrefix);
             if (PlayerPrefs.HasKey(l32Key) && PlayerPrefs.HasKey(u32Key))
             {
                 uint lower32 = (uint)PlayerPrefs.GetInt(l32Key), upper32 = (uint)PlayerPrefs.GetInt(u32Key);
-                long result = lower32 | ((long)upper32 << 32);
+                long result = ((long)upper32 << 32) | lower32;
 
                 return result;
             }
