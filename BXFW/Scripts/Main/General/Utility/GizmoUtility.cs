@@ -11,6 +11,19 @@ namespace BXFW
     /// </summary>
     public static class GizmoUtility
     {
+        public sealed class Drawer : LineShapeDrawer
+        {
+            protected override void DoDrawLine(Vector3 start, Vector3 end)
+            {
+                Gizmos.DrawLine(start, end);
+            }
+        }
+
+        /// <summary>
+        /// The primary GizmoUtility drawer. If the method isn't implemented in the variable's class you can use this.
+        /// </summary>
+        public static readonly Drawer drawer = new Drawer();
+
         /// <summary>
         /// Draws box collider gizmo according to the rotation of the parent transform.
         /// </summary>
@@ -42,12 +55,7 @@ namespace BXFW
         /// <param name="arrowHeadAngle">Head side rays angle.</param>
         public static void DrawArrow(Vector3 pos, Vector3 direction, float arrowHeadLength = 0.25f, float arrowHeadAngle = 20.0f)
         {
-            Gizmos.DrawRay(pos, direction);
-
-            Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Gizmos.DrawRay(pos + direction, right * arrowHeadLength);
-            Gizmos.DrawRay(pos + direction, left * arrowHeadLength);
+            drawer.DrawArrow(pos, direction, arrowHeadLength, arrowHeadAngle);
         }
         /// <summary>
         /// Draws an arrow to the scene using <see cref="Gizmos"/> with switchable color.
@@ -69,34 +77,17 @@ namespace BXFW
         /// <param name="radius">Radius of the circle.</param>
         public static void DrawWireCircle(Vector3 pos, float radius, Vector3 direction)
         {
-            int lenSphere = 16;
-            Vector3[] v = new Vector3[lenSphere]; // Sphere points (normalized)
-            for (int i = 0; i < lenSphere; i++)
-            {
-                float fl = i / (float)lenSphere; // current lerp
-                float c = Mathf.Cos(fl * (float)(Math.PI * 2.0));
-                float s = Mathf.Sin(fl * (float)(Math.PI * 2.0));
-
-                // Rotate using 'direction'.
-                Vector3 setVector = new Vector3(c, s, 0f);
-                if (direction != Vector3.zero)
-                {
-                    setVector = Quaternion.LookRotation(direction, Vector3.up) * setVector;
-                }
-
-                v[i] = setVector;
-            }
-
-            // Draw loop
-            int len = v.Length;
-            for (int i = 0; i < len; i++)
-            {
-                // Calculate sphere points with radius and relative positioning
-                Vector3 start = pos + (radius * v[i]);
-                Vector3 end = pos + (radius * v[(i + 1) % len]);
-                // Draw line
-                Gizmos.DrawLine(start, end);
-            }
+            drawer.DrawCircle(pos, radius, direction);
+        }
+        /// <summary>
+        /// Draws a circle to the scene using <see cref="Gizmos"/>.
+        /// </summary>
+        /// <param name="pos">Position of the circle.</param>
+        /// <param name="rotation">Rotation of the circle.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        public static void DrawWireCircle(Vector3 pos, float radius, Quaternion rotation)
+        {
+            drawer.DrawCircle(pos, radius, rotation);
         }
         /// <summary>
         /// Draws a circle to the scene using <see cref="Gizmos"/> with switchable color.
@@ -118,43 +109,7 @@ namespace BXFW
         /// <param name="radius">Radius of the circle.</param>
         public static void DrawWireHemiSphere(Vector3 pos, float radius)
         {
-            int segsSphere = 32 - 1; // + 1 segment for ending
-            Vector3 prevX = default,
-                prevY = default,
-                prevZ = default;
-            for (int i = 0; i < segsSphere + 1; i++)
-            {
-                float fL = i / (float)segsSphere; // current lerp
-                // 'H' prefixes half
-                float cH = Mathf.Cos(fL * (float)Math.PI), c = Mathf.Cos(fL * (float)(Math.PI * 2.0));
-                float sH = Mathf.Sin(fL * (float)Math.PI), s = Mathf.Sin(fL * (float)(Math.PI * 2.0));
-
-                if (i == 0)
-                {
-                    // x = new Vector3(c, s, 0);
-                    // y = new Vector3(0, c, s);
-                    // z = new Vector3(s, 0, c);
-                    // --
-                    // the 'Y' axis formula has been slightly altered to be rotated towards Vector3.up
-                    prevX = pos + (radius * new Vector3(cH, sH, 0f)); // X
-                    prevY = pos + (radius * new Vector3(0f, sH, cH)); // Y
-                    prevZ = pos + (radius * new Vector3(s, 0f, c));   // Z
-                    continue;
-                }
-
-                // Draw
-                Vector3 currentX = pos + (radius * new Vector3(cH, sH, 0f)),
-                    currentY = pos + (radius * new Vector3(0f, sH, cH)),
-                    currentZ = pos + (radius * new Vector3(s, 0f, c));
-
-                Gizmos.DrawLine(prevX, currentX);
-                Gizmos.DrawLine(prevY, currentY);
-                Gizmos.DrawLine(prevZ, currentZ);
-
-                prevX = pos + (radius * new Vector3(cH, sH, 0f));
-                prevY = pos + (radius * new Vector3(0f, sH, cH));
-                prevZ = pos + (radius * new Vector3(s, 0f, c));
-            }
+            drawer.DrawHemiSphere(pos, radius);
         }
         /// <summary>
         /// Draws a hemisphere to the scene using <see cref="Gizmos"/>.
@@ -181,52 +136,7 @@ namespace BXFW
         /// <param name="drawLinesFromOrigin">Draws 2 lines towards the starting and ending position from <paramref name="origin"/>.</param>
         public static void DrawArc(Vector3 origin, Quaternion rotation, float distance, float arcAngle, bool drawLinesFromOrigin = true)
         {
-            // rotate direction by that so it actually looks towards
-            // The center of the arc is the (direction * origin) * distance), but it's not needed.
-
-            // this number should be even, but an odd number of segments are drawn
-            // because i am still stuck in how to do for loops
-            int segments = 48;
-            int halfSegments = segments / 2;
-
-            // Draw origin line for initial
-            Vector3 prevPosition = origin + (rotation * new Vector3(
-                Mathf.Cos(-arcAngle / 2f * Mathf.Deg2Rad),
-                Mathf.Sin(-arcAngle / 2f * Mathf.Deg2Rad)
-            ) * distance);
-
-            if (drawLinesFromOrigin)
-            {
-                Gizmos.DrawLine(origin, prevPosition);
-            }
-
-            for (int i = -halfSegments + 1; i < halfSegments; i++)
-            {
-                // initial line is already drawn
-                // since lerp only goes from -0.49.. -> 0.49, the center arc lines will be drawn.
-                float lerp = (float)i / (segments - 1); // lerp that goes from -0.49.. -> 0.49..
-                float c = Mathf.Cos(arcAngle * lerp * Mathf.Deg2Rad); // x axis
-                float s = Mathf.Sin(arcAngle * lerp * Mathf.Deg2Rad); // y axis
-                Vector3 arcNextPosition = origin + (rotation * new Vector3(c, s) * distance);
-
-                // Primary line
-                Gizmos.DrawLine(prevPosition, arcNextPosition);
-
-                prevPosition = arcNextPosition;
-            }
-
-            // Final line
-            Vector3 lastPosition = origin + (rotation * new Vector3(
-                Mathf.Cos(arcAngle / 2f * Mathf.Deg2Rad),
-                Mathf.Sin(arcAngle / 2f * Mathf.Deg2Rad)
-            ) * distance);
-
-            // Draw normal + origin line for the last time
-            Gizmos.DrawLine(prevPosition, lastPosition);
-            if (drawLinesFromOrigin)
-            {
-                Gizmos.DrawLine(origin, lastPosition);
-            }
+            drawer.DrawArc(origin, rotation, distance, arcAngle, drawLinesFromOrigin);
         }
         /// <inheritdoc cref="DrawArc(Vector3, Quaternion, float, float, bool)"/>
         /// <param name="direction">
@@ -235,8 +145,13 @@ namespace BXFW
         /// </param>
         public static void DrawArc(Vector3 origin, Vector3 direction, float distance, float arcAngle, bool drawLinesFromOrigin = true)
         {
-            Quaternion rotation = direction == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(direction, Vector3.up) * Quaternion.AngleAxis(90f, Vector3.up);
-            DrawArc(origin, rotation, distance, arcAngle, drawLinesFromOrigin);
+            drawer.DrawArc(origin, direction, distance, arcAngle, drawLinesFromOrigin);
+        }
+
+        /// <inheritdoc cref="LineShapeDrawer.DrawSquare(Vector3, Vector2, Quaternion)"/>
+        public static void DrawSquare(Vector3 pos, Vector2 size, Quaternion rotation)
+        {
+            drawer.DrawSquare(pos, size, rotation);
         }
 
         /// <summary>
