@@ -402,6 +402,7 @@ namespace BXFW
         }
         /// <summary>
         /// Returns the given <see cref="Vector2"/> direction value from <paramref name="axis"/>.
+        /// <br>The returned value is not normalized.</br>
         /// </summary>
         public static Vector2 GetDirection(this TransformAxis2D axis)
         {

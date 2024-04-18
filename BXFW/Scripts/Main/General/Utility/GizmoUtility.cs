@@ -21,6 +21,8 @@ namespace BXFW
 
         /// <summary>
         /// The primary GizmoUtility drawer. If the method isn't implemented in the variable's class you can use this.
+        /// <br>Set the matrix of this only if you want 2 transformations at the same time, otherwise use <see cref="Gizmos.matrix"/>.</br>
+        /// <br>Set color using <see cref="Gizmos.color"/>.</br>
         /// </summary>
         public static readonly Drawer drawer = new Drawer();
 

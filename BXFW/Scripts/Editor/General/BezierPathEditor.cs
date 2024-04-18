@@ -241,9 +241,21 @@ namespace BXFW.ScriptEditor
         {
             m_SelectedHandles.Clear();
         }
-        public void Select(int index)
+        /// <summary>
+        /// Selects a handle.
+        /// <br>This method does not do bound checking, check the size of your <see cref="SerializedProperty"/> or the <see cref="BezierPath"/>. Out of bound selections will do nothing.</br>
+        /// </summary>
+        /// <param name="index">Index of the handle to select.</param>
+        /// <returns><see langword="true"/> if a new handle was selected, <see langword="false"/> if no new handle was selected.</returns>
+        public bool Select(int index)
         {
-            m_SelectedHandles.Add(index);
+            // Index has to be positive
+            if (index < 0)
+            {
+                return false;
+            }
+
+            return m_SelectedHandles.Add(index);
         }
 
         /// <summary>
@@ -464,7 +476,8 @@ namespace BXFW.ScriptEditor
             if (EditorGUI.EndChangeCheck())
             {
                 // Re-generate path because something was changed
-                // FIXME : This won't work on struct parents, the path will be generated in runtime instead
+                // FIXME : This won't work on struct parents (due to the fact that GetTarget().value is a copy if GetTarget().parent is a struct)
+                // the path will be generated in runtime instead
                 Undo.RecordObject(property.serializedObject.targetObject, "set value");
                 ((BezierPath)property.GetTarget().value).UpdatePath();
             }

@@ -528,7 +528,15 @@ namespace BXFW.Collections
         public int Add(T item, float chance)
         {
             // Ensure 'chance' is within limits
-            chance -= ChanceUpperLimit - (Sum(m_list, (data) => data.Chance) + chance);
+            if (m_list.Count > 0)
+            {
+                // > sum = 0.75
+                // > upper = 1
+                // > chance = 0.33
+                // >> excessSum = sum - (upper - chance)
+                // >> 0.75 - (1 - 0.33) => 0.75 - (0.67) => 0.08 excess sum
+                chance -= Sum(m_list, (data) => data.Chance) - (ChanceUpperLimit - chance);
+            }
 
             m_list.Add(new ChanceValue<T>(Math.Clamp(chance, 0f, 1f), item));
             return Count - 1;
