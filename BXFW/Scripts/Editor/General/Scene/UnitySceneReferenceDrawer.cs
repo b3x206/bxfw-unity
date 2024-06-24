@@ -20,7 +20,19 @@ namespace BXFW.ScriptEditor
         public int callbackOrder => 0;
         public static bool DeleteSceneListAfterBuild = true;
 
-        private static string RelativeDirectoryName = string.Empty;
+        // Unity may reload the domain during building, so set this to EditorPrefs.
+        private const string RelativeDirNameKey = "SRDtemp__RelativeDirectoryName";
+        private static string RelativeDirectoryName
+        {
+            get
+            {
+                return EditorPrefs.GetString(RelativeDirNameKey);
+            }
+            set
+            {
+                EditorPrefs.SetString(RelativeDirNameKey, value);
+            }
+        }
         private const string FileName = "MainSceneList";
 
         public void OnPreprocessBuild(BuildReport report)
