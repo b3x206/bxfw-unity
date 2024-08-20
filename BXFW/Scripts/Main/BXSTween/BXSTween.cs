@@ -210,6 +210,13 @@ namespace BXFW.Tweening
         {
             for (int i = RunningTweens.Count - 1; i >= 0; i--)
             {
+                // This may fail if too many tweens were running (?)
+                if (i >= RunningTweens.Count)
+                {
+                    i -= (RunningTweens.Count - (i + 1));
+                    continue;
+                }
+
                 BXSTweenable tween = RunningTweens[i];
                 if (tween == null)
                 {

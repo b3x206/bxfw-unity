@@ -52,6 +52,19 @@ namespace BXFW
         }
 
         /// <summary>
+        /// Creates a gray line with given thickness.
+        /// <br>The <see cref="LinePadding"/> is set to 3.</br>
+        /// </summary>
+        public InspectorLineAttribute(int thickness)
+        {
+#if UNITY_EDITOR
+            Color = Color.gray;
+            LineThickness = thickness;
+            LinePadding = 3;
+#endif
+        }
+
+        /// <summary>
         /// Creates a gray line with given padding and thickness.
         /// </summary>
         public InspectorLineAttribute(int thickness, int padding)

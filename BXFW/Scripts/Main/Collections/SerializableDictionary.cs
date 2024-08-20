@@ -31,11 +31,6 @@ namespace BXFW.Collections
         internal abstract void AddDummyPair();
     }
 
-    /// If 'SerializableDictionary{TKey, TValue}' was so good, why there isn't a 'SerializableDictionary2{TKey, TValue}'
-    /// Well, you asked. And i delivered. The all new SerializableDictionary2!
-    /// Features
-    /// * Probably will break your previous serialization lol
-    /// * Has a cool editor that isn't definitely broken because ReorderableList adding doesn't work unless you use dark magic.
     /// <summary>
     /// A <see cref="Dictionary{TKey, TValue}"/> that can be serialized by unity.
     /// Uses (mostly) the same constraints as the <see cref="Dictionary{TKey, TValue}"/> on both editor and code.
@@ -48,7 +43,8 @@ namespace BXFW.Collections
     /// * Unlike the <see cref="Dictionary{TKey, TValue}"/>, this does not use hashsets.
     /// (because of this it is slower than an usual dictionary, you should only use this if serialization is required or 
     /// cast back to <see cref="Dictionary{TKey, TValue}"/> if performance and editor serializability is required)
-    /// <br>* Ordering of the elements is ordered in the same order of elements that are added. It is not undefined behaviour.</br>
+    /// <br>* Ordering of the elements is ordered in the same order of elements that are added. It is not undefined behaviour.
+    /// (just should have called this an OrderedDictionary but that exists and is only serializable in C# context, not in unity context)</br>
     /// </remarks>
     [Serializable]
     public class SerializableDictionary<TKey, TValue> : SerializableDictionaryBase, IDictionary<TKey, TValue>
@@ -376,12 +372,23 @@ namespace BXFW.Collections
             return m_Pairs[index].value;
         }
 
+        /// <summary>
+        /// Check if the dummy pair is valid to be inserted.
+        /// </summary>
         internal override bool DummyPairIsValid()
         {
             return !ContainsKey(m_DummyPair.key);
         }
+        /// <summary>
+        /// Inserts the dummy pair.
+        /// </summary>
         internal override void AddDummyPair()
         {
+            if (!DummyPairIsValid())
+            {
+                Debug.LogWarning("[SerializableDictionary::AddDummyPair] Added the pair while the pair is not valid. Won't prevent it but will cause problems.");
+            }
+
             Add(m_DummyPair.key, m_DummyPair.value);
             m_DummyPair = new Pair();
         }

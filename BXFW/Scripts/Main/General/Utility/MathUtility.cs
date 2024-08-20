@@ -63,7 +63,7 @@ namespace BXFW
                 return to;
             }
 
-            // a + ((b - a) * t) but goofy
+            // a + ((b - a) * t) but applied twice
             return from + ((to - from) * ((value - valueFrom) / (valueTo - valueFrom)));
         }
 

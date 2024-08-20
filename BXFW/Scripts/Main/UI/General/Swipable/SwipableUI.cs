@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -56,7 +56,7 @@ namespace BXFW.UI
         /// </summary>
         public float scrollSensitivity = 0f;
         /// <summary>
-        /// Cooldown time for scrolling delta applying OnEndDrag.
+        /// Cooldown time for scrolling delta applying callback of OnEndDrag.
         /// </summary>
         [DrawIf(nameof(IsScrollable)), Clamp(0f, float.MaxValue)]
         public float scrollWaitTime = .16f;
@@ -98,15 +98,15 @@ namespace BXFW.UI
             set
             {
                 // Clamp menuValue
-                var menuValue = Mathf.Clamp(value, 0, MenuCount < 0 ? int.MaxValue : MenuCount - 1);
+                int menuValue = Mathf.Clamp(value, 0, MenuCount < 0 ? int.MaxValue : MenuCount - 1);
                 // Delta should use the clamped value to avoid bugs
-                var menuDelta = menuValue - m_CurrentMenu;
+                float menuDelta = menuValue - m_CurrentMenu;
 
                 // Change menus if there's delta
-                if (menuDelta != 0)
+                if (!Mathf.Approximately(menuDelta, 0f))
                 {
                     // Get location
-                    var newLocation = m_containerInitialPosition + (new Vector2(-ItemContainer.rect.width, 0f) * menuDelta);
+                    Vector2 newLocation = m_containerInitialPosition + (new Vector2(-ItemContainer.rect.width, 0f) * menuDelta);
 
                     // Interpolate to new location
                     SmoothSwipe(ItemContainer.localPosition, newLocation, swipeTweenDuration);
@@ -180,7 +180,7 @@ namespace BXFW.UI
                 }
             }
 
-            var posX = m_containerInitialPosition.x - swipeDelta; // Local position to set.
+            float posX = m_containerInitialPosition.x - swipeDelta; // Local position to set.
             ItemContainer.localPosition = new Vector2(posX, m_containerInitialPosition.y);
         }
         public void OnEndDrag(PointerEventData data)
@@ -251,7 +251,7 @@ namespace BXFW.UI
         private PointerEventData m_scrollEventData;
         private void Update()
         {
-            if (m_scrollEventData == null)
+            if (m_scrollEventData == null || !IsScrollable)
             {
                 return;
             }
@@ -336,8 +336,8 @@ namespace BXFW.UI
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            var gColor = Gizmos.color;
-            var rTransform = ItemContainer == null ? GetComponent<RectTransform>() : ItemContainer;
+            Color gColor = Gizmos.color;
+            RectTransform rTransform = ItemContainer == null ? GetComponent<RectTransform>() : ItemContainer;
 
             if (m_CurrentMenu >= MenuCount)
             {

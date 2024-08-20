@@ -49,7 +49,7 @@ namespace BXFW.Tweening.Editor
             // 2 : Make sequences display it's children indented
             // 3 : After that add a raw tweens view
             // 4 : Optimize further (laggy on larger than >500 elements)
-            // For now this is just a direct port of the BXTweenCoreInspector with monospace font.
+            // For now this is just a direct port of the BXTweenCoreInspector with monospace font and coloring, which was totally fine except for a lot of tweens.
 
             boxStyle ??= new GUIStyle(GUI.skin.box)
             {

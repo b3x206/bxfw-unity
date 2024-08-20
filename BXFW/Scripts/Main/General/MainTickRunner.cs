@@ -10,10 +10,10 @@ namespace BXFW
     public sealed class MainTickRunner : MonoBehaviour, ITickRunner
     {
         public int ElapsedTickCount => Time.frameCount;
-        
+
         private float m_PreviousUnscaledDeltaTime = 0f;
         public float UnscaledDeltaTime => m_PreviousUnscaledDeltaTime;
-        
+
         public bool SupportsFixedTick => true;
         private float m_PreviousFixedUnscaledDeltaTime = 0f;
         public float FixedUnscaledDeltaTime => m_PreviousFixedUnscaledDeltaTime;
