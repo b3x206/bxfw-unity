@@ -178,7 +178,10 @@ namespace BXFW.ScriptEditor
         }
 
         private Type setRootType;
-        private void DrawTypeDropdown(SerializedProperty arrayProperty, Type editConstraintGeneric, Type editType, int typeIndex, Rect position, GUIContent label)
+        private void DrawTypeDropdown(
+            SerializedProperty arrayProperty, Type editConstraintGeneric, Type editType,
+            SerializableTypeConstraintAttribute[] constraintAttributes, int typeIndex, Rect position, GUIContent label
+        )
         {
             // Draw a dropdown selector
             // The dropdown selector will summon the advanced dropdown
@@ -217,6 +220,17 @@ namespace BXFW.ScriptEditor
                     if (editConstraintGeneric?.IsGenericParameter ?? false)
                     {
                         return TypeUtility.GenericArgumentAllowsType(editConstraintGeneric, t);
+                    }
+
+                    // Check attribute constraints
+                    for (int i = 0; i < constraintAttributes.Length; i++)
+                    {
+                        SerializableTypeConstraintAttribute constraint = constraintAttributes[i];
+
+                        if (!constraint.IsTypeAllowed(t))
+                        {
+                            return false;
+                        }
                     }
 
                     return true;
@@ -267,10 +281,13 @@ namespace BXFW.ScriptEditor
         {
             return new Rect(r) { x = r.x + IndentHorizontal, width = r.width - IndentHorizontal };
         }
-        private void DrawTypesRecursive(SerializedProperty arrayProperty, Type genericConstraintType, Type rootType, int typeIndex, Rect position, GUIContent label)
+        private void DrawTypesRecursive(
+            SerializedProperty arrayProperty, Type genericConstraintType, Type rootType,
+            SerializableTypeConstraintAttribute[] constraintAttributes, int typeIndex, Rect position, GUIContent label
+        )
         {
             // Draw the root type
-            DrawTypeDropdown(arrayProperty, genericConstraintType, rootType, typeIndex, position, label);
+            DrawTypeDropdown(arrayProperty, genericConstraintType, rootType, constraintAttributes, typeIndex, position, label);
 
             if (rootType == null)
             {
@@ -295,12 +312,12 @@ namespace BXFW.ScriptEditor
                 // Open type
                 if (genericT.IsGenericParameter)
                 {
-                    DrawTypeDropdown(arrayProperty, openGenericT, genericT, i, IndentedRect(position), new GUIContent(label) { text = "Argument" });
+                    DrawTypeDropdown(arrayProperty, openGenericT, genericT, constraintAttributes, i, IndentedRect(position), new GUIContent(label) { text = "Argument" });
                 }
                 // Closed, draw type recursively for it
                 else
                 {
-                    DrawTypesRecursive(arrayProperty, openGenericT, genericT, i, IndentedRect(position), new GUIContent(label) { text = "Argument" });
+                    DrawTypesRecursive(arrayProperty, openGenericT, genericT, constraintAttributes, i, IndentedRect(position), new GUIContent(label) { text = "Argument" });
                 }
             }
         }
@@ -310,8 +327,11 @@ namespace BXFW.ScriptEditor
             mainCtx.Reset();
             label = EditorGUI.BeginProperty(position, label, property);
 
+            PropertyTargetInfo targetInfo = property.GetTarget();
+
+            SerializableTypeConstraintAttribute[] constraintAttributes = Array.ConvertAll(targetInfo.fieldInfo.GetCustomAttributes(typeof(SerializableTypeConstraintAttribute), true), c => c as SerializableTypeConstraintAttribute);
             // Target (read-only)
-            SerializableType target = (SerializableType)property.GetTarget().value;
+            SerializableType target = (SerializableType)targetInfo.value;
             // List of datas contained
             SerializedProperty dataArray = property.FindPropertyRelative("m_Data");
 
@@ -321,7 +341,7 @@ namespace BXFW.ScriptEditor
 
             // Draw a list of dropdown selectors for the generic type(s) + root type
             setRootType = target.Type;
-            DrawTypesRecursive(dataArray, null, target.Type, 0, position, label);
+            DrawTypesRecursive(dataArray, null, target.Type, constraintAttributes, 0, position, label);
 
             EditorGUI.EndProperty();
         }

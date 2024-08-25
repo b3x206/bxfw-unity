@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 namespace BXFW.Collections
 {
@@ -297,11 +298,16 @@ namespace BXFW.Collections
         }
         public override Type ElementType => typeof(T);
         public bool IsReadOnly => false;
-        public void Add(T item)
+        void ICollection<T>.Add(T item)
+        {
+            Add(item);
+        }
+        public int Add(T item)
         {
             // Insert to array
             int closestIndex = FindClosestBinarySearch(item);
             m_list.Insert(closestIndex, item);
+            return closestIndex;
         }
         public void AddRange(IEnumerable<T> elements)
         {
